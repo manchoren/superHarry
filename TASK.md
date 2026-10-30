@@ -2,7 +2,7 @@
 
 Baseline: 2026-10-29. Sources: [constitution.md](constitution.md) and [project_plan.md](project_plan.md), including the current accepted body and the historical 0.4.174-draft entry. The constitution prevails. This file organizes delivery; it does not approve new designs, change policy, or turn proposals into requirements.
 
-Repository baseline: only the constitution and project plan existed when this backlog was prepared. No implementation, test result, dependency approval or hardware acceptance is implied. All tasks below start unchecked. Update this baseline and task evidence as work lands.
+Repository baseline: only the constitution and project plan existed when this backlog was prepared. No implementation, test result, dependency approval or hardware acceptance is implied by that baseline. Current task status and evidence appear below.
 
 ## Execution rules
 
@@ -17,6 +17,181 @@ Repository baseline: only the constitution and project plan existed when this ba
 - Develop and functionally validate in emulated ARM64 first. Real-device acceptance is a later gate; emulation cannot establish Pi performance, physical isolation, HDMI or thermal behavior.
 - At runtime, local inference, STT, TTS, OCR and heavy sandbox work share one heavy-job slot. Development parallelism does not authorize concurrent heavy workloads on the Pi. Preserve UI/API responsiveness and guest scheduling rules.
 - Record completion evidence beside a checked task: PR/commit, review, checks, environment and remaining limits. Mark blocked tasks with the actual blocker and next action. Split large tasks into linked tickets without dropping their acceptance criteria.
+
+## Task tracking
+
+This table is the current coordination index for all backlog tasks. The detailed entries below remain authoritative for dependencies, gates, acceptance criteria and evidence. `Work recorded` means a draft or other evidence exists; it does not assert that an agent is currently working or that approvals, review or checks are complete. `In progress` indicates a current assignment. `Deferred` indicates work explicitly scheduled after the relevant release or milestone. `Complete` mirrors a checked task. `Pending` has no recorded progress.
+
+Update the row whenever work starts, an assignment changes, a blocker appears, work is handed off, or status changes. Record the active assignee name and the actual model when known; use `Unknown` when the model cannot be established, never infer it. Use `Unassigned` and `?` when no one is currently assigned. On handoff or completion, clear the active assignment and retain work evidence in the detailed task entry. A blocked task must identify its blocker and next action in its detailed entry; use `Blocked` in the table. Keep IDs, descriptions and statuses synchronized with the detailed backlog.
+
+| Task | Description | Status | Assigned | Model |
+|---|---|---|---|---|
+| T001 | Establish the requirements and constitution work record. | Complete | Unassigned | ? |
+| T002 | Write the architecture and repository-layout proposal. | Work recorded | Unassigned | ? |
+| T003 | Specify reproducible development and deployment environments. | Work recorded | Unassigned | ? |
+| T004 | Write the initial threat model and abuse-case inventory. | Work recorded | Unassigned | ? |
+| T005 | Propose HTTP/SSE and TS-to-Python contracts. | Work recorded | Unassigned | ? |
+| T006 | Propose base storage and migration ownership. | Work recorded | Unassigned | ? |
+| T007 | Specify auth, role and guest policies. | Work recorded | Unassigned | ? |
+| T008 | Design first-admin bootstrap and credential recovery. | Work recorded | Unassigned | ? |
+| T009 | Verify provider capabilities and propose routing/budget details. | Work recorded | Unassigned | ? |
+| T010 | Design resource governance and durable action states. | Work recorded | Unassigned | ? |
+| T011 | Design HTTPS, service privileges and LAN/VPN deployment. | Work recorded | Unassigned | ? |
+| T012 | Design network provisioning and offline recovery. | Work recorded | Unassigned | ? |
+| T013 | Establish contributor and operational documentation. | Work recorded | Unassigned | ? |
+| T014 | Complete dependency/license and local-check approval review. | Pending | Unassigned | ? |
+| T015 | Design synthetic security fixtures and agent/benchmark cases. | Work recorded | Unassigned | ? |
+| T016 | Scaffold the approved TypeScript components. | Pending | Unassigned | ? |
+| T017 | Scaffold the Python agent core. | Pending | Unassigned | ? |
+| T018 | Provision the ARM64 emulated environment. | Pending | Unassigned | ? |
+| T019 | Implement configuration and secret loading. | Pending | Unassigned | ? |
+| T020 | Implement local engineering checks. | Pending | Unassigned | ? |
+| T021 | Validate clean ARM64 installation and process startup. | Pending | Unassigned | ? |
+| T022 | Add structured logging, health and basic metrics primitives. | Pending | Unassigned | ? |
+| T023 | Implement approved base SQLite migrations and data access. | Pending | Unassigned | ? |
+| T024 | Implement the protected API/core transport. | Pending | Unassigned | ? |
+| T025 | Implement the authorized module registry. | Pending | Unassigned | ? |
+| T026 | Implement passwords and revocable sessions. | Pending | Unassigned | ? |
+| T027 | Implement account, TOTP and password-reset flows. | Pending | Unassigned | ? |
+| T028 | Implement deny-by-default role and object authorization. | Pending | Unassigned | ? |
+| T029 | Implement mandatory security audit events. | Pending | Unassigned | ? |
+| T030 | Implement atomic first-admin bootstrap. | Pending | Unassigned | ? |
+| T031 | Implement later authenticated administrator recovery. | Pending | Unassigned | ? |
+| T032 | Configure trusted HTTPS and private reachability. | Pending | Unassigned | ? |
+| T033 | Implement the constrained network broker. | Pending | Unassigned | ? |
+| T034 | Implement transactional network setup and reconnection. | Pending | Unassigned | ? |
+| T035 | Implement temporary guest sessions and admission limits. | Pending | Unassigned | ? |
+| T036 | Implement scoped file storage and authorized delivery. | Pending | Unassigned | ? |
+| T037 | Implement the approved SSE chat transport. | Pending | Unassigned | ? |
+| T038 | Build the bilingual responsive UI shell. | Pending | Unassigned | ? |
+| T039 | Build login, account and guest UI flows. | Pending | Unassigned | ? |
+| T040 | Build streamed chat and attachment interactions. | Pending | Unassigned | ? |
+| T041 | Add translation and responsive/accessibility checks. | Pending | Unassigned | ? |
+| T042 | Validate the secure basic chat slice in ARM64. | Pending | Unassigned | ? |
+| T043 | Implement complete constitution/context delivery. | Pending | Unassigned | ? |
+| T044 | Implement the provider-neutral model interface. | Pending | Unassigned | ? |
+| T045 | Implement the authorized tool-call boundary. | Pending | Unassigned | ? |
+| T046 | Implement OpenAI premium integration. | Pending | Unassigned | ? |
+| T047 | Implement provisional local inference. | Pending | Unassigned | ? |
+| T048 | Implement token/cost ledgers and hard limits. | Pending | Unassigned | ? |
+| T049 | Implement routing, circuit breaking and model controls. | Pending | Unassigned | ? |
+| T050 | Implement the shared heavy-job resource governor. | Pending | Unassigned | ? |
+| T051 | Implement guest scheduling and fair admission. | Pending | Unassigned | ? |
+| T052 | Implement durable pending tasks and safe continuation. | Pending | Unassigned | ? |
+| T053 | Implement reply-language and capability degradation policies. | Pending | Unassigned | ? |
+| T054 | Build model, budget and mode administration UI. | Pending | Unassigned | ? |
+| T055 | Implement capability-aware agent orchestration. | Pending | Unassigned | ? |
+| T056 | Build the repeatable model and agent evaluation harness. | Pending | Unassigned | ? |
+| T057 | Validate secure chat with real routing in ARM64. | Pending | Unassigned | ? |
+| T058 | Finalize memory and persistent-domain schema designs. | Pending | Unassigned | ? |
+| T059 | Implement isolated conversation histories. | Pending | Unassigned | ? |
+| T060 | Implement memory repositories and provenance. | Pending | Unassigned | ? |
+| T061 | Implement bounded semantic retrieval with keyword fallback. | Pending | Unassigned | ? |
+| T062 | Implement safe memory extraction and staleness handling. | Pending | Unassigned | ? |
+| T063 | Implement personality and fixed-directive administration. | Pending | Unassigned | ? |
+| T064 | Implement user memory controls and visibility policy. | Pending | Unassigned | ? |
+| T065 | Integrate scoped memory into agent responses. | Pending | Unassigned | ? |
+| T066 | Build persistent admin and user settings. | Pending | Unassigned | ? |
+| T067 | Finalize optional memory encryption and recovery design. | Pending | Unassigned | ? |
+| T068 | Implement memory encryption and transactional conversion. | Pending | Unassigned | ? |
+| T069 | Implement the minimal persistent maintenance scheduler. | Pending | Unassigned | ? |
+| T070 | Implement application-managed access and workspace quotas. | Pending | Unassigned | ? |
+| T071 | Implement storage-pressure cleanup and restart checks. | Pending | Unassigned | ? |
+| T072 | Implement idle-time memory consolidation. | Pending | Unassigned | ? |
+| T073 | Build scheduled maintenance and storage status views. | Pending | Unassigned | ? |
+| T074 | Design consistent backups and transactional restores. | Pending | Unassigned | ? |
+| T075 | Implement manual admin backup and download. | Pending | Unassigned | ? |
+| T076 | Implement reviewed restore and latest recovery retention. | Pending | Unassigned | ? |
+| T077 | Validate encryption, backup and restore failure paths. | Pending | Unassigned | ? |
+| T078 | Design release integrity, updates and data rollback. | Pending | Unassigned | ? |
+| T079 | Implement admin-initiated application updates. | Pending | Unassigned | ? |
+| T080 | Validate the persistence/admin milestone. | Pending | Unassigned | ? |
+| T081 | Finalize sandbox isolation and boundary design. | Pending | Unassigned | ? |
+| T082 | Implement isolated execution and hard resource caps. | Pending | Unassigned | ? |
+| T083 | Implement authorized public search, reading and downloads. | Pending | Unassigned | ? |
+| T084 | Implement validated offline sandbox file staging. | Pending | Unassigned | ? |
+| T085 | Implement sandbox tool dispatch and result handling. | Pending | Unassigned | ? |
+| T086 | Design and validate package-guard criteria. | Pending | Unassigned | ? |
+| T087 | Implement independent package decisions and audit. | Pending | Unassigned | ? |
+| T088 | Implement staged offline dependency installation and reuse. | Pending | Unassigned | ? |
+| T089 | Enable guarded task-library selection and alternative retry. | Pending | Unassigned | ? |
+| T090 | Select approved document-generation/conversion packages. | Pending | Unassigned | ? |
+| T091 | Implement sandboxed document generation and conversion. | Pending | Unassigned | ? |
+| T092 | Test sandbox escape and cross-user boundaries. | Pending | Unassigned | ? |
+| T093 | Test web and package supply-chain failures. | Pending | Unassigned | ? |
+| T094 | Validate the complete tool/sandbox milestone. | Pending | Unassigned | ? |
+| T095 | Design the skill manifest and approval records. | Work recorded | Unassigned | ? |
+| T096 | Implement source intake and manifest validation. | Pending | Unassigned | ? |
+| T097 | Implement admin approval and integrity enforcement. | Pending | Unassigned | ? |
+| T098 | Implement signature reporting and skill lifecycle. | Pending | Unassigned | ? |
+| T099 | Implement permission-bounded skill execution. | Pending | Unassigned | ? |
+| T100 | Build skill proposal/review/lifecycle interfaces. | Pending | Unassigned | ? |
+| T101 | Deliver reusable approved document skills. | Pending | Unassigned | ? |
+| T102 | Validate skill security and recovery integration. | Pending | Unassigned | ? |
+| T103 | Finalize user-job policy and recovery decisions. | Pending | Unassigned | ? |
+| T104 | Implement owned scheduled-job CRUD and persistence. | Pending | Unassigned | ? |
+| T105 | Implement time zones and daylight-saving behavior. | Pending | Unassigned | ? |
+| T106 | Implement resource/budget guardrails and stop controls. | Pending | Unassigned | ? |
+| T107 | Implement missed-job review and safe restart recovery. | Pending | Unassigned | ? |
+| T108 | Build user job management and failure views. | Pending | Unassigned | ? |
+| T109 | Build admin job and resource oversight. | Pending | Unassigned | ? |
+| T110 | Validate scheduler and maintenance coexistence. | Pending | Unassigned | ? |
+| T111 | Design image/OCR validation and fixtures. | Pending | Unassigned | ? |
+| T112 | Implement sandboxed image hygiene. | Pending | Unassigned | ? |
+| T113 | Implement provisional Spanish/English OCR. | Pending | Unassigned | ? |
+| T114 | Implement premium image and local OCR routing. | Pending | Unassigned | ? |
+| T115 | Build image/OCR chat interactions. | Pending | Unassigned | ? |
+| T116 | Validate malicious image/OCR and model paths. | Pending | Unassigned | ? |
+| T117 | Design display ownership and OS/browser isolation. | Pending | Unassigned | ? |
+| T118 | Implement trusted display coordination and session lifecycle. | Pending | Unassigned | ? |
+| T119 | Implement isolated Brave profile provisioning. | Pending | Unassigned | ? |
+| T120 | Implement secure handover and ownership invalidation. | Pending | Unassigned | ? |
+| T121 | Implement idle, playback and release behavior. | Pending | Unassigned | ? |
+| T122 | Design logo and ambient-display presentation. | Pending | Unassigned | ? |
+| T123 | Verify weather terms and implement cached weather. | Pending | Unassigned | ? |
+| T124 | Implement ambient slideshow and startup/login transitions. | Pending | Unassigned | ? |
+| T125 | Implement authorized browser tools and capture. | Pending | Unassigned | ? |
+| T126 | Implement browser intervention and action confirmation. | Pending | Unassigned | ? |
+| T127 | Implement interrupted browser-action recovery. | Pending | Unassigned | ? |
+| T128 | Build remote display status and claim/release UI. | Pending | Unassigned | ? |
+| T129 | Test display isolation, races and credential protection. | Pending | Unassigned | ? |
+| T130 | Validate image/display functional milestone. | Pending | Unassigned | ? |
+| T131 | Design channel adapters and identity-linking contracts. | Pending | Unassigned | ? |
+| T132 | Implement channel core and account-link management. | Pending | Unassigned | ? |
+| T133 | Implement Telegram private-chat long polling. | Pending | Unassigned | ? |
+| T134 | Validate Telegram delivery and permissions. | Pending | Unassigned | ? |
+| T135 | Verify dedicated Gmail and design safe mail integration. | Pending | Unassigned | ? |
+| T136 | Implement email intake, identity checks and sanitization. | Pending | Unassigned | ? |
+| T137 | Implement read/summarize and human-sent draft workflows. | Pending | Unassigned | ? |
+| T138 | Validate email spoofing, injection and draft-only behavior. | Pending | Unassigned | ? |
+| T139 | Finalize local audio dependency and privacy design. | Pending | Unassigned | ? |
+| T140 | Implement constrained audio intake and local transcription. | Pending | Unassigned | ? |
+| T141 | Implement Piper speech shaping and synthesis. | Pending | Unassigned | ? |
+| T142 | Implement persistent voice preferences. | Pending | Unassigned | ? |
+| T143 | Integrate Telegram/web voice notes and push-to-talk. | Pending | Unassigned | ? |
+| T144 | Validate audio scheduling, retention and degraded mode. | Pending | Unassigned | ? |
+| T145 | Validate Telegram, email and voice integration in ARM64. | Pending | Unassigned | ? |
+| T146 | Review current WhatsApp feasibility and request integration decision. | Pending | Unassigned | ? |
+| T147 | Implement and validate approved WhatsApp integration. | Pending | Unassigned | ? |
+| T148 | Resolve hardware availability and prepare the target Pi. | Pending | Unassigned | ? |
+| T149 | Deploy native production services and hardening. | Pending | Unassigned | ? |
+| T150 | Freeze hardware acceptance protocols and workloads. | Pending | Unassigned | ? |
+| T151 | Run the Spanish local-model bake-off. | Pending | Unassigned | ? |
+| T152 | Benchmark and choose multilingual STT settings. | Pending | Unassigned | ? |
+| T153 | Benchmark and choose the Piper voice. | Pending | Unassigned | ? |
+| T154 | Benchmark semantic memory and finalize retrieval fallback. | Pending | Unassigned | ? |
+| T155 | Benchmark Spanish/English OCR and finalize engine. | Pending | Unassigned | ? |
+| T156 | Validate actual HDMI, Brave, network and sandbox isolation. | Pending | Unassigned | ? |
+| T157 | Validate full-stack load, storage, recovery and observability. | Pending | Unassigned | ? |
+| T158 | Complete release review, documentation and reproducible distribution. | Pending | Unassigned | ? |
+| T159 | Evaluate hands-free voice after core channel delivery. | Pending | Unassigned | ? |
+| T160 | Evaluate installable PWA support after responsive web delivery. | Pending | Unassigned | ? |
+| T161 | Evaluate WebAuthn/passkeys after beta. | Pending | Unassigned | ? |
+| T162 | Evaluate local visual understanding beyond OCR. | Pending | Unassigned | ? |
+| T163 | Evaluate alternate TTS only if Piper quality is insufficient. | Pending | Unassigned | ? |
+| T164 | Evaluate repaired UPS and graceful shutdown integration. | Pending | Unassigned | ? |
+| T165 | Evaluate micro models and additional deployment scale. | Pending | Unassigned | ? |
+| T166 | Review stronger platform protection and outbound automation proposals. | Pending | Unassigned | ? |
 
 ## Approval and decision register
 
@@ -79,14 +254,14 @@ Sources: constitution in full; plan sections 3, 12, 14-17 and 19.
 - [ ] **T004 - Write the initial threat model and abuse-case inventory.** Depends: T001. Lane: security. Gate: none. Acceptance: docs/threat-model.md covers roles, trust boundaries, injection, confused deputy, cross-user access, SSRF, runtime code, skills, cron, models, browser, channels, secrets, updates and recovery, with linked negative tests. Complete before sandbox/skills implementation. Evidence: Design: [docs/threat-model.md](docs/threat-model.md); Independent documentation review completed 2026-10-30; formal review and execution of linked negative tests remain pending.
 - [ ] **T005 - Propose HTTP/SSE and TS-to-Python contracts.** Depends: T002, T004. Lane: contracts. Gate: none (design only). Acceptance: OpenAPI/event schemas specify requester/channel identity, authorization, structured error codes/parameters, cancellation, reconnect behavior and internal authentication; obtain G-CONTRACT approval before consumers implement them. Evidence: Proposal: [docs/contracts-proposal.md](docs/contracts-proposal.md); Owner approved the specified contract scope on 2026-10-30; see [ADR 0002](docs/adr/0002-contracts-storage.md). Security and explicitly open details remain pending. CSRF contract scope approved 2026-10-30: [ADR 0007](docs/adr/0007-csrf-contract.md); explicitly open details remain pending.
 - [ ] **T006 - Propose base storage and migration ownership.** Depends: T002, T004. Lane: data. Gate: none (design only). Acceptance: accounts, sessions, audit, settings, tasks, conversations and files have explicit ownership and transaction boundaries; separate memory schema approval, guest temporary context and secret storage; resolve initial migration tooling under G-ARCH/G-CONTRACT. Evidence: Proposal: [docs/storage-proposal.md](docs/storage-proposal.md); Owner approved specified logical ownership and migration proposal scope on 2026-10-30; see [ADR 0002](docs/adr/0002-contracts-storage.md). Schema, tooling and other explicitly open details remain pending.
-- [ ] **T007 - Specify auth, role and guest policies.** Depends: T004, T005. Lane: security. Gate: none (design only). Acceptance: define session revocation, password/MFA/reset, proxy trust and origin identity, guest expiry/rates/queues, administrative reauthentication and action confirmations without granting new privileges; prepare G-SECURITY approval. Evidence: Proposal: [docs/auth-policy-proposal.md](docs/auth-policy-proposal.md); G-SECURITY pending. Candidate decisions: [docs/security-decisions-proposal.md](docs/security-decisions-proposal.md); owner review pending. Concrete security proposals approved by owner 2026-10-30: [ADR 0004](docs/adr/0004-security-decisions.md); explicitly open decisions remain in [docs/security-open-decisions.md](docs/security-open-decisions.md). User password reset direction accepted 2026-10-30: [ADR 0005](docs/adr/0005-user-password-recovery.md); mechanism remains open. Owner selected security directions on 2026-10-30: [ADR 0006](docs/adr/0006-security-directions.md); details and other gates remain pending.
+- [ ] **T007 - Specify auth, role and guest policies.** Depends: T004, T005. Lane: security. Gate: none (design only). Acceptance: define session revocation, password/MFA/reset, proxy trust and origin identity, guest expiry/rates/queues, administrative reauthentication and action confirmations without granting new privileges; prepare G-SECURITY approval. Evidence: Proposal: [docs/auth-policy-proposal.md](docs/auth-policy-proposal.md); G-SECURITY pending. Candidate decisions: [docs/security-decisions-proposal.md](docs/security-decisions-proposal.md); concrete proposals approved within the scope recorded below. Concrete security proposals approved by owner 2026-10-30: [ADR 0004](docs/adr/0004-security-decisions.md); explicitly open decisions remain in [docs/security-open-decisions.md](docs/security-open-decisions.md). User password reset direction accepted 2026-10-30: [ADR 0005](docs/adr/0005-user-password-recovery.md); mechanism remains open. Owner selected security directions on 2026-10-30: [ADR 0006](docs/adr/0006-security-directions.md); details and other gates remain pending.
 - [ ] **T008 - Design first-admin bootstrap and credential recovery.** Depends: T007, T003. Lane: security. Gate: none (design only). Acceptance: separate first-run setup from later authenticated OS-admin recovery, including MFA handling, concurrent attempts, crash recovery, TLS trust and token redaction; recovery never reopens bootstrap silently. Evidence: Partial draft: [docs/bootstrap-recovery-proposal.md](docs/bootstrap-recovery-proposal.md); T003 and security/operations decisions pending. Owner approved lost-MFA recovery policy on 2026-10-30; see [ADR 0003](docs/adr/0003-lost-mfa-recovery.md); implementation details remain open.
 - [ ] **T009 - Verify provider capabilities and propose routing/budget details.** Depends: T002, T004. Lane: models. Gate: none (research/design only). Acceptance: check current official OpenAI model/account access, requested default gpt-6.1-terra/low, supported reasoning/fast-mode settings and prices; propose accounting and budget behavior; never substitute unsupported settings silently. Evidence: Proposal: [docs/model-routing-proposal.md](docs/model-routing-proposal.md); account access and G-MODEL decisions pending.
 - [ ] **T010 - Design resource governance and durable action states.** Depends: T005, T009. Lane: core. Gate: none (design only). Acceptance: propose one heavy-job slot, cancellation, priorities, admission thresholds, local request timeouts, retries and unknown-side-effect handling; distinguish required constitution context from trimmable context; prepare G-MODEL decisions. Evidence: [docs/resource-governance-proposal.md](docs/resource-governance-proposal.md); thresholds, retry policy and G-MODEL decisions pending.
 - [ ] **T011 - Design HTTPS, service privileges and LAN/VPN deployment.** Depends: T003, T004, T008. Lane: platform. Gate: none (design only). Acceptance: Caddy local CA/trust/renewal/rotation, separate loopback setup listener, Tailscale, firewall, service accounts and secret access satisfy LAN/VPN-only access and no port forwarding. Evidence: partial draft [docs/deployment-security-proposal.md](docs/deployment-security-proposal.md); T003/T008 and G-OPS/G-SECURITY remain pending.
 - [ ] **T012 - Design network provisioning and offline recovery.** Depends: T011, T007. Lane: platform. Gate: none (design only). Acceptance: validate NetworkManager/Netplan feasibility; propose narrow Unix-socket broker, peer identity, WPA2/WPA3-personal Wi-Fi and DHCP only, 120-second checkpoints and transactional persistence; unsupported operations remain blocked. Evidence: partial draft [docs/network-recovery-proposal.md](docs/network-recovery-proposal.md); prerequisites and G-OPS/G-SECURITY remain pending.
 - [ ] **T013 - Establish contributor and operational documentation.** Depends: T001. Lane: docs. Gate: none. Acceptance: README, CONTRIBUTING, CHANGELOG and ADR conventions describe project scope, local review/checks, constitution delivery and approval records; link tasks rather than leaving ticketless TODOs. Evidence: Prepared: [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), [CHANGELOG.md](CHANGELOG.md), [ADR conventions](docs/adr/README.md); peer review pending. Independent documentation review completed 2026-10-30; formal repository review remains pending.
-- [ ] **T014 - Complete dependency/license and local-check approval review.** Depends: T003, T004. Lane: governance. Gate: G-ARCH. Acceptance: approved exact packages/tools, supported versions, notices and supply-chain checks are recorded before installation; keep checks local, with no unapproved CI/CD service or workflow. Preliminary design: [docs/dependency-checks-proposal.md](docs/dependency-checks-proposal.md); T003, transitive inventory, vulnerability and compatibility review and G-ARCH remain pending. Independent review: [docs/dependency-review.md](docs/dependency-review.md); transitive, security and ARM64 validation remain open. Resolver options: [docs/python-dependency-options.md](docs/python-dependency-options.md); owner direction pending. Owner approved uv.lock direction 2026-10-30: [ADR 0008](docs/adr/0008-python-lock-direction.md); exact tool, packages and resolution procedure remain pending. See [approval inventory](docs/dependency-approval-inventory.md).
+- [ ] **T014 - Complete dependency/license and local-check approval review.** Depends: T003, T004. Lane: governance. Gate: G-ARCH. Acceptance: approved exact packages/tools, supported versions, notices and supply-chain checks are recorded before installation; keep checks local, with no unapproved CI/CD service or workflow. Preliminary design: [docs/dependency-checks-proposal.md](docs/dependency-checks-proposal.md); T003, transitive inventory, vulnerability and compatibility review and G-ARCH remain pending. Independent review: [docs/dependency-review.md](docs/dependency-review.md); transitive, security and ARM64 validation remain open. Resolver options: [docs/python-dependency-options.md](docs/python-dependency-options.md); owner direction recorded below. Owner approved uv.lock direction 2026-10-30: [ADR 0008](docs/adr/0008-python-lock-direction.md); exact tool, packages and resolution procedure remain pending. See [approval inventory](docs/dependency-approval-inventory.md).
 - [ ] **T015 - Design synthetic security fixtures and agent/benchmark cases.** Depends: T001, T004. Lane: quality. Gate: none (design only). Acceptance: define Spanish conversation/memory/web/file/permission cases, injection fixtures and 30-50 neutral-Spanish/voseo bake-off prompts; record expected outcomes, maintainer review and exploratory versus acceptance protocols. Unset hardware thresholds remain explicit decisions. Evidence: Proposal: [docs/evaluation-design.md](docs/evaluation-design.md); maintainer review, acceptance thresholds and hardware validation pending.
 
 ## Phase 1 - Emulated ARM64 development environment
