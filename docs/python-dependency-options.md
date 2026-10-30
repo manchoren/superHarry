@@ -1,0 +1,25 @@
+﻿# Python dependency resolution and lock options
+
+Status: decision proposal for T003/T014, 2026-10-30; no dependency, version, backend, lockfile or installation is approved. Constitution SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`. Read with [dependency proposal](dependency-checks-proposal.md) and [environment proposal](../environment_proposal.md). G-ARCH approval of exact tooling, dependencies and licenses remains necessary; emulator setup separately requires G-OPS.
+
+## Options for owner review
+
+| Option | How it works | Advantages | Costs and unresolved risks |
+|---|---|---|---|
+| A: uv project lock | Propose `pyproject.toml` plus uv's `uv.lock`, reviewed as the authoritative graph; export another format only where a reviewed tool needs it. | uv resolves across environments and can export requirements, pylock or CycloneDX; a single project workflow supports dependency groups. | Adds an executable dependency and its provenance/license review. uv normally locks and syncs automatically, so approved workflows must explicitly prevent unreviewed changes and installation; `--locked` checks consistency, while `--frozen` does not. Validate actual ARM64 markers and wheels, advisory/SBOM tools and pinned uv version. |
+| B: pip-tools with hashed requirements | Propose pip-tools to compile reviewed, pinned, hash-bearing requirements for each supported environment; use pip's hash-checking and binary-only mode for installation. | Familiar pip requirements consumption, hashes tied to chosen artifacts and clear target-specific review. | Adds pip-tools and pip dependencies. Multiple target/group files and hash updates require disciplined coordination; a source-only dependency is blocked under wheel-only policy. Verify exact version-specific commands and compatibility before adopting. |
+| C: pip lock and pylock | Propose pip's `pylock.toml` output as the reviewed target lock. | Uses the standardized PyPA reproducible-environment format and avoids adopting a separate lockfile format. | pip documents `pip lock` and pylock input as experimental, and guarantees generated locks only for the current Python version and platform. Verify candidate pip version, supported install and audit/SBOM workflows before choosing; target-specific locks may be needed. |
+
+Sources: [uv locking and syncing](https://docs.astral.sh/uv/concepts/projects/sync/), [uv resolution](https://docs.astral.sh/uv/concepts/resolution/), [pip-tools documentation](https://pip-tools.pypa.io/en/latest/), [pip lock](https://pip.pypa.io/en/stable/cli/pip_lock/), and [PyPA pylock specification](https://packaging.python.org/en/latest/specifications/pylock-toml/). These descriptions do not prove any candidate stack is compatible. Option A is a reasonable direction to evaluate for a multi-environment project, not a selected dependency or a recommendation to install it now.
+
+## Proposed review constraints common to all options
+
+- Establish exact Python interpreter, resolver, installer and build-backend versions, their source, hashes, licenses and security posture under G-ARCH. The OS package and its security updates remain part of T003. Resolve separate production and development graphs and record all transitive dependencies, conditions, artifact hashes and notices for the emulated ARM64 target.
+- Review wheel-only installation as the initial default. pip's [secure installation guidance](https://pip.pypa.io/en/stable/topics/secure-installs/) describes hash checking and rejecting source distributions; hashes establish equality with reviewed artifacts, not package safety. If a compatible wheel is unavailable, stop and review a separately specified source-build process and its build dependencies; do not silently fall back.
+- Treat dependency resolution as untrusted: it can fetch distributions or execute build metadata code. A dry-run report is not a lockfile and is not a safe execution boundary. No resolver runs or downloads are authorized by this document.
+- After approval, reproduce the reviewed graph and installation on clean ARM64 emulation using synthetic data. Validate missing or changed hash rejection, dependency and license scan coverage, SBOM completeness, offline or unavailable-index failure, target markers, and lock freshness. Record versions and outcomes; no real Pi performance or hardware acceptance follows from emulation.
+- Locking and package scanning for trusted repository development do not authorize runtime agents to install task packages or bypass the separately required package guard and sandbox rules.
+
+## Decision requested and remaining work
+
+The owner can select A, B or C as a direction, or request another option. That decision alone does not approve exact versions, transitive packages, a build backend, artifact sources, security exceptions, resolver commands or provisioning. T003/T014 must verify these details and obtain their respective approvals before generating an authoritative lock or installing. No lock was generated, tool installed, command executed, or compatibility/security test performed for this proposal.
