@@ -1,0 +1,33 @@
+﻿# Base storage and migration ownership proposal
+
+Status: T006 draft; schemas, migration tools and process access are not approved or implemented. G-CONTRACT, G-ARCH and applicable G-SECURITY decisions remain pending. Constitution baseline 2026-10-29 SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`. The [constitution](../constitution.md), [architecture proposal](../architecture_proposal.md), [contracts proposal](contracts-proposal.md) and [threat model](threat-model.md) govern scope.
+
+## Proposed ownership and logical records
+
+A single migration owner maintains ordered migrations and compatibility. Domain owners expose typed repository operations with explicit authorized requester context, rather than arbitrary cross-domain SQL. This is a logical inventory, not approved SQL, physical database layout or implementation schema. IDs are opaque; timestamps are UTC; constraints, indexes, deletion and retention must be specified in reviewed migrations.
+
+| Domain | Owner and proposed records | Authorization and atomic boundary |
+|---|---|---|
+| Accounts | Access/security: account ID, role, credential verifier reference, MFA configuration reference and lifecycle status. | Admin account changes require authenticated, confirmed policy; security audit and account change commit together when sharing a store. Secrets and keys are not returned to models. |
+| Sessions | Access/security: session ID/verifier, account or guest identity, expiry, revocation and creation metadata. | Server-managed and revocable. Create/revoke plus mandatory audit are atomic when possible; verify expiry and account status on every request. Guest session lasts 24 hours. |
+| Audit | Security: event ID, actor, operation, target, timestamp, outcome and redacted structured metadata. | Append-only from authorized application interfaces; no model can edit or disable. Privileged action and event must be coordinated transactionally or with a fail-closed durable mechanism. Audit remains enabled when diagnostics are disabled. |
+| Settings | Owning domain: key, validated value, scope, revision and actor. | Admin changes are server-authorized, confirmed where required, and audit with setting revision atomically. Secret values live outside this store. |
+| Tasks | Core/scheduler: task ID, owner, schedule, validated action descriptor, state, attempts, timestamps and side-effect outcome. | Owner-scoped; never run above creator's current authority. Atomic transitions and durable uncertainty prevent blind side-effect retry; creation and edits are audited. T010/T103–T110 settle state transitions. |
+| Conversations | Core/chat: conversation ID, owner, messages and request state; guest data uses a separate expiring temporary scope. | Owner authorization applies to every read/write. Store each message and request transition atomically where applicable; guest context is deleted on expiry, never promoted to persistent memory. |
+| Files | File service: ID, owner, opaque storage reference, media metadata, size, lifecycle and integrity metadata. | Actual content is outside webroot; validate paths and scope. Stage files and update metadata through a recoverable process; reject cross-owner references and clean failed stages. |
+
+Prefer a single ordered migration authority even if separate stores are selected. Proposed single writer per store/service is a review candidate, not a settled cross-process access mechanism; two processes must not bypass owner-scoped repositories or issue independent migrations. SQLite transaction boundaries cannot by themselves provide atomicity across independent databases and files. Designs requiring cross-store effects must specify durable state, recovery and fail-closed behavior; no distributed atomicity is assumed.
+
+## Memory, guests and secrets
+
+Memory schema, indexes, embeddings, encryption and conversion are explicitly separate and subject to T058, G-CONTRACT and G-SECURITY; the plan's example SQL is not an approved migration. Only authorized users/admins may retrieve their permitted memory scopes, and guests have none. When user memory visibility is disabled the user can still delete all their own memories. A separate encryption boundary must include memory indexes and derived data or protect them equivalently. Missing required keys fail closed; no empty replacement database is silently created.
+
+Guest temporary conversations belong to a guest session, expire after 24 hours and are deleted with that context; use a scoped store whose crash/restart cleanup is verified. They are not user accounts or memory. Actual secret material, tokens and encryption keys are stored in approved secret facilities outside downloadable backups and logs; credential verifier and secret references are not permission to copy secrets into application records. Exact separation of verifiers from key material needs security review.
+
+## Migrations and recovery
+
+Select a maintained migration tool only in T003/T014 with G-ARCH approval; no tool or version is chosen here. Each migration requires G-CONTRACT approval, a single owner, ordered version identifiers and a reproducible clean-install path. Before destructive or incompatible migrations, quiesce relevant writers and create and verify a consistent recoverable backup including all affected stores. Validate upgrade on a staged copy and user isolation before switching; report failures and keep or restore the previous usable state. A reverse migration must be explicitly verified; where safe reversal cannot be guaranteed, restore the compatible backup rather than pretending rollback is lossless. Coordinate scheduler, file staging, memory conversion and backup/restore/update to avoid simultaneous destructive maintenance. Restore secrets separately; missing required encryption keys make affected data unrecoverable.
+
+## Decisions and test obligations
+
+Owner review must decide physical SQLite boundaries, access ownership between processes, credentials versus verifier storage, audit atomicity across stores, migration tool/version and compatibility, metadata constraints and retention. Approving this document does not approve the memory schema or sandbox, update and encryption implementations. T023 and dependent tasks must test clean installation, ordered upgrades, failed migration and restart, consistent backup during writes, rollback/restore, owner isolation, guest expiry, foreign IDs, concurrent operations, missing keys, file-stage failures, and mandatory audit under failure. TM-02, TM-07, TM-11 and TM-12 in the threat model apply. No migrations, tests, dependencies or hardware checks have been performed for this proposal.

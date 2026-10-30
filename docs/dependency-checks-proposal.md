@@ -1,0 +1,45 @@
+﻿# Direct dependencies and local checks: review draft
+
+Status: T014 preparation only; T003 remains incomplete and T014 depends on completed T003 and T004. This is not a completed inventory, installation authorization, security finding resolution or compatibility claim. Constitution SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`; metadata queried 2026-10-30 from the official npm and PyPI registries. Gate G-ARCH requires explicit owner approval before adding dependencies; deployment/emulator additionally requires G-OPS. The owner-approved layout does not approve these packages.
+
+## Initial candidates, exact direct versions
+
+The following is a *partial* candidate list for first scaffolds and local checks. Licenses are registry declarations, not a complete notice review; consult version-specific package contents and transitive licenses. These are not lockfiles. Direct versions and installed transitive artifacts must be resolved, verified and approved before use. Sources link the package's authoritative registry entry; inspect the exact version in the registry when reviewing.
+
+| Purpose | Candidate | Registry-declared license |
+|---|---|---|
+| UI | [react 19.3.1](https://www.npmjs.com/package/react/v/19.3.1), [react-dom 19.3.1](https://www.npmjs.com/package/react-dom/v/19.3.1) | MIT each |
+| Access server | [fastify 5.12.7](https://www.npmjs.com/package/fastify/v/5.12.7) | MIT |
+| UI build | [vite 8.3.5](https://www.npmjs.com/package/vite/v/8.3.5), [@vitejs/plugin-react 6.1.2](https://www.npmjs.com/package/@vitejs/plugin-react/v/6.1.2) | MIT each |
+| Styles | [tailwindcss 4.3.3](https://www.npmjs.com/package/tailwindcss/v/4.3.3), [@tailwindcss/vite 4.3.3](https://www.npmjs.com/package/@tailwindcss/vite/v/4.3.3) | MIT each |
+| TypeScript and declarations | [typescript 6.0.3](https://www.npmjs.com/package/typescript/v/6.0.3) (Apache-2.0); [@types/react 19.3.0](https://www.npmjs.com/package/@types/react/v/19.3.0), [@types/react-dom 19.3.0](https://www.npmjs.com/package/@types/react-dom/v/19.3.0), [@types/node 24.10.0](https://www.npmjs.com/package/@types/node/v/24.10.0) (MIT each) | As specified |
+| JavaScript checks | [eslint 10.14.0](https://www.npmjs.com/package/eslint/v/10.14.0), [typescript-eslint 8.72.1](https://www.npmjs.com/package/typescript-eslint/v/8.72.1), [prettier 3.9.10](https://www.npmjs.com/package/prettier/v/3.9.10), [vitest 5.0.5](https://www.npmjs.com/package/vitest/v/5.0.5) | MIT each |
+| Python checks | [ruff 0.17.3](https://pypi.org/project/ruff/0.17.3/), [black 26.10.1](https://pypi.org/project/black/26.10.1/), [mypy 2.4.1](https://pypi.org/project/mypy/2.4.1/), [pytest 9.2.0](https://pypi.org/project/pytest/9.2.0/) | MIT each |
+| Python advisory check and SBOM | [pip-audit 2.10.1](https://pypi.org/project/pip-audit/2.10.1/) (PyPI classifier: Apache Software License); [cyclonedx-bom 7.6.0](https://pypi.org/project/cyclonedx-bom/7.6.0/) (Apache-2.0) | Verify exact license text and transitive notices |
+
+The Python runtime/core framework, Python dependency resolver/locking mechanism and build backend, shadcn component source and individual dependencies, test browser/DOM environment, security/secret scanning binary, JS SBOM/license tooling, HTTP/session/security plugins and any model providers remain undecided. Do not treat them as approved or assume the above is sufficient to implement T016/T017/T020. shadcn/ui is an accepted design direction, not blanket approval of every copied component or package it may need. Record every component's source and license separately before inclusion.
+
+## Compatibility and supply-chain review
+
+Registry metadata for `typescript-eslint 8.72.1` restricts TypeScript to `>=4.8.4 <6.1.0`; therefore the current TypeScript 7.0.2 is incompatible and is not proposed. The candidate 6.0.3 falls within this declared range; this is not a test of the whole stack. The proposed Vite, React plugin, Tailwind Vite plugin, Vitest and ESLint declare ranges compatible with candidate Node 24 and Vite 8, but optional/required peer packages, React compatibility, ARM64 native binaries, Python wheels and package-security status remain unverified. The exact npm and Python dependency graphs, hashes, lock-generation tooling, supported versions and build dependencies must be reviewed before approval. Registry listings do not guarantee safety. Review CVEs and license obligations, including Node and OS bundled components, and reconcile advisories rather than suppressing failures.
+
+## Local check design, pending tool approval
+
+Run a clean install from reviewed immutable lockfiles with integrity checks; lint and check formatting for TypeScript and Python; execute strict TypeScript and mypy checks; run unit/integration/security tests with model calls mocked; scan locked dependencies for known advisories and scan repository content and history for secrets using separately approved tooling; produce SBOM and review license notices; then build. Pin executable versions and record output, failures and environment. No CI/CD is proposed. Exact commands must be documented after tool and scripts are approved and implemented; they are not asserted to exist now. Separate real-model and hardware evaluations. The release requires evidence from review and real Pi testing in addition to local checks.
+
+## Remaining gate work
+
+Finish T003's host/guest image, firmware, snapshot, boot and dependency compatibility research. Produce a complete versioned direct/transitive manifest with provenance, hashes, vulnerabilities, licenses and artifact support; choose unresolved tools and record proposed commands. Owner approval is required for exact dependencies and operations before installation or scaffold work. No checks, lockfile generation, installations or implementation were executed for this proposal.
+
+## Additional check-tool candidates and specific vulnerability review
+
+The following proposed choices narrow the unresolved tooling above but do not resolve artifact trust, all transitive dependencies or G-ARCH. Metadata was checked on 2026-10-30:
+
+| Purpose | Versioned candidate | Evidence and open checks |
+|---|---|---|
+| JavaScript SBOM | [@cyclonedx/cyclonedx-npm 6.0.1](https://www.npmjs.com/package/@cyclonedx/cyclonedx-npm/v/6.0.1), Apache-2.0 | The [upstream documentation](https://github.com/CycloneDX/cyclonedx-node-npm/tree/v6.0.1) describes npm SBOM generation and requires Node >=20.18 and npm >=9, met by candidate Node 24.22.2/npm 11.19.1. Validate full and production dependency inventories separately, account for omitted optional dependencies and compare against lockfiles; SBOM output alone is not a license or vulnerability approval. |
+| JavaScript license metadata | [license-checker-rseidelsohn 5.0.1](https://www.npmjs.com/package/license-checker-rseidelsohn/v/5.0.1), BSD-3-Clause | Registry declares Node >=24/npm >=11. Its output is discovery, not legal analysis; review actual package licenses and notices, missing declarations, bundled files and generated shadcn sources. |
+| Local secret scan | [Gitleaks 8.30.1](https://github.com/gitleaks/gitleaks/releases/tag/v8.30.1), MIT per [tagged license](https://github.com/gitleaks/gitleaks/blob/v8.30.1/LICENSE) | Upstream release lists a Linux ARM64 archive. Verify checksum and provenance before acquisition; scan working tree and full accessible Git history with redacted reporting. Check rules on synthetic canaries and handle false positives without exposing secret contents. An all-clear is not proof of no secrets. |
+| Local dependency/OS advisory scan | [Trivy 0.76.1](https://github.com/aquasecurity/trivy/releases/tag/v0.76.1), Apache-2.0 per tagged project license | Release lists a Linux ARM64 archive and signatures. Verify exact artifacts, vulnerability database provenance/freshness and offline failure behavior; avoid silent missing-data passes. Confirm coverage for the approved lockfiles and OS snapshot before use. `pip-audit` remains proposed as a Python-specific complementary source, not as proof of full ecosystem coverage. |
+
+For MSYS2 QEMU `11.1.1-3`, the [MSYS2 package record](https://packages.msys2.org/packages/mingw-w64-ucrt-x86_64-qemu) flags CVE-2024-6519, CVE-2023-2680, CVE-2023-1386, CVE-2024-8354, CVE-2024-6505, CVE-2021-20255, CVE-2019-12067 and CVE-2018-18438. These are package-page alerts, not proof each affects this exact Windows build or selected virtual devices. [Red Hat's CVE-2023-2680 advisory](https://access.redhat.com/security/cve/CVE-2023-2680) concerns an incomplete downstream RHEL fix; it does not establish that the candidate MSYS2 binary is affected. The advisory could not be retrieved in this review, so that interpretation must be confirmed from the vendor before use. Obtain vendor/upstream affected ranges and fix commits for each alert, compare the exact source and build/patch metadata, and record disposition or choose another verified candidate. No finding has been resolved or waived, and no VM may be provisioned on the strength of these notes alone.
