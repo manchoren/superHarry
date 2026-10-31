@@ -16,4 +16,4 @@ uv can implicitly update and synchronize project state; resolution or build meta
 
 ## Evidence and limits
 
-The owner's explicit approval was recorded in the coordinating conversation on 2026-10-30. The research file reviewed at approval has SHA-256 `477dae95ab39e1e102e36a3adea69cf362778e9a8ba1b8b9427a2a37e3b89eb6`; its status line predates this decision. No uv binary was installed or executed, no lockfile was generated, and no dependency, security, ARM64 or hardware acceptance test is claimed. T003 and T014 remain incomplete.
+The owner's explicit approval was recorded in the coordinating conversation on 2026-10-30. The research file reviewed at approval has SHA-256 `477dae95ab39e1e102e36a3adea69cf362778e9a8ba1b8b9427a2a37e3b89eb6`; its status line predates this decision. No uv binary was installed or executed, no lockfile was generated, and no dependency, security, ARM64 or hardware acceptance test is claimed. T003 is complete at design-proposal scope; T014 and all dependency/runtime approvals remain pending.

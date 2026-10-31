@@ -1,6 +1,6 @@
 ﻿# Direct dependencies and local checks: review draft
 
-Status: T014 preparation only; T003 remains incomplete and T014 depends on completed T003 and T004. This is not a completed inventory, installation authorization, security finding resolution or compatibility claim. Constitution SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`; metadata queried 2026-10-30 from the official npm and PyPI registries. Gate G-ARCH requires explicit owner approval before adding dependencies; deployment/emulator additionally requires G-OPS. The owner-approved layout does not approve these packages.
+Status: T014 preparation only; T003's design proposal is complete and T014 depends on completed T003 and T004. This is not a completed inventory, installation authorization, security finding resolution or compatibility claim. Constitution SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`; metadata queried 2026-10-30 from the official npm and PyPI registries. Gate G-ARCH requires explicit owner approval before adding dependencies; deployment/emulator additionally requires G-OPS. The owner-approved layout does not approve these packages.
 
 ## Initial candidates, exact direct versions
 

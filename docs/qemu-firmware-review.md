@@ -1,6 +1,6 @@
 ﻿# QEMU AArch64 firmware provenance and license review
 
-Status: partial evidence for T003/T014, 2026-10-30; no installation, execution, or approval. Constitution baseline 2026-10-29; complete file read, SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`.
+Status: partial evidence for T003/T014, 2026-10-30. The owner provisionally selected the bundled images as the continued-review candidate; this is not dependency approval, risk acceptance, installation or execution. Rollback design recreates a writable VARS copy from the template for each VM session. VM disks and state are to reside under repository-root `.dev-vm/`, ignored by Git, with explicit Windows ACLs for the current user, SYSTEM and local Administrators only; automatically discard overlay and writable VARS after normal QEMU exit, but retain abnormal-exit artifacts until explicit cleanup. This path does not enable guest file sharing. ACL implementation, cleanup safety, permissions and lifecycle implementation remain open. Constitution baseline 2026-10-29; complete file read, SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`.
 
 ## Artifact comparison
 
@@ -25,7 +25,7 @@ The inspected `edk2-licenses.txt` includes EDK2 and OvmfPkg `BSD-2-Clause-Patent
 
 ## Remaining gates
 
-Independently authenticate upstream tag/source and signing keys and assess revocation; validate firmware security advisories, component versions and license notices; verify the exact `virt` device graph, NVRAM lifecycle, boot and guest compatibility after G-ARCH/G-OPS approvals. Hash comparisons and declared metadata do not establish a safe configuration, actual boot success or real Pi hardware behavior.
+Independently authenticate upstream tag/source and signing keys and assess revocation; validate firmware security advisories, component versions and license notices; verify the exact `virt` device graph, writable VARS-copy permissions/reset lifecycle, boot and guest compatibility after G-ARCH/G-OPS approvals. Hash comparisons and declared metadata do not establish a safe configuration, actual boot success or real Pi hardware behavior.
 
 ## Security and support screening (2026-10-30)
 

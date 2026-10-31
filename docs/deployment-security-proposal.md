@@ -1,6 +1,6 @@
 ﻿# HTTPS, service privileges and LAN/VPN deployment proposal
 
-Status: T011 preliminary design only, 2026-10-30. T003 and T008 remain incomplete; G-OPS and relevant G-SECURITY decisions remain open. No service, firewall, certificate or VPN has been configured. Constitution baseline 2026-10-29, SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`.
+Status: T011 preliminary design only, 2026-10-30. T003 is complete at design-proposal scope; T008 and T011 remain incomplete, and G-OPS and relevant G-SECURITY decisions remain open. No service, firewall, certificate or VPN has been configured. Constitution baseline 2026-10-29, SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`.
 
 ## Exposure and trust boundaries
 

@@ -1,6 +1,6 @@
 ﻿# First-admin bootstrap and later recovery proposal
 
-Status: independent draft for T008, not ready for completion while T003's environment proposal remains incomplete. G-SECURITY and G-OPS approval and OS-specific verification are required except for the limited MFA recovery decision recorded in [ADR 0003](adr/0003-lost-mfa-recovery.md). Constitution baseline 2026-10-29 SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`. The accepted plan section 10.2 establishes the first-run baseline; this document proposes how to assess its recovery gap, without claiming implementation.
+Status: independent draft for T008. T003's environment proposal is complete at design scope; G-SECURITY and G-OPS approval and OS-specific verification remain required except for the limited MFA recovery decision recorded in [ADR 0003](adr/0003-lost-mfa-recovery.md). Constitution baseline 2026-10-29 SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`. The accepted plan section 10.2 establishes the first-run baseline; this document proposes how to assess its recovery gap, without claiming implementation.
 
 ## First-run boundary
 
