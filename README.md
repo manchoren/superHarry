@@ -11,4 +11,4 @@ The repository currently contains requirements and design work, not a runnable a
 - [Contributing](CONTRIBUTING.md): review, security and local validation requirements.
 - [ADR conventions](docs/adr/README.md): decision and approval records.
 
-Installation and operational commands will be documented when the environment and dependencies have been approved and implemented. Follow T003, T014 and T018 in the backlog for this work. Never expose the planned web application publicly or forward ports; its approved access scope is LAN/VPN with HTTPS.
+Installation and operational commands will be documented when the environment and dependencies have been approved and implemented. Follow [T003](TASK.md) for environment details, [T014](TASK.md) for dependency and check-tool approval, [T018](TASK.md) for ARM64 provisioning, and [T020](TASK.md) for implemented local-check commands. No command is implied before those decisions and implementations are complete. Never expose the planned web application publicly or forward ports; its approved access scope is LAN/VPN with HTTPS.

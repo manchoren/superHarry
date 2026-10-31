@@ -1,10 +1,10 @@
 # ADR proposal: application boundaries and repository layout
 
-Status: proposed for owner review under G-ARCH; no implementation or dependency approval is implied. Task: T002. Constitution baseline 2026-10-29, SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`.
+Status: T002 proposal finalized. Owner approval is recorded in part in [ADR 0001](docs/adr/0001-repository-layout.md) for the repository layout and ownership boundaries only; this is not blanket G-ARCH clearance. No implementation or dependency approval is implied. Constitution baseline 2026-10-29, SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`.
 
 ## Context and accepted constraints
 
-The target is one Pi 5, developed first in emulated ARM64. The accepted stack is React, TypeScript and Vite, Tailwind and shadcn/ui; Node and Fastify for the access server; a separate Python agent core; SQLite; and a registry for server routes and UI panels. These names do not approve versions, dependency installation, interfaces or deployment privileges. Caddy and Tailscale are accepted deployment directions, with operational details pending G-OPS. The constitution takes precedence over this proposal.
+The target is one Pi 5, developed first in emulated ARM64. The accepted stack is React, TypeScript and Vite, Tailwind and shadcn/ui; Node and Fastify for the access server; a separate Python agent core; SQLite; and a registry for server routes and UI panels. Application services run natively under systemd; the accepted sandbox direction is nsjail, with rootless Podman as the alternative, subject to Pi validation. These accepted choices do not approve exact versions, dependency installation, interfaces, service configuration or deployment privileges. Caddy and Tailscale are accepted deployment directions, with operational details pending G-OPS. The constitution takes precedence over this proposal.
 
 ## Proposed boundaries
 
@@ -39,7 +39,7 @@ Separating access and orchestration follows the accepted two-language architectu
 
 ## Review and dependent work
 
-- Owner: approve or request changes to the proposed layout and ownership boundaries under G-ARCH. Record scope, reviewer and evidence before scaffolding. T003 and T014 propose exact toolchains, packages, versions, licenses and checks; this ADR does not select them.
+- Owner approval of the repository layout and ownership boundaries is recorded in part in [ADR 0001](docs/adr/0001-repository-layout.md); exact toolchains, packages, versions, licenses and checks remain for T003/T014 and are not selected here. G-ARCH is not blanket approval for implementation.
 - T004 produces the threat model. T005/T006 propose internal/public contracts and data ownership for G-CONTRACT. T007/T008 settle identity, authentication and recovery under G-SECURITY.
 - T011/T012 specify service identities, certificate trust and network provisioning under G-OPS. Sandbox, display, channels and provider designs retain their own gates. Hardware choices and acceptance remain pending Pi measurements.
 - Review impact: change boundaries through a new ADR and applicable gates; verify authorization and isolation in integration and negative tests. Unit and integration model calls must be mocked; real-model evaluations are separate. Full local checks and review apply to implementation.
