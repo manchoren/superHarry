@@ -28,7 +28,7 @@ Update the row whenever work starts, an assignment changes, a blocker appears, w
 |---|---|---|---|---|
 | T001 | Establish the requirements and constitution work record. | Complete | Unassigned | ? |
 | T002 | Write the architecture and repository-layout proposal. | Complete | Unassigned | ? |
-| T003 | Specify reproducible development and deployment environments. | Work recorded | Unassigned | ? |
+| T003 | Specify reproducible development and deployment environments. | In progress | T003 MSYS2 research | Unknown |
 | T004 | Write the initial threat model and abuse-case inventory. | Complete | Unassigned | ? |
 | T005 | Propose HTTP/SSE and TS-to-Python contracts. | Complete | Unassigned | ? |
 | T006 | Propose base storage and migration ownership. | Complete | Unassigned | ? |
