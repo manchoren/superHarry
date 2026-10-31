@@ -284,6 +284,23 @@ The MSYS2 package catalog lists `mingw-w64-ucrt-x86_64-qemu` in `ucrt64` and `mi
 
 The same catalog records display NVD-linked entries for CVE-2024-6519, CVE-2023-2680, CVE-2023-1386, CVE-2024-8354, CVE-2024-6505, CVE-2021-20255, CVE-2019-12067 and CVE-2018-18438. This is a package catalog's vulnerability feed, not a version-specific vendor disposition: it neither proves these issues affect version 11.1.3-1 nor clears them. Each entry must be triaged against upstream fixes, the MSYS2 build, component reachability and the intended configuration as part of the full advisory review. The catalog page still does not establish that its binary was built from the currently viewed recipe, contains `qemu-system-aarch64.exe`, or has the expected hash/signature.
 
+#### Bounded triage of catalog-linked QEMU CVEs (2026-10-30; read-only)
+
+Debian Security Tracker records were checked against its QEMU `1:11.1.3+ds-1` sid source version, which corresponds to upstream QEMU 11.1.3 plus Debian packaging. These records are useful upstream-version triage, not a vulnerability disposition for the separately built MSYS2 binary.
+
+| CVE shown by MSYS2 catalog | Debian status for sid QEMU `1:11.1.3+ds-1` | Triage note |
+|---|---|---|
+| [CVE-2024-6519](https://security-tracker.debian.org/tracker/CVE-2024-6519) | Fixed | Debian fixed its Trixie package in 10.0.10; sid is fixed. |
+| [CVE-2023-2680](https://security-tracker.debian.org/tracker/CVE-2023-2680) | Fixed / not affected | Debian notes the reported issue was a Red Hat-specific incomplete fix for CVE-2021-3750. |
+| [CVE-2023-1386](https://security-tracker.debian.org/tracker/CVE-2023-1386) | Vulnerable / unfixed | 9p passthrough filesystem may fail to drop SUID/SGID bits; the proposed no-9p/no-shared-directory boundary could remove this path only if confirmed in the exact QEMU device graph. |
+| [CVE-2024-8354](https://security-tracker.debian.org/tracker/CVE-2024-8354) | Fixed | Debian records the upstream fix in 10.0.5/10.1.1; sid is fixed. |
+| [CVE-2024-6505](https://security-tracker.debian.org/tracker/CVE-2024-6505) | Fixed | Debian records fixed status for Trixie, forky and sid. |
+| [CVE-2021-20255](https://security-tracker.debian.org/tracker/CVE-2021-20255) | Fixed | Debian records fixed status for Trixie, forky and sid. |
+| [CVE-2019-12067](https://security-tracker.debian.org/tracker/CVE-2019-12067) | Vulnerable / unfixed | NULL dereference in the emulated AHCI controller; Debian says no sanctioned upstream patch was available at its latest note. Omitting AHCI could remove this route, but the eventual device graph has not been established. |
+| [CVE-2018-18438](https://security-tracker.debian.org/tracker/CVE-2018-18438) | Fixed | Debian records a fixed version from QEMU 3.1 onward. |
+
+Thus six entries are marked fixed/not affected by Debian for its sid QEMU 11.1.3 source, while two remain unresolved in that tracker. This does **not** establish that the MSYS2 11.1.3-1 binary contains the same fixes, that the two unresolved components are absent, or that its transitive dependencies are clear. Resolve AHCI and 9p reachability in the exact VM configuration, inspect the exact MSYS2 package build and metadata, and complete the remaining dependency/advisory review before any installation decision.
+
 ### Owner-authorized forky/sid QEMU alternatives (research only; no suite selected)
 
 The owner authorized research on these Debian suites as alternative **WSL host** candidates. This is not authorization to install, upgrade, mix suites, create a WSL distribution, or use either candidate. Both package names below designate amd64 host binaries; the `qemu-system-aarch64` executable runs on x86-64/amd64 and emulates a separate arm64 guest. Do not select `qemu-system-arm:arm64` as though it were the host emulator merely because the guest is ARM64.
