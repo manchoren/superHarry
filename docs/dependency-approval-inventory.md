@@ -25,7 +25,7 @@ No package row establishes that the named artifact is safe or compatible. Curren
 
 | Area | Current candidate or decision | Missing review before provisioning |
 |---|---|---|
-| Host emulator | MSYS2 UCRT64 QEMU 11.1.3-1 and matching qemu-common 11.1.3-1 | Independent signing-key trust, full host dependency closure and licenses, firmware provenance, current CVE/device disposition and boot; WSL/QEMU alternative remains unapproved |
+| Host emulator | Owner-selected current design direction: MSYS2 UCRT64 QEMU 11.1.3-1 and matching qemu-common 11.1.3-1 | Selection is not G-ARCH/G-OPS setup approval. Independent signing-key trust, full host dependency closure and licenses, firmware provenance, current CVE/device disposition, update/rollback and boot remain unresolved; do not switch to WSL/QEMU without owner reconsideration |
 | ARM64 guest | Debian 13.7.0 ARM64 netinst candidate | Signed image digest, fixed authenticated repository snapshot, exact OS package closure and guest image/firmware integration |
 | Target OS | Raspberry Pi OS 64-bit Desktop release 2026-10-06 candidate | Verify exact image and checksum, package baseline and differences from emulation; real hardware testing remains separate |
 | Node toolchain | Node.js 24.22.2 and bundled npm 11.19.1 candidates | Exact signed artifact and bundled notices, compatibility, execution and dependency graphs |
