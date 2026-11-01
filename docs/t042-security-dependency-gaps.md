@@ -25,7 +25,7 @@ Status: review-only draft, 2026-10-31. T042 uses simulated responses, but its pr
 
 Prepare synthetic negative fixtures for unauthorized role and object access, guest upload and memory/tool requests, forged internal identity, session fixation/revocation, TOTP replay, stale/forged CSRF and multi-tab behavior, reset/bootstrap races, malformed files and rendered injection, audit failure, unavailable core, SSE reconnect and cancellation, and network rollback failures. Verify approved prerequisites and actual behavior in ARM64; physical network and Pi performance require separate hardware acceptance. The fixture plan is not a test result.
 
-No dependency was selected, downloaded, installed or executed; no application, test, schema, authentication mechanism or security gate was changed or approved by this document.
+No dependency was selected, installed or executed; no application, test, schema, authentication mechanism or security gate was changed or approved by this document. The later exact-candidate tarball review is recorded below.
 
 ## Proposed additional candidates for eligibility review
 
@@ -42,7 +42,7 @@ A local compromised-password list still needs an explicit source and license. In
 
 ## Exact registry metadata and bounded advisory evidence (2026-10-31)
 
-The owner authorized research of these four candidates, not installation, selection or version approval. The official npm registry version endpoints below returned the metadata recorded here via read-only HTTPS; no tarball or native artifact was downloaded, authenticated or executed. Registry integrity values identify the published tarball, but are not independently authenticated and do not attest build provenance. Direct requirements are ranges unless marked exact; transitive, optional, build and native closure are unresolved. The npm metadata is not an ARM64 runtime test.
+The owner authorized research of these four candidates, not installation, selection or version approval. In this metadata-only pass, the official npm registry version endpoints returned the records below via read-only HTTPS; no tarball or native artifact was downloaded or executed. Registry integrity values identify the published tarball, but are not independently authenticated and do not attest build provenance. Direct requirements are ranges unless marked exact; transitive, optional, build and native closure are unresolved. The npm metadata is not an ARM64 runtime test. A later exact archive inspection is documented below.
 
 | Exact registry record and published tarball integrity | Metadata and direct dependencies | Platform and security limits |
 |---|---|---|
@@ -52,3 +52,16 @@ The owner authorized research of these four candidates, not installation, select
 | [file-type 22.3.0](https://registry.npmjs.org/file-type/22.3.0): `sha512-PrPedgnnWl5bWz3JHgar0QSzRvzeyFh7dZ9JpYOgcPZu4KALS9zw4MMa6qXRYyjeBsAlpaWB2boLuG991+0HIQ==` | MIT; Node `>=22`; direct `strtok3 ^10.6.3`, `token-types ^6.1.2`, `uint8array-extras ^1.6.0`, `@tokenizer/inflate ^0.6.0`. | Published advisories [GHSA-5v7r-6r5c-r473](https://github.com/advisories/GHSA-5v7r-6r5c-r473) and [GHSA-j47w-4g3g-c36v](https://github.com/advisories/GHSA-j47w-4g3g-c36v) describe malformed ASF and compressed ZIP denial of service in earlier ranges, fixed in 21.3.1 and 21.3.2 respectively; 22.3.0 is outside those listed ranges, not thereby established safe. Resource limits and isolated untrusted document processing remain required. |
 
 All four license values are registry declarations, not a legal or notices review. The current release records, targeted artifact contents, signed provenance, all dependency advisories, license obligations and exact ARM64 behavior must be verified before a G-ARCH packet; a partial web lookup cannot satisfy mandatory checks. No dependency, security control or exception has been approved or implemented.
+
+## Exact npm tarball inspection (2026-10-31)
+
+The four owner-authorized research candidates were fetched at their exact registry versions and their downloaded bytes matched the npm `dist.integrity` SHA-512 value. The in-memory inspection results, archive SHA-256 values, selected metadata and file hashes are retained in the [artifact evidence](evidence/t014-authorized-npm-artifact-review.json). The tarballs were read as data only; no files were extracted to the workspace, and no package or lifecycle hook was executed. A match against a digest returned by the same registry is integrity evidence relative to that registry response, not independent publisher identity, build provenance, source correspondence or a vulnerability scan.
+
+This inspection narrows, but does not close, candidate gaps:
+
+- `argon2` 0.45.1's exact archive contains 64-bit AArch64 Linux `.node` binaries for both glibc and musl, plus MIT package text and a separate Argon2 reference-code notice offering CC0 1.0 or Apache-2.0 terms. Its `install` script invokes `node-gyp-build`; neither the selected ABI nor native artifact provenance, nested notices, dependency checks or runtime behavior is established.
+- `otpauth` 9.5.2's exact metadata declares `@noble/hashes` 2.4.0 as a runtime dependency. The archive's MIT text is present, but that dependency's own artifact/license/advisory review and all TOTP security behavior remain open.
+- `react-markdown` 10.1.0's exact archive confirms its React/type peers and parser/rendering dependencies; full closure, hostile-content behavior, URL policy, CSP and configuration review remain open.
+- `file-type` 22.3.0's exact `source/index.js` returns `undefined` for unknown and text-based inputs (lines 1481 and 1708 in that archive). It is therefore a best-effort binary signature detector, not a universal MIME classifier. Any use must retain opaque file acceptance, treat undecidable types as `application/octet-stream`, and avoid treating detected MIME as validation or safety. This candidate alone cannot satisfy a claim that every possible file has a definitive MIME type.
+
+The inspection does not select or recommend any candidate. Exact supported-target tests, complete direct/transitive/optional/build closure, provenance, fresh advisories, full notice dispositions and G-ARCH/G-SECURITY/G-CONTRACT decisions are still required; candidates that fail any mandatory project constraint remain ineligible.

@@ -1,0 +1,164 @@
+{
+  "status": "research-only; no dependency selection or installation approval",
+  "review_date": "2026-10-31",
+  "method": "Fetched the exact npm version metadata and tarball over HTTPS, compared the tarball bytes to the registry dist.integrity SHA-512 SRI value, parsed package metadata and read selected notice/source files in memory. No package was extracted to disk, installed or executed.",
+  "limitations": [
+    "The SRI value and tarball are obtained from the same registry; a match is not independent publisher authentication, build provenance or source-to-binary attestation.",
+    "This review covers only four exact direct-candidate tarballs; it does not review their transitive, optional, bundled or build dependency closure.",
+    "License declarations and embedded notice files are evidence for follow-up, not a legal compatibility or redistribution decision.",
+    "Static presence of a native binary does not establish ABI compatibility, runtime behavior, security or support on the selected ARM64 guest and target."
+  ],
+  "packages": [
+    {
+      "name": "argon2",
+      "version": "0.45.1",
+      "metadata_url": "https://registry.npmjs.org/argon2/0.45.1",
+      "tarball_integrity": "sha512-skm+/WCjkGqCQxF7FG1LuZXM5yvbFjgbfiCGsud2oLgaDhh6b6dbH0b1EkghbM+xx4Bj8Ape+KKgixoIlWZicQ==",
+      "integrity_matches_downloaded_bytes": true,
+      "tarball_bytes": 386842,
+      "tarball_sha256": "4acffbd5e5a87fe8fad926afc9a9ac450d69b7082686dd2836be0d8309dbd8aa",
+      "license_declared": "MIT",
+      "engines": {
+        "node": ">=16.17.0"
+      },
+      "install_script": "cross-env ZERO_AR_DATE=1 node-gyp-build",
+      "direct_dependencies": {
+        "@phc/format": "^1.0.0",
+        "cross-env": "^10.1.0",
+        "node-addon-api": "^8.9.0",
+        "node-gyp-build": "^4.8.4"
+      },
+      "notice_files": [
+        {
+          "path": "package/LICENSE",
+          "bytes": 1083,
+          "sha256": "ec63daa8f09b41da3bc6d1b2bae784941cdf0511715a006229117cabae8ed44a",
+          "finding": "MIT license text"
+        },
+        {
+          "path": "package/argon2/LICENSE",
+          "bytes": 17879,
+          "sha256": "220f8736a89ff51c92ef3d497f413b48e6cf1df3d6278bc909c6308c78e1718e",
+          "finding": "Bundled Argon2 reference C implementations state CC0 1.0 or Apache License 2.0 at the recipient's option and reproduce both texts; disposition and attribution still need review."
+        }
+      ],
+      "linux_arm64_prebuilds": [
+        {
+          "path": "package/prebuilds/linux-arm64/argon2.armv8.glibc.node",
+          "bytes": 51800,
+          "sha256": "d1a174cb5c08aa9638496c3cb1b4652492330838dbfe4906d34b6c097789c630",
+          "elf_class_bits": 64,
+          "elf_machine": 183,
+          "elf_machine_name": "AArch64"
+        },
+        {
+          "path": "package/prebuilds/linux-arm64/argon2.armv8.musl.node",
+          "bytes": 67512,
+          "sha256": "7e084fc69aac5f608fddaa91fbf1a353335f226f38f4ee3a7cfa0ad247db8ff3",
+          "elf_class_bits": 64,
+          "elf_machine": 183,
+          "elf_machine_name": "AArch64"
+        }
+      ],
+      "disposition": "The exact candidate tarball contains Linux ARM64 glibc and musl native binaries, but the selected Debian/production ABI, binary provenance, native implementation licensing and full dependency checks are not established. The install hook is present; no installation or build is approved."
+    },
+    {
+      "name": "otpauth",
+      "version": "9.5.2",
+      "metadata_url": "https://registry.npmjs.org/otpauth/9.5.2",
+      "tarball_integrity": "sha512-GQ5emWR/x1tcExT62IBT0UfO95wZzJZyxYOJOGVeQF47SYEN9vmh0vISvDZaNMuFJRG+IaWCKtfm+t9Bfoal6w==",
+      "integrity_matches_downloaded_bytes": true,
+      "tarball_bytes": 243533,
+      "tarball_sha256": "ccc4f26635d1a388368fbe30de4074254ddf16c0c2953b2a7873d3d6f02ae211",
+      "license_declared": "MIT",
+      "direct_dependencies": {
+        "@noble/hashes": "2.4.0"
+      },
+      "install_script": null,
+      "notice_files": [
+        {
+          "path": "package/LICENSE.md",
+          "bytes": 1090,
+          "sha256": "8f515aab304a561416f03b32a3448bb0e6657a662b024f17fc31a5faf5dfdb7a",
+          "finding": "MIT license text"
+        }
+      ],
+      "disposition": "The transitive hash dependency, its notices/advisories and TOTP seed custody, replay prevention, recovery and rate limiting remain unresolved."
+    },
+    {
+      "name": "react-markdown",
+      "version": "10.1.0",
+      "metadata_url": "https://registry.npmjs.org/react-markdown/10.1.0",
+      "tarball_integrity": "sha512-qKxVopLT/TyA6BX3Ue5NwabOsAzm0Q7kAPwq6L+wWDwisYs7R8vZ0nRXqq6rkueboxpkjvLGU9fWifiX/ZZFxQ==",
+      "integrity_matches_downloaded_bytes": true,
+      "tarball_bytes": 15544,
+      "tarball_sha256": "205f5c607c68e1e42b8d7a036326bdb3a105ae55e6469ecfcaf998004609d5f7",
+      "license_declared": "MIT",
+      "direct_dependencies": {
+        "@types/hast": "^3.0.0",
+        "@types/mdast": "^4.0.0",
+        "devlop": "^1.0.0",
+        "hast-util-to-jsx-runtime": "^2.0.0",
+        "html-url-attributes": "^3.0.0",
+        "mdast-util-to-hast": "^13.0.0",
+        "remark-parse": "^11.0.0",
+        "remark-rehype": "^11.0.0",
+        "unified": "^11.0.0",
+        "unist-util-visit": "^5.0.0",
+        "vfile": "^6.0.0"
+      },
+      "peer_dependencies": {
+        "@types/react": ">=18",
+        "react": ">=18"
+      },
+      "install_script": null,
+      "notice_files": [
+        {
+          "path": "package/license",
+          "bytes": 1079,
+          "sha256": "f6196c64e144f9a6fa9154c3a80bc8b89615a9567934b83a8951879f06ba2aef",
+          "finding": "MIT license text"
+        }
+      ],
+      "disposition": "The exact package metadata confirms a broad parser/rendering dependency tree and React peers; full closure, exact React integration, URL policy, CSP and hostile-input tests remain open."
+    },
+    {
+      "name": "file-type",
+      "version": "22.3.0",
+      "metadata_url": "https://registry.npmjs.org/file-type/22.3.0",
+      "tarball_integrity": "sha512-PrPedgnnWl5bWz3JHgar0QSzRvzeyFh7dZ9JpYOgcPZu4KALS9zw4MMa6qXRYyjeBsAlpaWB2boLuG991+0HIQ==",
+      "integrity_matches_downloaded_bytes": true,
+      "tarball_bytes": 35002,
+      "tarball_sha256": "b10b5585d8d748573b61321b966ce1f6691fd91b5760399995f3606797565b36",
+      "license_declared": "MIT",
+      "engines": {
+        "node": ">=22"
+      },
+      "direct_dependencies": {
+        "@tokenizer/inflate": "^0.6.0",
+        "strtok3": "^10.6.3",
+        "token-types": "^6.1.2",
+        "uint8array-extras": "^1.6.0"
+      },
+      "install_script": null,
+      "notice_files": [
+        {
+          "path": "package/license",
+          "bytes": 1117,
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "finding": "MIT license text"
+        }
+      ],
+      "source_observation": {
+        "path": "package/source/index.js",
+        "bytes": 47646,
+        "sha256": "45c8a39fddc273ec5905e94a216ac88b9aec106050b946b8ac6c2fc54503ca26",
+        "lines": {
+          "1481": "return undefined; // Some unknown text based format",
+          "1708": "return undefined; // Some text based format"
+        }
+      },
+      "disposition": "The exact source confirms undefined results for unknown/text-based formats. It may contribute best-effort binary signature detection only; callers must preserve opaque acceptance and explicitly map unknown results to application/octet-stream. This package cannot prove a MIME type for every file."
+    }
+  ]
+}
