@@ -211,6 +211,18 @@ The source archive for `cc-libs` is 107,229,138 bytes, and the archive for `gles
 
 For the 14 new source archives, the predicate found 41 matching paths in the nested upstream source archives; `egl-headers` had no matching path. The [audit script](evidence/t014-msys2/audit_source_notice_paths.py) and [machine-readable result](evidence/t014-msys2/source-notice-path-audit.json) retain each matched path, content length and hash, the source archive hash, and the binary/recipe hash comparisons. This is path evidence only: it neither determines which components are shipped in each binary nor proves a notice is complete or legally applicable. In particular, paths found in source can refer to tests, examples, tools, architectures or bundled components absent from the binary. The binary hash and `.BUILDINFO`/`PKGBUILD` comparison establish consistency with the retained index and source archive, not independent publisher identity, source signature validity, build reproducibility or complete source-to-binary provenance. Downloaded archives and notice contents were removed; no package or source code was executed.
 
+## Embedded license identifiers in pathless binary payloads (2026-10-31)
+
+The exact `cc-libs`, `egl-headers` and `gles-headers` binary archives were retrieved as data and each SHA-256 matched the retained index. The [binary inspection script](evidence/t014-msys2/audit_pathless_binary_files.py) and [machine-readable result](evidence/t014-msys2/pathless-binary-review.json) record every payload path, file hash, embedded SPDX identifier and the exact package license metadata.
+
+| Exact package | Index-declared license field | Payload observation | Review status |
+|---|---|---|---|
+| `cc-libs` 16.2.0-6 | `spdx:GPL-3.0-or-later WITH GCC-exception-3.1 AND GFDL-1.3-or-later` | The 2,343-byte archive contains only `.BUILDINFO`, `.MTREE` and `.PKGINFO`; no payload files. | Do not infer the license disposition of the package's dependencies or build inputs from an empty payload. The large source archive and dependency relationships remain unreviewed. |
+| `egl-headers` 1.5.r284.3ae2b7c-1 | `spdx:Apache-2.0` | All three payload headers contain `SPDX-License-Identifier: Apache-2.0`. | The embedded identifiers agree with the index field; source/notices and distribution obligations still require review. |
+| `gles-headers` 3.2.r1065.7fc154c-1 | `spdx:MIT` | Twelve payload headers: seven declare MIT, four declare Apache-2.0, and one contains copyright/license markers but no SPDX identifier. | The embedded declarations are not represented by the single index field. Reconcile this metadata and review the unlabeled file and applicable notices; this is not, by itself, a legal noncompliance conclusion. |
+
+These are embedded file-level identifiers, not a complete license analysis. The source archive for `gles-headers` remains uninspected, the `cc-libs` binary carries no payload to inspect, and no package approval or redistribution decision follows from this pass.
+
 ## Notices and completion gaps
 
 - QEMU `11.1.3-1` declares `spdx:GPL-2.0-or-later AND LGPL-2.1-or-later AND BSD-2-Clause AND BSD-3-Clause AND MIT`. Four records have that same exact declared tuple; this is not proof they contain identical material. Determine per-file terms, notices, linked components and source-provision requirements for the actual artifacts and distribution model.

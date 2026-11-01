@@ -1,0 +1,233 @@
+{
+  "scope": "Data-only inspection of three exact binary archives whose earlier path audit found no notice-like path. Embedded identifiers and package metadata are leads, not a legal or completeness finding.",
+  "retrieved_at_utc": "2026-11-01T01:45:26.827079+00:00",
+  "inventory_sha256": "c2cbc97932fc330ef1f4ea25852a2508c1db2ab0aa44e112258246900c03baff",
+  "method": "Matched each binary SHA-256 to retained index; listed archive entries; streamed payload files and recorded hashes and embedded SPDX identifiers/notice markers. No archive paths were extracted and no package code was executed.",
+  "packages": [
+    {
+      "name": "mingw-w64-ucrt-x86_64-cc-libs",
+      "version": "16.2.0-6",
+      "declared_licenses": [
+        "spdx:GPL-3.0-or-later WITH GCC-exception-3.1 AND GFDL-1.3-or-later"
+      ],
+      "filename": "mingw-w64-ucrt-x86_64-cc-libs-16.2.0-6-any.pkg.tar.zst",
+      "archive_sha256": "d8fff9e62443168bcda8ce746697243519c4f090ea607357ce94feac0bd10a50",
+      "archive_hash_matches_index": true,
+      "archive_entries": [
+        ".BUILDINFO",
+        ".MTREE",
+        ".PKGINFO"
+      ],
+      "payload_file_count": 0,
+      "payload_files": []
+    },
+    {
+      "name": "mingw-w64-ucrt-x86_64-egl-headers",
+      "version": "1.5.r284.3ae2b7c-1",
+      "declared_licenses": [
+        "spdx:Apache-2.0"
+      ],
+      "filename": "mingw-w64-ucrt-x86_64-egl-headers-1.5.r284.3ae2b7c-1-any.pkg.tar.zst",
+      "archive_sha256": "29743159048cf216f75d0dc3eb3e0a04a07515db17d839803e54b060f5aeb0b3",
+      "archive_hash_matches_index": true,
+      "archive_entries": [
+        ".BUILDINFO",
+        ".MTREE",
+        ".PKGINFO",
+        "ucrt64/",
+        "ucrt64/include/",
+        "ucrt64/include/EGL/",
+        "ucrt64/include/EGL/egl.h",
+        "ucrt64/include/EGL/eglext.h",
+        "ucrt64/include/EGL/eglplatform.h"
+      ],
+      "payload_file_count": 3,
+      "payload_files": [
+        {
+          "path": "ucrt64/include/EGL/egl.h",
+          "bytes": 19286,
+          "sha256": "42ef2c0fabd5bdf2654e7768f90ce4e9d49d0013e5b6ac984bf6d5f8afbb66c9",
+          "spdx_identifiers": [
+            "Apache-2.0"
+          ],
+          "contains_copyright_marker": true,
+          "contains_license_marker": true
+        },
+        {
+          "path": "ucrt64/include/EGL/eglext.h",
+          "bytes": 73442,
+          "sha256": "16850120313a5cb90e092e96a9542c16c67d31821fa0be896837d3886c90b0d5",
+          "spdx_identifiers": [
+            "Apache-2.0"
+          ],
+          "contains_copyright_marker": true,
+          "contains_license_marker": true
+        },
+        {
+          "path": "ucrt64/include/EGL/eglplatform.h",
+          "bytes": 5239,
+          "sha256": "25b5391655effcf363a38fa00c3154f356a3eab3d35dc067847875513cf1e441",
+          "spdx_identifiers": [
+            "Apache-2.0"
+          ],
+          "contains_copyright_marker": true,
+          "contains_license_marker": true
+        }
+      ]
+    },
+    {
+      "name": "mingw-w64-ucrt-x86_64-gles-headers",
+      "version": "3.2.r1065.7fc154c-1",
+      "declared_licenses": [
+        "spdx:MIT"
+      ],
+      "filename": "mingw-w64-ucrt-x86_64-gles-headers-3.2.r1065.7fc154c-1-any.pkg.tar.zst",
+      "archive_sha256": "066007a50bd08f062b5494f2c4811a219e1a65f4ecdce2beb453f6d9d8b92098",
+      "archive_hash_matches_index": true,
+      "archive_entries": [
+        ".BUILDINFO",
+        ".MTREE",
+        ".PKGINFO",
+        "ucrt64/",
+        "ucrt64/include/",
+        "ucrt64/include/GLES/",
+        "ucrt64/include/GLES/1.0/",
+        "ucrt64/include/GLES/1.0/gl.h",
+        "ucrt64/include/GLES/egl.h",
+        "ucrt64/include/GLES/gl.h",
+        "ucrt64/include/GLES/glext.h",
+        "ucrt64/include/GLES/glplatform.h",
+        "ucrt64/include/GLES2/",
+        "ucrt64/include/GLES2/gl2.h",
+        "ucrt64/include/GLES2/gl2ext.h",
+        "ucrt64/include/GLES2/gl2platform.h",
+        "ucrt64/include/GLES3/",
+        "ucrt64/include/GLES3/gl3.h",
+        "ucrt64/include/GLES3/gl31.h",
+        "ucrt64/include/GLES3/gl32.h",
+        "ucrt64/include/GLES3/gl3platform.h"
+      ],
+      "payload_file_count": 12,
+      "payload_files": [
+        {
+          "path": "ucrt64/include/GLES/1.0/gl.h",
+          "bytes": 24827,
+          "sha256": "8af48e22c67317d7aa14e9e37df535eaddd63fa4c9559f0ac8de8d98f662cbf8",
+          "spdx_identifiers": [],
+          "contains_copyright_marker": true,
+          "contains_license_marker": true
+        },
+        {
+          "path": "ucrt64/include/GLES/egl.h",
+          "bytes": 399,
+          "sha256": "6f27d0fbd2190b179cad9df81cea0eb9524281543fdfb86134c06175009db092",
+          "spdx_identifiers": [
+            "Apache-2.0"
+          ],
+          "contains_copyright_marker": true,
+          "contains_license_marker": true
+        },
+        {
+          "path": "ucrt64/include/GLES/gl.h",
+          "bytes": 30603,
+          "sha256": "6b576206efbee73c0ba9716f8bbeb23496de17e735d0aa9e5eb00d73976db185",
+          "spdx_identifiers": [
+            "MIT"
+          ],
+          "contains_copyright_marker": true,
+          "contains_license_marker": true
+        },
+        {
+          "path": "ucrt64/include/GLES/glext.h",
+          "bytes": 52710,
+          "sha256": "f9d9dc4d8006925c5a0dd37a7f91a0fb87d066ba5b057384f6dea8ffeac79dbe",
+          "spdx_identifiers": [
+            "MIT"
+          ],
+          "contains_copyright_marker": true,
+          "contains_license_marker": true
+        },
+        {
+          "path": "ucrt64/include/GLES/glplatform.h",
+          "bytes": 634,
+          "sha256": "c6bcc0caaf56609c494efb327e8e9e2845630f6b58641ddde71eacd2c2790d21",
+          "spdx_identifiers": [
+            "Apache-2.0"
+          ],
+          "contains_copyright_marker": true,
+          "contains_license_marker": true
+        },
+        {
+          "path": "ucrt64/include/GLES2/gl2.h",
+          "bytes": 42930,
+          "sha256": "80f2c16d6543bc5ed3f9431c21fd4825d29af1dd82beab2edf31e377e6e70995",
+          "spdx_identifiers": [
+            "MIT"
+          ],
+          "contains_copyright_marker": true,
+          "contains_license_marker": true
+        },
+        {
+          "path": "ucrt64/include/GLES2/gl2ext.h",
+          "bytes": 246411,
+          "sha256": "c1cea50de7a535186731d3f4c737c5d7cc266efdb35d026b4fca61e002c508fa",
+          "spdx_identifiers": [
+            "MIT"
+          ],
+          "contains_copyright_marker": true,
+          "contains_license_marker": true
+        },
+        {
+          "path": "ucrt64/include/GLES2/gl2platform.h",
+          "bytes": 642,
+          "sha256": "f5da0747540a50be5f44aad264aae45bdf157a192c40f17487dd9a2f99c71b6c",
+          "spdx_identifiers": [
+            "Apache-2.0"
+          ],
+          "contains_copyright_marker": true,
+          "contains_license_marker": true
+        },
+        {
+          "path": "ucrt64/include/GLES3/gl3.h",
+          "bytes": 81600,
+          "sha256": "2bce113ec5e2f92a74d1a685d8b5399be9e143b605ee41cac5196275f9aca87c",
+          "spdx_identifiers": [
+            "MIT"
+          ],
+          "contains_copyright_marker": true,
+          "contains_license_marker": true
+        },
+        {
+          "path": "ucrt64/include/GLES3/gl31.h",
+          "bytes": 106404,
+          "sha256": "612fc3a3c483baa3b04dfa6be3cb44217ad5ebb92c3af05531dcac2c159b177a",
+          "spdx_identifiers": [
+            "MIT"
+          ],
+          "contains_copyright_marker": true,
+          "contains_license_marker": true
+        },
+        {
+          "path": "ucrt64/include/GLES3/gl32.h",
+          "bytes": 127284,
+          "sha256": "e580e7db6bfc6b86860ae6b02fa27eb9acfe6726bab71f9c268568cdbf80baea",
+          "spdx_identifiers": [
+            "MIT"
+          ],
+          "contains_copyright_marker": true,
+          "contains_license_marker": true
+        },
+        {
+          "path": "ucrt64/include/GLES3/gl3platform.h",
+          "bytes": 642,
+          "sha256": "a9e060dae5a2b11c5a889b679692b7089a10a7e03ebfbb6cf28217f6e322fb08",
+          "spdx_identifiers": [
+            "Apache-2.0"
+          ],
+          "contains_copyright_marker": true,
+          "contains_license_marker": true
+        }
+      ]
+    }
+  ]
+}
