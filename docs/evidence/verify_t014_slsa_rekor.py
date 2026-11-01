@@ -7,11 +7,18 @@ import base64
 import datetime as dt
 import hashlib
 import json
+import subprocess
+import tempfile
 import urllib.parse
 import urllib.request
+from pathlib import Path
 
 
 USER_AGENT = "superHarry-T014-static-review/1.0"
+TRUSTED_ROOT_URL = (
+    "https://raw.githubusercontent.com/sigstore/root-signing/main/targets/"
+    "trusted_root.json"
+)
 PACKAGES = (
     ("argon2", "0.45.1"),
     ("otpauth", "9.5.2"),
@@ -28,6 +35,15 @@ def get_json(url: str) -> dict:
         return json.load(response)
 
 
+def get_bytes(url: str) -> bytes:
+    request = urllib.request.Request(
+        url,
+        headers={"Accept": "application/json", "User-Agent": USER_AGENT},
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        return response.read()
+
+
 def decode_hash(value: str) -> bytes:
     if len(value) == 64:
         try:
@@ -35,6 +51,59 @@ def decode_hash(value: str) -> bytes:
         except ValueError:
             pass
     return base64.b64decode(value, validate=True)
+
+
+def verify_checkpoint(checkpoint: str | dict, public_key: bytes) -> bool:
+    envelope = checkpoint["envelope"] if isinstance(checkpoint, dict) else checkpoint
+    encoded = envelope.encode("utf-8")
+    signed_text, signature_block = encoded.rsplit(b"\n\n", maxsplit=1)
+    signature_line = signature_block.splitlines()[0]
+    prefix, name, encoded_signature = signature_line.split(b" ", maxsplit=2)
+    if prefix != "—".encode("utf-8") or name != b"rekor.sigstore.dev":
+        raise ValueError("Unexpected Rekor checkpoint signature framing")
+    signature = base64.b64decode(encoded_signature, validate=True)
+    if signature[:4] != hashlib.sha256(public_key).digest()[:4]:
+        raise ValueError("Checkpoint signing-key hint does not match the key")
+
+    with tempfile.TemporaryDirectory(prefix="t014-rekor-checkpoint-") as temp_dir:
+        directory = Path(temp_dir)
+        der_path = directory / "key.der"
+        pem_path = directory / "key.pem"
+        signature_path = directory / "signature.der"
+        message_path = directory / "checkpoint.txt"
+        der_path.write_bytes(public_key)
+        signature_path.write_bytes(signature[4:])
+        message_path.write_bytes(signed_text + b"\n")
+        subprocess.run(
+            [
+                "openssl",
+                "pkey",
+                "-pubin",
+                "-inform",
+                "DER",
+                "-in",
+                str(der_path),
+                "-out",
+                str(pem_path),
+            ],
+            check=True,
+            capture_output=True,
+        )
+        result = subprocess.run(
+            [
+                "openssl",
+                "dgst",
+                "-sha256",
+                "-verify",
+                str(pem_path),
+                "-signature",
+                str(signature_path),
+                str(message_path),
+            ],
+            capture_output=True,
+            text=True,
+        )
+        return result.returncode == 0
 
 
 def rekor_proof_matches(body: bytes, proof: dict) -> bool:
@@ -66,6 +135,8 @@ def lookup_entry(log_index: str) -> dict:
 
 
 def main() -> None:
+    trusted_root_bytes = get_bytes(TRUSTED_ROOT_URL)
+    trusted_root = json.loads(trusted_root_bytes)
     results = []
     for name, version in PACKAGES:
         encoded_name = urllib.parse.quote(name, safe="").replace("%2F", "%2f")
@@ -88,6 +159,19 @@ def main() -> None:
         proof_entry = lookup_entry(proof_index)
         proof_body = base64.b64decode(proof_entry["body"], validate=True)
         bundle_proof = tlog_entry["inclusionProof"]
+        log_key = next(
+            item
+            for item in trusted_root["tlogs"]
+            if item["logId"]["keyId"] == tlog_entry["logId"]["keyId"]
+        )
+        log_public_key = base64.b64decode(
+            log_key["publicKey"]["rawBytes"], validate=True
+        )
+        log_id_bytes = base64.b64decode(
+            log_key["logId"]["keyId"], validate=True
+        )
+        if hashlib.sha256(log_public_key).digest() != log_id_bytes:
+            raise ValueError(f"Rekor key ID does not match public key for {name}")
 
         results.append(
             {
@@ -102,6 +186,9 @@ def main() -> None:
                 "bundle_merkle_path_recomputes_to_bundle_root": rekor_proof_matches(
                     body, bundle_proof
                 ),
+                "bundle_checkpoint_signature_verified_with_published_log_key": (
+                    verify_checkpoint(bundle_proof["checkpoint"], log_public_key)
+                ),
                 "live_entry_log_index": str(entry["logIndex"]),
                 "live_body_matches_bundle_canonicalized_body": live_body == body,
                 "live_entry_canonicalized_body_sha256": hashlib.sha256(
@@ -112,11 +199,15 @@ def main() -> None:
                 "live_merkle_path_body_recomputes_to_root": rekor_proof_matches(
                     live_body, proof
                 ),
+                "live_checkpoint_signature_verified_with_published_log_key": (
+                    verify_checkpoint(proof["checkpoint"], log_public_key)
+                ),
                 "live_proof_index_matches_entry_index": proof_index
                 == str(entry["logIndex"]),
                 "live_log_id": entry["logID"],
                 "live_proof_tree_size": str(proof["treeSize"]),
                 "live_proof_root_hash": proof["rootHash"],
+                "log_key_id_matches_published_key": True,
             }
         )
 
@@ -124,10 +215,15 @@ def main() -> None:
         json.dumps(
             {
                 "retrieved_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
+                "trusted_root_source": TRUSTED_ROOT_URL,
+                "trusted_root_sha256": hashlib.sha256(
+                    trusted_root_bytes
+                ).hexdigest(),
                 "results": results,
                 "limitations": [
-                    "This script does not authenticate the Fulcio or Rekor trust root.",
-                    "It does not verify signed checkpoints or signed entry timestamps.",
+                    "The fetched Sigstore trusted-root file is not TUF-authenticated here.",
+                    "Checkpoint signatures are verified mathematically against the published Rekor key only.",
+                    "The Fulcio certificate chain and signed entry timestamps are not verified here.",
                     "A recomputed Merkle root does not resolve an index/body mismatch.",
                 ],
             },
