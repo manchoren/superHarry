@@ -1,6 +1,6 @@
 {
   "status": "research only; not a pacman-resolved installation graph or package approval",
-  "reviewed_at_utc": "2026-11-01T02:00:26.6610934Z",
+  "reviewed_at_utc": "2026-11-01T02:03:01.5769220Z",
   "inventory_sha256": "c2cbc97932fc330ef1f4ea25852a2508c1db2ab0aa44e112258246900c03baff",
   "method": "Fetched the exact indexed archives as data, compared their SHA-256 values with the retained index, listed members without extraction, read .BUILDINFO/.PKGINFO and streamed only named license files. No package code was executed or installed.",
   "source_recipe": {
@@ -131,10 +131,12 @@
       "license_metadata": [
         "spdx:MIT AND BSD-3-Clause"
       ],
+      "archive_entry_count": 10,
       "existing_notice_path_hash": {
         "path": "ucrt64/share/licenses/libwinpthread/COPYING",
         "sha256": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177"
-      }
+      },
+      "notice_review": "The exact 2,883-byte COPYING file contains the MIT permission and retention terms for mingw-w64 project code and a separate BSD 3-clause notice for portions derived from Lockless Inc.; the declared combined identifiers match these two notice families. Source-to-binary component mapping and complete provenance remain unverified."
     },
     {
       "name": "mingw-w64-ucrt-x86_64-tzdata",
@@ -143,10 +145,12 @@
       "license_metadata": [
         "custom: public domain"
       ],
+      "archive_entry_count": 1874,
       "existing_notice_path_hash": {
         "path": "ucrt64/share/licenses/tzdata/LICENSE",
         "sha256": "0613408568889f5739e5ae252b722a2659c02002839ad970a63dc5e9174b27cf"
-      }
+      },
+      "notice_review": "The exact 252-byte LICENSE states that, unless specified below, the tz code and data are public domain; its conditional BSD clause names date.c, newstrftime.3 and strftime.c. None of those exact basenames occurs in this archive's 1,874 member listing. This is limited to the named archive members and the package notice, not an independent rights investigation."
     }
   ],
   "limitations": [
