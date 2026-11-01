@@ -1,0 +1,463 @@
+{
+  "scope": "Source-only path audit for 14 of 18 SPDX-prefixed binary records without matching notice paths; paths and hashes are leads, not a license, completeness, provenance, or approval finding.",
+  "retrieved_at_utc": "2026-11-01T01:43:25.090714+00:00",
+  "inventory_sha256": "c2cbc97932fc330ef1f4ea25852a2508c1db2ab0aa44e112258246900c03baff",
+  "method": "Downloaded exact binary and source-only archives as data; checked binary SHA-256 against retained index and BUILDINFO PKGBUILD hash against source archive; searched outer and nested source archives for notice-like paths and hashed matching content. No archive paths were extracted and no code was executed.",
+  "packages": [
+    {
+      "name": "mingw-w64-ucrt-x86_64-egl-headers",
+      "version": "1.5.r284.3ae2b7c-1",
+      "binary_filename": "mingw-w64-ucrt-x86_64-egl-headers-1.5.r284.3ae2b7c-1-any.pkg.tar.zst",
+      "binary_sha256": "29743159048cf216f75d0dc3eb3e0a04a07515db17d839803e54b060f5aeb0b3",
+      "binary_hash_matches_index": true,
+      "pkgbuild_sha256": "70136de66fb4ffc1ff1757c696bf3a45c821061a099398b69222e056d5257734",
+      "source_filename": "mingw-w64-egl-headers-1.5.r284.3ae2b7c-1.src.tar.zst",
+      "source_url": "https://mirror.msys2.org/mingw/sources/mingw-w64-egl-headers-1.5.r284.3ae2b7c-1.src.tar.zst",
+      "source_bytes": 3642469,
+      "source_sha256": "6483500e2ae3c5a1c4fbff1e181d71e64e056a9e94cd318282bbbff8995b6f1d",
+      "notice_path_count": 0,
+      "notice_paths": []
+    },
+    {
+      "name": "mingw-w64-ucrt-x86_64-giflib",
+      "version": "6.1.3-1",
+      "binary_filename": "mingw-w64-ucrt-x86_64-giflib-6.1.3-1-any.pkg.tar.zst",
+      "binary_sha256": "9e7ac8feb0e2af6e0fce3c8ead1bd7bcaf018661d08033858c1e2657a04f6f1a",
+      "binary_hash_matches_index": true,
+      "pkgbuild_sha256": "089116501d800a8e3a42352ba805e0ff21075efa230f2f5fa12bf4ef8febd915",
+      "source_filename": "mingw-w64-giflib-6.1.3-1.src.tar.zst",
+      "source_url": "https://mirror.msys2.org/mingw/sources/mingw-w64-giflib-6.1.3-1.src.tar.zst",
+      "source_bytes": 470866,
+      "source_sha256": "7c41b8653d50671d511eb7ee455e219b1997de7b126ce4874eb3f47ae414aea6",
+      "notice_path_count": 1,
+      "notice_paths": [
+        {
+          "path": "mingw-w64-giflib/giflib-6.1.3.tar.gz/giflib-6.1.3/COPYING",
+          "bytes": 1039,
+          "sha256": "ed5d90cb4a041bddad679470a071302ab05ae5d0ec2cf8f9c97ad7b2708751e6",
+          "container": "giflib"
+        }
+      ]
+    },
+    {
+      "name": "mingw-w64-ucrt-x86_64-gnutls",
+      "version": "3.8.13-3",
+      "binary_filename": "mingw-w64-ucrt-x86_64-gnutls-3.8.13-3-any.pkg.tar.zst",
+      "binary_sha256": "303da3babd11f545fcac647439298e8559951ce6a1086666faf8ad2a1f708be6",
+      "binary_hash_matches_index": true,
+      "pkgbuild_sha256": "0626ac4c78bd79c915b3ea1213b66fa384e3a6eaa392b407eb230a87c9ef83db",
+      "source_filename": "mingw-w64-gnutls-3.8.13-3.src.tar.zst",
+      "source_url": "https://mirror.msys2.org/mingw/sources/mingw-w64-gnutls-3.8.13-3.src.tar.zst",
+      "source_bytes": 7280076,
+      "source_sha256": "7889cd73810d909642c0f122b40cfe0eaec5b0d2985804f145cd90c6a51c0435",
+      "notice_path_count": 9,
+      "notice_paths": [
+        {
+          "path": "mingw-w64-gnutls/gnutls-3.8.13.tar.xz/gnutls-3.8.13/COPYING",
+          "bytes": 35149,
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+          "container": "gnutls"
+        },
+        {
+          "path": "mingw-w64-gnutls/gnutls-3.8.13.tar.xz/gnutls-3.8.13/COPYING.LESSERv2",
+          "bytes": 26419,
+          "sha256": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95",
+          "container": "gnutls"
+        },
+        {
+          "path": "mingw-w64-gnutls/gnutls-3.8.13.tar.xz/gnutls-3.8.13/doc/cha-copying.texi",
+          "bytes": 165,
+          "sha256": "02e34d9aef924707000316d10328f7d3350e4b2032cfcbb843cc24b473af235b",
+          "container": "gnutls"
+        },
+        {
+          "path": "mingw-w64-gnutls/gnutls-3.8.13.tar.xz/gnutls-3.8.13/doc/examples/tlsproxy/LICENSE",
+          "bytes": 1090,
+          "sha256": "b42dbe48110754b99f026ad30e69b1069f826fb07e7c616b526bd1090952fb1b",
+          "container": "gnutls"
+        },
+        {
+          "path": "mingw-w64-gnutls/gnutls-3.8.13.tar.xz/gnutls-3.8.13/lib/accelerated/x86/license.txt",
+          "bytes": 2463,
+          "sha256": "0c35a52bcfa4da2f0df4a1282a6034e211c976b8b6d43691a639eef9c8aebf7e",
+          "container": "gnutls"
+        },
+        {
+          "path": "mingw-w64-gnutls/gnutls-3.8.13.tar.xz/gnutls-3.8.13/lib/crau/LICENSE",
+          "bytes": 1067,
+          "sha256": "b3c9aed2f5750f6bf698c74916d675d1734e12455b96bfdf6f90e23ab01595cd",
+          "container": "gnutls"
+        },
+        {
+          "path": "mingw-w64-gnutls/gnutls-3.8.13.tar.xz/gnutls-3.8.13/lib/crau/UNLICENSE",
+          "bytes": 1212,
+          "sha256": "b5065838cbac452dfc855ba6e6e031481ad2c68406f70d21ead9321374653e6c",
+          "container": "gnutls"
+        },
+        {
+          "path": "mingw-w64-gnutls/gnutls-3.8.13.tar.xz/gnutls-3.8.13/lib/extras/licenses/CC0",
+          "bytes": 6383,
+          "sha256": "5c37e41135091a39821cfb306ad8516625b0bb49510ce56ad85c347bbc46df29",
+          "container": "gnutls"
+        },
+        {
+          "path": "mingw-w64-gnutls/gnutls-3.8.13.tar.xz/gnutls-3.8.13/lib/inih/LICENSE.txt",
+          "bytes": 1510,
+          "sha256": "9ae3b39e83e9158e44b67733baa3bb2d84e80efdcfb14a5820210a42c7abdf7f",
+          "container": "gnutls"
+        }
+      ]
+    },
+    {
+      "name": "mingw-w64-ucrt-x86_64-gst-plugins-good",
+      "version": "1.28.8-1",
+      "binary_filename": "mingw-w64-ucrt-x86_64-gst-plugins-good-1.28.8-1-any.pkg.tar.zst",
+      "binary_sha256": "258f9192bcb65dd7ee79f3298784d5355b16fcd62fb7060789a1194f8010e3a5",
+      "binary_hash_matches_index": true,
+      "pkgbuild_sha256": "87ad0e99a1d1aa8780fd656b6b6bc4243f04abe16606d4b86826f183bc221430",
+      "source_filename": "mingw-w64-gst-plugins-good-1.28.8-1.src.tar.zst",
+      "source_url": "https://mirror.msys2.org/mingw/sources/mingw-w64-gst-plugins-good-1.28.8-1.src.tar.zst",
+      "source_bytes": 6017707,
+      "source_sha256": "9d7336e565acbb4c6e2c65a865100c33ed0b8b0bdcb8c7fa09af3d4cfe603d5e",
+      "notice_path_count": 3,
+      "notice_paths": [
+        {
+          "path": "mingw-w64-gst-plugins-good/gst-plugins-good-1.28.8.tar.xz/gst-plugins-good-1.28.8/COPYING",
+          "bytes": 26432,
+          "sha256": "6095e9ffa777dd22839f7801aa845b31c9ed07f3d6bf8a26dc5d2dec8ccc0ef3",
+          "container": "gst-plugins-good"
+        },
+        {
+          "path": "mingw-w64-gst-plugins-good/gst-plugins-good-1.28.8.tar.xz/gst-plugins-good-1.28.8/gst/rtp/dboolhuff.LICENSE",
+          "bytes": 1495,
+          "sha256": "e293d1dddc9785200b1f58a4f5293543cf8566d9e0b8a3c02fad955035b19f42",
+          "container": "gst-plugins-good"
+        },
+        {
+          "path": "mingw-w64-gst-plugins-good/gst-plugins-good-1.28.8.tar.xz/gst-plugins-good-1.28.8/gst/rtsp/COPYING.MIT",
+          "bytes": 1156,
+          "sha256": "0efdd7e1522b73c4a206ab2fb1bb8a609157abccf588837bca6eb7c98d5b35c6",
+          "container": "gst-plugins-good"
+        }
+      ]
+    },
+    {
+      "name": "mingw-w64-ucrt-x86_64-gstreamer",
+      "version": "1.28.8-1",
+      "binary_filename": "mingw-w64-ucrt-x86_64-gstreamer-1.28.8-1-any.pkg.tar.zst",
+      "binary_sha256": "db13c201cbc385aebf23916b971ae0aaf4aeabb53c07f2ca232a644886b82e1b",
+      "binary_hash_matches_index": true,
+      "pkgbuild_sha256": "f2c00399100a2624221f3a336ae7429334421a31a250b0ff16ae5190f95cb81f",
+      "source_filename": "mingw-w64-gstreamer-1.28.8-1.src.tar.zst",
+      "source_url": "https://mirror.msys2.org/mingw/sources/mingw-w64-gstreamer-1.28.8-1.src.tar.zst",
+      "source_bytes": 1967698,
+      "source_sha256": "c5331bd61a2e5b4cb11d83fb82e9c5dae8748b902722c86cfffd364ecca56313",
+      "notice_path_count": 1,
+      "notice_paths": [
+        {
+          "path": "mingw-w64-gstreamer/gstreamer-1.28.8.tar.xz/gstreamer-1.28.8/COPYING",
+          "bytes": 26431,
+          "sha256": "ad2eec519ebd4b5df86ea84dff24ae3bfa2edea846a703b58902dd221ae375db",
+          "container": "gstreamer"
+        }
+      ]
+    },
+    {
+      "name": "mingw-w64-ucrt-x86_64-gtk-update-icon-cache",
+      "version": "3.24.52-1",
+      "binary_filename": "mingw-w64-ucrt-x86_64-gtk-update-icon-cache-3.24.52-1-any.pkg.tar.zst",
+      "binary_sha256": "eedfe01d226496699b95b065b3ec2a4fb3c51979b2fd649541a560d1f949ae18",
+      "binary_hash_matches_index": true,
+      "pkgbuild_sha256": "9e3cd207ab5e0dd95ff48dd74e15af0f0328966c118a9006ca57d2049c327577",
+      "source_filename": "mingw-w64-gtk3-3.24.52-1.src.tar.zst",
+      "source_url": "https://mirror.msys2.org/mingw/sources/mingw-w64-gtk3-3.24.52-1.src.tar.zst",
+      "source_bytes": 13583458,
+      "source_sha256": "b87574f9f86e5afd18dca456e951062f8ade1d2d6b7cd1c0489738b892a24b09",
+      "notice_path_count": 2,
+      "notice_paths": [
+        {
+          "path": "mingw-w64-gtk3/gtk-3.24.52.tar.xz/gtk-3.24.52/COPYING",
+          "bytes": 25383,
+          "sha256": "b7993225104d90ddd8024fd838faf300bea5e83d91203eab98e29512acebd69c",
+          "container": "gtk-update-icon-cache"
+        },
+        {
+          "path": "mingw-w64-gtk3/gtk-3.24.52.tar.xz/gtk-3.24.52/gdk/COPYING",
+          "bytes": 26530,
+          "sha256": "dc626520dcd53a22f727af3ee42c770e56c97a64fe3adb063799d8ab032fe551",
+          "container": "gtk-update-icon-cache"
+        }
+      ]
+    },
+    {
+      "name": "mingw-w64-ucrt-x86_64-libidn2",
+      "version": "2.3.8-4",
+      "binary_filename": "mingw-w64-ucrt-x86_64-libidn2-2.3.8-4-any.pkg.tar.zst",
+      "binary_sha256": "d5f4b5e9d99ff7b2a986d1dc0c73da2bcd93ba68462be7b1debbd6ef76371f57",
+      "binary_hash_matches_index": true,
+      "pkgbuild_sha256": "cf6def1817d6a38b49c66fc4cbe36cd56705d9b8952dae13e06d60da703983ff",
+      "source_filename": "mingw-w64-libidn2-2.3.8-4.src.tar.zst",
+      "source_url": "https://mirror.msys2.org/mingw/sources/mingw-w64-libidn2-2.3.8-4.src.tar.zst",
+      "source_bytes": 2147337,
+      "source_sha256": "cd83e8514fbeb6a4499299b88691b9b9ecc3114cca1e2be4f6c54aab6ae9ddd0",
+      "notice_path_count": 5,
+      "notice_paths": [
+        {
+          "path": "mingw-w64-libidn2/libidn2-2.3.8.tar.gz/libidn2-2.3.8/COPYING",
+          "bytes": 35149,
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+          "container": "libidn2"
+        },
+        {
+          "path": "mingw-w64-libidn2/libidn2-2.3.8.tar.gz/libidn2-2.3.8/COPYING.LESSERv3",
+          "bytes": 7652,
+          "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118",
+          "container": "libidn2"
+        },
+        {
+          "path": "mingw-w64-libidn2/libidn2-2.3.8.tar.gz/libidn2-2.3.8/COPYING.unicode",
+          "bytes": 8782,
+          "sha256": "01d621eef165cf4d3d3dbb737aa0699178d94c6f18cf87e9dde6db3ca7790f46",
+          "container": "libidn2"
+        },
+        {
+          "path": "mingw-w64-libidn2/libidn2-2.3.8.tar.gz/libidn2-2.3.8/COPYINGv2",
+          "bytes": 17984,
+          "sha256": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
+          "container": "libidn2"
+        },
+        {
+          "path": "mingw-w64-libidn2/libidn2-2.3.8.tar.gz/libidn2-2.3.8/build-aux/update-copyright",
+          "bytes": 11434,
+          "sha256": "1abd3f23319daaa0d4f2e597bb2d706c0eff24567789052dbfae4341cfc2ec56",
+          "container": "libidn2"
+        }
+      ]
+    },
+    {
+      "name": "mingw-w64-ucrt-x86_64-libssh",
+      "version": "0.12.2-1",
+      "binary_filename": "mingw-w64-ucrt-x86_64-libssh-0.12.2-1-any.pkg.tar.zst",
+      "binary_sha256": "1be494f5fad8bf1210a1eeaccdd07d3e8319f4d13cd79a9302ae196fcc96da8b",
+      "binary_hash_matches_index": true,
+      "pkgbuild_sha256": "a034ae78fc47fa516eee2336c44a99e8ddb2eb9e0e9f5ecea38219ad0fc85735",
+      "source_filename": "mingw-w64-libssh-0.12.2-1.src.tar.zst",
+      "source_url": "https://mirror.msys2.org/mingw/sources/mingw-w64-libssh-0.12.2-1.src.tar.zst",
+      "source_bytes": 762807,
+      "source_sha256": "b935d915b5392e573f65855c491e476ae38860d3929d2b564e507aa660c3e05b",
+      "notice_path_count": 2,
+      "notice_paths": [
+        {
+          "path": "mingw-w64-libssh/libssh-0.12.2.tar.xz/libssh-0.12.2/COPYING",
+          "bytes": 25008,
+          "sha256": "1656186e951db1c010a8485481fa94587f7e53a26d24976bef97945ad0c4df5a",
+          "container": "libssh"
+        },
+        {
+          "path": "mingw-w64-libssh/libssh-0.12.2.tar.xz/libssh-0.12.2/cmake/Modules/COPYING-CMAKE-SCRIPTS",
+          "bytes": 1327,
+          "sha256": "46cde7dc11e64c78d650b4851b88f6704b4665ff60f22a1caf68ceb15e217e5b",
+          "container": "libssh"
+        }
+      ]
+    },
+    {
+      "name": "mingw-w64-ucrt-x86_64-libtheora",
+      "version": "1.2.0-1",
+      "binary_filename": "mingw-w64-ucrt-x86_64-libtheora-1.2.0-1-any.pkg.tar.zst",
+      "binary_sha256": "7c5d7caadc7da0b293ccb3eb8ed9d00f335fd62527a16cfd2a4fddca43d8de11",
+      "binary_hash_matches_index": true,
+      "pkgbuild_sha256": "6febdba0e00b0385072bb558eb9f9ab61c12f7604571b8c18afc2274a3455f54",
+      "source_filename": "mingw-w64-libtheora-1.2.0-1.src.tar.zst",
+      "source_url": "https://mirror.msys2.org/mingw/sources/mingw-w64-libtheora-1.2.0-1.src.tar.zst",
+      "source_bytes": 2529398,
+      "source_sha256": "2390e994f10cb3e3e5f32898010ecede4e61bd10d47cfe4d1500ed8c7a774e85",
+      "notice_path_count": 2,
+      "notice_paths": [
+        {
+          "path": "mingw-w64-libtheora/libtheora-1.2.0.tar.gz/libtheora-1.2.0/LICENSE",
+          "bytes": 960,
+          "sha256": "2c902950c73a63cd285dc0c36573de9c5fefe66d49312949c51d941f33e92932",
+          "container": "libtheora"
+        },
+        {
+          "path": "mingw-w64-libtheora/libtheora-1.2.0.tar.gz/libtheora-1.2.0/COPYING",
+          "bytes": 1470,
+          "sha256": "8417fad7da775735564e209484a2e011e0fa201e94f01fdbee6e4977e478e6fc",
+          "container": "libtheora"
+        }
+      ]
+    },
+    {
+      "name": "mingw-w64-ucrt-x86_64-libvpx",
+      "version": "1.17.0-1",
+      "binary_filename": "mingw-w64-ucrt-x86_64-libvpx-1.17.0-1-any.pkg.tar.zst",
+      "binary_sha256": "8ff6919dbb88ea26ce28d22fd81d6f0d6e200cf56a4dd81ffc2d33124fe98024",
+      "binary_hash_matches_index": true,
+      "pkgbuild_sha256": "ec57aa54095093c69364d4870f84176a6470ff6eed74bea64954ed4ebec74592",
+      "source_filename": "mingw-w64-libvpx-1.17.0-1.src.tar.zst",
+      "source_url": "https://mirror.msys2.org/mingw/sources/mingw-w64-libvpx-1.17.0-1.src.tar.zst",
+      "source_bytes": 5653451,
+      "source_sha256": "7b322fffe50501d26bbbb489135e5001f6096da2529ad992c712c00c94bb38dd",
+      "notice_path_count": 6,
+      "notice_paths": [
+        {
+          "path": "mingw-w64-libvpx/libvpx-1.17.0.tar.gz/libvpx-1.17.0/LICENSE",
+          "bytes": 1537,
+          "sha256": "8267348d5af1262c11d1a08de2f5afc77457755f1ac658627dd9acf71011d615",
+          "container": "libvpx"
+        },
+        {
+          "path": "mingw-w64-libvpx/libvpx-1.17.0.tar.gz/libvpx-1.17.0/third_party/googletest/src/LICENSE",
+          "bytes": 1475,
+          "sha256": "9702de7e4117a8e2b20dafab11ffda58c198aede066406496bef670d40a22138",
+          "container": "libvpx"
+        },
+        {
+          "path": "mingw-w64-libvpx/libvpx-1.17.0.tar.gz/libvpx-1.17.0/third_party/libwebm/LICENSE.TXT",
+          "bytes": 1496,
+          "sha256": "5aec868f669e384a22372a4e8a1a6cd7d44c64cd451f960ca69cc170d1e13acf",
+          "container": "libvpx"
+        },
+        {
+          "path": "mingw-w64-libvpx/libvpx-1.17.0.tar.gz/libvpx-1.17.0/third_party/libyuv/LICENSE",
+          "bytes": 1506,
+          "sha256": "2b2cc1180c7e6988328ad2033b04b80117419db9c4c584918bbb3cfec7e9364f",
+          "container": "libvpx"
+        },
+        {
+          "path": "mingw-w64-libvpx/libvpx-1.17.0.tar.gz/libvpx-1.17.0/third_party/nalloc/LICENSE",
+          "bytes": 1069,
+          "sha256": "d7dd0396ec46975e1bf9093680068ef301bc0ed204603e623a6f7073ab922ab1",
+          "container": "libvpx"
+        },
+        {
+          "path": "mingw-w64-libvpx/libvpx-1.17.0.tar.gz/libvpx-1.17.0/third_party/x86inc/LICENSE",
+          "bytes": 936,
+          "sha256": "719d8fa235f2068e0ae6d6a7dceb0a7720d7840f0f0ebed29957989e6ded3cd8",
+          "container": "libvpx"
+        }
+      ]
+    },
+    {
+      "name": "mingw-w64-ucrt-x86_64-nettle",
+      "version": "4.0-1",
+      "binary_filename": "mingw-w64-ucrt-x86_64-nettle-4.0-1-any.pkg.tar.zst",
+      "binary_sha256": "47b49f1723ef2c75ff3042b6e463910c47cdffa3342e175b6409fb9d630e64ed",
+      "binary_hash_matches_index": true,
+      "pkgbuild_sha256": "7d82c0e2504f0dabc0170e7b5790f55c4c25a7be7c7dd973ab5d17ebe04d8ae1",
+      "source_filename": "mingw-w64-nettle-4.0-1.src.tar.zst",
+      "source_url": "https://mirror.msys2.org/mingw/sources/mingw-w64-nettle-4.0-1.src.tar.zst",
+      "source_bytes": 2630115,
+      "source_sha256": "453187e86139bce3c5b94542cc709ead7f523f0fc33ce4cc2b8fe9d5a9719cdd",
+      "notice_path_count": 3,
+      "notice_paths": [
+        {
+          "path": "mingw-w64-nettle/nettle-4.0.tar.gz/nettle-4.0/COPYING.LESSERv3",
+          "bytes": 7652,
+          "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118",
+          "container": "nettle"
+        },
+        {
+          "path": "mingw-w64-nettle/nettle-4.0.tar.gz/nettle-4.0/COPYINGv2",
+          "bytes": 18092,
+          "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
+          "container": "nettle"
+        },
+        {
+          "path": "mingw-w64-nettle/nettle-4.0.tar.gz/nettle-4.0/COPYINGv3",
+          "bytes": 35150,
+          "sha256": "e6037104443f9a7829b2aa7c5370d0789a7bda3ca65a0b904cdc0c2e285d9195",
+          "container": "nettle"
+        }
+      ]
+    },
+    {
+      "name": "mingw-w64-ucrt-x86_64-p11-kit",
+      "version": "0.26.5-1",
+      "binary_filename": "mingw-w64-ucrt-x86_64-p11-kit-0.26.5-1-any.pkg.tar.zst",
+      "binary_sha256": "6e1645f0afa669f3e3325abb891d79c58dacf0bb5f9bb1ea719d22da1d754e62",
+      "binary_hash_matches_index": true,
+      "pkgbuild_sha256": "98fa23420fa595ea71cf51fdb3f5cc2bcd77a0b996e36549057fe82b8c1e723f",
+      "source_filename": "mingw-w64-p11-kit-0.26.5-1.src.tar.zst",
+      "source_url": "https://mirror.msys2.org/mingw/sources/mingw-w64-p11-kit-0.26.5-1.src.tar.zst",
+      "source_bytes": 1094024,
+      "source_sha256": "1665c40c6237bbb9be868ecfc00ab65f9038047e4c608126de575ae4ecb5ca12",
+      "notice_path_count": 1,
+      "notice_paths": [
+        {
+          "path": "mingw-w64-p11-kit/p11-kit-0.26.5.tar.xz/p11-kit-0.26.5/COPYING",
+          "bytes": 1447,
+          "sha256": "2e1ba993904df807a10c3eda1e5c272338edc35674b679773a8b3ad460731054",
+          "container": "p11-kit"
+        }
+      ]
+    },
+    {
+      "name": "mingw-w64-ucrt-x86_64-snappy",
+      "version": "1.3.1-1",
+      "binary_filename": "mingw-w64-ucrt-x86_64-snappy-1.3.1-1-any.pkg.tar.zst",
+      "binary_sha256": "a4037212ff1e8a4c12af0b7b5443d3abb46ca7e30849a45160db90add74b54c8",
+      "binary_hash_matches_index": true,
+      "pkgbuild_sha256": "5910e367126d0ee319fe6cf33540b41f8ed81ade50c48ee44fa070ac6b592133",
+      "source_filename": "mingw-w64-snappy-1.3.1-1.src.tar.zst",
+      "source_url": "https://mirror.msys2.org/mingw/sources/mingw-w64-snappy-1.3.1-1.src.tar.zst",
+      "source_bytes": 1114597,
+      "source_sha256": "fd5151722f18a5ba30758d296c8e6ce0b9429c8f926229ba8e43297643add23e",
+      "notice_path_count": 2,
+      "notice_paths": [
+        {
+          "path": "mingw-w64-snappy/snappy-1.3.1.tar.gz/snappy-1.3.1/COPYING",
+          "bytes": 2645,
+          "sha256": "55172044f7e241207117448a4d9d6ba1d0925c8ad66b5d4c08c70adfa9cc3de6",
+          "container": "snappy"
+        },
+        {
+          "path": "mingw-w64-snappy/snappy-1.3.1.tar.gz/snappy-1.3.1/COPYING.notestdata",
+          "bytes": 1475,
+          "sha256": "5221a36a801b981fbdfda7b87db64cff231a3b88223a066c325411b539df796f",
+          "container": "snappy"
+        }
+      ]
+    },
+    {
+      "name": "mingw-w64-ucrt-x86_64-taglib",
+      "version": "2.2.1-1",
+      "binary_filename": "mingw-w64-ucrt-x86_64-taglib-2.2.1-1-any.pkg.tar.zst",
+      "binary_sha256": "7a3bd5f6d08bebd0f3e2ec8893324e97bbb54b02b48ef476ee613c3e8f5cc0b2",
+      "binary_hash_matches_index": true,
+      "pkgbuild_sha256": "890cea01c5b19c5ad36e848523e1316d5ebc5aa70ba71ab8c4fe7e99d0c8b3c7",
+      "source_filename": "mingw-w64-taglib-2.2.1-1.src.tar.zst",
+      "source_url": "https://mirror.msys2.org/mingw/sources/mingw-w64-taglib-2.2.1-1.src.tar.zst",
+      "source_bytes": 1503406,
+      "source_sha256": "8927b13a7a2123a041c6310d16cc7a24faad0c6f4ce52e41b1ff062861987538",
+      "notice_path_count": 4,
+      "notice_paths": [
+        {
+          "path": "mingw-w64-taglib/taglib-2.2.1.tar.gz/taglib-2.2.1/COPYING.LGPL",
+          "bytes": 26530,
+          "sha256": "dc626520dcd53a22f727af3ee42c770e56c97a64fe3adb063799d8ab032fe551",
+          "container": "taglib"
+        },
+        {
+          "path": "mingw-w64-taglib/taglib-2.2.1.tar.gz/taglib-2.2.1/COPYING.MPL",
+          "bytes": 25755,
+          "sha256": "53692a2ed6c6a2c6ec9b32dd0b820dfae91e0a1fcdf625ca9ed0bdf8705fcc4f",
+          "container": "taglib"
+        },
+        {
+          "path": "mingw-w64-taglib/taglib-2.2.1.tar.gz/taglib-2.2.1/3rdparty/utfcpp/LICENSE",
+          "bytes": 1338,
+          "sha256": "c9bff75738922193e67fa726fa225535870d2aa1059f91452c411736284ad566",
+          "container": "taglib"
+        },
+        {
+          "path": "mingw-w64-taglib/taglib-2.2.1.tar.gz/taglib-2.2.1/3rdparty/utfcpp/extern/ftest/LICENSE",
+          "bytes": 1324,
+          "sha256": "2c6a01b25167bc49e6575185c7379b0ddff608b6b3e35d89d2d185473c7ff6bf",
+          "container": "taglib"
+        }
+      ]
+    }
+  ]
+}

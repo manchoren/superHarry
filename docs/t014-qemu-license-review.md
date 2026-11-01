@@ -184,6 +184,33 @@ The path predicate found matches in 111 of these 129 archives and none in 18: `c
 
 The same source-metadata redistribution caveat applies to the derivative result as to the retained index. Rerunning contacts a live repository and may produce download failures or changed artifacts; archived hashes and statuses must be checked, and no claim of a retained artifact snapshot is implied.
 
+## Source-only follow-up for pathless SPDX records (2026-10-31)
+
+For 16 of the 18 SPDX-prefixed binary archives without a matching notice path, the exact binary archive was downloaded as data, its SHA-256 matched the retained index, and its `.BUILDINFO` `pkgbuild_sha256sum` matched the `PKGBUILD` in the corresponding source-only archive. For 14 packages, the source-only archive was also hashed and its nested upstream source archive(s) were listed and searched for paths containing `license`, `licence`, `copyright`, `copying` or `notice`; matching file contents were streamed and hashed. The 14 source-only archive hashes and matching path counts are:
+
+| Package / version | Source-only archive SHA-256 | `PKGBUILD` SHA-256 | Matching source path count |
+|---|---|---|---:|
+| `egl-headers` 1.5.r284.3ae2b7c-1 | `6483500e2ae3c5a1c4fbff1e181d71e64e056a9e94cd318282bbbff8995b6f1d` | `70136de66fb4ffc1ff1757c696bf3a45c821061a099398b69222e056d5257734` | 0 |
+| `giflib` 6.1.3-1 | `7c41b8653d50671d511eb7ee455e219b1997de7b126ce4874eb3f47ae414aea6` | `089116501d800a8e3a42352ba805e0ff21075efa230f2f5fa12bf4ef8febd915` | 1 |
+| `gnutls` 3.8.13-3 | `7889cd73810d909642c0f122b40cfe0eaec5b0d2985804f145cd90c6a51c0435` | `0626ac4c78bd79c915b3ea1213b66fa384e3a6eaa392b407eb230a87c9ef83db` | 9 |
+| `gst-plugins-good` 1.28.8-1 | `9d7336e565acbb4c6e2c65a865100c33ed0b8b0bdcb8c7fa09af3d4cfe603d5e` | `87ad0e99a1d1aa8780fd656b6b6bc4243f04abe16606d4b86826f183bc221430` | 3 |
+| `gstreamer` 1.28.8-1 | `c5331bd61a2e5b4cb11d83fb82e9c5dae8748b902722c86cfffd364ecca56313` | `f2c00399100a2624221f3a336ae7429334421a31a250b0ff16ae5190f95cb81f` | 1 |
+| `gtk-update-icon-cache` 3.24.52-1 (`gtk3` source) | `b87574f9f86e5afd18dca456e951062f8ade1d2d6b7cd1c0489738b892a24b09` | `9e3cd207ab5e0dd95ff48dd74e15af0f0328966c118a9006ca57d2049c327577` | 2 |
+| `libidn2` 2.3.8-4 | `cd83e8514fbeb6a4499299b88691b9b9ecc3114cca1e2be4f6c54aab6ae9ddd0` | `cf6def1817d6a38b49c66fc4cbe36cd56705d9b8952dae13e06d60da703983ff` | 5 |
+| `libssh` 0.12.2-1 | `b935d915b5392e573f65855c491e476ae38860d3929d2b564e507aa660c3e05b` | `a034ae78fc47fa516eee2336c44a99e8ddb2eb9e0e9f5ecea38219ad0fc85735` | 2 |
+| `libtheora` 1.2.0-1 | `2390e994f10cb3e3e5f32898010ecede4e61bd10d47cfe4d1500ed8c7a774e85` | `6febdba0e00b0385072bb558eb9f9ab61c12f7604571b8c18afc2274a3455f54` | 2 |
+| `libvpx` 1.17.0-1 | `7b322fffe50501d26bbbb489135e5001f6096da2529ad992c712c00c94bb38dd` | `ec57aa54095093c69364d4870f84176a6470ff6eed74bea64954ed4ebec74592` | 6 |
+| `nettle` 4.0-1 | `453187e86139bce3c5b94542cc709ead7f523f0fc33ce4cc2b8fe9d5a9719cdd` | `7d82c0e2504f0dabc0170e7b5790f55c4c25a7be7c7dd973ab5d17ebe04d8ae1` | 3 |
+| `p11-kit` 0.26.5-1 | `1665c40c6237bbb9be868ecfc00ab65f9038047e4c608126de575ae4ecb5ca12` | `98fa23420fa595ea71cf51fdb3f5cc2bcd77a0b996e36549057fe82b8c1e723f` | 1 |
+| `snappy` 1.3.1-1 | `fd5151722f18a5ba30758d296c8e6ce0b9429c8f926229ba8e43297643add23e` | `5910e367126d0ee319fe6cf33540b41f8ed81ade50c48ee44fa070ac6b592133` | 2 |
+| `taglib` 2.2.1-1 | `8927b13a7a2123a041c6310d16cc7a24faad0c6f4ce52e41b1ff062861987538` | `890cea01c5b19c5ad36e848523e1316d5ebc5aa70ba71ab8c4fe7e99d0c8b3c7` | 4 |
+
+The two QEMU split packages, `qemu-guest-agent` and `qemu-image-util` 11.1.3-1, also matched the retained binary hashes and reported the previously reviewed QEMU `PKGBUILD` SHA-256 `905771a8d3f3f612d6772cec74d4daa5ba574bdd9378453f513dff7e1019bf8f` in `.BUILDINFO`; both correspond to the previously reviewed QEMU source-only archive SHA-256 `3ee1d4292f930e9cbdc356c1015ae7cd94e8bfa3f2f8daf5664b00ae5cd5267b`. The earlier QEMU source and firmware review remains the source-side evidence for these split packages; it is not a package-specific license disposition.
+
+The source archive for `cc-libs` is 107,229,138 bytes, and the archive for `gles-headers` is 182,522,240 bytes. These two source archives were not downloaded or inspected in this pass. Their binary archives remain in the 18-package no-path set.
+
+For the 14 new source archives, the predicate found 41 matching paths in the nested upstream source archives; `egl-headers` had no matching path. The [audit script](evidence/t014-msys2/audit_source_notice_paths.py) and [machine-readable result](evidence/t014-msys2/source-notice-path-audit.json) retain each matched path, content length and hash, the source archive hash, and the binary/recipe hash comparisons. This is path evidence only: it neither determines which components are shipped in each binary nor proves a notice is complete or legally applicable. In particular, paths found in source can refer to tests, examples, tools, architectures or bundled components absent from the binary. The binary hash and `.BUILDINFO`/`PKGBUILD` comparison establish consistency with the retained index and source archive, not independent publisher identity, source signature validity, build reproducibility or complete source-to-binary provenance. Downloaded archives and notice contents were removed; no package or source code was executed.
+
 ## Notices and completion gaps
 
 - QEMU `11.1.3-1` declares `spdx:GPL-2.0-or-later AND LGPL-2.1-or-later AND BSD-2-Clause AND BSD-3-Clause AND MIT`. Four records have that same exact declared tuple; this is not proof they contain identical material. Determine per-file terms, notices, linked components and source-provision requirements for the actual artifacts and distribution model.
