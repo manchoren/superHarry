@@ -1,0 +1,4871 @@
+{
+  "retrieved_utc": "2026-10-31T23:09:11.469492+00:00",
+  "catalog_review_sha256": "7c92c48c9f2f012ea1214006df7cee3d924d0f0073a3e9a56f5c4ebcbf270b17",
+  "scope": "CNA records for catalog CVEs excluding QEMU, GnuTLS and libssh2; not a completed vulnerability disposition",
+  "records": [
+    {
+      "id": "CVE-2016-0749",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-spice",
+          "version": "0.16.0-4"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2016-0749",
+      "retrieval": "ok",
+      "record_sha256": "d2661e2aa462d2e00ee2e88aa652b5d3043fc4926f1a270efdad8d3ba9ff97e7",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "The smartcard interaction in SPICE allows remote attackers to cause a denial of service (QEMU-KVM process crash) or possibly execute arbitrary code via vectors related to connecting to a guest VM, which triggers a heap-based buffer overflow."
+      ],
+      "affected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://security.gentoo.org/glsa/201606-05",
+        "http://www.oracle.com/technetwork/topics/security/linuxbulletinapr2016-2952096.html",
+        "http://lists.opensuse.org/opensuse-updates/2016-07/msg00003.html",
+        "http://www.ubuntu.com/usn/USN-3014-1",
+        "http://lists.opensuse.org/opensuse-updates/2016-07/msg00004.html",
+        "https://access.redhat.com/errata/RHSA-2016:1205",
+        "http://www.debian.org/security/2016/dsa-3596",
+        "https://access.redhat.com/errata/RHSA-2016:1204"
+      ],
+      "date_updated": "2024-08-05T22:30:03.963Z"
+    },
+    {
+      "id": "CVE-2016-2150",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-spice",
+          "version": "0.16.0-4"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2016-2150",
+      "retrieval": "ok",
+      "record_sha256": "3564e6519bb0011d38b381a57d7ab6669b4de1cf6963cd2c36493b96bbb1b25a",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "SPICE allows local guest OS users to read from or write to arbitrary host memory locations via crafted primary surface parameters, a similar issue to CVE-2015-5261."
+      ],
+      "affected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://security.gentoo.org/glsa/201606-05",
+        "http://www.oracle.com/technetwork/topics/security/linuxbulletinapr2016-2952096.html",
+        "http://lists.opensuse.org/opensuse-updates/2016-07/msg00003.html",
+        "http://www.ubuntu.com/usn/USN-3014-1",
+        "http://lists.opensuse.org/opensuse-updates/2016-07/msg00004.html",
+        "https://access.redhat.com/errata/RHSA-2016:1205",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=1313496",
+        "http://www.debian.org/security/2016/dsa-3596",
+        "https://access.redhat.com/errata/RHSA-2016:1204"
+      ],
+      "date_updated": "2024-08-05T23:17:50.615Z"
+    },
+    {
+      "id": "CVE-2017-11695",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-nss",
+          "version": "3.132-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2017-11695",
+      "retrieval": "ok",
+      "record_sha256": "bee44a8722252c9652b41b808aa1ad32b101c8a9bb4bd108244483735cd6b8d9",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "Heap-based buffer overflow in the alloc_segs function in lib/dbm/src/hash.c in Mozilla Network Security Services (NSS) allows context-dependent attackers to have unspecified impact using a crafted cert8.db file."
+      ],
+      "affected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "http://www.securitytracker.com/id/1039153",
+        "http://www.securityfocus.com/bid/100345",
+        "http://www.geeknik.net/9brdqk6xu",
+        "http://packetstormsecurity.com/files/143735/NSS-Buffer-Overflows-Floating-Point-Exception.html",
+        "http://seclists.org/fulldisclosure/2017/Aug/17",
+        "https://security.gentoo.org/glsa/202003-37"
+      ],
+      "date_updated": "2024-08-05T18:19:37.736Z"
+    },
+    {
+      "id": "CVE-2017-11696",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-nss",
+          "version": "3.132-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2017-11696",
+      "retrieval": "ok",
+      "record_sha256": "975a0c285b064a8027a999e2bac14bcf2d79878f84a9c8e3707969782240b904",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "Heap-based buffer overflow in the __hash_open function in lib/dbm/src/hash.c in Mozilla Network Security Services (NSS) allows context-dependent attackers to have unspecified impact using a crafted cert8.db file."
+      ],
+      "affected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "http://www.securitytracker.com/id/1039153",
+        "http://www.securityfocus.com/bid/100345",
+        "http://www.geeknik.net/9brdqk6xu",
+        "http://packetstormsecurity.com/files/143735/NSS-Buffer-Overflows-Floating-Point-Exception.html",
+        "http://seclists.org/fulldisclosure/2017/Aug/17",
+        "https://security.gentoo.org/glsa/202003-37"
+      ],
+      "date_updated": "2024-08-05T18:19:38.411Z"
+    },
+    {
+      "id": "CVE-2017-11697",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-nss",
+          "version": "3.132-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2017-11697",
+      "retrieval": "ok",
+      "record_sha256": "76c408a878a12fb3f39c54019efff66e64352c9a35aea21f0899c5abb3a76dfe",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "The __hash_open function in hash.c:229 in Mozilla Network Security Services (NSS) allows context-dependent attackers to cause a denial of service (floating point exception and crash) via a crafted cert8.db file."
+      ],
+      "affected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "http://www.securitytracker.com/id/1039153",
+        "http://www.securityfocus.com/bid/100345",
+        "http://www.geeknik.net/9brdqk6xu",
+        "http://packetstormsecurity.com/files/143735/NSS-Buffer-Overflows-Floating-Point-Exception.html",
+        "http://seclists.org/fulldisclosure/2017/Aug/17",
+        "https://security.gentoo.org/glsa/202003-37"
+      ],
+      "date_updated": "2024-08-05T18:19:38.896Z"
+    },
+    {
+      "id": "CVE-2017-11698",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-nss",
+          "version": "3.132-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2017-11698",
+      "retrieval": "ok",
+      "record_sha256": "9f690cd4d640bb6a2447e76d663b82831d5dc8ca6628ed2510e0cff7ee81ef4e",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "Heap-based buffer overflow in the __get_page function in lib/dbm/src/h_page.c in Mozilla Network Security Services (NSS) allows context-dependent attackers to have unspecified impact using a crafted cert8.db file."
+      ],
+      "affected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "http://www.securitytracker.com/id/1039153",
+        "http://www.securityfocus.com/bid/100345",
+        "http://www.geeknik.net/9brdqk6xu",
+        "http://packetstormsecurity.com/files/143735/NSS-Buffer-Overflows-Floating-Point-Exception.html",
+        "http://seclists.org/fulldisclosure/2017/Aug/17",
+        "https://security.gentoo.org/glsa/202003-37"
+      ],
+      "date_updated": "2024-08-05T18:19:37.767Z"
+    },
+    {
+      "id": "CVE-2018-10893",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-spice",
+          "version": "0.16.0-4"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2018-10893",
+      "retrieval": "ok",
+      "record_sha256": "de8db5d5842e273a502af63f69e1e845cabfefa698372019e9b93e49741073ae",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "Multiple integer overflow and buffer overflow issues were discovered in spice-client's handling of LZ compressed frames. A malicious server could cause the client to crash or, potentially, execute arbitrary code."
+      ],
+      "affected": [
+        {
+          "product": "spice-client",
+          "vendor": "Red Hat",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://bugzilla.redhat.com/show_bug.cgi?id=CVE-2018-10893",
+        "https://lists.freedesktop.org/archives/spice-devel/2018-July/044489.html",
+        "https://access.redhat.com/errata/RHSA-2019:2229",
+        "https://access.redhat.com/errata/RHSA-2020:0471"
+      ],
+      "date_updated": "2024-08-05T07:54:34.900Z"
+    },
+    {
+      "id": "CVE-2019-2708",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-db",
+          "version": "6.2.32-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2019-2708",
+      "retrieval": "ok",
+      "record_sha256": "19046edaecf0ceec386937b67c9fa138f776a0fcbc717b67113f64ee43d7be72",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "Vulnerability in the Data Store component of Oracle Berkeley DB. Supported versions that are affected are Prior to 6.138, prior to 6.2.38 and prior to 18.1.32. Easily exploitable vulnerability allows low privileged attacker having Local Logon privilege with logon to the infrastructure where Data Store executes to compromise Data Store. Successful attacks of this vulnerability can result in unauthorized ability to cause a partial denial of service (partial DOS) of Data Store. CVSS 3.0 Base Score 3.3 (Availability impacts). CVSS Vector: (CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L)."
+      ],
+      "affected": [
+        {
+          "product": "Oracle Berkeley DB",
+          "vendor": "Oracle Corporation",
+          "versions": [
+            {
+              "lessThan": "6.138",
+              "status": "affected",
+              "version": "unspecified",
+              "versionType": "custom"
+            },
+            {
+              "lessThan": "6.2.38",
+              "status": "affected",
+              "version": "unspecified",
+              "versionType": "custom"
+            },
+            {
+              "lessThan": "18.1.32",
+              "status": "affected",
+              "version": "unspecified",
+              "versionType": "custom"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "http://www.oracle.com/technetwork/security-advisory/cpuapr2019-5072813.html",
+        "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/OQFKX6NKU2DCW5CTCHQSOJJDFVRVTPO6/"
+      ],
+      "date_updated": "2024-10-02T15:38:38.332Z"
+    },
+    {
+      "id": "CVE-2020-2981",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-db",
+          "version": "6.2.32-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2020-2981",
+      "retrieval": "ok",
+      "record_sha256": "8edf7a7fa3585da74cb7e603159b3a6da86fb55bca4d1dd1792468ba2c11fc16",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "Vulnerability in the Data Store component of Oracle Berkeley DB. The supported version that is affected is Prior to 18.1.40. Difficult to exploit vulnerability allows unauthenticated attacker with logon to the infrastructure where Data Store executes to compromise Data Store. Successful attacks require human interaction from a person other than the attacker. Successful attacks of this vulnerability can result in takeover of Data Store. CVSS 3.1 Base Score 7.0 (Confidentiality, Integrity and Availability impacts). CVSS Vector: (CVSS:3.1/AV:L/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:H)."
+      ],
+      "affected": [
+        {
+          "product": "Oracle Berkeley DB",
+          "vendor": "Oracle Corporation",
+          "versions": [
+            {
+              "lessThan": "18.1.40",
+              "status": "affected",
+              "version": "unspecified",
+              "versionType": "custom"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://www.oracle.com/security-alerts/cpujul2020.html"
+      ],
+      "date_updated": "2024-09-26T20:33:28.645Z"
+    },
+    {
+      "id": "CVE-2021-30473",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-aom",
+          "version": "3.15.3-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2021-30473",
+      "retrieval": "ok",
+      "record_sha256": "658967cc7b630698b96b5087c7c731fbb3df66f5cb618f578e9cd0416842033c",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "aom_image.c in libaom in AOMedia before 2021-04-07 frees memory that is not located on the heap."
+      ],
+      "affected": [
+        {
+          "vendor": "n/a",
+          "product": "n/a",
+          "versions": [
+            {
+              "version": "n/a",
+              "status": "affected"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://bugs.chromium.org/p/aomedia/issues/detail?id=2998",
+        "https://aomedia.googlesource.com/aom/+/4efe20e99dcd9b6f8eadc8de8acc825be7416578",
+        "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZXCI33HXH6YSOGC2LPE2REQLMIDH6US4/",
+        "https://lists.debian.org/debian-lts-announce/2023/09/msg00003.html",
+        "https://www.debian.org/security/2023/dsa-5490",
+        "https://security.gentoo.org/glsa/202401-32"
+      ],
+      "date_updated": "2024-08-03T22:32:41.091Z"
+    },
+    {
+      "id": "CVE-2021-30474",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-aom",
+          "version": "3.15.3-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2021-30474",
+      "retrieval": "ok",
+      "record_sha256": "1ca5beeb74621921bdabc51ca7691120ecbffec94d9918a1a3fc0ff6763fb4e5",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "aom_dsp/grain_table.c in libaom in AOMedia before 2021-03-30 has a use-after-free."
+      ],
+      "affected": [
+        {
+          "vendor": "n/a",
+          "product": "n/a",
+          "versions": [
+            {
+              "version": "n/a",
+              "status": "affected"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://bugs.chromium.org/p/aomedia/issues/detail?id=3000",
+        "https://aomedia.googlesource.com/aom/+/6e31957b6dc62dbc7d1bb70cd84902dd14c4bf2e",
+        "https://lists.debian.org/debian-lts-announce/2023/09/msg00003.html",
+        "https://www.debian.org/security/2023/dsa-5490",
+        "https://security.gentoo.org/glsa/202401-32"
+      ],
+      "date_updated": "2024-08-03T22:32:41.054Z"
+    },
+    {
+      "id": "CVE-2021-30475",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-aom",
+          "version": "3.15.3-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2021-30475",
+      "retrieval": "ok",
+      "record_sha256": "273b32e5ed4bde30dcd7b6d3db0a9fa9b25433136c8535fecf67b731803ce5c1",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "aom_dsp/noise_model.c in libaom in AOMedia before 2021-03-24 has a buffer overflow."
+      ],
+      "affected": [
+        {
+          "vendor": "n/a",
+          "product": "n/a",
+          "versions": [
+            {
+              "version": "n/a",
+              "status": "affected"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://bugs.chromium.org/p/aomedia/issues/detail?id=2999",
+        "https://aomedia.googlesource.com/aom/+/12adc723acf02633595a4d8da8345742729f46c0",
+        "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZXCI33HXH6YSOGC2LPE2REQLMIDH6US4/",
+        "https://lists.debian.org/debian-lts-announce/2023/09/msg00003.html",
+        "https://www.debian.org/security/2023/dsa-5490",
+        "https://security.gentoo.org/glsa/202401-32"
+      ],
+      "date_updated": "2024-08-03T22:32:41.126Z"
+    },
+    {
+      "id": "CVE-2021-30499",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libcaca",
+          "version": "0.99.beta20-8"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2021-30499",
+      "retrieval": "ok",
+      "record_sha256": "0b02f3aa825a723ad42ed5787fb5e751ea0e63af4576704d0fbd6736245f73a9",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libcaca. A buffer overflow of export.c in function export_troff might lead to memory corruption and other potential consequences."
+      ],
+      "affected": [
+        {
+          "product": "libcaca",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "master"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://bugzilla.redhat.com/show_bug.cgi?id=1948679",
+        "https://github.com/cacalabs/libcaca/issues/54",
+        "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/6WFGYICNTMNDNMDDUV4G2RYFB5HNJCOV/",
+        "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/PC7EGOEQ5C4OD66ZUJJIIYEXBTZOCMZX/",
+        "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZSBCRN6EGQJUVOSD4OEEQ6XORHEM2CUL/",
+        "https://lists.debian.org/debian-lts-announce/2024/04/msg00004.html"
+      ],
+      "date_updated": "2025-11-03T19:25:46.633Z"
+    },
+    {
+      "id": "CVE-2022-0856",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libcaca",
+          "version": "0.99.beta20-8"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2022-0856",
+      "retrieval": "ok",
+      "record_sha256": "0d3edc59ed0717a71ca528d9dd70959aa7d085a4f67e4b54be86d58b1e7500b9",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "libcaca is affected by a Divide By Zero issue via img2txt, which allows a remote malicious user to cause a Denial of Service"
+      ],
+      "affected": [
+        {
+          "vendor": "n/a",
+          "product": "libcaca",
+          "versions": [
+            {
+              "version": "libcaca - v0.99.beta20",
+              "status": "affected"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://github.com/cacalabs/libcaca/issues/65",
+        "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/GTDRPVX3HCYLQCLMQ6NNSRC3B7L6WGUM/",
+        "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/B3E5GF2LSX2ZEY5JZNM7HXJMLHMY436X/",
+        "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/MFOFTTMHO666HB3TVHBMCES6GCKG5PPG/"
+      ],
+      "date_updated": "2024-08-02T23:40:04.515Z"
+    },
+    {
+      "id": "CVE-2022-33065",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsndfile",
+          "version": "1.2.2-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2022-33065",
+      "retrieval": "ok",
+      "record_sha256": "9348bed9d663f0d90111de15136e9be881cc533aa3bb0eaef5f53b097b8b740c",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "Multiple signed integers overflow in function au_read_header in src/au.c and in functions mat4_open and mat4_read_header in src/mat4.c in Libsndfile, allows an attacker to cause Denial of Service or other unspecified impacts."
+      ],
+      "affected": [
+        {
+          "vendor": "n/a",
+          "product": "n/a",
+          "versions": [
+            {
+              "version": "n/a",
+              "status": "affected"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://github.com/libsndfile/libsndfile/issues/833",
+        "https://github.com/libsndfile/libsndfile/issues/789"
+      ],
+      "date_updated": "2024-10-28T18:23:22.077Z"
+    },
+    {
+      "id": "CVE-2023-37769",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-pixman",
+          "version": "0.46.4-3"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2023-37769",
+      "retrieval": "ok",
+      "record_sha256": "a35e8fa147404d7f5520c33921f41847995b35da1c7e70d4ebdea739c9757e4c",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "stress-test master commit e4c878 was discovered to contain a FPE vulnerability via the component combine_inner at /pixman-combine-float.c."
+      ],
+      "affected": [
+        {
+          "vendor": "n/a",
+          "product": "n/a",
+          "versions": [
+            {
+              "version": "n/a",
+              "status": "affected"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://gitlab.freedesktop.org/pixman/pixman/-/issues/76"
+      ],
+      "date_updated": "2024-10-30T15:25:35.794Z"
+    },
+    {
+      "id": "CVE-2023-4039",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-cc-libs",
+          "version": "16.2.0-6"
+        },
+        {
+          "name": "mingw-w64-ucrt-x86_64-libgcc",
+          "version": "16.2.0-6"
+        },
+        {
+          "name": "mingw-w64-ucrt-x86_64-libstdc++",
+          "version": "16.2.0-6"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2023-4039",
+      "retrieval": "ok",
+      "record_sha256": "3c5b52f9580963d22a7901e7ae828501b3dcad04cc378c17122a14e7d83f4224",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "**DISPUTED**A failure in the -fstack-protector feature in GCC-based toolchains \nthat target AArch64 allows an attacker to exploit an existing buffer \noverflow in dynamically-sized local variables in your application \nwithout this being detected. This stack-protector failure only applies \nto C99-style dynamically-sized local variables or those created using \nalloca(). The stack-protector operates as intended for statically-sized \nlocal variables.\n\nThe default behavior when the stack-protector \ndetects an overflow is to terminate your application, resulting in \ncontrolled loss of availability. An attacker who can exploit a buffer \noverflow without triggering the stack-protector might be able to change \nprogram flow control to cause an uncontrolled loss of availability or to\n go further and affect confidentiality or integrity. NOTE: The GCC project argues that this is a missed hardening bug and not a vulnerability by itself."
+      ],
+      "affected": [
+        {
+          "defaultStatus": "affected",
+          "product": "Arm GNU Toolchain",
+          "vendor": "Arm Ltd",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "All versions where option -fstack-protector is used"
+            }
+          ]
+        },
+        {
+          "defaultStatus": "unaffected",
+          "product": "GCC",
+          "vendor": "GNU",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "All versions of GCC that target AArch64 when option -fstack-protector is used"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://developer.arm.com/Arm%20Security%20Center/GCC%20Stack%20Protector%20Vulnerability%20AArch64",
+        "https://github.com/metaredteam/external-disclosures/security/advisories/GHSA-x7ch-h5rf-w2mf"
+      ],
+      "date_updated": "2026-10-14T21:23:13.065Z"
+    },
+    {
+      "id": "CVE-2024-38517",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-rapidjson",
+          "version": "1.1.0-8"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2024-38517",
+      "retrieval": "ok",
+      "record_sha256": "4c77092927308d93aa8796dff71561fa2c36dfb10c1deb4cd8e5559d0048cca9",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "Tencent RapidJSON is vulnerable to privilege escalation due to an integer underflow in the `GenericReader::ParseNumber()` function of `include/rapidjson/reader.h` when parsing JSON text from a stream. An attacker needs to send the victim a crafted file which needs to be opened; this triggers the integer underflow vulnerability (when the file is parsed), leading to elevation of privilege."
+      ],
+      "affected": [
+        {
+          "vendor": "Tencent",
+          "product": "RapidJSON",
+          "versions": [
+            {
+              "version": "<= 1.1.0",
+              "status": "affected"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://msrc.microsoft.com/update-guide/vulnerability/CVE-2024-38517",
+        "https://github.com/Tencent/rapidjson/pull/1261/commits/8269bc2bc289e9d343bae51cdf6d23ef0950e001",
+        "https://github.com/fmalita/rapidjson/commit/8269bc2bc289e9d343bae51cdf6d23ef0950e001"
+      ],
+      "date_updated": "2024-09-05T08:03:35.926Z"
+    },
+    {
+      "id": "CVE-2024-39684",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-rapidjson",
+          "version": "1.1.0-8"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2024-39684",
+      "retrieval": "ok",
+      "record_sha256": "0e09c15354824a1ecbae0a246c367309ea5d406f0d0d6a743519b8c8f885fc81",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "Tencent RapidJSON is vulnerable to privilege escalation due to an integer overflow in the `GenericReader::ParseNumber()` function of `include/rapidjson/reader.h` when parsing JSON text from a stream. An attacker needs to send the victim a crafted file which needs to be opened; this triggers the integer overflow vulnerability (when the file is parsed), leading to elevation of privilege."
+      ],
+      "affected": [
+        {
+          "vendor": "Tencent",
+          "product": "RapidJSON",
+          "versions": [
+            {
+              "version": "<= 1.1.0",
+              "status": "affected"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://msrc.microsoft.com/update-guide/vulnerability/CVE-2024-39684"
+      ],
+      "date_updated": "2024-09-05T08:03:37.023Z"
+    },
+    {
+      "id": "CVE-2024-50612",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsndfile",
+          "version": "1.2.2-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2024-50612",
+      "retrieval": "ok",
+      "record_sha256": "49aa9997a6cba0596e7fa9aa3645195f5ba85c6d7af357aa1dd3574a892c4481",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "libsndfile through 1.2.2 has an ogg_vorbis.c vorbis_analysis_wrote out-of-bounds read."
+      ],
+      "affected": [
+        {
+          "vendor": "n/a",
+          "product": "n/a",
+          "versions": [
+            {
+              "version": "n/a",
+              "status": "affected"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://github.com/libsndfile/libsndfile/issues/1035"
+      ],
+      "date_updated": "2024-10-30T20:47:04.173Z"
+    },
+    {
+      "id": "CVE-2024-50613",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsndfile",
+          "version": "1.2.2-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2024-50613",
+      "retrieval": "ok",
+      "record_sha256": "e1be85f80908dfdd3ca642227fbe95c354346a4df4191537b19793b47fda1a82",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "libsndfile through 1.2.2 has a reachable assertion, that may lead to application exit, in mpeg_l3_encode.c mpeg_l3_encoder_close."
+      ],
+      "affected": [
+        {
+          "vendor": "n/a",
+          "product": "n/a",
+          "versions": [
+            {
+              "version": "n/a",
+              "status": "affected"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://github.com/libsndfile/libsndfile/issues/1034"
+      ],
+      "date_updated": "2024-10-30T19:13:18.634Z"
+    },
+    {
+      "id": "CVE-2025-15367",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-python",
+          "version": "3.14.10-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2025-15367",
+      "retrieval": "ok",
+      "record_sha256": "97cf2919773f0bce1eb6b67cdc552890bfe200f0b23e920b561a474948ab9808",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "The poplib module, when passed a user-controlled command, can have\nadditional commands injected using newlines. Mitigation rejects commands\ncontaining control characters."
+      ],
+      "affected": [
+        {
+          "defaultStatus": "unaffected",
+          "modules": [
+            "poplib"
+          ],
+          "product": "CPython",
+          "repo": "https://github.com/python/cpython",
+          "vendor": "Python Software Foundation",
+          "versions": [
+            {
+              "version": "0",
+              "lessThan": "3.15.0a6",
+              "status": "affected",
+              "versionType": "python"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://github.com/python/cpython/pull/143924",
+        "https://github.com/python/cpython/issues/143923",
+        "https://mail.python.org/archives/list/security-announce@python.org/thread/CBFBOWVGGUJFSGITQCCBZS4GEYYZ7ZNE/",
+        "https://github.com/python/cpython/commit/b234a2b67539f787e191d2ef19a7cbdce32874e7"
+      ],
+      "date_updated": "2026-02-26T14:44:41.341Z"
+    },
+    {
+      "id": "CVE-2025-52194",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsndfile",
+          "version": "1.2.2-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2025-52194",
+      "retrieval": "ok",
+      "record_sha256": "117f8210964a5524035b548436a8984cb7c5ff9c2bfce22d051c226afcfa9481",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A buffer overflow vulnerability exists in libsndfile version 1.2.2 and potentially earlier versions when processing malformed IRCAM audio files. The vulnerability occurs in the ircam_read_header function at src/ircam.c:164 during sample rate processing, leading to memory corruption and potential code execution."
+      ],
+      "affected": [
+        {
+          "vendor": "n/a",
+          "product": "n/a",
+          "versions": [
+            {
+              "version": "n/a",
+              "status": "affected"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://github.com/libsndfile/libsndfile/issues/1082",
+        "https://github.com/libsndfile",
+        "https://bushido-sec.com/index.php/2025/08/08/libsndfile-buffer-overflow/"
+      ],
+      "date_updated": "2025-08-21T19:56:46.362Z"
+    },
+    {
+      "id": "CVE-2025-56226",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsndfile",
+          "version": "1.2.2-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2025-56226",
+      "retrieval": "ok",
+      "record_sha256": "98efdb83cf25ef2f9a5c017f09f20fed8bc7aaf43a5c8f1a7b32b07f52f1989f",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "Libsndfile <=1.2.2 contains a memory leak vulnerability in the mpeg_l3_encoder_init() function within the mpeg_l3_encode.c file."
+      ],
+      "affected": [
+        {
+          "vendor": "n/a",
+          "product": "n/a",
+          "versions": [
+            {
+              "version": "n/a",
+              "status": "affected"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://github.com/libsndfile/libsndfile/issues/1089",
+        "https://gist.github.com/Sisyphus-wang/f9e6e017b7d478bebee6e8187672abc8"
+      ],
+      "date_updated": "2026-01-14T14:57:00.271Z"
+    },
+    {
+      "id": "CVE-2025-67873",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-capstone",
+          "version": "5.0.9-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2025-67873",
+      "retrieval": "ok",
+      "record_sha256": "fa7d8cb0643ca487c6665730c48f607beff1355ca01b4e692a304a021742a9b5",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "Capstone is a disassembly framework. In versions 6.0.0-Alpha5 and prior, Skipdata length is not bounds-checked, so a user-provided skipdata callback can make cs_disasm/cs_disasm_iter memcpy more than 24 bytes into cs_insn.bytes, causing a heap buffer overflow in the disassembly path. Commit cbef767ab33b82166d263895f24084b75b316df3 fixes the issue."
+      ],
+      "affected": [
+        {
+          "vendor": "capstone-engine",
+          "product": "capstone",
+          "versions": [
+            {
+              "version": "<= 6.0.0-Alpha5",
+              "status": "affected"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://github.com/capstone-engine/capstone/security/advisories/GHSA-hj6g-v545-v7jg",
+        "https://github.com/capstone-engine/capstone/commit/cbef767ab33b82166d263895f24084b75b316df3"
+      ],
+      "date_updated": "2025-12-18T15:09:19.484Z"
+    },
+    {
+      "id": "CVE-2025-68114",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-capstone",
+          "version": "5.0.9-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2025-68114",
+      "retrieval": "ok",
+      "record_sha256": "971b515b991e4c1230f0af9d5da93a61e08b3ab0edff8e87bd339e59364d758d",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "Capstone is a disassembly framework. In versions 6.0.0-Alpha5 and prior, an unchecked vsnprintf return in SStream_concat lets a malicious cs_opt_mem.vsnprintf drive SStream’s index negative or past the end, leading to a stack buffer underflow/overflow when the next write occurs. Commit 2c7797182a1618be12017d7d41e0b6581d5d529e fixes the issue."
+      ],
+      "affected": [
+        {
+          "vendor": "capstone-engine",
+          "product": "capstone",
+          "versions": [
+            {
+              "version": "<= 6.0.0-Alpha5",
+              "status": "affected"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://github.com/capstone-engine/capstone/security/advisories/GHSA-85f5-6xr3-q76r",
+        "https://github.com/capstone-engine/capstone/commit/2c7797182a1618be12017d7d41e0b6581d5d529e"
+      ],
+      "date_updated": "2025-12-18T15:09:11.561Z"
+    },
+    {
+      "id": "CVE-2026-103995",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-python",
+          "version": "3.14.10-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-103995",
+      "retrieval": "ok",
+      "record_sha256": "99943e75bbbbedd754072a6f443a012de5240aaedf9c53584568ce5eb6411f66",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "Response body and chunk parsing would handle non-hex or negative integers incorrectly which could result in misinterpreting HTTP response contents."
+      ],
+      "affected": [
+        {
+          "defaultStatus": "unaffected",
+          "modules": [
+            "http.client",
+            "http"
+          ],
+          "product": "CPython",
+          "repo": "https://github.com/python/cpython",
+          "vendor": "Python Software Foundation",
+          "versions": [
+            {
+              "lessThan": "3.16.0",
+              "status": "affected",
+              "version": "0",
+              "versionType": "python"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://github.com/python/cpython/pull/150752",
+        "https://github.com/python/cpython/issues/150751",
+        "https://github.com/python/cpython/commit/2eb2af805c156ca52b316bb4ced5e0ab3971d0ae",
+        "https://github.com/python/cpython/commit/9f52b443c002cccfb54bda0706a9276b6b4a109d"
+      ],
+      "date_updated": "2026-10-28T00:33:14.944Z"
+    },
+    {
+      "id": "CVE-2026-113351",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-expat",
+          "version": "2.9.0-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-113351",
+      "retrieval": "ok",
+      "record_sha256": "85da96382280e95a7aff699c69c7f5c94a885b99e146c0e334155e6b919c944d",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "libexpat 2.7.2 through 2.9.0 contains a denial of service vulnerability because XML_ParserReset zeroes the direct byte count but never offsets tracked heap allocations. Attackers can submit a large XML document so later documents on the same reset parser fail with XML_ERROR_NO_MEMORY until it is recreated."
+      ],
+      "affected": [
+        {
+          "vendor": "libexpat",
+          "product": "libexpat",
+          "packageURL": "pkg:github/libexpat/libexpat",
+          "defaultStatus": "unaffected",
+          "versions": [
+            {
+              "version": "2.7.2",
+              "lessThanOrEqual": "2.9.0",
+              "status": "affected",
+              "versionType": "semver"
+            }
+          ],
+          "repo": "https://github.com/libexpat/libexpat"
+        }
+      ],
+      "references": [
+        "https://github.com/libexpat/libexpat/pull/1431",
+        "https://github.com/libexpat/libexpat/blob/a76b1174c1ea52abb639a4c69d52b630a8a106a2/expat/lib/xmlparse.c#L860-L884",
+        "https://github.com/libexpat/libexpat/blob/a76b1174c1ea52abb639a4c69d52b630a8a106a2/expat/lib/xmlparse.c#L1560",
+        "https://github.com/libexpat/libexpat",
+        "https://www.vulncheck.com/advisories/libexpat-2.7.2-through-2.9.0-denial-of-service-via-xml-parserreset"
+      ],
+      "date_updated": "2026-10-20T16:06:48.218Z"
+    },
+    {
+      "id": "CVE-2026-115506",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-expat",
+          "version": "2.9.0-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-115506",
+      "retrieval": "ok",
+      "record_sha256": "9898f6b149f2862e32ea6f408cdd91c64b8ab8bf9e59564febec97b1d0dbe13b",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "libexpat through 2.9.0 contains a denial of service vulnerability because billion laughs protection in accountingDiffTolerated() in xmlparse.c detects entity amplification too late. Attackers can supply a moderately sized XML document with a large DTD and nested entity expansions to consume tens of seconds of CPU per parse."
+      ],
+      "affected": [
+        {
+          "vendor": "libexpat",
+          "product": "libexpat",
+          "packageURL": "pkg:github/libexpat/libexpat",
+          "defaultStatus": "unaffected",
+          "versions": [
+            {
+              "version": "0",
+              "status": "affected",
+              "versionType": "semver",
+              "lessThanOrEqual": "2.9.0"
+            }
+          ],
+          "repo": "https://github.com/libexpat/libexpat"
+        }
+      ],
+      "references": [
+        "https://github.com/libexpat/libexpat/pull/1433",
+        "https://github.com/libexpat/libexpat/issues/1160",
+        "https://github.com/hannob/lololol",
+        "https://github.com/libexpat/libexpat",
+        "https://www.vulncheck.com/advisories/libexpat-through-2.9.0-denial-of-service-via-billion-laughs-detection-delay"
+      ],
+      "date_updated": "2026-10-23T21:06:43.010Z"
+    },
+    {
+      "id": "CVE-2026-116741",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-speex",
+          "version": "1.2.1-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-116741",
+      "retrieval": "ok",
+      "record_sha256": "0dd79e8ebecc7dda9902871f2a86dd39b3d02670208d59107ef58c81166186e4",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "Speex (libspeex) through 1.2.1 contains an out-of-bounds write vulnerability in speex_bits_read_whole_bytes() in libspeex/bits.c that mishandles length truncation for non-owned SpeexBits buffers. Attackers can stream crafted Speex data into buffers set up with speex_bits_init_buffer() or speex_bits_set_bit_buffer() to corrupt heap or stack memory and crash applications."
+      ],
+      "affected": [
+        {
+          "vendor": "xiph",
+          "product": "speex",
+          "defaultStatus": "unaffected",
+          "versions": [
+            {
+              "version": "0",
+              "status": "affected",
+              "versionType": "custom",
+              "lessThanOrEqual": "1.2.1"
+            }
+          ],
+          "packageURL": "pkg:github/xiph/speex",
+          "repo": "https://github.com/xiph/speex"
+        }
+      ],
+      "references": [
+        "https://github.com/xiph/speex/issues/42",
+        "https://github.com/xiph/speex",
+        "https://github.com/xiph/speex/blob/Speex-1.2.1/libspeex/bits.c#L177",
+        "https://hackmd.io/@haindpwn/speex-bits-read-whole-bytes-oob-write",
+        "https://gitlab.xiph.org/xiph/speex/-/merge_requests/32",
+        "https://www.vulncheck.com/advisories/speex-through-1.2.1-out-of-bounds-write-via-speex-bits-read-whole-bytes"
+      ],
+      "date_updated": "2026-10-26T21:52:40.782Z"
+    },
+    {
+      "id": "CVE-2026-12548",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsoup3",
+          "version": "3.8.1-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-12548",
+      "retrieval": "ok",
+      "record_sha256": "2bad9ee482de5337abf31f4791fa2ba22361b6a665697779a37a8ad2afdf3eaa",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A heap out-of-bounds read flaw was found in libsoup. When parsing multipart HTTP messages, an integer type mismatch between the caller and soup_headers_parse() can cause the length parameter to be incorrectly truncated, leading to a heap buffer over-read. A remote attacker could use this flaw to crash an application using libsoup or potentially disclose heap memory contents."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/security/cve/CVE-2026-12548",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2489996",
+        "https://gitlab.gnome.org/GNOME/libsoup/-/work_items/512"
+      ],
+      "date_updated": "2026-07-23T14:19:47.210Z"
+    },
+    {
+      "id": "CVE-2026-12549",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsoup3",
+          "version": "3.8.1-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-12549",
+      "retrieval": "ok",
+      "record_sha256": "a07660c4d25729f067d978205015111706027bc7cfd01dc03be7d95d3e353137",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "The fix for CVE-2026-2443 was regressed by a subsequent rework commit that replaced specific overflow checks with a general signed comparison. When a client sends a Range request with a suffix length exceeding the content size, the resulting negative start value is not properly clamped, leading to malformed HTTP 206 responses and log flooding."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 6",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "unknown",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:6"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 7",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "unknown",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:7"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:9"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/security/cve/CVE-2026-12549",
+        "https://access.redhat.com/security/cve/cve-2026-0716",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2489999",
+        "https://gitlab.gnome.org/GNOME/libsoup/-/work_items/516"
+      ],
+      "date_updated": "2026-06-23T14:18:41.983Z"
+    },
+    {
+      "id": "CVE-2026-12891",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-gstreamer",
+          "version": "1.28.8-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-12891",
+      "retrieval": "ok",
+      "record_sha256": "0948ee277d43d26032da1d3f3de1d3330e9d126477ab9e9a31a85c764f30dd49",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in the GStreamer gst-plugins-bad package. When processing a malformed H.266/VVC video stream with a crafted aspect ratio indicator value, the H.266 parser performs an out-of-bounds read of up to 8 bytes from adjacent memory. This flaw allows an attacker to craft a malicious H.266 video file or stream that, when processed by a GStreamer-based application, could leak limited memory contents through video metadata, potentially exposing sensitive information from the application's address space."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "gstreamer1-plugins-bad-free",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "gstreamer1-plugins-bad-free",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "gstreamer1-plugins-bad-free",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:9"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/security/cve/CVE-2026-12891",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2491318",
+        "https://gitlab.freedesktop.org/gstreamer/gstreamer/-/work_items/5109"
+      ],
+      "date_updated": "2026-09-10T17:23:04.482Z"
+    },
+    {
+      "id": "CVE-2026-12892",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-gstreamer",
+          "version": "1.28.8-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-12892",
+      "retrieval": "ok",
+      "record_sha256": "5501ddfab3d8f4bfae8587c65989c7a3fae3770a1de47307646584dc9c682f0f",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in GStreamer's gst-plugins-bad package. When processing a specially crafted H.264 video file containing malformed MVC or SVC extension slice NAL units, a 1-byte heap out-of-bounds read can occur during parsing. This happens when the parser attempts to check slice boundary information without first verifying that the NAL unit contains enough data beyond the extension header. An attacker could exploit this by tricking a user into opening a malicious H.264 video file, potentially causing the application to crash or leak a single byte of heap memory."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "gstreamer1-plugins-bad-free",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 6",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "gstreamer-plugins-bad-free",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:6"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 7",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "gstreamer1-plugins-bad-free",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:7"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "gstreamer1-plugins-bad-free",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "gstreamer1-plugins-bad-free",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:9"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/security/cve/CVE-2026-12892",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2491321",
+        "https://gitlab.freedesktop.org/gstreamer/gstreamer/-/work_items/5108"
+      ],
+      "date_updated": "2026-09-10T17:22:58.295Z"
+    },
+    {
+      "id": "CVE-2026-13757",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-p11-kit",
+          "version": "0.26.5-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-13757",
+      "retrieval": "ok",
+      "record_sha256": "543718ba9215e0041201e893c3ec202e756e92ba1197011651578e0d90757a0a",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in p11-kit. The RPC message attribute parsing functions p11_rpc_message_get_attribute() and p11_rpc_message_get_attribute_array_value() form a mutually-recursive call chain with no recursion depth limit when processing nested CKA_WRAP_TEMPLATE, CKA_UNWRAP_TEMPLATE, and CKA_DERIVE_TEMPLATE attributes. An unauthenticated attacker with local access to the p11-kit RPC Unix domain socket can send a specially crafted request with deeply nested template attributes, causing stack exhaustion and crashing the p11-kit server process and its dependent services."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "p11-kit",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.26.4-1.el10_2",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10.2"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "p11-kit",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.26.4-1.el9_8",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:9::appstream",
+            "cpe:/o:redhat:enterprise_linux:9::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "p11-kit",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.26.4-1.el9_8",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:9::appstream",
+            "cpe:/o:redhat:enterprise_linux:9::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Cert Manager support for Red Hat OpenShift release 1.17",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "cert-manager/jetstack-cert-manager-acmesolver-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1791371080",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:cert_manager:1.17::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Cert Manager support for Red Hat OpenShift release 1.17",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "cert-manager/jetstack-cert-manager-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1791371069",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:cert_manager:1.17::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Cert Manager support for Red Hat OpenShift release 1.17",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "cert-manager/cert-manager-operator-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1791788287",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:cert_manager:1.17::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Cert Manager support for Red Hat OpenShift release 1.17",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "cert-manager/cert-manager-istio-csr-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1791378395",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:cert_manager:1.17::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Cert Manager support for Red Hat OpenShift release 1.17",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "cert-manager/cert-manager-operator-bundle",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1791970484",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:cert_manager:1.17::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Cert Manager support for Red Hat OpenShift release 1.18",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "cert-manager/jetstack-cert-manager-acmesolver-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1791459707",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:cert_manager:1.18::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Cert Manager support for Red Hat OpenShift release 1.18",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "cert-manager/jetstack-cert-manager-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1791459711",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:cert_manager:1.18::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Cert Manager support for Red Hat OpenShift release 1.18",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "cert-manager/cert-manager-istio-csr-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1791459759",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:cert_manager:1.18::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Cert Manager support for Red Hat OpenShift release 1.18",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "cert-manager/cert-manager-operator-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1789029076",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:cert_manager:1.18::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Cert Manager support for Red Hat OpenShift release 1.18",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "cert-manager/cert-manager-operator-bundle",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1791966259",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:cert_manager:1.18::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Cert Manager support for Red Hat OpenShift release 1.20",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "cert-manager/jetstack-cert-manager-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1790223279",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:cert_manager:1.20::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Cert Manager support for Red Hat OpenShift release 1.20",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "cert-manager/cert-manager-istio-csr-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1790223719",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:cert_manager:1.20::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Cert Manager support for Red Hat OpenShift release 1.20",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "cert-manager/cert-manager-operator-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1790272426",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:cert_manager:1.20::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Cert Manager support for Red Hat OpenShift release 1.20",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "cert-manager/jetstack-cert-manager-acmesolver-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1790589998",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:cert_manager:1.20::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Cert Manager support for Red Hat OpenShift release 1.20",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "cert-manager/jetstack-cert-manager-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1790589912",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:cert_manager:1.20::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Cert Manager support for Red Hat OpenShift release 1.20",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "cert-manager/cert-manager-istio-csr-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1790589914",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:cert_manager:1.20::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Cert Manager support for Red Hat OpenShift release 1.20",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "cert-manager/cert-manager-operator-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1790589855",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:cert_manager:1.20::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Cert Manager support for Red Hat OpenShift release 1.20",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "cert-manager/cert-manager-trust-manager-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1790598593",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:cert_manager:1.20::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Cost Management 4",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "costmanagement/costmanagement-metrics-rhel9-operator",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1790844333",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:cost_management:4::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Discovery 2",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "discovery/discovery-server-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1786638573",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:discovery:2::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Discovery 2",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "discovery/discovery-ui-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1786634825",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:discovery:2::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Hardened Images",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "p11-kit-main",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0.26.2-1.2.hum1",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:hummingbird:1"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Hardened Images",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "p11-kit-main",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0.26.4-1.hum1",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:hummingbird:1"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Insights proxy 1.5",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "insights-proxy/insights-proxy-container-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1786433656",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:insights_proxy:1.5::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Update Infrastructure 5",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "rhui5/cds-kubernetes-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1786435241",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:rhui:5::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Update Infrastructure 5",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "rhui5/cds-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1786533457",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:rhui:5::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Update Infrastructure 5",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "rhui5/haproxy-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1786533449",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:rhui:5::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Update Infrastructure 5",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "rhui5/installer-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1786435483",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:rhui:5::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Update Infrastructure 5",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "rhui5/rhua-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1786533529",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:rhui:5::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Update Infrastructure 5",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "rhui5/cds-kubernetes-tp-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1787241211",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:rhui:5::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Update Infrastructure 5",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "rhui5/installer-tp-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1787135742",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:rhui:5::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Update Infrastructure 5",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "rhui5/rhua-tp-rhel9",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "1787241260",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:rhui:5::el9"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 6",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "p11-kit",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:6"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 7",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "p11-kit",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:7"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "p11-kit",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat OpenShift Container Platform 4",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "openshift/ose-rhel-coreos-8",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/a:redhat:openshift:4"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat OpenShift Container Platform 4",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "openshift/ose-rhel-coreos-9",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/a:redhat:openshift:4"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/errata/RHSA-2026:37469",
+        "https://access.redhat.com/errata/RHSA-2026:38342",
+        "https://access.redhat.com/errata/RHSA-2026:49667",
+        "https://access.redhat.com/errata/RHSA-2026:49668",
+        "https://access.redhat.com/errata/RHSA-2026:53371",
+        "https://access.redhat.com/errata/RHSA-2026:54387",
+        "https://access.redhat.com/errata/RHSA-2026:54760",
+        "https://access.redhat.com/errata/RHSA-2026:58981",
+        "https://access.redhat.com/errata/RHSA-2026:72394",
+        "https://access.redhat.com/errata/RHSA-2026:72395",
+        "https://access.redhat.com/errata/RHSA-2026:72399",
+        "https://access.redhat.com/errata/RHSA-2026:72470",
+        "https://access.redhat.com/errata/RHSA-2026:72475",
+        "https://access.redhat.com/errata/RHSA-2026:72476",
+        "https://access.redhat.com/errata/RHSA-2026:72502",
+        "https://access.redhat.com/errata/RHSA-2026:81201",
+        "https://access.redhat.com/errata/RHSA-2026:82304",
+        "https://access.redhat.com/errata/RHSA-2026:82322",
+        "https://access.redhat.com/errata/RHSA-2026:82336",
+        "https://access.redhat.com/errata/RHSA-2026:82347",
+        "https://access.redhat.com/errata/RHSA-2026:82354",
+        "https://access.redhat.com/errata/RHSA-2026:82372",
+        "https://access.redhat.com/errata/RHSA-2026:82857",
+        "https://access.redhat.com/errata/RHSA-2026:82888",
+        "https://access.redhat.com/security/cve/CVE-2026-13757",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2494556",
+        "https://github.com/advisories/GHSA-p2wm-69qx-x25w"
+      ],
+      "date_updated": "2026-10-14T19:24:48.694Z"
+    },
+    {
+      "id": "CVE-2026-1467",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsoup3",
+          "version": "3.8.1-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-1467",
+      "retrieval": "ok",
+      "record_sha256": "88c2dd28edc3b0ca54671fc301ca76091f732735095ec6a8433d12bb89bae103",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libsoup, an HTTP client library. This vulnerability, known as CRLF (Carriage Return Line Feed) Injection, occurs when an HTTP proxy is configured and the library improperly handles URL-decoded input used to create the Host header. A remote attacker can exploit this by providing a specially crafted URL containing CRLF sequences, allowing them to inject additional HTTP headers or complete HTTP request bodies. This can lead to unintended or unauthorized HTTP requests being forwarded by the proxy, potentially impacting downstream services."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 6",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:6"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 7",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:7"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:9"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/security/cve/CVE-2026-1467",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2433174",
+        "https://gitlab.gnome.org/GNOME/libsoup/-/issues/488"
+      ],
+      "date_updated": "2026-03-25T14:34:12.270Z"
+    },
+    {
+      "id": "CVE-2026-1536",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsoup3",
+          "version": "3.8.1-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-1536",
+      "retrieval": "ok",
+      "record_sha256": "ba3e549d765ac55ce08d38a9e4f1abb948ce6c7922e285388128483573689895",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libsoup. An attacker who can control the input for the Content-Disposition header can inject CRLF (Carriage Return Line Feed) sequences into the header value. These sequences are then interpreted verbatim when the HTTP request or response is constructed, allowing arbitrary HTTP headers to be injected. This vulnerability can lead to HTTP header injection or HTTP response splitting without requiring authentication or user interaction."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 6",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:6"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 7",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:7"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:9"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/security/cve/CVE-2026-1536",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2433834",
+        "https://gitlab.gnome.org/GNOME/libsoup/-/issues/486"
+      ],
+      "date_updated": "2026-03-25T14:21:34.319Z"
+    },
+    {
+      "id": "CVE-2026-1539",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsoup3",
+          "version": "3.8.1-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-1539",
+      "retrieval": "ok",
+      "record_sha256": "3ee163f9f43888a31d81d39c63107863dbe713181c0ff0004c3a81e86acfe78f",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in the libsoup HTTP library that can cause proxy authentication credentials to be sent to unintended destinations. When handling HTTP redirects, libsoup removes the Authorization header but does not remove the Proxy-Authorization header if the request is redirected to a different host. As a result, sensitive proxy credentials may be leaked to third-party servers. Applications using libsoup for HTTP communication may unintentionally expose proxy authentication data."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 6",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:6"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 7",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:7"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:9"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/security/cve/CVE-2026-1539",
+        "https://gitlab.gnome.org/GNOME/libsoup/-/issues/489"
+      ],
+      "date_updated": "2026-03-25T14:12:27.065Z"
+    },
+    {
+      "id": "CVE-2026-1801",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsoup3",
+          "version": "3.8.1-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-1801",
+      "retrieval": "ok",
+      "record_sha256": "a04ac686f35ea488246219ba85c1e66547b89a9fd380dafc4e92014efbed1c6c",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libsoup, an HTTP client/server library. This HTTP Request Smuggling vulnerability arises from non-RFC-compliant parsing in the soup_filter_input_stream_read_line() logic, where libsoup accepts malformed chunk headers, such as lone line feed (LF) characters instead of the required carriage return and line feed (CRLF). A remote attacker can exploit this without authentication or user interaction by sending specially crafted chunked requests. This allows libsoup to parse and process multiple HTTP requests from a single network message, potentially leading to information disclosure."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 6",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:6"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 7",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:7"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:9"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/security/cve/CVE-2026-1801",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2436315",
+        "https://gitlab.gnome.org/GNOME/libsoup/-/issues/481"
+      ],
+      "date_updated": "2026-03-26T18:58:54.712Z"
+    },
+    {
+      "id": "CVE-2026-2369",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsoup3",
+          "version": "3.8.1-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-2369",
+      "retrieval": "ok",
+      "record_sha256": "c7ede1fa5ce99822286cf30a819f219d173738e62b9a3bd8517a1c65d711d0f4",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libsoup. An integer underflow vulnerability occurs when processing content with a zero-length resource, leading to a buffer overread. This can allow an attacker to potentially access sensitive information or cause an application level denial of service."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 6",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "unaffected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:6"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 7",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "unaffected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:7"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "unaffected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "unaffected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:9"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/security/cve/CVE-2026-2369",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2439091",
+        "https://gitlab.gnome.org/GNOME/libsoup/-/issues/498"
+      ],
+      "date_updated": "2026-04-28T21:34:31.204Z"
+    },
+    {
+      "id": "CVE-2026-2436",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsoup3",
+          "version": "3.8.1-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-2436",
+      "retrieval": "ok",
+      "record_sha256": "d0e74a320c1abc8cd7d626090650cea7416b4bc77a994807c380af4b41a44395",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libsoup's SoupServer. A remote attacker could exploit a use-after-free vulnerability where the `soup_server_disconnect()` function frees connection objects prematurely, even if a TLS handshake is still pending. If the handshake completes after the connection object has been freed, a dangling pointer is accessed, leading to a server crash and a Denial of Service."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 6",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:6"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 7",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:7"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:9"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/security/cve/CVE-2026-2436",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2442909",
+        "https://gitlab.gnome.org/GNOME/libsoup/-/issues/501"
+      ],
+      "date_updated": "2026-04-21T16:00:28.482Z"
+    },
+    {
+      "id": "CVE-2026-2443",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsoup3",
+          "version": "3.8.1-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-2443",
+      "retrieval": "ok",
+      "record_sha256": "c9f20f5cc7bbb0fb34fbbcdf3a1518324bb8d5077bbba29c880a969bee0ddc7e",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was identified in libsoup, a widely used HTTP library in GNOME-based systems. When processing specially crafted HTTP Range headers, the library may improperly validate requested byte ranges. In certain build configurations, this could allow a remote attacker to access portions of server memory beyond the intended response. Exploitation requires a vulnerable configuration and access to a server using the embedded SoupServer component."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 6",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:6"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 7",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:7"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:9"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/security/cve/CVE-2026-2443",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2439671",
+        "https://gitlab.gnome.org/GNOME/libsoup/-/issues/487"
+      ],
+      "date_updated": "2026-03-23T19:19:48.562Z"
+    },
+    {
+      "id": "CVE-2026-2708",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsoup3",
+          "version": "3.8.1-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-2708",
+      "retrieval": "ok",
+      "record_sha256": "a9ef82e052d3d9a39f6a3d5cdff71016a27a5866a07f5f3ee9302fa001083666",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A request smuggling vulnerability exists in libsoup's HTTP/1 header parsing logic. The soup_message_headers_append_common() function in libsoup/soup-message-headers.c unconditionally appends each header value without validating for duplicate or conflicting Content-Length fields. This allows an attacker to send HTTP requests containing multiple Content-Length headers with differing values."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 6",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:6"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 7",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:7"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:9"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/security/cve/CVE-2026-2708",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2440743",
+        "https://gitlab.gnome.org/GNOME/libsoup/-/issues/500",
+        "https://gitlab.gnome.org/GNOME/libsoup/-/merge_requests/513"
+      ],
+      "date_updated": "2026-04-24T14:55:14.618Z"
+    },
+    {
+      "id": "CVE-2026-3099",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsoup3",
+          "version": "3.8.1-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-3099",
+      "retrieval": "ok",
+      "record_sha256": "cb8dc178d00e9c3cf9be9a062885f483432fb9ea295b36a6f7fe62ba67d9d931",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in Libsoup. The server-side digest authentication implementation in the SoupAuthDomainDigest class does not properly track issued nonces or enforce the required incrementing nonce-count (nc) attribute. This vulnerability allows a remote attacker to capture a single valid authentication header and replay it repeatedly. Consequently, the attacker can bypass authentication and gain unauthorized access to protected resources, impersonating the legitimate user."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "unaffected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 6",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "unknown",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:6"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 7",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "unaffected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:7"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "unaffected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "unaffected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:9"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/security/cve/CVE-2026-3099",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2442232",
+        "https://gitlab.gnome.org/GNOME/libsoup/-/issues/495"
+      ],
+      "date_updated": "2026-05-01T15:31:03.428Z"
+    },
+    {
+      "id": "CVE-2026-3632",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsoup3",
+          "version": "3.8.1-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-3632",
+      "retrieval": "ok",
+      "record_sha256": "6bfb55355cd31c8d25185ce846300eedfe6e318630f95627e75265ccb339d425",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libsoup, a library used by applications to send network requests. This vulnerability occurs because libsoup does not properly validate hostnames, allowing special characters to be injected into HTTP headers. A remote attacker could exploit this to perform HTTP smuggling, where they can send hidden, malicious requests alongside legitimate ones. In certain situations, this could lead to Server-Side Request Forgery (SSRF), enabling an attacker to force the server to make unauthorized requests to other internal or external systems. The impact is low, as SoupServer is not actually used in internet infrastructure."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 6",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "unknown",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:6"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 7",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:7"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:9"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/security/cve/CVE-2026-3632",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2445127",
+        "https://gitlab.gnome.org/GNOME/libsoup/-/issues/483"
+      ],
+      "date_updated": "2026-03-19T20:56:56.070Z"
+    },
+    {
+      "id": "CVE-2026-3633",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsoup3",
+          "version": "3.8.1-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-3633",
+      "retrieval": "ok",
+      "record_sha256": "2a1c0b53ce8f58972de38a9244c9246898b7925de08ea922032b5f4f0ef844e0",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libsoup. A remote attacker, by controlling the method parameter of the `soup_message_new()` function, could inject arbitrary headers and additional request data. This vulnerability, known as CRLF (Carriage Return Line Feed) injection, occurs because the method value is not properly escaped during request line construction, potentially leading to HTTP request injection."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 6",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "unknown",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:6"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 7",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:7"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:9"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/security/cve/CVE-2026-3633",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2445128",
+        "https://gitlab.gnome.org/GNOME/libsoup/-/issues/484"
+      ],
+      "date_updated": "2026-03-19T20:57:05.472Z"
+    },
+    {
+      "id": "CVE-2026-3634",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsoup3",
+          "version": "3.8.1-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-3634",
+      "retrieval": "ok",
+      "record_sha256": "08334df0728a6d392d28d0265de26cd320e4f7bec495b8859969cebab823d937",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libsoup. An attacker controlling the value used to set the Content-Type header can inject a Carriage Return Line Feed (CRLF) sequence due to improper input sanitization in the `soup_message_headers_set_content_type()` function. This vulnerability allows for the injection of arbitrary header-value pairs, potentially leading to HTTP header injection and response splitting attacks."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 6",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "unknown",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:6"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 7",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:7"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:9"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/security/cve/CVE-2026-3634",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2445129",
+        "https://gitlab.gnome.org/GNOME/libsoup/-/issues/485"
+      ],
+      "date_updated": "2026-03-19T20:55:36.678Z"
+    },
+    {
+      "id": "CVE-2026-37555",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsndfile",
+          "version": "1.2.2-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-37555",
+      "retrieval": "ok",
+      "record_sha256": "2e249dd8c38073fbd7a87253faa0a6c3520adee1f41f42514cab04808c5ff0c1",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "An issue was discovered in libsndfile 1.2.2 IMA ADPCM codec. The AIFF code path (line 241) was fixed with (sf_count_t) cast, but the WAV code path (line 235) and close path (line 167) were not. When samplesperblock (int) * blocks (int) exceeds INT_MAX, the 32-bit multiplication overflows before being assigned to sf.frames (sf_count_t/int64). With samplesperblock=50000 and blocks=50000, the product 2500000000 overflows to -1794967296. This causes incorrect frame count leading to heap buffer overflow or denial of service. Both values come from the WAV file header and are attacker-controlled. This issue was discovered after an incomplete fix for CVE-2022-33065."
+      ],
+      "affected": [
+        {
+          "vendor": "n/a",
+          "product": "n/a",
+          "versions": [
+            {
+              "version": "n/a",
+              "status": "affected"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://github.com/libsndfile/libsndfile/issues/833",
+        "https://github.com/libsndfile/libsndfile/commit/9a829113c88a51e57c1e46473e90609e4b7df151",
+        "https://gist.github.com/sgInnora/a5f5c19e4bf6f4fb74fab7b0ef2bfcc1"
+      ],
+      "date_updated": "2026-07-15T02:48:46.534Z"
+    },
+    {
+      "id": "CVE-2026-42046",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libcaca",
+          "version": "0.99.beta20-8"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-42046",
+      "retrieval": "ok",
+      "record_sha256": "500fd571d4cfca076752d2eb059a9c01e4db85253f15b47a77b7978326300cfd",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "libcaca is a colour ASCII art library. In 0.99.beta20 and earlier, an integer overflow vulnerability in libcaca's canvas import functionality allows an attacker to cause a controlled heap out-of-bounds write (heap overflow) by supplying a crafted file in the \"caca\" format. Depending on the build configuration and memory allocator, this may lead to memory corruption or remote code execution. This is the same vulnerability as CVE-2021-3410 but the fix at that time was not fully correct. Commit fb77acff9ba6bb01d53940da34fb10f20b156a23 fixes this vulnerability."
+      ],
+      "affected": [
+        {
+          "vendor": "cacalabs",
+          "product": "libcaca",
+          "versions": [
+            {
+              "version": "<= 0.99.beta20",
+              "status": "affected"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://github.com/cacalabs/libcaca/security/advisories/GHSA-4vvg-vrqv-m56w",
+        "https://github.com/cacalabs/libcaca/issues/86",
+        "https://github.com/cacalabs/libcaca/commit/fb77acff9ba6bb01d53940da34fb10f20b156a23"
+      ],
+      "date_updated": "2026-05-12T13:16:37.138Z"
+    },
+    {
+      "id": "CVE-2026-4271",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsoup3",
+          "version": "3.8.1-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-4271",
+      "retrieval": "ok",
+      "record_sha256": "fa5306a4bd6fcfac7be1504d8800e8c6abb50c836db36f285b9377adc3650f7d",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libsoup, a library for handling HTTP requests. This vulnerability, known as a Use-After-Free, occurs in the HTTP/2 server implementation. A remote attacker can exploit this by sending specially crafted HTTP/2 requests that cause authentication failures. This can lead to the application attempting to access memory that has already been freed, potentially causing application instability or crashes, resulting in a Denial of Service (DoS)."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:3.6.5-3.el10_1.11",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10.1"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:3.6.5-3.el10_2.11",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10.2"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10.0 Extended Update Support",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:3.6.5-3.el10_0.15",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux_eus:10.0"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 6",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:6"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 7",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "unaffected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:7"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "unaffected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "unaffected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:9"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/errata/RHSA-2026:15968",
+        "https://access.redhat.com/errata/RHSA-2026:17482",
+        "https://access.redhat.com/errata/RHSA-2026:19143",
+        "https://access.redhat.com/security/cve/CVE-2026-4271",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2448044",
+        "https://gitlab.gnome.org/GNOME/libsoup/-/issues/496"
+      ],
+      "date_updated": "2026-05-19T21:30:20.035Z"
+    },
+    {
+      "id": "CVE-2026-49263",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-capstone",
+          "version": "5.0.9-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-49263",
+      "retrieval": "ok",
+      "record_sha256": "83ea66bd72e87d1a01feea5f7a41992daca0ddaedac3b1ecfb9f03fc15db9f33",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "Capstone is a disassembly framework. Prior to version 6.0.0-Alpha9, Capstone's WebAssembly backend accepts attacker-controlled raw WASM instruction bytes through the public `cs_disasm()` and `cs_disasm_iter()` APIs. For a large but well-formed `br_table` instruction, the WASM decoder accumulates the immediate length in a wider local variable but returns it through a `uint16_t` instruction-size path. When the encoded instruction length is exactly 65,536 bytes, the size wraps to zero and `cs_disasm()` can repeatedly decode the same instruction without advancing. For larger lengths, `cs_disasm_iter()` advances into the middle of the `br_table` payload and decodes target bytes as subsequent instructions. This is an availability and parser-integrity issue. Version 6.0.0-Alpha9 patches the issue."
+      ],
+      "affected": [
+        {
+          "vendor": "capstone-engine",
+          "product": "capstone",
+          "versions": [
+            {
+              "version": "< 6.0.0-Alpha9",
+              "status": "affected"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://github.com/capstone-engine/capstone/security/advisories/GHSA-5m9f-vqcm-g5pr",
+        "https://github.com/capstone-engine/capstone/blob/251c5bb4bc9bb92973e738ae3c5f4ef86f103356/ChangeLog#L102"
+      ],
+      "date_updated": "2026-08-17T19:52:03.982Z"
+    },
+    {
+      "id": "CVE-2026-49282",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-capstone",
+          "version": "5.0.9-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-49282",
+      "retrieval": "ok",
+      "record_sha256": "7c5e689f6c5919f4cf805265f76584a3043095f4f951930d3b210174c9bb7f1b",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "Capstone is a disassembly framework. Prior to version 6.0.0-Alpha9, Capstone's public `cs_insn_name()` API forwards caller-supplied instruction IDs directly to the selected architecture backend. Most backends validate the ID before indexing instruction-name tables, but the M68K and RISCV backends have missing or incomplete bounds checks. On a Capstone handle opened for M68K or RISCV, a caller-controlled invalid instruction ID can trigger an out-of-bounds read and crash the process. The demonstrated impact is availability loss in applications or bindings that expose instruction-name lookup to untrusted IDs. No code execution or data disclosure was demonstrated. Version 6.0.0-Alpha9 patches the issue."
+      ],
+      "affected": [
+        {
+          "vendor": "capstone-engine",
+          "product": "capstone",
+          "versions": [
+            {
+              "version": "< 6.0.0-Alpha9",
+              "status": "affected"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://github.com/capstone-engine/capstone/security/advisories/GHSA-jrw4-wj52-2vw8",
+        "https://github.com/capstone-engine/capstone/blob/251c5bb4bc9bb92973e738ae3c5f4ef86f103356/ChangeLog#L102"
+      ],
+      "date_updated": "2026-08-17T18:11:13.518Z"
+    },
+    {
+      "id": "CVE-2026-5119",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsoup3",
+          "version": "3.8.1-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-5119",
+      "retrieval": "ok",
+      "record_sha256": "31af7d21c0bf16591927fbeec1caf17edcd0eb634903d92c2990e5952ab32e7c",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libsoup. When establishing HTTPS tunnels through a configured HTTP proxy, sensitive session cookies are transmitted in cleartext within the initial HTTP CONNECT request. A network-positioned attacker or a malicious HTTP proxy can intercept these cookies, leading to potential session hijacking or user impersonation."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:3.6.5-3.el10_1.11",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10.1"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:3.6.5-3.el10_2.11",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10.2"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10.0 Extended Update Support",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:3.6.5-3.el10_0.15",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux_eus:10.0"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 7 Extended Lifecycle Support",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:2.62.2-12.el7_9",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/o:redhat:rhel_els:7"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:2.62.3-14.el8_10",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:8::appstream",
+            "cpe:/o:redhat:enterprise_linux:8::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:2.62.3-14.el8_10",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:8::appstream",
+            "cpe:/o:redhat:enterprise_linux:8::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8.4 Advanced Mission Critical Update Support",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:2.62.3-2.el8_4.9",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:rhel_aus:8.4::appstream",
+            "cpe:/a:redhat:rhel_eus_long_life:8.4::appstream",
+            "cpe:/o:redhat:rhel_aus:8.4::baseos",
+            "cpe:/o:redhat:rhel_eus_long_life:8.4::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8.4 Extended Update Support Long-Life Add-On",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:2.62.3-2.el8_4.9",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:rhel_aus:8.4::appstream",
+            "cpe:/a:redhat:rhel_eus_long_life:8.4::appstream",
+            "cpe:/o:redhat:rhel_aus:8.4::baseos",
+            "cpe:/o:redhat:rhel_eus_long_life:8.4::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8.6 Advanced Mission Critical Update Support",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:2.62.3-2.el8_6.9",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:rhel_aus:8.6::appstream",
+            "cpe:/a:redhat:rhel_eus_long_life:8.6::appstream",
+            "cpe:/o:redhat:rhel_aus:8.6::baseos",
+            "cpe:/o:redhat:rhel_eus_long_life:8.6::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8.6 Extended Update Support Long-Life Add-On",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:2.62.3-2.el8_6.9",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:rhel_aus:8.6::appstream",
+            "cpe:/a:redhat:rhel_eus_long_life:8.6::appstream",
+            "cpe:/o:redhat:rhel_aus:8.6::baseos",
+            "cpe:/o:redhat:rhel_eus_long_life:8.6::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8.8 Telecommunications Update Service",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:2.62.3-3.el8_8.9",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:rhel_e4s:8.8::appstream",
+            "cpe:/a:redhat:rhel_tus:8.8::appstream",
+            "cpe:/o:redhat:rhel_e4s:8.8::baseos",
+            "cpe:/o:redhat:rhel_tus:8.8::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8.8 Update Services for SAP Solutions",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:2.62.3-3.el8_8.9",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:rhel_e4s:8.8::appstream",
+            "cpe:/a:redhat:rhel_tus:8.8::appstream",
+            "cpe:/o:redhat:rhel_e4s:8.8::baseos",
+            "cpe:/o:redhat:rhel_tus:8.8::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:2.72.0-12.el9_7.6",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:9::appstream"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:2.72.0-16.el9_8.1",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:9::appstream"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9.0 Update Services for SAP Solutions",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:2.72.0-8.el9_0.10",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:rhel_e4s:9.0::appstream"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9.2 Update Services for SAP Solutions",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:2.72.0-8.el9_2.11",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:rhel_e4s:9.2::appstream"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9.4 Update Services for SAP Solutions",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:2.72.0-8.el9_4.10",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:rhel_e4s:9.4::appstream"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9.6 Extended Update Support",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:2.72.0-10.el9_6.7",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:rhel_eus:9.6::appstream"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 6",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "unknown",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:6"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/errata/RHSA-2026:13978",
+        "https://access.redhat.com/errata/RHSA-2026:14087",
+        "https://access.redhat.com/errata/RHSA-2026:15968",
+        "https://access.redhat.com/errata/RHSA-2026:17482",
+        "https://access.redhat.com/errata/RHSA-2026:19143",
+        "https://access.redhat.com/errata/RHSA-2026:19356",
+        "https://access.redhat.com/errata/RHSA-2026:21686",
+        "https://access.redhat.com/errata/RHSA-2026:22316",
+        "https://access.redhat.com/errata/RHSA-2026:22317",
+        "https://access.redhat.com/errata/RHSA-2026:22323",
+        "https://access.redhat.com/errata/RHSA-2026:22710",
+        "https://access.redhat.com/errata/RHSA-2026:22716",
+        "https://access.redhat.com/errata/RHSA-2026:24344",
+        "https://access.redhat.com/errata/RHSA-2026:24722",
+        "https://access.redhat.com/security/cve/CVE-2026-5119",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2452932",
+        "https://gitlab.gnome.org/GNOME/libsoup/-/issues/502"
+      ],
+      "date_updated": "2026-06-09T08:57:31.694Z"
+    },
+    {
+      "id": "CVE-2026-55893",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-capstone",
+          "version": "5.0.9-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-55893",
+      "retrieval": "ok",
+      "record_sha256": "26e263f037e88c827dd5784cb2018a88c75d3137b463e0c0714f346308ba56b5",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "Capstone is a disassembly framework. In 6.0.0-Alpha9 and earlier, Capstone's arch/SH/SHDisassembler.c SH floating-point decoders such as opFADD, opFMUL, and opFSUB call set_reg() and set_reg_n() using sh_info.op.op_count without checking the fixed-size operands[] array. Repeated crafted instructions processed through cs_disasm_iter() or cs_disasm() with CS_ARCH_SH, CS_MODE_SH2A or CS_MODE_SH4A, CS_MODE_SHFPU, and CS_OPT_DETAIL can increment the operand count beyond the 176-byte sh_info allocation and perform a four-byte heap buffer overflow write. The corruption can crash the process and may enable code execution depending on heap layout. This issue is fixed in version 6.0.0-Alpha10."
+      ],
+      "affected": [
+        {
+          "vendor": "capstone-engine",
+          "product": "capstone",
+          "versions": [
+            {
+              "version": "< 6.0.0-Alpha10",
+              "status": "affected"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://github.com/capstone-engine/capstone/security/advisories/GHSA-3hpv-wr3j-rxwh",
+        "https://github.com/capstone-engine/capstone/pull/2968",
+        "https://github.com/capstone-engine/capstone/pull/2969",
+        "https://github.com/capstone-engine/capstone/commit/09e76802380b9e94d9720c44458d9d5282219e7e",
+        "https://github.com/capstone-engine/capstone/commit/e17ee44a8307ea33375b4727ac4f987650bf7bed",
+        "https://github.com/capstone-engine/capstone/releases/tag/6.0.0-Alpha10"
+      ],
+      "date_updated": "2026-08-21T21:45:29.340Z"
+    },
+    {
+      "id": "CVE-2026-55894",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-capstone",
+          "version": "5.0.9-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-55894",
+      "retrieval": "ok",
+      "record_sha256": "06c41e4207975362112322d2d0f944512d0b41c5dcf252dbe04cc53e6045eec3",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "Capstone is a disassembly framework. In 6.0.0-Alpha9 and earlier, Capstone's arch/SH/SHDisassembler.c sh_disassemble() function computes an idx value from a raw 16-bit instruction without ensuring it is within the active mode-specific decode[] function-pointer table. An application using CS_ARCH_SH with CS_MODE_SH2A or CS_MODE_SH4A and CS_MODE_SHFPU can pass crafted bytecode through cs_disasm_iter() or cs_disasm(), causing the decode[idx] test to read outside the table and terminate the process with a segmentation fault. No code execution or information disclosure was demonstrated. This issue is fixed in version 6.0.0-Alpha10."
+      ],
+      "affected": [
+        {
+          "vendor": "capstone-engine",
+          "product": "capstone",
+          "versions": [
+            {
+              "version": "< 6.0.0-Alpha10",
+              "status": "affected"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://github.com/capstone-engine/capstone/security/advisories/GHSA-gf2c-xwcp-hvf4",
+        "https://github.com/capstone-engine/capstone/pull/2968",
+        "https://github.com/capstone-engine/capstone/pull/2969",
+        "https://github.com/capstone-engine/capstone/commit/09e76802380b9e94d9720c44458d9d5282219e7e",
+        "https://github.com/capstone-engine/capstone/commit/e17ee44a8307ea33375b4727ac4f987650bf7bed",
+        "https://github.com/capstone-engine/capstone/releases/tag/6.0.0-Alpha10"
+      ],
+      "date_updated": "2026-08-21T15:00:05.011Z"
+    },
+    {
+      "id": "CVE-2026-59843",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libssh",
+          "version": "0.12.2-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-59843",
+      "retrieval": "ok",
+      "record_sha256": "5a8a089b93e62062b1bd258f0cc5f2f923d521d83b1832212413334ce9fd45ae",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libssh. A remote authenticated peer can advertise a zero maximum packet size in SSH_MSG_CHANNEL_OPEN, causing later channel writes to loop indefinitely and consume CPU, leading to denial of service."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.12.0-3.el10_2",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10.2"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.9.6-17.el8_10",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:8::appstream",
+            "cpe:/o:redhat:enterprise_linux:8::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.9.6-17.el8_10",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:8::appstream",
+            "cpe:/o:redhat:enterprise_linux:8::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.10.4-19.el9_8",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:9::appstream",
+            "cpe:/o:redhat:enterprise_linux:9::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.10.4-19.el9_8",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:9::appstream",
+            "cpe:/o:redhat:enterprise_linux:9::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Hardened Images",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "libssh-main",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0.12.1-4.hum1",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:hummingbird:1"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/errata/RHSA-2026:42922",
+        "https://access.redhat.com/errata/RHSA-2026:55855",
+        "https://access.redhat.com/errata/RHSA-2026:62217",
+        "https://access.redhat.com/errata/RHSA-2026:62218",
+        "https://access.redhat.com/security/cve/CVE-2026-59843",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2498176"
+      ],
+      "date_updated": "2026-09-01T20:01:39.685Z"
+    },
+    {
+      "id": "CVE-2026-59844",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libssh",
+          "version": "0.12.2-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-59844",
+      "retrieval": "ok",
+      "record_sha256": "45e491f21ab3cb72e4a7b5b1b84fa63847d213fd112516c0cc798e5f213ce010",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libssh. A remote authenticated client can issue SSH_FXP_READ requests with an arbitrarily large length, causing a libssh SFTP server to allocate excessive memory and potentially exhaust it through repeated requests."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.12.0-3.el10_2",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10.2"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.9.6-17.el8_10",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:8::appstream",
+            "cpe:/o:redhat:enterprise_linux:8::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.9.6-17.el8_10",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:8::appstream",
+            "cpe:/o:redhat:enterprise_linux:8::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.10.4-19.el9_8",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:9::appstream",
+            "cpe:/o:redhat:enterprise_linux:9::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.10.4-19.el9_8",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:9::appstream",
+            "cpe:/o:redhat:enterprise_linux:9::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Hardened Images",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "libssh-main",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0.12.1-4.hum1",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:hummingbird:1"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/errata/RHSA-2026:42922",
+        "https://access.redhat.com/errata/RHSA-2026:55855",
+        "https://access.redhat.com/errata/RHSA-2026:62217",
+        "https://access.redhat.com/errata/RHSA-2026:62218",
+        "https://access.redhat.com/security/cve/CVE-2026-59844",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2498177"
+      ],
+      "date_updated": "2026-09-01T20:01:43.079Z"
+    },
+    {
+      "id": "CVE-2026-59845",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libssh",
+          "version": "0.12.2-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-59845",
+      "retrieval": "ok",
+      "record_sha256": "cd56f37d0bf9da7a4a16bcfe8a554e2d5fdf7a6692d7444553e08cb29608baf1",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libssh. When ProxyCommand is used, an unchecked fork() failure can be stored as process ID -1; during cleanup, signals may then be sent across the caller's accessible process tree, leading to local denial of service."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.12.0-3.el10_2",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10.2"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.9.6-17.el8_10",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:8::appstream",
+            "cpe:/o:redhat:enterprise_linux:8::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.9.6-17.el8_10",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:8::appstream",
+            "cpe:/o:redhat:enterprise_linux:8::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.10.4-19.el9_8",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:9::appstream",
+            "cpe:/o:redhat:enterprise_linux:9::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.10.4-19.el9_8",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:9::appstream",
+            "cpe:/o:redhat:enterprise_linux:9::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Hardened Images",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "libssh-main",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0.12.1-4.hum1",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:hummingbird:1"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/errata/RHSA-2026:42922",
+        "https://access.redhat.com/errata/RHSA-2026:55855",
+        "https://access.redhat.com/errata/RHSA-2026:62217",
+        "https://access.redhat.com/errata/RHSA-2026:62218",
+        "https://access.redhat.com/security/cve/CVE-2026-59845",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2498178"
+      ],
+      "date_updated": "2026-09-01T20:01:47.686Z"
+    },
+    {
+      "id": "CVE-2026-59846",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libssh",
+          "version": "0.12.2-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-59846",
+      "retrieval": "ok",
+      "record_sha256": "c1edd6502fc9daf1ae53aa6dfd80a2d2f52d34558dab9ac4b50b8e13e57a3a45",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libssh. A malicious username expanded through %r in ProxyCommand handling can inject shell metacharacters, exposing environment variables and causing unintended shell behavior."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.12.0-3.el10_2",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10.2"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.9.6-17.el8_10",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:8::appstream",
+            "cpe:/o:redhat:enterprise_linux:8::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.9.6-17.el8_10",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:8::appstream",
+            "cpe:/o:redhat:enterprise_linux:8::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.10.4-19.el9_8",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:9::appstream",
+            "cpe:/o:redhat:enterprise_linux:9::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.10.4-19.el9_8",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:9::appstream",
+            "cpe:/o:redhat:enterprise_linux:9::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Hardened Images",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "libssh-main",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0.12.1-4.hum1",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:hummingbird:1"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/errata/RHSA-2026:42922",
+        "https://access.redhat.com/errata/RHSA-2026:55855",
+        "https://access.redhat.com/errata/RHSA-2026:62217",
+        "https://access.redhat.com/errata/RHSA-2026:62218",
+        "https://access.redhat.com/security/cve/CVE-2026-59846",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2498179"
+      ],
+      "date_updated": "2026-09-01T20:21:47.724Z"
+    },
+    {
+      "id": "CVE-2026-59848",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libssh",
+          "version": "0.12.2-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-59848",
+      "retrieval": "ok",
+      "record_sha256": "69664bf0b5b870fbd94303d5a536ab59e7f9ee51b2a09995982c54e5f072f19b",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libssh. A malicious SFTP server can send responses for unknown request IDs that libssh clients keep queued indefinitely, causing unbounded memory growth and client-side denial of service."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.12.0-3.el10_2",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10.2"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.9.6-17.el8_10",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:8::appstream",
+            "cpe:/o:redhat:enterprise_linux:8::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.9.6-17.el8_10",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:8::appstream",
+            "cpe:/o:redhat:enterprise_linux:8::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.10.4-19.el9_8",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:9::appstream",
+            "cpe:/o:redhat:enterprise_linux:9::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.10.4-19.el9_8",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:9::appstream",
+            "cpe:/o:redhat:enterprise_linux:9::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Hardened Images",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "libssh-main",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0.12.1-4.hum1",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:hummingbird:1"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/errata/RHSA-2026:42922",
+        "https://access.redhat.com/errata/RHSA-2026:55855",
+        "https://access.redhat.com/errata/RHSA-2026:62217",
+        "https://access.redhat.com/errata/RHSA-2026:62218",
+        "https://access.redhat.com/security/cve/CVE-2026-59848",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2498181"
+      ],
+      "date_updated": "2026-09-01T20:01:22.011Z"
+    },
+    {
+      "id": "CVE-2026-59850",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libssh",
+          "version": "0.12.2-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-59850",
+      "retrieval": "ok",
+      "record_sha256": "62a284f6799d7140c758d31c083c84a72f92204dcc6dbf66d22e9bf3c9a85031",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libssh. If data packets are processed after a channel is closed, channel data callbacks can be invoked after the associated data has already been freed, leading to crashes or possible use-after-free conditions."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.12.0-3.el10_2",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10.2"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.9.6-17.el8_10",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:8::appstream",
+            "cpe:/o:redhat:enterprise_linux:8::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.9.6-17.el8_10",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:8::appstream",
+            "cpe:/o:redhat:enterprise_linux:8::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.10.4-19.el9_8",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:9::appstream",
+            "cpe:/o:redhat:enterprise_linux:9::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.10.4-19.el9_8",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:enterprise_linux:9::appstream",
+            "cpe:/o:redhat:enterprise_linux:9::baseos"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Hardened Images",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "libssh-main",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0.12.1-4.hum1",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:hummingbird:1"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/errata/RHSA-2026:42922",
+        "https://access.redhat.com/errata/RHSA-2026:55855",
+        "https://access.redhat.com/errata/RHSA-2026:62217",
+        "https://access.redhat.com/errata/RHSA-2026:62218",
+        "https://access.redhat.com/security/cve/CVE-2026-59850",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2498183"
+      ],
+      "date_updated": "2026-09-01T20:01:27.766Z"
+    },
+    {
+      "id": "CVE-2026-59851",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libssh",
+          "version": "0.12.2-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-59851",
+      "retrieval": "ok",
+      "record_sha256": "c1db7e012b877b1fbaa721cecc7a77cc3213f05fc26b40cbfd5b1c20d4ddc190",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libssh. On servers with GSSAPIKeyExchange enabled, the gssapi-keyex path does not verify whether the authenticated Kerberos principal is authorized for the requested local user, allowing authenticated clients to log in as arbitrary users."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0:0.12.0-3.el10_2",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10.2"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Hardened Images",
+          "collectionURL": "https://catalog.redhat.com/software/containers/",
+          "packageName": "libssh-main",
+          "defaultStatus": "affected",
+          "versions": [
+            {
+              "version": "0.12.1-4.hum1",
+              "lessThan": "*",
+              "versionType": "rpm",
+              "status": "unaffected"
+            }
+          ],
+          "cpes": [
+            "cpe:/a:redhat:hummingbird:1"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "unaffected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libssh",
+          "defaultStatus": "unaffected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:9"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/errata/RHSA-2026:42922",
+        "https://access.redhat.com/errata/RHSA-2026:55855",
+        "https://access.redhat.com/security/cve/CVE-2026-59851",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2498184"
+      ],
+      "date_updated": "2026-08-17T21:38:10.967Z"
+    },
+    {
+      "id": "CVE-2026-66337",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsoup3",
+          "version": "3.8.1-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-66337",
+      "retrieval": "ok",
+      "record_sha256": "b978eca0feeac84dfb601313b1dc030acebc03bd571717d016b42d4bbee24705",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libsoup. An unsigned integer underflow in the soup_filter_input_stream_read_until() function causes a heap buffer over-read when parsing multipart HTTP responses. A malicious HTTP server can exploit this by sending a crafted multipart response, potentially causing the client application to crash or disclose sensitive heap memory."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 6",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:6"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 7",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:7"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:9"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/security/cve/CVE-2026-66337",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2506949"
+      ],
+      "date_updated": "2026-07-27T16:01:20.262Z"
+    },
+    {
+      "id": "CVE-2026-66338",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsoup3",
+          "version": "3.8.1-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-66338",
+      "retrieval": "ok",
+      "record_sha256": "3b8546c1c95d1b452786f7f9baed3df163659781dbb0afcb1284e8483a4703e9",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libsoup. The chunked transfer encoding parser uses a permissive parsing function for chunk sizes that silently accepts inputs violating RFC 9112, including leading whitespace, plus sign prefixes, and trailing invalid characters. When libsoup operates behind a strict frontend proxy, this parsing differential can be exploited to smuggle HTTP requests."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 6",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:6"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 7",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:7"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:9"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/security/cve/CVE-2026-66338",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2506950"
+      ],
+      "date_updated": "2026-07-27T14:35:12.458Z"
+    },
+    {
+      "id": "CVE-2026-66339",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-libsoup3",
+          "version": "3.8.1-1"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-66339",
+      "retrieval": "ok",
+      "record_sha256": "f48f2f14417002edd4ad70749f7075e95ecbb7eaeca42364ea5f2ad8518259a7",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "A flaw was found in libsoup. After a CONNECT tunnel is established through an HTTP proxy, libsoup incorrectly attaches the Proxy-Authorization header to subsequent HTTPS requests sent through that tunnel to the destination server. This allows the destination server to capture proxy credentials, leading to information disclosure."
+      ],
+      "affected": [
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 10",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup3",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:10"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 6",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:6"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 7",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:7"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 8",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:8"
+          ]
+        },
+        {
+          "vendor": "Red Hat",
+          "product": "Red Hat Enterprise Linux 9",
+          "collectionURL": "https://access.redhat.com/downloads/content/package-browser/",
+          "packageName": "libsoup",
+          "defaultStatus": "affected",
+          "cpes": [
+            "cpe:/o:redhat:enterprise_linux:9"
+          ]
+        }
+      ],
+      "references": [
+        "https://access.redhat.com/security/cve/CVE-2026-66339",
+        "https://bugzilla.redhat.com/show_bug.cgi?id=2506951"
+      ],
+      "date_updated": "2026-07-28T14:55:26.084Z"
+    },
+    {
+      "id": "CVE-2026-85091",
+      "packages": [
+        {
+          "name": "mingw-w64-ucrt-x86_64-zlib",
+          "version": "1.3.2-3"
+        }
+      ],
+      "source": "https://cveawg.mitre.org/api/cve/CVE-2026-85091",
+      "retrieval": "ok",
+      "record_sha256": "0adb307ba9909c39ffc69b6da54f2f2cb97927c207a2fcc7077fd389c6520cf6",
+      "state": "PUBLISHED",
+      "descriptions": [
+        "zlib versions 1.3.1.2 through 1.3.2 contain a heap buffer overflow vulnerability in the gz_vacate() function when processing non-blocking gzwrite() operations with stale external buffer pointers. Attackers can trigger the overflow by calling gzprintf() or gzvprintf() after a write stall, causing an unchecked memmove() to write beyond the internal input buffer boundary."
+      ],
+      "affected": [
+        {
+          "vendor": "zlib",
+          "product": "zlib",
+          "defaultStatus": "unaffected",
+          "packageURL": "pkg:github/madler/zlib",
+          "versions": [
+            {
+              "version": "1.3.1.2",
+              "lessThanOrEqual": "1.3.2",
+              "status": "affected",
+              "versionType": "custom"
+            }
+          ]
+        }
+      ],
+      "references": [
+        "https://gist.github.com/thesmartshadow/e0b9481792afb7c31e86fee1ff084490",
+        "https://github.com/madler/zlib/blob/v1.3.2/gzwrite.c#L393",
+        "https://github.com/madler/zlib",
+        "https://www.vulncheck.com/advisories/zlib-1.3.1.2-through-1.3.2-heap-buffer-overflow-via-gz-vacate"
+      ],
+      "date_updated": "2026-09-03T13:21:30.355Z"
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+# T014/T042 exact-scope inventory
+
+Status: scope analysis, 2026-10-31. This document maps the current hard-dependency closure of T042 and the documented roles that could enter its dependency/tool scope. It is not a package recommendation, selected manifest, compatibility claim, approval, or permission to acquire, resolve, install, or execute anything. Names and versions below are reproduced as existing research records only; none is demonstrated here to satisfy all applicable constraints.
+
+## Hard task boundary as currently written
+
+T042 directly depends on T021, T029, T032, T034, T039, T040, and T041. Following their declared task dependencies yields this prerequisite closure:
+
+`T002-T008`, `T011-T014`, `T016-T021`, `T023-T030`, and `T032-T041`. T022 and T031 are not in the closure.
+
+The explicit in-scope implementation and validation tasks are:
+
+- Environment and checks: T016-T021.
+- Persistence, transport, security and audit: T023-T030.
+- Private HTTPS and network operations: T032-T034.
+- Guest access and files: T035-T036.
+- SSE and UI: T037-T041.
+- Design prerequisites: T002-T008, T011-T014.
+
+Important hard-dependency consequences:
+
+- T034 is a hard prerequisite of T042, and T034 depends on T033 and blocked T012. T012's network-provisioning scope, T033's privileged broker, and their applicable G-OPS/G-SECURITY/G-CONTRACT decisions cannot be silently omitted from the current T042 closure.
+- T032 requires the Caddy/Tailscale HTTPS and private-reachability design. T030 first-admin bootstrap is in its hard dependency closure.
+- T039 depends on T027, whose acceptance includes optional TOTP; T039 explicitly includes account/MFA flows. The owner confirmed including optional TOTP in this slice; implementation choice and all security gates remain open.
+- T040 depends on T036/T037 and requires sanitized Markdown, CSP, attachments and authorized downloads. Guest upload remains denied. File identification and Markdown rendering are not equivalent to a complete safe-file or safe-rendering design.
+- T021 requires the emulated ARM64 environment. Host, guest, OS, firmware, app and local-check tool closures must be tracked separately.
+
+The closure is wider than “mock chat”: mocked model responses remove real provider/model dependencies only. They do not remove security, TLS, storage, network operations, audit, file, UI, test or ARM64 prerequisites.
+
+## Role inventory and recorded candidate identities
+
+The candidate column records names/versions present in the existing research packet. It is not a recommendation or a claim that the candidate is necessary. A role marked `unresolved` has no exact package/tool decision in the reviewed records. If an approved standard-library or in-repository implementation is chosen, its exact runtime and code scope still must be recorded and reviewed.
+
+| Scope | Role required by task/design | Existing researched identity (not selected) | Scope status / decision still needed |
+|---|---|---|---|
+| Host/emulation | Windows MSYS2 UCRT64 QEMU plus firmware; ARM64 Debian 13 guest | QEMU and qemu-common `11.1.3-1`; EDK2 candidate; Debian 13 ARM64 | Candidate direction only. Full solver-equivalent graph, trust, artifacts, licenses, advisories, effective devices and G-ARCH/G-OPS remain open. |
+| Guest runtime | JavaScript service/build host | Node.js `24.22.2`, bundled npm `11.19.1` | Candidate only; host/guest artifact role, exact artifact trust, bundled component closure and all checks remain open. |
+| Access service | Fastify API, protected internal core transport and request validation | Fastify `5.12.7` | Fastify is a recorded candidate; internal transport, authentication, validation and authorization are not selected by it. |
+| Browser runtime | React UI, browser rendering and English/Spanish localization | React/React DOM `19.3.1`; i18next `26.5.12`; react-i18next `17.1.9` | Recorded candidates; graph, exact version acceptance and security/contract decisions remain open. Owner requested latest Chrome, Safari and Firefox; OS/device matrix and exact versions at validation are not established. |
+| UI build | Vite, Tailwind, TypeScript, shadcn source components | Vite `8.3.5`; Tailwind `4.3.3`; TypeScript `6.0.3`; @vitejs/plugin-react `6.1.2`; @tailwindcss/vite `4.3.3` | Candidate records only. Determine actual direct needs, copied source components, peers, native/platform artifacts and complete notices. |
+| Secure rendering | T040 sanitized Markdown, URL policy and CSP | react-markdown `10.1.0` is research-authorized | Conditional candidate only. The rendering design, URL handling, plugin policy and security tests are unresolved; no plugin/sanitizer is selected. |
+| Python core | Debian Python runtime and venv; typed core | Debian python3.13/python3.13-venv `3.13.5-2+deb13u5` | OS candidate only; exact authenticated guest snapshot, closure, target support and G-OPS/G-ARCH remain open. |
+| Python build and internal transport | Python build backend, access/core transport, schema/input validation, configuration/secrets | No exact selected identity | Unresolved. Do not invent a library or assume a framework covers these roles. |
+| Storage/migrations/audit | SQLite binding/runtime, versioned SQL migrations and Python runner; durable mandatory audit | SQLite distribution/version unresolved; no migration package selected | ADR 0009 fixes ownership/format direction only. Physical store/process boundary, binding, transaction and fail-closed audit mechanisms need decisions. |
+| Authentication/session | Argon2id, local compromised-password blocklist, revocable sessions, CSRF, throttling, bootstrap/recovery | argon2 `0.45.1` and otpauth `9.5.2` are research-authorized | Argon2 candidate has an unresolved native ARM64 artifact/provenance/lifecycle gate; blocklist source is unselected. Owner has included optional TOTP in T042, but no implementation is selected. Neither candidate provides sessions, CSRF, recovery, rate limiting, custody or audit. |
+| Network operations | Caddy/Tailscale, broker and OS network manager for T012/T032-T034 | Caddy/Tailscale are unversioned design candidates; exact broker/network-manager packages unresolved | In hard closure. Exact OS, packages, versions, privilege boundaries and transactional rollback feasibility are not established. Do not treat QEMU guest networking as the product broker. |
+| File handling | T036 content identification, limits, safe storage and authorized download | file-type `22.3.0` research-authorized | Owner intent is arbitrary-format opaque attachment acceptance, not universal parsing/safety. MIME must be inferred from bytes, not client header or extension; unknown/ambiguous types fall back to `application/octet-stream`. The requested 4 GB cap is provisionally interpreted as 4,000,000,000 bytes; streaming, storage/quota, timeout and resource feasibility remain unvalidated. No type detector is shown comprehensive for every format. Guest uploads remain denied. |
+| Tests | JS/Python unit/integration/security tests; browser, keyboard/mobile/accessibility and ARM64 validation | Vitest `5.0.5`; pytest `9.2.0` are research-authorized | Candidate runners only. No browser/DOM/e2e/a11y test environment is selected. Determine exact tests needed by T020/T041 and supported target. |
+| Engineering checks | JS lint/format/strict types; Python lint/format/type checking; local-only execution | ESLint `10.14.0`, Prettier `3.9.10`, typescript-eslint `8.72.1`, Ruff `0.17.3`, Black `26.10.1`, mypy `2.4.1` | Recorded check candidates; exact configuration, mypy-vs-pyright, commands, tool/runtime graph, supported platform and coverage remain open. |
+| Security/advisory/SBOM/license checks | Secret scan; complete advisory coverage; graph/SBOM and actual notice review | Gitleaks `8.30.1`, Trivy `0.76.1`, pip-audit `2.10.1`, @cyclonedx/cyclonedx-npm `6.0.1`, cyclonedx-bom `7.6.0`, license-checker-rseidelsohn `5.0.1`, uv `0.13.6` are existing research records | None has demonstrated all required ecosystems, sources, graph branches, notice coverage, authenticated provenance and 24-hour cache conditions. Python SBOM/marker/group/build coverage remains unresolved. No scanner combination is selected or cleared. |
+
+T057 provider/model packages and later memory, sandbox, skills, voice, messaging, OCR and HDMI scope are excluded unless a specific hard prerequisite is documented. Exclusion does not weaken any T042 acceptance criterion.
+
+## Owner scope decisions
+
+On 2026-10-31 the owner confirmed:
+
+- Preserve the current hard T042 dependency on T034 and its prerequisite chain, including T033 and blocked T012. Network setup/broker scope remains part of the closure; no task edge or acceptance criterion is changed.
+- Include the optional admin/user TOTP flow in T042's MFA scope. The `otpauth` research record does not thereby become a selected implementation or approved dependency; all applicable evidence and approvals remain required.
+- The owner clarified the intent: accept any file format as an opaque attachment and verify/classify its MIME type. This does not make “all formats” safely parseable or identifiable: detection is by content bytes, never by trusting the submitted MIME header or extension; unknown, malformed or ambiguous content is classified as `application/octet-stream`, retained only as opaque bytes, and never executed or rendered inline. Format-specific parsing/preview/scanning is allowed only for explicitly reviewed processors in the required sandbox. The requested 4 GB per-file cap is provisionally recorded as decimal 4,000,000,000 bytes; enforce via streaming and reject over-cap input, but storage, quotas, timeouts and resource feasibility must still be validated. T036 remains blocked pending those limits and a complete handling/test design; guest uploads remain denied.
+- The owner requested latest Chrome, Safari and Firefox. This identifies browser families, not exact versions or test platforms. The supported OS/device matrix is still needed; Safari validation requires an Apple browser environment, which is not part of the current Windows/Linux ARM64 setup. Do not imply this coverage is available without a separately reviewed test environment.
+- Exact shadcn source components remain unselected. Do not copy component source or choose browser tooling on the basis of this scope record.
+
+For planning only, interpret “latest browser versions” as the latest stable vendor release at the time of each validation run and record the exact browser/OS/device versions in the result. The validation matrix must include desktop Chrome, Safari and Firefox plus mobile browser coverage required by T039-T041; Safari requires an Apple test target. This does not select a browser-automation dependency, provide that environment, or claim T041 coverage.
+
+## Point-1 disposition
+
+## Bounded research of Python roles requested by owner
+
+The owner asked for agent research of the exact Python build backend, authenticated TypeScript-to-Python transport, and SQLite binding roles. The read-only review found no repository-approved exact choice. It compared only mechanisms and packages against primary documentation; it did not download, build, install or execute code.
+
+| Role | Research result | Primary-source evidence | Status |
+|---|---|---|---|
+| Internal transport | mTLS over loopback using Python `ssl` and Node `tls`/`https` standard libraries avoids a new framework and authenticates a peer cryptographically; it still lacks approved certificate issuance/rotation and secret custody, exact OpenSSL/artifact verification, and the separately approved signed request-context/replay mechanism. UDS peer-credential checking could not be established for Node core from the reviewed official API evidence. | [Python `ssl`](https://docs.python.org/3.13/library/ssl.html); [Node `tls`](https://nodejs.org/api/tls.html); contracts still require independent request-context controls. | Conditional research lead only; not a recommendation or compliant choice. |
+| First-party Python build backend | `uv_build` `0.13.6` and `flit_core` have documented declarative/static-metadata designs; `uv_build`'s ARM64 wheel provenance remains unresolved and it is limited to pure Python; `flit_core` still requires exact version/artifact/provenance and G-ARCH review. An omitted backend may cause uv to fall back to setuptools legacy behavior, which the existing security review says can execute build code. | [uv build backends](https://docs.astral.sh/uv/concepts/build-backend/); [uv build-system fallback](https://docs.astral.sh/uv/concepts/projects/config/#build-systems); [Flit metadata](https://flit.pypa.io/en/stable/pyproject_toml.html); [uv-build release](https://pypi.org/project/uv-build/). | No backend meets the gate on current evidence. Require an explicit, reviewed backend and prove safe behavior; do not omit `[build-system]` or treat resolver flags as proof. |
+| SQLite binding | Debian CPython's stdlib `sqlite3` linked to Debian `libsqlite3` is the only reviewed route not adding another third-party package; exact signed ARM64 snapshot/artifact trust, compile-time features and transaction/audit design are still unresolved. `pysqlite3-binary` lacks an ARM64 wheel in the reviewed listing; `apsw` has unresolved exact CPython 3.13 ARM64 artifact and license evidence. | [Debian Python 3.13 source build dependencies](https://sources.debian.org/src/python3.13/3.13.5-2+deb13u5/debian/control/); [Debian Trixie ARM64 SQLite package](https://packages.debian.org/trixie/arm64/libsqlite3-0/download); [pysqlite3-binary files](https://pypi.org/project/pysqlite3-binary/); [APSW](https://pypi.org/project/apsw/). | No binding is approved or shown fully compliant. The x86-only package is excluded for this target; do not source-build it as fallback. |
+
+These findings do not establish G-ARCH/G-SECURITY/G-CONTRACT approval. No option is recommended as meeting all constraints.
+
+The current task graph and owner decisions define a **functional scope**, but not an exact dependency/tool set. Arbitrary-format opaque attachment acceptance is now the functional intent; it does not mean every MIME can be recognized or every file safely processed. The requested cap is recorded as decimal 4,000,000,000 bytes for planning; the final input must enforce that limit by streaming and reject excess bytes, but storage/quota/timeout/resource feasibility and the unit interpretation have not been accepted as validated facts. Unknown/malformed/polyglot handling and MIME/download headers need implementation-level policy. The browser family scope is recorded, but test platforms/tools are not selected. Exact shadcn source components and browser test scope need identification. The MIME-identification implementation remains unselected and no candidate is shown comprehensive for arbitrary formats. The internal transport, Python build backend and SQLite binding also require concrete design choices after reviewing the conditional findings above. Exact local browser/test/check coverage remains open.
+
+No exact package/tool set has been shown to pass the all-constraints gate. T014 stays blocked while these scope decisions and subsequent artifact, graph, license, advisory, platform and approval evidence are missing. Do not generate a manifest or resolve a graph from this inventory.

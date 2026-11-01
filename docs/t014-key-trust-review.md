@@ -1,0 +1,35 @@
+﻿# T014 MSYS2 signing-key trust review
+
+Status: research only, 2026-10-31. Constitution SHA-256: `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`. This record does not approve trust, packages, installation, risk acceptance or an emulator configuration. The full constitution was read before this review.
+
+## Evidence and scope
+
+The [existing artifact review](t014-next-decision.md) records mathematical signature verification of QEMU, its source archive and the retained UCRT64 database using developer fingerprint `5F944B027F7FE2091985AA2EFA11531AA0AA7F57`. It also records mathematically valid developer-key certifications from master keys `D55E7A6D7CE9BA1587C0ACACF40D263ECA25678A`, `69985C5EB351011C78DF7F6D755B8182ACD22879`, and `6E8FEAFF9644F54EED90EEA0790AE56A1D3CFDDC`. GPG reported `TRUST_UNDEFINED`; keyring import had an agent failure and returned nonzero. Those findings remain qualified and were not repeated in this pass.
+
+On 2026-10-31, a read-only GitHub API lookup of `msys2/MSYS2-keyring` `main` returned commit [`5d249077a0cfeec9dbf51515e5e01da413d28859`](https://github.com/msys2/MSYS2-keyring/commit/5d249077a0cfeec9dbf51515e5e01da413d28859), whose recorded commit time is 2026-08-14 08:59:56 UTC. At that exact revision:
+
+- The [master-keyids](https://raw.githubusercontent.com/msys2/MSYS2-keyring/5d249077a0cfeec9dbf51515e5e01da413d28859/master-keyids) file lists all three master fingerprints above.
+- The [packager-keyids](https://raw.githubusercontent.com/msys2/MSYS2-keyring/5d249077a0cfeec9dbf51515e5e01da413d28859/packager-keyids) file lists the developer fingerprint above as `lazka`.
+- None of these four fingerprints appears in the corresponding project-maintained [master-revoked-keyids](https://raw.githubusercontent.com/msys2/MSYS2-keyring/5d249077a0cfeec9dbf51515e5e01da413d28859/master-revoked-keyids), [packager-revoked-keyids](https://raw.githubusercontent.com/msys2/MSYS2-keyring/5d249077a0cfeec9dbf51515e5e01da413d28859/packager-revoked-keyids), or combined [msys2-revoked](https://raw.githubusercontent.com/msys2/MSYS2-keyring/5d249077a0cfeec9dbf51515e5e01da413d28859/msys2-revoked) lists. This is a bounded absence observation, not an OpenPGP revocation check or proof that a later revocation does not exist.
+- MSYS2's [keyring documentation](https://www.msys2.org/dev/keyring/) independently presents the same listed fingerprints and describes three master certifications, but it is a second project-controlled presentation, not an independent identity authority. Its [repository guidance](https://github.com/msys2/MSYS2-keyring) describes maintaining packager-revoked-keyids, making the negative list result relevant to project policy, subject to repository freshness and integrity.
+
+The API response, the raw files and MSYS2's website were retrieved over HTTPS from project-controlled channels; this pass did not retain the response bodies, authenticate the Git commit signature, establish key continuity independently, check current keyserver revocation packets, assign owner trust, or repeat package signature verification. A raw GitHub revision URL pins the observed repository content identifier; it does not alone establish trusted authorship or current revocation status. The `main` branch may have advanced after this lookup. Search did not yield an independently controlled primary attestation binding these exact master fingerprints to their claimed holders; do not treat forum logs or mirrored fingerprints as a trust anchor.
+
+## Decision boundary and next verification
+
+The constitution requires checks and explicit approval for dependencies, but does not itself prescribe a specific independent fingerprint channel. Independent verification is a proposed supply-chain control in [the decision packet](t014-next-decision.md), not a previously approved owner policy. Do not silently change that control or infer that the owner accepts an unverified key. Before presenting an installation decision, refresh the project-maintained keyring and applicable revocation information, obtain an independently authenticated fingerprint or other explicitly reviewed bootstrap evidence, resolve the nonzero GPG import/agent issue without weakening cryptographic checks, and repeat validation against the retained signature and each selected package. Present any remaining uncertainty and an explicit, bounded trust decision with the rest of G-ARCH evidence. Existing package graph, license, advisory, artifact, and operations reviews remain separate.
+
+No package, keyring, system configuration or owner-trust setting was installed or changed. No package code was executed. Only read-only HTTP metadata was fetched.
+
+## Public keyserver packet inspection (2026-10-31)
+
+A separate read-only pass fetched full-fingerprint search results from `https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x<FINGERPRINT>`, independently of MSYS2 hosting, into a uniquely named temporary directory. The existing local GnuPG was used with `--batch --no-options --no-default-keyring --with-colons --show-keys` to inspect each downloaded blob without importing it; each returned exit code 0. No owner trust was assigned. The temporary directory and four downloaded files were removed by Python's temporary-directory context after inspection.
+
+| Primary fingerprint | Download bytes | Download SHA-256 | GnuPG primary record observation |
+|---|---:|---|---|
+| `5F944B027F7FE2091985AA2EFA11531AA0AA7F57` | 6,266 | `42c0113dfab822fb5ca66cef3dddf7148cda8bd6e4e3804d4f222c4990ad87cc` | `pub:-`, fingerprint matched; no revoked status reported |
+| `D55E7A6D7CE9BA1587C0ACACF40D263ECA25678A` | 3,999 | `9b2635255fece1c711a573f17d53eadd14a7e500ff2844bd7c3a05def2119ce9` | `pub:-`, fingerprint matched; no revoked status reported |
+| `69985C5EB351011C78DF7F6D755B8182ACD22879` | 4,145 | `d198ef641d411de2e03c9674948c5b30188e74f8d6eee86be5045d6a54737504` | `pub:-`, fingerprint matched; no revoked status reported |
+| `6E8FEAFF9644F54EED90EEA0790AE56A1D3CFDDC` | 1,878 | `658609bc32cfc2c143a8028a985a2a9367e3f480548fed6ea0b785ec77eaabcf` | `pub:-`, fingerprint matched; no revoked status reported |
+
+This observation is restricted to the packets returned by this keyserver at the time of the request. An untrusted public keyserver can be incomplete or stale; lack of a reported revoked status does not prove no revocation certificate exists elsewhere, and a matching full fingerprint does not independently authenticate the named owner or its role in MSYS2. The keyserver-supplied records were not imported or merged with the project keyring, the previous failed import was not repaired, master certifications were not rechecked against a refreshed merged key set, and the candidate package signatures were not reverified in this pass. Do not treat `pub:-` as a trusted status, a certification of identity, or risk acceptance. The project-controlled absence finding above and this independent distribution-channel observation provide two bounded data points, not an exhaustive revocation service or completed key-trust review.
