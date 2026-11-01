@@ -10,7 +10,7 @@ Status: T005 proposal; limited owner approval is recorded in [ADR 0002](adr/0002
 
   | Design item | Can be drafted from accepted choices now | Still requires an explicit choice, evidence, or gate |
   |---|---|---|
-  | `auth.resolve_session` | Closed request/result/error shape, canonical 43-character cookie-token grammar, active identity fields, generic `UNAUTHENTICATED` result, and the 4,096-byte canonical-result ceiling; see the proposal below. | Exact pre-auth context and response-authentication schema, transaction/audit details, and stale-authorization review require G-SECURITY/G-CONTRACT. This draft cannot authorize implementation. |
+  | `auth.resolve_session` | Closed request/result/error shape, canonical 43-character cookie-token grammar, active identity fields, generic `UNAUTHENTICATED` result, and the 4,096-byte canonical-result ceiling; see the proposal below. | Whether an absent cookie is represented as `null`, response-authentication schema, transaction/audit details, and stale-authorization review require G-SECURITY/G-CONTRACT. Caller-supplied channel claims are excluded by the owner-selected pre-auth direction. This draft cannot authorize implementation. |
   | Internal v1 envelope | Field names/order/encodings, strict ASCII scalar policy, duplicate/unknown-field rejection, HMAC coverage and error-neutrality can be written as a draft from the owner-selected directions below. | Per-operation schema, numeric body/field caps, parser behavior, clock trust/rollback, cross-language vectors and full error envelope require G-SECURITY/G-CONTRACT; target time-service and deployment evidence also require G-OPS. |
   | `chat.read_events`, `conversation.list`, `conversation.read` | Closed field names, requester-scoped access, non-disclosing `NOT_FOUND`, and bounded-read intent can be drafted from the current allowlist and owner selections. | Cursor grammar, page/result limits, exact event/history/message fields and ordering, and feature-specific behavior need explicit product/owner choices and G-CONTRACT/G-SECURITY review. |
   | Authentication beyond session resolution | Generic public failure mapping, cookie properties, expiry direction, account-delay behavior, and selected audit requirements constrain a future draft. | Login identifier grammar/normalization, complete login/logout/revocation schemas and response behavior are not selected; do not infer them from session or error choices. Owner choices plus G-CONTRACT/G-SECURITY review are required. |
@@ -308,21 +308,21 @@ These are read-facing operations, not a decision that they are side-effect-free.
 
 The following are **agent-proposed schema drafts, 2026-11-01**, derived only from the accepted directions identified above. They are intentionally bounded shapes, not JSON Schema, owner decisions, gate approvals, or implementation instructions.
 
-For `auth.resolve_session`, use one closed request object and a distinct typed pre-auth context:
+For `auth.resolve_session`, the agent-proposed shape uses one closed request object and a distinct typed pre-auth context:
 
 ```text
-context = {kind: "pre_auth", channel: "web"}
+context = {kind: "pre_auth"}
 payload = {session_token: string | null}
 ```
 
-The access service supplies this context only for `auth.resolve_session`; it does not carry `principal_id`, role, session ID, authorization revision, or caller-asserted service identity. The authenticated mTLS peer supplies service identity. `session_token: null` represents an absent cookie; otherwise require the owner-selected canonical unpadded base64url encoding of exactly 32 bytes (43 ASCII characters). Reject unknown or duplicate fields, never log/cache/persist the raw token, and return the same typed `UNAUTHENTICATED` result with `parameters: {}` for absent, malformed, invalid, expired or revoked tokens and disabled accounts. On success, the candidate result is:
+The access service supplies this context only for `auth.resolve_session`; it does not carry `principal_id`, role, session ID, authorization revision, channel, or caller-asserted service identity. The authenticated mTLS peer supplies service identity. `session_token: null` represents an absent cookie; otherwise require the owner-selected canonical unpadded base64url encoding of exactly 32 bytes (43 ASCII characters). Reject unknown or duplicate fields, never log/cache/persist the raw token, and return the same typed `UNAUTHENTICATED` result with `parameters: {}` for absent, malformed, invalid, expired or revoked tokens and disabled accounts. On success, the candidate result is:
 
 ```text
 {status: "active", principal_id: UUIDv4, role: "guest" | "user" | "admin",
  channel: "web", session_id: UUIDv4, authorization_revision: base64url-128}
 ```
 
-Use canonical lowercase hyphenated UUIDv4 text (36 ASCII characters) for both IDs and canonical unpadded base64url of exactly 16 bytes (22 ASCII characters) for `authorization_revision`. The selected public mapping is HTTP 401 with the standard error envelope. Enforce the accepted 4,096-byte canonical result-payload cap. Successful resolution updates idle activity; unsuccessful resolution does not. This proposal deliberately does not choose token persistence columns, the pre-auth context's integrity/response binding, timestamps, or audit transaction layout. The context shape and whether an absent token is represented as `null` require G-SECURITY/G-CONTRACT review.
+Use canonical lowercase hyphenated UUIDv4 text (36 ASCII characters) for both IDs and canonical unpadded base64url of exactly 16 bytes (22 ASCII characters) for `authorization_revision`. The source of the result's `channel` value must not be a caller-supplied pre-auth claim and remains for G-SECURITY/G-CONTRACT review. The selected public mapping is HTTP 401 with the standard error envelope. Enforce the accepted 4,096-byte canonical result-payload cap. Successful resolution updates idle activity; unsuccessful resolution does not. This proposal deliberately does not choose token persistence columns, the pre-auth context's integrity/response binding, timestamps, or audit transaction layout. Whether an absent token is represented as `null` requires G-SECURITY/G-CONTRACT review.
 
 For the remaining named reads, the safe draft boundary is a closed object with only the fields below; no owner selector, generic filter, SQL/table selector or caller-selected unbounded limit is allowed:
 
