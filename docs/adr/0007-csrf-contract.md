@@ -1,14 +1,16 @@
 # ADR 0007: Browser CSRF and pre-authentication contract
 
-Status: Accepted in part, 2026-10-30. Tasks: T005, T007, T024, T026 and T035. Gates: G-CONTRACT and G-SECURITY, limited to the scope below.
+Status: Accepted in part, 2026-10-30; account-session timeouts selected by owner 2026-10-31. Tasks: T005, T007, T024, T026 and T035. Gates: G-CONTRACT and G-SECURITY, limited to the scope below.
 
 ## Context and decision
 
 The owner approved the concrete scope described in [the CSRF contract proposal](../csrf-contract-proposal.md) on 2026-10-30, including the ten-minute absolute pre-authentication session and the specified token and multi-tab behavior. This extends the CSRF direction in [ADR 0006](0006-security-directions.md). The reviewed proposal specifies token issuance, validation and transition behavior, structured errors and negative test obligations. The complete constitution, baseline 2026-10-29, SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`, prevails.
 
+On 2026-10-31, the owner separately selected a 60-minute idle timeout and 24-hour absolute timeout for authenticated admin/user sessions. This records those policy values only; it does not approve session storage, schema, rate limits, deployment or implementation. The ten-minute pre-authentication session lifetime remains unchanged.
+
 ## Scope and remaining decisions
 
-This approval applies only to the concrete proposal as reviewed. Exact pre-session quotas, the MFA transition, configured origins, session storage and deployment remain undecided, as do the proposal's other explicitly open details. Schema, dependencies and implementation choices retain their applicable approval gates. This does not authorize installation, a deployed endpoint, network or service configuration, or changes to unrelated contracts. Further contract, authentication or session changes require applicable renewed approval. All existing prerequisites remain in force.
+The 2026-10-30 approval applies only to the concrete CSRF proposal as reviewed. The 2026-10-31 owner selection adds the authenticated account-session timeout values above without changing that CSRF contract. Exact pre-session quotas, the MFA transition, configured origins, session storage and deployment remain undecided, as do the proposal's other explicitly open details. Schema, dependencies and implementation choices retain their applicable approval gates. This does not authorize installation, a deployed endpoint, network or service configuration, or changes to unrelated contracts. Further contract, authentication or session changes require applicable renewed approval. All existing prerequisites remain in force.
 
 ## Evidence and limits
 
