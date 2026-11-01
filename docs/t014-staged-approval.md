@@ -6,6 +6,8 @@ Status: review preparation, 2026-10-31. Constitution SHA-256 `426923873e828b7a0e
 
 The owner selected an ARM64 generic Debian 13 guest on Windows/MSYS2 UCRT64 QEMU as the development direction; the detailed VM choices and their limitations are recorded in [TASK T003](../TASK.md). Guest outbound Internet was chosen as unrestricted, with no inbound forwarding. Registry-restricted egress appears in resolver drafts as a **proposed additional control**, not as a settled replacement for that choice; any change to the selected network design needs a separately scoped owner decision. Guest availability and effective boundaries are not established. The owner selected a 24-hour maximum for eligible advisory-cache data, individual review for missing ARM64 artifacts, and evaluation of explicit case-specific exceptions for confirmed findings. Incomplete mandatory checks still block installation. `uv.lock` is a format direction, not approval of an executable.
 
+On 2026-10-31, the owner directed keeping the current work simple and not expanding research to additional unresolved roles; if a concrete complication arises later, track it in a separate task. For this review, use only the already documented candidate set and evidence. This narrows research activity, but does not remove existing T042 hard prerequisites, waive a mandatory check, establish a complete graph, approve any candidate, or authorize installation or resolution.
+
 ## Exact candidate tools for a first stage
 
 | Item | Candidate artifact and target | Recorded evidence | Missing before a concrete execution approval |

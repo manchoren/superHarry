@@ -1,0 +1,838 @@
+{
+  "status": "read-only registry metadata; not a resolver result or approval",
+  "retrieved_at_utc": "2026-11-01T02:33:42.759222+00:00",
+  "registry": "https://registry.npmjs.org/",
+  "scope": "exact npm candidates already documented for T014/T042",
+  "limits": [
+    "Metadata and integrity values come from the same registry and are not independent provenance.",
+    "Dependency ranges are recorded as published; no transitive versions were selected or resolved.",
+    "No package archives were downloaded, installed or executed.",
+    "No license, advisory, completeness or target-compatibility decision is made."
+  ],
+  "counts": {
+    "candidate_roots": 24,
+    "dependency_peer_optional_declarations": 160,
+    "unique_dependency_names_per_root": 160,
+    "edges_to_other_candidate_roots": 17
+  },
+  "candidate_roots": [
+    {
+      "name": "react",
+      "version": "19.3.1",
+      "metadata_url": "https://registry.npmjs.org/react/19.3.1",
+      "metadata_sha256": "ecf8c02b9096a7813842d87fae50a707a8809c5c3d0ec6b359ac51d40188ff6f",
+      "dist_integrity_claim": "sha512-QNhWdt7nrgVWWQG58QuGsAR3jv3Hbe4mb4vz7w2csnHavciZJgda1CPNaldF6eVxv90ud3jUXpKlHL69gO38yw==",
+      "dependencies": null,
+      "optionalDependencies": null,
+      "peerDependencies": null,
+      "peerDependenciesMeta": null,
+      "engines": {
+        "node": ">=0.10.0"
+      },
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    },
+    {
+      "name": "react-dom",
+      "version": "19.3.1",
+      "metadata_url": "https://registry.npmjs.org/react-dom/19.3.1",
+      "metadata_sha256": "2d72d7d33a8b0fea5614e1b415d06470877efa8eebbdf638cee04e5b83c2c7a5",
+      "dist_integrity_claim": "sha512-Y0bARz53lhEC1NMCASs0/j+faB/zqt3R8hpvg1e8+61ZVJ4UL0UdC4cBbXfZMcIuhrfgeILTLe+ZeBCavQPtKQ==",
+      "dependencies": {
+        "scheduler": "^0.28.0"
+      },
+      "optionalDependencies": null,
+      "peerDependencies": {
+        "react": "^19.3.1"
+      },
+      "peerDependenciesMeta": null,
+      "engines": null,
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    },
+    {
+      "name": "fastify",
+      "version": "5.12.7",
+      "metadata_url": "https://registry.npmjs.org/fastify/5.12.7",
+      "metadata_sha256": "eb67c50aee7551b3cdfb4300cdd132cb75e02bf3896431205fea08d22994610b",
+      "dist_integrity_claim": "sha512-v4pEPsTRPuqlDIYiQFB+BHjVN4SdHX9u0ABk0ZDUKbbdY1vsNryUd1j4Z+jQEZajvYIVk047Kimva9/AJ79GYw==",
+      "dependencies": {
+        "pino": "^9.14.0 || ^10.1.0",
+        "rfdc": "^1.3.1",
+        "avvio": "^9.0.0",
+        "semver": "^7.6.0",
+        "toad-cache": "^3.7.0",
+        "find-my-way": "^9.6.0",
+        "@fastify/error": "^4.0.0",
+        "process-warning": "^5.1.0",
+        "abstract-logging": "^2.0.1",
+        "light-my-request": "^6.0.0",
+        "secure-json-parse": "^4.0.0",
+        "@fastify/proxy-addr": "^5.0.0",
+        "fast-json-stringify": "^7.0.0",
+        "@fastify/ajv-compiler": "^4.0.5",
+        "@fastify/fast-json-stringify-compiler": "^5.0.0"
+      },
+      "optionalDependencies": null,
+      "peerDependencies": null,
+      "peerDependenciesMeta": null,
+      "engines": null,
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    },
+    {
+      "name": "vite",
+      "version": "8.3.5",
+      "metadata_url": "https://registry.npmjs.org/vite/8.3.5",
+      "metadata_sha256": "ba34bc2cd5e3e2c14de8d81d000e5596d4c110aab59b723c8b9bdb175df78723",
+      "dist_integrity_claim": "sha512-z1YpjieJ9g0ebTmQpLBv/oq9E3F9EIlOe+7LahW8SrE3LTiG3udBRUXQOlYXP9b+IC2q2phHeVxj9xGlw34OEQ==",
+      "dependencies": {
+        "postcss": "^8.5.30",
+        "rolldown": "~1.2.14",
+        "picomatch": "^4.0.7",
+        "tinyglobby": "^0.2.17",
+        "lightningcss": "^1.33.0"
+      },
+      "optionalDependencies": {
+        "fsevents": "~2.3.3"
+      },
+      "peerDependencies": {
+        "tsx": "^4.8.1",
+        "jiti": ">=1.21.0",
+        "less": "^4.0.0",
+        "sass": "^1.70.0",
+        "yaml": "^2.4.2",
+        "stylus": ">=0.54.8",
+        "terser": "^5.16.0",
+        "esbuild": "^0.27.0 || ^0.28.0",
+        "sugarss": "^5.0.0",
+        "@types/node": "^20.19.0 || >=22.12.0",
+        "sass-embedded": "^1.70.0",
+        "@vitejs/devtools": "^0.7.1 || ^0.8.0"
+      },
+      "peerDependenciesMeta": {
+        "tsx": {
+          "optional": true
+        },
+        "jiti": {
+          "optional": true
+        },
+        "less": {
+          "optional": true
+        },
+        "sass": {
+          "optional": true
+        },
+        "yaml": {
+          "optional": true
+        },
+        "stylus": {
+          "optional": true
+        },
+        "terser": {
+          "optional": true
+        },
+        "esbuild": {
+          "optional": true
+        },
+        "sugarss": {
+          "optional": true
+        },
+        "@types/node": {
+          "optional": true
+        },
+        "sass-embedded": {
+          "optional": true
+        },
+        "@vitejs/devtools": {
+          "optional": true
+        }
+      },
+      "engines": {
+        "node": "^20.19.0 || >=22.12.0"
+      },
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    },
+    {
+      "name": "@vitejs/plugin-react",
+      "version": "6.1.2",
+      "metadata_url": "https://registry.npmjs.org/%40vitejs%2Fplugin-react/6.1.2",
+      "metadata_sha256": "4b69f47be418b4a5db930c2e5189de1d51ff95f101d0ab0a056d79bdedc6f636",
+      "dist_integrity_claim": "sha512-fhJNGUdscQa4HkI0xFxwonWyhnVReCPDbXI7FH7jmzpnVCrFQI7PRrhWecO263610vOrs9tr2Y4xcf8uAdFxbw==",
+      "dependencies": {
+        "@rolldown/pluginutils": "^1.0.1"
+      },
+      "optionalDependencies": null,
+      "peerDependencies": {
+        "vite": "^8.0.0",
+        "oxc-transform-react": "^0.152.0",
+        "@rolldown/plugin-babel": "^0.1.7 || ^0.2.0",
+        "babel-plugin-react-compiler": "^1.0.0"
+      },
+      "peerDependenciesMeta": {
+        "oxc-transform-react": {
+          "optional": true
+        },
+        "@rolldown/plugin-babel": {
+          "optional": true
+        },
+        "babel-plugin-react-compiler": {
+          "optional": true
+        }
+      },
+      "engines": {
+        "node": "^20.19.0 || >=22.12.0"
+      },
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    },
+    {
+      "name": "tailwindcss",
+      "version": "4.3.3",
+      "metadata_url": "https://registry.npmjs.org/tailwindcss/4.3.3",
+      "metadata_sha256": "e15224dd87d06dc360946ad675dd59d36c1409206c0d34289625bc4d648c1ebb",
+      "dist_integrity_claim": "sha512-gOhV3P7ufE62QDGg1zVaTgCR+EtPv92k2nIhVcVKcLmxT1sUBsQGhnZj175j+MqRt4zLF7ic+sCYjfhxMxj7YQ==",
+      "dependencies": null,
+      "optionalDependencies": null,
+      "peerDependencies": null,
+      "peerDependenciesMeta": null,
+      "engines": null,
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    },
+    {
+      "name": "@tailwindcss/vite",
+      "version": "4.3.3",
+      "metadata_url": "https://registry.npmjs.org/%40tailwindcss%2Fvite/4.3.3",
+      "metadata_sha256": "e62a537db95e220ceab347609a618dc3bad6c717c35cce95f36f3e660630a33d",
+      "dist_integrity_claim": "sha512-yYU8cogLeSh/ms2jh8Fj7jaba/EWa7Ja6GoUqYZaraEuCI5YS6ms6ObZgjjedm+jm6XZjdNRWBpPP6Z86oOxcw==",
+      "dependencies": {
+        "tailwindcss": "4.3.3",
+        "@tailwindcss/node": "4.3.3",
+        "@tailwindcss/oxide": "4.3.3"
+      },
+      "optionalDependencies": null,
+      "peerDependencies": {
+        "vite": "^5.2.0 || ^6 || ^7 || ^8"
+      },
+      "peerDependenciesMeta": null,
+      "engines": null,
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    },
+    {
+      "name": "typescript",
+      "version": "6.0.3",
+      "metadata_url": "https://registry.npmjs.org/typescript/6.0.3",
+      "metadata_sha256": "c3b095f0ba61c854843c4965598d3d1de8eb8e3d41cfec93c5ffbfd8bde537cc",
+      "dist_integrity_claim": "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==",
+      "dependencies": null,
+      "optionalDependencies": null,
+      "peerDependencies": null,
+      "peerDependenciesMeta": null,
+      "engines": {
+        "node": ">=14.17"
+      },
+      "os": null,
+      "cpu": null,
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "@types/react",
+      "version": "19.3.0",
+      "metadata_url": "https://registry.npmjs.org/%40types%2Freact/19.3.0",
+      "metadata_sha256": "eec8e8dd1f72955d2fa12e256cd5ab96d476342594cd2034398679a76cfdcac8",
+      "dist_integrity_claim": "sha512-N0rFCuH9YoxG9/m61l9MfpJKfmLOVU0em7ipIz6TRgSSkvReLB9vL85GB+yr8Bs5leqpvg96JSwF4ZS1s4viQg==",
+      "dependencies": {
+        "csstype": "^3.2.2"
+      },
+      "optionalDependencies": null,
+      "peerDependencies": {},
+      "peerDependenciesMeta": null,
+      "engines": null,
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    },
+    {
+      "name": "@types/react-dom",
+      "version": "19.3.0",
+      "metadata_url": "https://registry.npmjs.org/%40types%2Freact-dom/19.3.0",
+      "metadata_sha256": "4d8ed45d8ca1673b9e27017726cc0f97f65a177cb1499efd9d09f484d4e81f5c",
+      "dist_integrity_claim": "sha512-ZI7bU42mZXXKHn/qNLEw2IrbiINU7X5+vfgdixBHkCNpYWXjKgfQ/P+uyGb5CjOLB9UcnTeg3rylQtV2hym44Q==",
+      "dependencies": {},
+      "optionalDependencies": null,
+      "peerDependencies": {
+        "@types/react": "^19.3.0"
+      },
+      "peerDependenciesMeta": null,
+      "engines": null,
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    },
+    {
+      "name": "@types/node",
+      "version": "24.10.0",
+      "metadata_url": "https://registry.npmjs.org/%40types%2Fnode/24.10.0",
+      "metadata_sha256": "914908f938a97c530959cf4658d87cdde3d35b95402081af773cbba777186f29",
+      "dist_integrity_claim": "sha512-qzQZRBqkFsYyaSWXuEHc2WR9c0a0CXwiE5FWUvn7ZM+vdy1uZLfCunD38UzhuB7YN/J11ndbDBcTmOdxJo9Q7A==",
+      "dependencies": {
+        "undici-types": "~7.16.0"
+      },
+      "optionalDependencies": null,
+      "peerDependencies": {},
+      "peerDependenciesMeta": null,
+      "engines": null,
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    },
+    {
+      "name": "eslint",
+      "version": "10.14.0",
+      "metadata_url": "https://registry.npmjs.org/eslint/10.14.0",
+      "metadata_sha256": "3c71c8c1c80217a71251defcf0d211601ee3d51f1e9b808ec477a747a912b459",
+      "dist_integrity_claim": "sha512-T0pNsxkb9IKmtQjhpK3d7nWOpFv+YHuMbTJnSVMoQblF0onvXfErrtp4V1jHtsQPan7dKaGVD0q1WCXnzMF31A==",
+      "dependencies": {
+        "ajv": "^6.14.0",
+        "debug": "^4.3.2",
+        "espree": "^11.2.0",
+        "ignore": "^5.2.0",
+        "esquery": "^1.7.0",
+        "esutils": "^2.0.2",
+        "find-up": "^5.0.0",
+        "is-glob": "^4.0.0",
+        "minimatch": "^10.2.6",
+        "optionator": "^0.9.3",
+        "cross-spawn": "^7.0.6",
+        "glob-parent": "^6.0.2",
+        "imurmurhash": "^0.1.4",
+        "@eslint/core": "^1.2.1",
+        "eslint-scope": "^9.1.2",
+        "@humanfs/node": "^0.16.8",
+        "@types/estree": "^1.0.6",
+        "fast-deep-equal": "^3.1.3",
+        "natural-compare": "^1.4.0",
+        "file-entry-cache": "11.1.5 || >11.1.6 <12",
+        "@eslint/plugin-kit": "^0.7.3",
+        "eslint-visitor-keys": "^5.0.1",
+        "@eslint/config-array": "^0.23.5",
+        "@humanwhocodes/retry": "^0.4.2",
+        "escape-string-regexp": "^4.0.0",
+        "@eslint/config-helpers": "^0.7.0",
+        "@eslint-community/regexpp": "^4.12.2",
+        "@eslint-community/eslint-utils": "^4.8.0",
+        "@humanwhocodes/module-importer": "^1.0.1",
+        "json-stable-stringify-without-jsonify": "^1.0.1"
+      },
+      "optionalDependencies": null,
+      "peerDependencies": {
+        "jiti": "*"
+      },
+      "peerDependenciesMeta": {
+        "jiti": {
+          "optional": true
+        }
+      },
+      "engines": {
+        "node": "^20.19.0 || ^22.13.0 || >=24"
+      },
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    },
+    {
+      "name": "typescript-eslint",
+      "version": "8.72.1",
+      "metadata_url": "https://registry.npmjs.org/typescript-eslint/8.72.1",
+      "metadata_sha256": "aaf198f4a8b32e1d70533c623adc99342860db2fbaeeb13a0e3d934ba37c8ef9",
+      "dist_integrity_claim": "sha512-3Li9FfPmQp45nxEtFD1ZCrYFI3cYK5kpyNtmm1H7lMagm8u9sy6PTjy3ytwQZs7KNukOyKFHAZ6z6GjYFeaeXw==",
+      "dependencies": {
+        "@typescript-eslint/utils": "8.72.1",
+        "@typescript-eslint/parser": "8.72.1",
+        "@typescript-eslint/eslint-plugin": "8.72.1",
+        "@typescript-eslint/typescript-estree": "8.72.1"
+      },
+      "optionalDependencies": null,
+      "peerDependencies": {
+        "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0",
+        "typescript": ">=4.8.4 <6.1.0"
+      },
+      "peerDependenciesMeta": null,
+      "engines": {
+        "node": "^18.18.0 || ^20.9.0 || >=21.1.0"
+      },
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    },
+    {
+      "name": "prettier",
+      "version": "3.9.10",
+      "metadata_url": "https://registry.npmjs.org/prettier/3.9.10",
+      "metadata_sha256": "15fc5a88d57d228acc4daca70370496b5c547f9b27060278a0ca804c4fd75e04",
+      "dist_integrity_claim": "sha512-skGHTH1Yb9QvaTC4hWnRTzEYtCpApF0UMBPz+t/0ZPzP8ihefo/btKd+QA7pUE0fEwA1SbS/NmhyEcstdXOIdA==",
+      "dependencies": null,
+      "optionalDependencies": null,
+      "peerDependencies": null,
+      "peerDependenciesMeta": null,
+      "engines": {
+        "node": ">=14"
+      },
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    },
+    {
+      "name": "vitest",
+      "version": "5.0.5",
+      "metadata_url": "https://registry.npmjs.org/vitest/5.0.5",
+      "metadata_sha256": "161da05d413b8aca31ebb7763625d66086cb47057057f00d24d69147a343ef62",
+      "dist_integrity_claim": "sha512-cPODOMF8YnkiiYtDdHo6n4wWmBrOBBbOIYH2d33M4l3CdNn72h+qMmO6uXffUN6A5AZFXNND/d+krS9mgkXRfg==",
+      "dependencies": {
+        "chai": "^6.3.0",
+        "obug": "^3.0.0",
+        "std-env": "^4.3.0",
+        "tinyexec": "^1.3.1",
+        "picomatch": "^4.0.7",
+        "tinybench": "^6.2.2",
+        "tinyglobby": "^0.2.17",
+        "@types/chai": "^5.2.2",
+        "expect-type": "^1.4.0",
+        "magic-string": "^1.4.3",
+        "@vitest/mocker": "5.0.5",
+        "es-module-lexer": "^2.3.2",
+        "why-is-node-running": "3.2.1"
+      },
+      "optionalDependencies": null,
+      "peerDependencies": {
+        "vite": "^6.4.0 || ^7.0.0 || ^8.0.0",
+        "jsdom": "*",
+        "happy-dom": "*",
+        "@vitest/ui": "5.0.5",
+        "@types/node": "^22.0.0 || >=24.0.0",
+        "@edge-runtime/vm": "*",
+        "@opentelemetry/api": "^1.9.0",
+        "@vitest/coverage-v8": "5.0.5",
+        "@vitest/browser-preview": "5.0.5",
+        "@vitest/coverage-istanbul": "5.0.5",
+        "@vitest/browser-playwright": "5.0.5",
+        "@vitest/browser-webdriverio": "^5.0.0-beta.5 || >=5.0.0"
+      },
+      "peerDependenciesMeta": {
+        "vite": {
+          "optional": false
+        },
+        "jsdom": {
+          "optional": true
+        },
+        "happy-dom": {
+          "optional": true
+        },
+        "@vitest/ui": {
+          "optional": true
+        },
+        "@types/node": {
+          "optional": true
+        },
+        "@edge-runtime/vm": {
+          "optional": true
+        },
+        "@opentelemetry/api": {
+          "optional": true
+        },
+        "@vitest/coverage-v8": {
+          "optional": true
+        },
+        "@vitest/browser-preview": {
+          "optional": true
+        },
+        "@vitest/coverage-istanbul": {
+          "optional": true
+        },
+        "@vitest/browser-playwright": {
+          "optional": true
+        },
+        "@vitest/browser-webdriverio": {
+          "optional": true
+        }
+      },
+      "engines": {
+        "node": "^22.12.0 || ^24.0.0 || >=26.0.0"
+      },
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    },
+    {
+      "name": "@cyclonedx/cyclonedx-npm",
+      "version": "6.0.1",
+      "metadata_url": "https://registry.npmjs.org/%40cyclonedx%2Fcyclonedx-npm/6.0.1",
+      "metadata_sha256": "af89b8b1b16739f2da9e450e114364fe0191c64e143f3fd7881484c67a04268f",
+      "dist_integrity_claim": "sha512-/aU3bBC6qP6cV/qQ5SfUSygE/+2hQhwgg6sJML31/gZ96NyMvIUuwdk637H4z+LS/NryRT2kjR2wtD0qBEVVHQ==",
+      "dependencies": {
+        "commander": "^14.0.0",
+        "xmlbuilder2": "^3.0.2 || ^4.0.3",
+        "packageurl-js": "^2.0.1",
+        "spdx-expression-parse": "^3.0.1 || ^4.0.0",
+        "normalize-package-data": "^7.0.0 || ^8.0.0",
+        "@cyclonedx/cyclonedx-library": "^10.0.0"
+      },
+      "optionalDependencies": {
+        "ajv": "^8.12.0",
+        "libxmljs2": "^0.35||^0.37",
+        "ajv-formats": "^3.0.1",
+        "ajv-formats-draft2019": "^1.6.1"
+      },
+      "peerDependencies": null,
+      "peerDependenciesMeta": null,
+      "engines": {
+        "npm": ">=9",
+        "node": ">=20.18.0"
+      },
+      "os": null,
+      "cpu": null,
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "license-checker-rseidelsohn",
+      "version": "5.0.1",
+      "metadata_url": "https://registry.npmjs.org/license-checker-rseidelsohn/5.0.1",
+      "metadata_sha256": "7c6c58a335c6732976db38844b520adb3b2fa54428e381ac2199d2ffc7a04e62",
+      "dist_integrity_claim": "sha512-9X+ikKxt9Hy3zOrOZzW1dXL4St5akoYjLt63Am9JZVzU6aTdN+xfDvqySpnJT+gF/h5RmtMk2waW6TDNNCKbqQ==",
+      "dependencies": {
+        "nopt": "^7.2.0",
+        "chalk": "4.1.2",
+        "debug": "^4.3.4",
+        "mkdirp": "^1.0.4",
+        "semver": "^7.3.5",
+        "treeify": "^1.1.0",
+        "spdx-correct": "^3.2.0",
+        "spdx-satisfies": "^6.0.0",
+        "@npmcli/arborist": "9.6.0",
+        "lodash.clonedeep": "^4.5.0",
+        "@npmcli/package-json": "7.0.5",
+        "spdx-expression-parse": "^4.0.0"
+      },
+      "optionalDependencies": null,
+      "peerDependencies": null,
+      "peerDependenciesMeta": null,
+      "engines": {
+        "npm": ">=11",
+        "node": ">=24"
+      },
+      "os": null,
+      "cpu": null,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "i18next",
+      "version": "26.5.12",
+      "metadata_url": "https://registry.npmjs.org/i18next/26.5.12",
+      "metadata_sha256": "f97dcd274f6f50d2e7fee7cfde9100c6e3c7bac3f0588300a6b7d7b42a1724a5",
+      "dist_integrity_claim": "sha512-vTt8tc3y5axoU7wwTYg8vjpILLyP33a5GyGJAVI7FDRx1XueYxZVIkcVeStoftrVnAM/o28hKvK0sslucDI9aQ==",
+      "dependencies": null,
+      "optionalDependencies": null,
+      "peerDependencies": {
+        "typescript": "^5 || ^6 || ^7"
+      },
+      "peerDependenciesMeta": {
+        "typescript": {
+          "optional": true
+        }
+      },
+      "engines": null,
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    },
+    {
+      "name": "react-i18next",
+      "version": "17.1.9",
+      "metadata_url": "https://registry.npmjs.org/react-i18next/17.1.9",
+      "metadata_sha256": "70763c9a82cfb9df6ad928bd5955344afe804182364bac6d244e38e22d638603",
+      "dist_integrity_claim": "sha512-OgYqIH13XHPlWTaaI795Dz+k2AdKnXcOxNQVnf750T8Ij0TYWp1nYvXRpoJBulPqlyk2OAbn1PM4tFKiIj/byA==",
+      "dependencies": {
+        "@babel/runtime": "^7.29.7",
+        "html-parse-stringify": "^4.0.1",
+        "use-sync-external-store": "^1.6.0"
+      },
+      "optionalDependencies": null,
+      "peerDependencies": {
+        "react": ">= 16.8.0",
+        "i18next": ">= 26.2.0",
+        "typescript": "^5 || ^6 || ^7"
+      },
+      "peerDependenciesMeta": {
+        "react-dom": {
+          "optional": true
+        },
+        "typescript": {
+          "optional": true
+        },
+        "react-native": {
+          "optional": true
+        }
+      },
+      "engines": null,
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    },
+    {
+      "name": "argon2",
+      "version": "0.45.1",
+      "metadata_url": "https://registry.npmjs.org/argon2/0.45.1",
+      "metadata_sha256": "92f292cb139c7b595c07bd807fb1e7f7d5040bbfcce793e88384b9bc21dac127",
+      "dist_integrity_claim": "sha512-skm+/WCjkGqCQxF7FG1LuZXM5yvbFjgbfiCGsud2oLgaDhh6b6dbH0b1EkghbM+xx4Bj8Ape+KKgixoIlWZicQ==",
+      "dependencies": {
+        "cross-env": "^10.1.0",
+        "@phc/format": "^1.0.0",
+        "node-addon-api": "^8.9.0",
+        "node-gyp-build": "^4.8.4"
+      },
+      "optionalDependencies": null,
+      "peerDependencies": null,
+      "peerDependenciesMeta": null,
+      "engines": {
+        "node": ">=16.17.0"
+      },
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    },
+    {
+      "name": "otpauth",
+      "version": "9.5.2",
+      "metadata_url": "https://registry.npmjs.org/otpauth/9.5.2",
+      "metadata_sha256": "6c232cfc5b27cc711b8e06b847cbd0f5f25a34f8f8ffc24d9b70b49427f08423",
+      "dist_integrity_claim": "sha512-GQ5emWR/x1tcExT62IBT0UfO95wZzJZyxYOJOGVeQF47SYEN9vmh0vISvDZaNMuFJRG+IaWCKtfm+t9Bfoal6w==",
+      "dependencies": {
+        "@noble/hashes": "2.4.0"
+      },
+      "optionalDependencies": null,
+      "peerDependencies": null,
+      "peerDependenciesMeta": null,
+      "engines": null,
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    },
+    {
+      "name": "@noble/hashes",
+      "version": "2.4.0",
+      "metadata_url": "https://registry.npmjs.org/%40noble%2Fhashes/2.4.0",
+      "metadata_sha256": "f335f4cd79ac84185b74e6fad9439ebbfb29c96fdb101fbfd99e729cd5fbe2c8",
+      "dist_integrity_claim": "sha512-X5XaVWZIBCT7HHZGm5I7ZQXDwLG+bGXuSrMQAW+7Zvl87h1kmc1ZB1VSRJcpUfoUrGQp4Fkoxm5kZ+Ms+aW+eA==",
+      "dependencies": null,
+      "optionalDependencies": null,
+      "peerDependencies": null,
+      "peerDependenciesMeta": null,
+      "engines": {
+        "node": ">= 20.19.0"
+      },
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    },
+    {
+      "name": "react-markdown",
+      "version": "10.1.0",
+      "metadata_url": "https://registry.npmjs.org/react-markdown/10.1.0",
+      "metadata_sha256": "7bf2811d3003d510e3e98fc29ca9a1cdcb7353ea2a765687edab002e09cbfaba",
+      "dist_integrity_claim": "sha512-qKxVopLT/TyA6BX3Ue5NwabOsAzm0Q7kAPwq6L+wWDwisYs7R8vZ0nRXqq6rkueboxpkjvLGU9fWifiX/ZZFxQ==",
+      "dependencies": {
+        "vfile": "^6.0.0",
+        "devlop": "^1.0.0",
+        "unified": "^11.0.0",
+        "@types/hast": "^3.0.0",
+        "@types/mdast": "^4.0.0",
+        "remark-parse": "^11.0.0",
+        "remark-rehype": "^11.0.0",
+        "unist-util-visit": "^5.0.0",
+        "mdast-util-to-hast": "^13.0.0",
+        "html-url-attributes": "^3.0.0",
+        "hast-util-to-jsx-runtime": "^2.0.0"
+      },
+      "optionalDependencies": null,
+      "peerDependencies": {
+        "react": ">=18",
+        "@types/react": ">=18"
+      },
+      "peerDependenciesMeta": null,
+      "engines": null,
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    },
+    {
+      "name": "file-type",
+      "version": "22.3.0",
+      "metadata_url": "https://registry.npmjs.org/file-type/22.3.0",
+      "metadata_sha256": "a05db29cdf2bec004d20969fbf16bd50b891a797fde0690fdf161f4c28ee546f",
+      "dist_integrity_claim": "sha512-PrPedgnnWl5bWz3JHgar0QSzRvzeyFh7dZ9JpYOgcPZu4KALS9zw4MMa6qXRYyjeBsAlpaWB2boLuG991+0HIQ==",
+      "dependencies": {
+        "strtok3": "^10.6.3",
+        "token-types": "^6.1.2",
+        "uint8array-extras": "^1.6.0",
+        "@tokenizer/inflate": "^0.6.0"
+      },
+      "optionalDependencies": null,
+      "peerDependencies": null,
+      "peerDependenciesMeta": null,
+      "engines": {
+        "node": ">=22"
+      },
+      "os": null,
+      "cpu": null,
+      "license": "MIT"
+    }
+  ],
+  "edges_between_candidate_roots": [
+    {
+      "from": "react-dom",
+      "to": "react",
+      "kind": "peer",
+      "declared_range": "^19.3.1",
+      "candidate_root_version": "19.3.1",
+      "range_compatibility": "not evaluated"
+    },
+    {
+      "from": "vite",
+      "to": "@types/node",
+      "kind": "peer",
+      "declared_range": "^20.19.0 || >=22.12.0",
+      "candidate_root_version": "24.10.0",
+      "range_compatibility": "not evaluated"
+    },
+    {
+      "from": "@vitejs/plugin-react",
+      "to": "vite",
+      "kind": "peer",
+      "declared_range": "^8.0.0",
+      "candidate_root_version": "8.3.5",
+      "range_compatibility": "not evaluated"
+    },
+    {
+      "from": "@tailwindcss/vite",
+      "to": "tailwindcss",
+      "kind": "required",
+      "declared_range": "4.3.3",
+      "candidate_root_version": "4.3.3",
+      "range_compatibility": "not evaluated"
+    },
+    {
+      "from": "@tailwindcss/vite",
+      "to": "vite",
+      "kind": "peer",
+      "declared_range": "^5.2.0 || ^6 || ^7 || ^8",
+      "candidate_root_version": "8.3.5",
+      "range_compatibility": "not evaluated"
+    },
+    {
+      "from": "@types/react-dom",
+      "to": "@types/react",
+      "kind": "peer",
+      "declared_range": "^19.3.0",
+      "candidate_root_version": "19.3.0",
+      "range_compatibility": "not evaluated"
+    },
+    {
+      "from": "typescript-eslint",
+      "to": "eslint",
+      "kind": "peer",
+      "declared_range": "^8.57.0 || ^9.0.0 || ^10.0.0",
+      "candidate_root_version": "10.14.0",
+      "range_compatibility": "not evaluated"
+    },
+    {
+      "from": "typescript-eslint",
+      "to": "typescript",
+      "kind": "peer",
+      "declared_range": ">=4.8.4 <6.1.0",
+      "candidate_root_version": "6.0.3",
+      "range_compatibility": "not evaluated"
+    },
+    {
+      "from": "vitest",
+      "to": "vite",
+      "kind": "peer",
+      "declared_range": "^6.4.0 || ^7.0.0 || ^8.0.0",
+      "candidate_root_version": "8.3.5",
+      "range_compatibility": "not evaluated"
+    },
+    {
+      "from": "vitest",
+      "to": "@types/node",
+      "kind": "peer",
+      "declared_range": "^22.0.0 || >=24.0.0",
+      "candidate_root_version": "24.10.0",
+      "range_compatibility": "not evaluated"
+    },
+    {
+      "from": "i18next",
+      "to": "typescript",
+      "kind": "peer",
+      "declared_range": "^5 || ^6 || ^7",
+      "candidate_root_version": "6.0.3",
+      "range_compatibility": "not evaluated"
+    },
+    {
+      "from": "react-i18next",
+      "to": "react",
+      "kind": "peer",
+      "declared_range": ">= 16.8.0",
+      "candidate_root_version": "19.3.1",
+      "range_compatibility": "not evaluated"
+    },
+    {
+      "from": "react-i18next",
+      "to": "i18next",
+      "kind": "peer",
+      "declared_range": ">= 26.2.0",
+      "candidate_root_version": "26.5.12",
+      "range_compatibility": "not evaluated"
+    },
+    {
+      "from": "react-i18next",
+      "to": "typescript",
+      "kind": "peer",
+      "declared_range": "^5 || ^6 || ^7",
+      "candidate_root_version": "6.0.3",
+      "range_compatibility": "not evaluated"
+    },
+    {
+      "from": "otpauth",
+      "to": "@noble/hashes",
+      "kind": "required",
+      "declared_range": "2.4.0",
+      "candidate_root_version": "2.4.0",
+      "range_compatibility": "not evaluated"
+    },
+    {
+      "from": "react-markdown",
+      "to": "react",
+      "kind": "peer",
+      "declared_range": ">=18",
+      "candidate_root_version": "19.3.1",
+      "range_compatibility": "not evaluated"
+    },
+    {
+      "from": "react-markdown",
+      "to": "@types/react",
+      "kind": "peer",
+      "declared_range": ">=18",
+      "candidate_root_version": "19.3.0",
+      "range_compatibility": "not evaluated"
+    }
+  ]
+}

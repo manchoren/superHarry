@@ -61,6 +61,12 @@ flowchart LR
 
 This shows 20 declared dependency edges and two peer requirements, not their resolved versions. The peer nodes are requirements, not assertions that a compatible React or type package has been selected. Transitive, optional, platform-specific and build-tool closures for these edges remain unenumerated.
 
+## Existing npm candidate metadata
+
+On 2026-10-31, read-only requests to the official npm registry captured the declared package metadata for the 24 exact npm candidate roots already listed in T014 records. The reproducible [capture script](evidence/t014-transitive/capture_npm_candidate_edges.py) records only names, versions, declared dependency/optional/peer ranges, selected package constraints, publisher license labels, publisher integrity claims and raw-metadata digests. The [machine-readable edge evidence](evidence/t014-transitive/npm-candidate-edges.json) contains 115 required, five optional and 40 peer declarations (160 total), including 17 edges to another candidate root.
+
+The root-to-root ranges are recorded but not evaluated against each other; no transitive versions were selected. The metadata and integrity claims come from the same registry and are not independent provenance. This adds direct range edges for the existing candidates, but does not close their transitive, build, bundled or platform-specific dependencies and is not resolver output.
+
 ## QEMU host package metadata traversal
 
 The retained [QEMU inventory](evidence/t014-msys2/qemu-inventory.json) contains 159 package records and 502 dependency edges from an exploratory traversal rooted at `mingw-w64-ucrt-x86_64-qemu`. Its source database digest is `3253eb5ed9d16e936b4ca854d2ca2eb5c3d164322967f0dad21cf26eca484248`; [the inventory script](evidence/t014-msys2/build_inventory.py) records how edges were derived. The traversal matched 495 requirements by exact package name and seven through a unique declared `PROVIDES` name; four constrained edges received static version checks.
@@ -69,4 +75,4 @@ These are repository-metadata relationships, not a pacman transaction or solver-
 
 ## Boundary and next action
 
-This is the graph available from existing retained evidence, not the complete T042/T014 dependency graph. Other candidate versions in the [T042 scope inventory](t014-t042-scope.md) do not have an artifact-backed dependency closure here. The owner declined expanding research to additional unresolved roles; this graph does not fill or waive those roles, change T042's hard prerequisites, or authorize a resolver. Keep the missing edges explicit and defer separately scoped issues to new tasks as they arise. T014 remains blocked until its required graph, checks, compatibility evidence and approvals are complete.
+This is the graph available from existing retained evidence, not the complete T042/T014 dependency graph. Other candidate versions in the [T042 scope inventory](t014-t042-scope.md) do not have an artifact-backed dependency closure here. On 2026-10-31, the owner directed keeping the current work simple, not expanding research to additional unresolved roles, and creating separate tasks for concrete complications that arise later. This does not fill or waive those roles, change T042's hard prerequisites, or authorize a resolver. Keep missing edges explicit. T014 remains blocked until the applicable graph, checks, compatibility evidence and approvals are complete.
