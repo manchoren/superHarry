@@ -91,40 +91,68 @@
       ]
     },
     "slsa_provenance_attestations": {
-      "verification_status": "The published bundle DSSE payloads were decoded as data and their subject SHA-512 digests matched the npm dist.integrity values. The Sigstore bundle signatures, certificate identity, transparency-log inclusion and provenance policy were not cryptographically verified.",
+      "verification_status": "The published DSSE PAE signatures for the SLSA provenance bundles were verified with OpenSSL against the leaf ECDSA public keys in their embedded certificates. Leaf certificate SAN identities and validity windows at the Rekor integrated timestamps were inspected. GitHub Actions run metadata corroborates successful runs, source commits and the noble-hashes reusable workflow reference. The Fulcio certificate chain/root, Rekor inclusion proofs/checkpoint signatures, and a project-specific provenance policy were not verified.",
       "results": [
         {
           "name": "argon2",
           "version": "0.45.1",
           "attestation_advertised": true,
           "subject_digest_matches_dist_integrity": true,
+          "dsse_signature_verified_with_embedded_leaf_certificate": true,
+          "leaf_certificate_SAN": "https://github.com/ranisalt/node-argon2/.github/workflows/release.yml@refs/tags/v0.45.1",
+          "leaf_certificate_valid_at_rekor_integrated_time": true,
           "workflow_repository": "https://github.com/ranisalt/node-argon2",
           "workflow_path": ".github/workflows/release.yml",
           "workflow_ref": "refs/tags/v0.45.1",
           "resolved_git_commit": "786de7152f95881b0683aea1d2ca60ed0d6d9e2f",
-          "invocation": "https://github.com/ranisalt/node-argon2/actions/runs/29877756901/attempts/1"
+          "invocation": "https://github.com/ranisalt/node-argon2/actions/runs/29877756901/attempts/1",
+          "github_actions_run": {
+            "conclusion": "success",
+            "event": "release",
+            "head_sha_matches_attestation": true,
+            "run_url": "https://github.com/ranisalt/node-argon2/actions/runs/29877756901"
+          }
         },
         {
           "name": "otpauth",
           "version": "9.5.2",
           "attestation_advertised": true,
           "subject_digest_matches_dist_integrity": true,
+          "dsse_signature_verified_with_embedded_leaf_certificate": true,
+          "leaf_certificate_SAN": "https://github.com/hectorm/otpauth/.github/workflows/main.yml@refs/tags/v9.5.2",
+          "leaf_certificate_valid_at_rekor_integrated_time": true,
           "workflow_repository": "https://github.com/hectorm/otpauth",
           "workflow_path": ".github/workflows/main.yml",
           "workflow_ref": "refs/tags/v9.5.2",
           "resolved_git_commit": "5a0cb600fae0eb5be476db825f26fbf612a2dffd",
-          "invocation": "https://github.com/hectorm/otpauth/actions/runs/33812915767/attempts/1"
+          "invocation": "https://github.com/hectorm/otpauth/actions/runs/33812915767/attempts/1",
+          "github_actions_run": {
+            "conclusion": "success",
+            "event": "push",
+            "head_sha_matches_attestation": true,
+            "run_url": "https://github.com/hectorm/otpauth/actions/runs/33812915767"
+          }
         },
         {
           "name": "@noble/hashes",
           "version": "2.4.0",
           "attestation_advertised": true,
           "subject_digest_matches_dist_integrity": true,
+          "dsse_signature_verified_with_embedded_leaf_certificate": true,
+          "leaf_certificate_SAN": "https://github.com/paulmillr/jsbt/.github/workflows/release.yml@c138efca67d90dce86a7cc22c01d6b66d193ea7a",
+          "leaf_certificate_valid_at_rekor_integrated_time": true,
           "workflow_repository": "https://github.com/paulmillr/noble-hashes",
           "workflow_path": ".github/workflows/release.yml",
           "workflow_ref": "refs/tags/2.4.0",
           "resolved_git_commit": "663c2aeeffc308ac0cded59bd32f7c212adacfc2",
-          "invocation": "https://github.com/paulmillr/noble-hashes/actions/runs/33074534582/attempts/1"
+          "invocation": "https://github.com/paulmillr/noble-hashes/actions/runs/33074534582/attempts/1",
+          "github_actions_run": {
+            "conclusion": "success",
+            "event": "release",
+            "head_sha_matches_attestation": true,
+            "referenced_reusable_workflow": "paulmillr/jsbt/.github/workflows/release.yml@c138efca67d90dce86a7cc22c01d6b66d193ea7a",
+            "run_url": "https://github.com/paulmillr/noble-hashes/actions/runs/33074534582"
+          }
         },
         {
           "name": "react-markdown",
