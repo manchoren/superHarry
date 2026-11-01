@@ -6,6 +6,18 @@ Status: T005 proposal; limited owner approval is recorded in [ADR 0002](adr/0002
 
 - **Limited approved basis — G-CONTRACT (ADR 0002):** the reviewed initial chat HTTP/SSE fragment, its request-identity, error, reconnect, cancellation and compatibility principles, plus the stated versioned internal envelope and ownership principles. Approval is only for that reviewed scope; it is not blanket approval of every detail below or of future changes.
 - **Still open — G-CONTRACT:** payload limits; event retention and cross-restart durability; complete authentication schemas; operation-specific and future-module schemas; and any change to the approved contract basis. T010 must define durable action semantics. Changes to approved contract terms require applicable renewed approval.
+- **T167 R6 bounded schema/policy disposition — agent-proposed, 2026-11-01; not owner-approved:**
+
+  | Design item | Can be drafted from accepted choices now | Still requires an explicit choice, evidence, or gate |
+  |---|---|---|
+  | `auth.resolve_session` | Closed request/result/error shape, canonical 43-character cookie-token grammar, active identity fields, generic `UNAUTHENTICATED` result, and the 4,096-byte canonical-result ceiling; see the proposal below. | Exact pre-auth context and response-authentication schema, transaction/audit details, and stale-authorization review require G-SECURITY/G-CONTRACT. This draft cannot authorize implementation. |
+  | Internal v1 envelope | Field names/order/encodings, strict ASCII scalar policy, duplicate/unknown-field rejection, HMAC coverage and error-neutrality can be written as a draft from the owner-selected directions below. | Per-operation schema, numeric body/field caps, parser behavior, clock trust/rollback, cross-language vectors and full error envelope require G-SECURITY/G-CONTRACT; target time-service and deployment evidence also require G-OPS. |
+  | `chat.read_events`, `conversation.list`, `conversation.read` | Closed field names, requester-scoped access, non-disclosing `NOT_FOUND`, and bounded-read intent can be drafted from the current allowlist and owner selections. | Cursor grammar, page/result limits, exact event/history/message fields and ordering, and feature-specific behavior need explicit product/owner choices and G-CONTRACT/G-SECURITY review. |
+  | Authentication beyond session resolution | Generic public failure mapping, cookie properties, expiry direction, account-delay behavior, and selected audit requirements constrain a future draft. | Login identifier grammar/normalization, complete login/logout/revocation schemas and response behavior are not selected; do not infer them from session or error choices. Owner choices plus G-CONTRACT/G-SECURITY review are required. |
+  | Audit fields and policy | Minimal field allowlists can be drafted from the accepted event-class directions below without introducing extra personal data. | Exact enum values, actor/subject semantics, physical schema, atomicity/recovery, access/export boundaries and retention legality remain for T029 and G-SECURITY/G-CONTRACT (and applicable G-ARCH/G-OPS/legal) review. |
+  | Quotas and operational thresholds | Public error mappings and fail-closed behavior already selected can be specified without numeric thresholds. | Numeric quotas/rates/bursts, state lifecycle and trusted Origin/proxy/IP rules require owner choices and synthetic-load/configuration evidence, then G-SECURITY/G-CONTRACT/G-OPS review. |
+
+  These are eligibility boundaries for proposal drafting only. No row constitutes an accepted schema, policy approval, gate decision, implementation authorization, or evidence that a control works.
 - **Owner-selected session-token encoding and verifier direction — 2026-11-01:** represent the 256-bit random cookie bearer token as canonical unpadded base64url of exactly 43 ASCII characters, decoding to exactly 32 bytes. Reject padding, noncanonical encodings and other decoded lengths. After canonical decoding, persist only SHA-256 of the 32 token bytes as the server-side verifier; never store the raw token or log/cache/return it, and never substitute it for the UUIDv4 `session_id`. The selected browser cookie is `__Host-superharry_session` with `Secure`, `HttpOnly`, `SameSite=Strict`, `Path=/` and no `Domain`. This does not approve a session schema or implementation.
 - **Owner-selected account-session quota behavior — 2026-11-01:** after valid credentials are verified, if the account's active-session quota is reached, reject creation of a new session and preserve existing sessions; do not silently revoke/evict one or count the result as a failed credential attempt. Return the same external response as a failed login without quota-specific details, and emit an individual security-audit event for each rejection. The event direction is limited to authenticated `principal_id`, fixed event type/outcome, timestamp and `request_id`; exclude IP, Origin, credentials, token and quota/cap details. Retain the event for 90 days, subject to legal/operational review. If the event cannot be persisted, return `UNAVAILABLE`/503 rather than the normal generic quota response. The numeric quota remains open pending capacity evidence; event schema and failure/transaction behavior remain subject to T029 and G-SECURITY/G-CONTRACT review.
 - **Owner-selected pre-auth session quota direction — 2026-11-01:** key the quota by Origin plus validated client IP, using a fixed reverse-proxy topology, and map exhaustion to HTTP 429 `RATE_LIMITED` without `Retry-After`, using the standard error envelope with `parameters: {}` and `request_id`; do not expose cap, expiry or quota-key details. Do not enforce it until the exact allowed-Origin set, proxy addresses/hops and trusted client-IP derivation are approved; never trust arbitrary forwarded-IP headers. Numeric cap, canonicalization and state lifecycle remain open for G-SECURITY/G-CONTRACT/G-OPS review.
@@ -223,6 +235,35 @@ For an authenticated access-service-to-core request, the versioned envelope is `
 
 This matrix is a least-data review candidate, not an accepted schema. Exact event type/outcome vocabularies, actor-versus-subject semantics, UUIDv4 generation implementation, physical representation, query-purpose choices and any additional mandatory fields require G-CONTRACT/G-SECURITY/G-ARCH review.
 
+**T167 audit-field refinement — agent-proposed, 2026-11-01; not owner-approved:** use distinct typed actor and subject fields rather than overloading `principal_id`. A minimal review shape is:
+
+```text
+AuditEvent = {
+  event_id: UUIDv4,
+  occurred_at: UTC timestamp,
+  event_type: closed enum,
+  operation: closed enum,
+  actor: {kind: "principal" | "service", id: canonical identifier},
+  outcome: closed enum,
+  request_id?: canonical UUIDv4,
+  subject_principal_id?: canonical UUIDv4,
+  session_id?: canonical UUIDv4,
+  aggregate_count?: positive integer
+}
+```
+
+The event-specific schemas should require only these fields:
+
+| Event | Required event-specific fields | Actor / subject rule |
+|---|---|---|
+| Failed password verification | `subject_principal_id` only if the account exists | Access service is actor for both known and unknown accounts; omit subject for unknown names. |
+| Failed-session-resolution threshold signal | `subject_principal_id`, `aggregate_count` | Access service is actor; emit only the selected account-correlated aggregate signal, never an individual event. |
+| Session create/login, explicit logout, or revocation | `session_id` | Authenticated principal is actor when available; otherwise access service for pre-auth creation/login. No automatic-expiry event or free-text reason. |
+| Retry, nonce replay, or payload conflict | `request_id` | Authenticated principal or access-service actor; each observed attempt has its independent event ID. |
+| Committed business effect | `request_id` | Authenticated principal actor; omit target/object IDs for T167 idempotent effects. |
+
+Use the event class to select a separately reviewed retention period; do not put a caller-controlled retention value in an event. Never include a password, verifier, submitted account-name text, cookie/session token, nonce, IP/Origin, raw payload, exception text or arbitrary metadata. These field names and typed shapes are agent proposals only. The exact event/outcome/operation enums, actor identity grammar, timestamp representation, whether `request_id` is mandatory for each class, transaction boundary and persistence layout remain open for T029 and G-SECURITY/G-CONTRACT review. The one-year business-effect and 90-day security/lifecycle directions remain owner-selected but subject to operational and applicable legal review.
+
 **Owner-selected T029 audit-access direction (2026-11-01; not approved):** keep appends within the authorized Python core event interface; do not expose audit search/read to models, skills, ordinary users or direct TypeScript database access. The owner selected evaluating the existing application `admin` role for a narrowly scoped read/export capability with documented purpose, constrained time-range/type filters, redaction and an audit record for each query/export. The owner selected using the currently authenticated admin session without additional password/TOTP step-up for each query/export. Recheck current session validity and admin authorization for every request. Do not permit update or deletion through normal application operations. Retention cleanup is a separate core-owned, class-specific operation, not a general delete API. The broader role and session-only authorization increase exposure if an admin session is compromised and require explicit G-SECURITY risk review; least-privilege alternatives may still be considered by the gate. Exact filter/export bounds, access-event fields, storage/OS controls and legal holds remain open for G-SECURITY/G-OPS/G-CONTRACT review.
 
 **Owner-selected export-bounds direction (2026-11-01; not approved):** allow the operator export only with row-count, byte-size and time-range limits established after synthetic-volume and performance tests; do not invent numeric caps before that evidence. The test target and numerical bounds require approval before the endpoint is implemented.
@@ -254,7 +295,7 @@ The following are illustrative shapes to make the allowlist reviewable. They are
 
 | Operation | Candidate request payload | Candidate success result |
 |---|---|---|
-| `auth.resolve_session` | `{session_token: string}` containing the 32-byte random cookie bearer token encoded as canonical unpadded base64url of exactly 43 ASCII characters. The access service forwards it only over the authenticated internal channel; reject padding, noncanonical encodings or other decoded lengths, and do not log, cache or expose it. The core validates it against current session state. | Active: `{status: "active", principal_id, role, channel, session_id, authorization_revision}`. If absent, invalid, expired or revoked, or if the account is disabled, return the same typed `UNAUTHENTICATED` error with no cause-specific parameters and no idle-activity update. Use the owner-selected typed pre-auth context proposal; its exact fields and response authentication remain open. |
+| `auth.resolve_session` | `{session_token: string | null}`; `null` represents an absent cookie in the agent-proposed refinement below. A string contains the 32-byte random cookie bearer token encoded as canonical unpadded base64url of exactly 43 ASCII characters. The access service forwards it only over the authenticated internal channel; reject padding, noncanonical encodings or other decoded lengths, and do not log, cache or expose it. The core validates it against current session state. | Active: `{status: "active", principal_id, role, channel, session_id, authorization_revision}`. If absent, invalid, expired or revoked, or if the account is disabled, return the same typed `UNAUTHENTICATED` error with no cause-specific parameters and no idle-activity update. Use the owner-selected typed pre-auth context proposal; its exact fields and response authentication remain open. |
 | `chat.read_events` | `{request_id: UUID, after_cursor?: string}`. The cursor is opaque and scoped to the request; page size/response bytes are capped by reviewed server-side limits rather than permitting an unbounded caller-selected read. | `{events: Event[], next_cursor?: string, has_more: boolean, terminal: boolean}`. `Event` is the approved public SSE event envelope. Preserve ordering and return `EVENT_HISTORY_UNAVAILABLE` rather than silently restarting if retained history cannot be served. |
 | `conversation.list` | `{after_cursor?: string, page_size?: integer}`; `page_size` is bounded by an explicit server-side maximum, still to be selected. | `{items: [{conversation_id: string, last_activity: timestamp}], next_cursor?: string}`. This minimal summary is a candidate; title/preview and timestamp encoding need product/schema review. Scope is always the authenticated user's own persistent conversations. Successful listing updates the user's history-list activity marker only, not the listed records. |
 | `conversation.read` | `{conversation_id: string, cursor?: string, page_size?: integer}`; cursor ordering/direction and bounded page-size maximum require review. | `{conversation_id: string, messages: [{message_id: string, role: string, content: string, created_at: timestamp}], next_cursor?: string}` for a bounded page of user-visible history. Contents are untrusted; do not expose hidden system instructions or credentials. A successful read updates last access for this conversation. Attachment metadata/bytes and deletion are outside this read operation and require separately reviewed operations. |
@@ -262,6 +303,38 @@ The following are illustrative shapes to make the allowlist reviewable. They are
 The owner selected the same non-disclosing `NOT_FOUND` response for an absent object and an existing object that the requester may not access. Apply this to object IDs in `chat.read_events` and `conversation.read`; do not include existence or ownership details in response parameters. Malformed identifiers/payloads still map to `INVALID_INPUT`; invalid sessions map to `UNAUTHENTICATED`; unavailable service maps to `UNAVAILABLE`; unavailable retained chat history maps to `EVENT_HISTORY_UNAVAILABLE`. Exact internal error/log handling and timing side-channel controls remain open. Never return SQL, filesystem paths, exception text or credential material. The selected caller-initiated same-`request_id` retry and core deadline rules are documented above; exact public mapping, operation effects and enforcement remain subject to contract/security review.
 
 These are read-facing operations, not a decision that they are side-effect-free. The owner selected successful session resolution updating idle activity as the proposal direction; candidate behavior is to validate the session and update its activity in the same core operation, while invalid sessions do not update it. For T059, the owner selected successful `conversation.list` updating one user/history-list activity marker only (not each returned conversation), and successful `conversation.read` updating only the accessed conversation's last-access metadata. Transaction atomicity, clock source, concurrent updates, audit and retry behavior remain unapproved; denied or failed reads must not falsely record successful access.
+
+#### T167 authentication and read schema refinements
+
+The following are **agent-proposed schema drafts, 2026-11-01**, derived only from the accepted directions identified above. They are intentionally bounded shapes, not JSON Schema, owner decisions, gate approvals, or implementation instructions.
+
+For `auth.resolve_session`, use one closed request object and a distinct typed pre-auth context:
+
+```text
+context = {kind: "pre_auth", channel: "web"}
+payload = {session_token: string | null}
+```
+
+The access service supplies this context only for `auth.resolve_session`; it does not carry `principal_id`, role, session ID, authorization revision, or caller-asserted service identity. The authenticated mTLS peer supplies service identity. `session_token: null` represents an absent cookie; otherwise require the owner-selected canonical unpadded base64url encoding of exactly 32 bytes (43 ASCII characters). Reject unknown or duplicate fields, never log/cache/persist the raw token, and return the same typed `UNAUTHENTICATED` result with `parameters: {}` for absent, malformed, invalid, expired or revoked tokens and disabled accounts. On success, the candidate result is:
+
+```text
+{status: "active", principal_id: UUIDv4, role: "guest" | "user" | "admin",
+ channel: "web", session_id: UUIDv4, authorization_revision: base64url-128}
+```
+
+Use canonical lowercase hyphenated UUIDv4 text (36 ASCII characters) for both IDs and canonical unpadded base64url of exactly 16 bytes (22 ASCII characters) for `authorization_revision`. The selected public mapping is HTTP 401 with the standard error envelope. Enforce the accepted 4,096-byte canonical result-payload cap. Successful resolution updates idle activity; unsuccessful resolution does not. This proposal deliberately does not choose token persistence columns, the pre-auth context's integrity/response binding, timestamps, or audit transaction layout. The context shape and whether an absent token is represented as `null` require G-SECURITY/G-CONTRACT review.
+
+For the remaining named reads, the safe draft boundary is a closed object with only the fields below; no owner selector, generic filter, SQL/table selector or caller-selected unbounded limit is allowed:
+
+| Operation | Agent-proposed closed request/result shape | Still unresolved before a complete schema |
+|---|---|---|
+| `chat.read_events` | Request `{request_id: UUIDv4, after_cursor?: opaque string}`; result `{events: Event[], next_cursor?: opaque string, has_more: boolean, terminal: boolean}`. | Cursor grammar/size, page and result limits, retention behavior and exact `Event` shape are subject to product choice and G-CONTRACT/G-SECURITY. |
+| `conversation.list` | Request `{after_cursor?: opaque string, page_size?: integer}`; result `{items: [{conversation_id: UUIDv4, last_activity: timestamp}], next_cursor?: opaque string}`. Scope is always the authenticated principal's own history. | Cursor ordering, timestamp representation, page/result limits, and whether summaries include title/preview require explicit product choice and G-CONTRACT/G-SECURITY. |
+| `conversation.read` | Request `{conversation_id: UUIDv4, cursor?: opaque string, page_size?: integer}`; result `{conversation_id: UUIDv4, messages: [{message_id: UUIDv4, role: closed enum, content: string, created_at: timestamp}], next_cursor?: opaque string}`. Scope is always the authenticated principal's own conversation. | Message-role enum, cursor ordering, timestamp representation, content/attachment boundary and page/result limits require explicit product choice and G-CONTRACT/G-SECURITY. |
+
+For all reads, use the selected indistinguishable `NOT_FOUND` response for absent and unauthorized objects, and derive requester scope from validated context inside Python. Keep activity metadata changes distinct from business effects. The closed request/result shapes may be refined as proposals now; numeric limits, exact event/message representation and activity-update atomicity must remain unresolved until their owner choices and applicable gates are recorded. Do not treat their inclusion in this document as approval.
+
+No corresponding `auth.login`, `auth.logout`, or `auth.revoke_session` wire schema is proposed here. Before drafting those contracts, the owner must select the login identifier grammar/normalization and the public request/response semantics; then G-CONTRACT/G-SECURITY must review credential handling, CSRF/pre-session context, session creation/revocation, quota behavior and audit atomicity. Existing owner directions constrain but do not complete those schemas.
 
 ## Versioning and verification principles
 
