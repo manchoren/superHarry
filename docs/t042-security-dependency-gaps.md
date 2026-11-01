@@ -55,6 +55,8 @@ For the owner-selected account-session quota behavior, test that the quota is ch
 
 For the browser session-cookie contract, verify the exact `__Host-superharry_session` name, `Secure`, `HttpOnly`, `SameSite=Strict`, `Path=/`, absence of `Domain` and HTTPS-only delivery; include browser-level tests that reject incompatible `__Host-` attributes. Verify logout clears the same cookie name and path without a `Domain` attribute.
 
+For the pre-authentication cookie, verify the distinct `__Host-superharry_preauth` name with `Secure`, `HttpOnly`, `SameSite=Strict`, `Path=/`, no `Domain` and HTTPS-only delivery; on successful transition verify it is cleared with the same name/path and no `Domain`.
+
 For pre-authentication session quotas, test keying by configured Origin plus validated client IP using the selected fixed reverse-proxy topology, only after the Origin allowlist, proxy addresses/hops and trusted client-IP derivation are approved. Prove arbitrary forwarded-IP headers cannot choose or change the quota key. Verify quota exhaustion maps to HTTP 429 `RATE_LIMITED` without `Retry-After`, using the standard error envelope with empty `parameters` and `request_id` and no cap/expiry/quota-key details. Numeric cap, canonicalization and state lifecycle require separate review.
 
 Verify all those `UNAUTHENTICATED` cases map to HTTP 401 with standard body `{code: "UNAUTHENTICATED", parameters: {}, request_id}`; only the request-specific correlation ID may vary. Ensure status/body do not distinguish cookie absence, invalidity, expiry, revocation or account disablement.

@@ -8,6 +8,8 @@ The owner approved the concrete scope described in [the CSRF contract proposal](
 
 On 2026-10-31, the owner separately selected a 60-minute idle timeout and 24-hour absolute timeout for authenticated admin/user sessions. This records those policy values only; it does not approve session storage, schema, rate limits, deployment or implementation. The ten-minute pre-authentication session lifetime remains unchanged.
 
+On 2026-11-01, the owner selected the distinct `__Host-superharry_preauth` cookie for pre-authentication state, with `Secure`, `HttpOnly`, `SameSite=Strict`, `Path=/`, no `Domain` and HTTPS. Clear it with the same name/path and no `Domain` when transitioning successfully to the separate authenticated `__Host-superharry_session` cookie. This direction does not authorize implementation or deployment.
+
 ## Scope and remaining decisions
 
 The 2026-10-30 approval applies only to the concrete CSRF proposal as reviewed. The 2026-10-31 owner selection adds the authenticated account-session timeout values above without changing that CSRF contract. Exact pre-session quotas, the MFA transition, configured origins, session storage and deployment remain undecided, as do the proposal's other explicitly open details. Schema, dependencies and implementation choices retain their applicable approval gates. This does not authorize installation, a deployed endpoint, network or service configuration, or changes to unrelated contracts. Further contract, authentication or session changes require applicable renewed approval. All existing prerequisites remain in force.
