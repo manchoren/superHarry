@@ -223,6 +223,12 @@ The exact `cc-libs`, `egl-headers` and `gles-headers` binary archives were retri
 
 These are embedded file-level identifiers, not a complete license analysis. The source archive for `gles-headers` remains uninspected, the `cc-libs` binary carries no payload to inspect, and no package approval or redistribution decision follows from this pass.
 
+### Narrow source correspondence checks
+
+- For `cc-libs`, binary `.BUILDINFO` records `pkgbuild_sha256sum` `1a123ea062e01beb611c4375999492b0f41ef2d92d03e38cb29e7c23e855ad45`, which matches the SHA-256 of the current [MSYS2 GCC PKGBUILD](https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-gcc/PKGBUILD). The source-only archive was not inspected; the exact binary has no payload files.
+- The 12 `gles-headers` payload file hashes match byte-for-byte the corresponding `api/GLES/...` files at Khronos OpenGL-Registry commit [`7fc154cefa5a57702ff401ce2f9256178c7525dd`](https://github.com/KhronosGroup/OpenGL-Registry/commit/7fc154cefa5a57702ff401ce2f9256178c7525dd). The GitHub API reports the commit signature as verified; this pass did not independently authenticate the signing key or check revocation.
+- The current [MSYS2 GLES PKGBUILD](https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-gles-headers/PKGBUILD) names that same Khronos commit and declares `spdx:MIT`, but its SHA-256 `2eb8d38a8610b932d1b133b42f9ee1f5ec53452311f421acb5f9c904315d8db2` does not match the binary `.BUILDINFO` `pkgbuild_sha256sum` `15ad9adc1952a523fe7c0db76d312eb1db79e2470b8f23c0320d56f7ad943029`. Therefore the current recipe is not proof of the exact recipe used for the indexed package. The four embedded Apache-2.0 identifiers still require a package-level license and notice disposition.
+
 ## Notices and completion gaps
 
 - QEMU `11.1.3-1` declares `spdx:GPL-2.0-or-later AND LGPL-2.1-or-later AND BSD-2-Clause AND BSD-3-Clause AND MIT`. Four records have that same exact declared tuple; this is not proof they contain identical material. Determine per-file terms, notices, linked components and source-provision requirements for the actual artifacts and distribution model.
