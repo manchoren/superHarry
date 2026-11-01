@@ -1,13 +1,144 @@
 {
   "status": "research-only; no dependency selection or installation approval",
   "review_date": "2026-10-31",
-  "method": "Fetched the exact npm version metadata and tarball over HTTPS, compared the tarball bytes to the registry dist.integrity SHA-512 SRI value, parsed package metadata and read selected notice/source files in memory. No package was extracted to disk, installed or executed.",
+  "method": "Fetched exact npm version metadata and tarballs over HTTPS, compared downloaded tarball bytes to each registry dist.integrity SHA-512 SRI value, parsed package metadata and read selected notice/source files in memory. Queried OSV for the four candidates and the exact direct dependency @noble/hashes. No package was extracted to disk, installed or executed.",
   "limitations": [
     "The SRI value and tarball are obtained from the same registry; a match is not independent publisher authentication, build provenance or source-to-binary attestation.",
-    "This review covers only four exact direct-candidate tarballs; it does not review their transitive, optional, bundled or build dependency closure.",
+    "This review covers four exact direct-candidate tarballs and one exact direct dependency of otpauth; it does not review their remaining transitive, optional, bundled or build dependency closure.",
     "License declarations and embedded notice files are evidence for follow-up, not a legal compatibility or redistribution decision.",
     "Static presence of a native binary does not establish ABI compatibility, runtime behavior, security or support on the selected ARM64 guest and target."
   ],
+  "advisory_and_provenance_followup": {
+    "checked_at_utc": "2026-11-01T01:57:34.086539+00:00",
+    "osv_exact_version_queries": {
+      "endpoint": "https://api.osv.dev/v1/query",
+      "results": [
+        {
+          "ecosystem": "npm",
+          "name": "argon2",
+          "version": "0.45.1",
+          "returned_vulnerability_records": 0
+        },
+        {
+          "ecosystem": "npm",
+          "name": "otpauth",
+          "version": "9.5.2",
+          "returned_vulnerability_records": 0
+        },
+        {
+          "ecosystem": "npm",
+          "name": "@noble/hashes",
+          "version": "2.4.0",
+          "returned_vulnerability_records": 0
+        },
+        {
+          "ecosystem": "npm",
+          "name": "react-markdown",
+          "version": "10.1.0",
+          "returned_vulnerability_records": 0
+        },
+        {
+          "ecosystem": "npm",
+          "name": "file-type",
+          "version": "22.3.0",
+          "returned_vulnerability_records": 0
+        }
+      ],
+      "limitations": [
+        "An empty exact-version response means only that this OSV query returned no matching records at the retrieval time; it does not establish absence of vulnerabilities.",
+        "The response did not expose a database synchronization timestamp sufficient to prove the owner's 24-hour advisory-data freshness requirement.",
+        "Only these five package/version pairs were queried. Transitive/optional/build dependencies, bundled code and other advisory sources are not covered."
+      ]
+    },
+    "npm_registry_signatures": {
+      "verification": "ECDSA P-256/SHA-256 signatures over name@version:dist.integrity were verified locally with Node's built-in crypto against the public key returned by https://registry.npmjs.org/-/npm/v1/keys.",
+      "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+      "key_expiry_in_registry_response": null,
+      "results": [
+        {
+          "name": "argon2",
+          "version": "0.45.1",
+          "valid_signature_count": 1,
+          "dist_signatures_count": 1
+        },
+        {
+          "name": "otpauth",
+          "version": "9.5.2",
+          "valid_signature_count": 2,
+          "dist_signatures_count": 2
+        },
+        {
+          "name": "@noble/hashes",
+          "version": "2.4.0",
+          "valid_signature_count": 1,
+          "dist_signatures_count": 1
+        },
+        {
+          "name": "react-markdown",
+          "version": "10.1.0",
+          "valid_signature_count": 1,
+          "dist_signatures_count": 1
+        },
+        {
+          "name": "file-type",
+          "version": "22.3.0",
+          "valid_signature_count": 2,
+          "dist_signatures_count": 2
+        }
+      ],
+      "limitations": [
+        "This verifies the signature mathematics relative to a key retrieved from the same npm registry. Independent key identity, trust, and revocation are not established."
+      ]
+    },
+    "slsa_provenance_attestations": {
+      "verification_status": "The published bundle DSSE payloads were decoded as data and their subject SHA-512 digests matched the npm dist.integrity values. The Sigstore bundle signatures, certificate identity, transparency-log inclusion and provenance policy were not cryptographically verified.",
+      "results": [
+        {
+          "name": "argon2",
+          "version": "0.45.1",
+          "attestation_advertised": true,
+          "subject_digest_matches_dist_integrity": true,
+          "workflow_repository": "https://github.com/ranisalt/node-argon2",
+          "workflow_path": ".github/workflows/release.yml",
+          "workflow_ref": "refs/tags/v0.45.1",
+          "resolved_git_commit": "786de7152f95881b0683aea1d2ca60ed0d6d9e2f",
+          "invocation": "https://github.com/ranisalt/node-argon2/actions/runs/29877756901/attempts/1"
+        },
+        {
+          "name": "otpauth",
+          "version": "9.5.2",
+          "attestation_advertised": true,
+          "subject_digest_matches_dist_integrity": true,
+          "workflow_repository": "https://github.com/hectorm/otpauth",
+          "workflow_path": ".github/workflows/main.yml",
+          "workflow_ref": "refs/tags/v9.5.2",
+          "resolved_git_commit": "5a0cb600fae0eb5be476db825f26fbf612a2dffd",
+          "invocation": "https://github.com/hectorm/otpauth/actions/runs/33812915767/attempts/1"
+        },
+        {
+          "name": "@noble/hashes",
+          "version": "2.4.0",
+          "attestation_advertised": true,
+          "subject_digest_matches_dist_integrity": true,
+          "workflow_repository": "https://github.com/paulmillr/noble-hashes",
+          "workflow_path": ".github/workflows/release.yml",
+          "workflow_ref": "refs/tags/2.4.0",
+          "resolved_git_commit": "663c2aeeffc308ac0cded59bd32f7c212adacfc2",
+          "invocation": "https://github.com/paulmillr/noble-hashes/actions/runs/33074534582/attempts/1"
+        },
+        {
+          "name": "react-markdown",
+          "version": "10.1.0",
+          "attestation_advertised": false
+        },
+        {
+          "name": "file-type",
+          "version": "22.3.0",
+          "attestation_advertised": false
+        }
+      ]
+    }
+  },
   "packages": [
     {
       "name": "argon2",
@@ -84,6 +215,30 @@
         }
       ],
       "disposition": "The transitive hash dependency, its notices/advisories and TOTP seed custody, replay prevention, recovery and rate limiting remain unresolved."
+    },
+    {
+      "name": "@noble/hashes",
+      "version": "2.4.0",
+      "metadata_url": "https://registry.npmjs.org/%40noble%2fhashes/2.4.0",
+      "tarball_integrity": "sha512-X5XaVWZIBCT7HHZGm5I7ZQXDwLG+bGXuSrMQAW+7Zvl87h1kmc1ZB1VSRJcpUfoUrGQp4Fkoxm5kZ+Ms+aW+eA==",
+      "integrity_matches_downloaded_bytes": true,
+      "tarball_bytes": 167626,
+      "tarball_sha256": "e1946149b780017b2564fcc092cb01c04e1d7f20627d0296c17da8868f4436dc",
+      "license_declared": "MIT",
+      "engines": {
+        "node": ">= 20.19.0"
+      },
+      "dependencies": {},
+      "install_script": null,
+      "notice_files": [
+        {
+          "path": "package/LICENSE",
+          "bytes": 1109,
+          "sha256": "4f221aee6e072336700c408c68ab3b96a3fc09f6aebe6f48f1bd99e5ef13faec",
+          "finding": "MIT license text"
+        }
+      ],
+      "disposition": "This exact tarball is the sole direct production dependency declared by otpauth 9.5.2. Its signature verifies relative to npm's registry-published key, and its SLSA attestation subject matches the tarball digest; signer/build trust and the attestation signature still need independent verification. Full license/advisory checks remain open."
     },
     {
       "name": "react-markdown",

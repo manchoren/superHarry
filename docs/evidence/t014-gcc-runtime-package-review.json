@@ -1,0 +1,157 @@
+{
+  "status": "research only; not a pacman-resolved installation graph or package approval",
+  "reviewed_at_utc": "2026-11-01T02:00:26.6610934Z",
+  "inventory_sha256": "c2cbc97932fc330ef1f4ea25852a2508c1db2ab0aa44e112258246900c03baff",
+  "method": "Fetched the exact indexed archives as data, compared their SHA-256 values with the retained index, listed members without extraction, read .BUILDINFO/.PKGINFO and streamed only named license files. No package code was executed or installed.",
+  "source_recipe": {
+    "repository": "https://github.com/msys2/MINGW-packages",
+    "path": "mingw-w64-gcc/PKGBUILD",
+    "commit": "5c1ca99730b358ba0915fc8eba7a29e6e169c378",
+    "url": "https://github.com/msys2/MINGW-packages/blob/5c1ca99730b358ba0915fc8eba7a29e6e169c378/mingw-w64-gcc/PKGBUILD",
+    "sha256": "1a123ea062e01beb611c4375999492b0f41ef2d92d03e38cb29e7c23e855ad45",
+    "package_functions": {
+      "cc-libs": "Adds no files; declares exact-version dependencies on libgcc and libstdc++.",
+      "libgcc": "Adds the GCC low-level runtime library and copies COPYING3 and COPYING.RUNTIME.",
+      "libstdc++": "Adds the C++ runtime DLL and copies COPYING3 and COPYING.RUNTIME."
+    },
+    "limitation": "PKGBUILD hash agreement establishes recipe-byte correspondence to .BUILDINFO, not trusted publisher identity, source archive integrity, reproducible build or complete source-to-binary provenance."
+  },
+  "packages": [
+    {
+      "name": "mingw-w64-ucrt-x86_64-cc-libs",
+      "version": "16.2.0-6",
+      "archive": "mingw-w64-ucrt-x86_64-cc-libs-16.2.0-6-any.pkg.tar.zst",
+      "archive_sha256": "d8fff9e62443168bcda8ce746697243519c4f090ea607357ce94feac0bd10a50",
+      "buildinfo_pkgbuild_sha256": "1a123ea062e01beb611c4375999492b0f41ef2d92d03e38cb29e7c23e855ad45",
+      "license_metadata": [
+        "spdx:GPL-3.0-or-later WITH GCC-exception-3.1 AND GFDL-1.3-or-later"
+      ],
+      "archive_entries": [
+        ".BUILDINFO",
+        ".MTREE",
+        ".PKGINFO"
+      ],
+      "payload_files": [],
+      "dependencies_from_exact_recipe": [
+        "mingw-w64-ucrt-x86_64-libgcc=16.2.0-6",
+        "mingw-w64-ucrt-x86_64-libstdc++=16.2.0-6"
+      ],
+      "disposition": "The package is an empty dependency wrapper in this recipe. Its package-level license metadata cannot be treated as a per-file license finding or used to clear its runtime dependencies."
+    },
+    {
+      "name": "mingw-w64-ucrt-x86_64-libgcc",
+      "version": "16.2.0-6",
+      "archive": "mingw-w64-ucrt-x86_64-libgcc-16.2.0-6-any.pkg.tar.zst",
+      "archive_sha256": "80b2497f019977dd9528b1abc8621b1328a0115ab1f724047ccbb56bf323f11d",
+      "buildinfo_pkgbuild_sha256": "1a123ea062e01beb611c4375999492b0f41ef2d92d03e38cb29e7c23e855ad45",
+      "license_metadata": [
+        "spdx:GPL-3.0-or-later WITH GCC-exception-3.1 AND GFDL-1.3-or-later"
+      ],
+      "archive_entries": [
+        ".BUILDINFO",
+        ".MTREE",
+        ".PKGINFO",
+        "ucrt64/",
+        "ucrt64/bin/",
+        "ucrt64/bin/libgcc_s_seh-1.dll",
+        "ucrt64/share/",
+        "ucrt64/share/licenses/",
+        "ucrt64/share/licenses/libgcc/",
+        "ucrt64/share/licenses/libgcc/COPYING.RUNTIME",
+        "ucrt64/share/licenses/libgcc/COPYING3"
+      ],
+      "license_files": [
+        {
+          "path": "ucrt64/share/licenses/libgcc/COPYING.RUNTIME",
+          "bytes": 3324,
+          "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74",
+          "identifies": "GCC Runtime Library Exception, version 3.1"
+        },
+        {
+          "path": "ucrt64/share/licenses/libgcc/COPYING3",
+          "bytes": 35147,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+          "identifies": "GNU General Public License, version 3"
+        }
+      ],
+      "dependencies_from_package_metadata": [
+        "mingw-w64-ucrt-x86_64-libwinpthread"
+      ],
+      "disposition": "The package archive includes GPLv3 and Runtime Library Exception text. The package metadata also declares GFDL-1.3-or-later; applicability to this exact runtime artifact has not been resolved. The runtime binary's source correspondence and notices are not established by the recipe hash alone."
+    },
+    {
+      "name": "mingw-w64-ucrt-x86_64-libstdc++",
+      "version": "16.2.0-6",
+      "archive": "mingw-w64-ucrt-x86_64-libstdc++-16.2.0-6-any.pkg.tar.zst",
+      "archive_sha256": "33c5e58a85a538cf843a8672991cce591f0231d66da3b66a57629712d64be17f",
+      "buildinfo_pkgbuild_sha256": "1a123ea062e01beb611c4375999492b0f41ef2d92d03e38cb29e7c23e855ad45",
+      "license_metadata": [
+        "spdx:GPL-3.0-or-later WITH GCC-exception-3.1 AND GFDL-1.3-or-later"
+      ],
+      "archive_entries": [
+        ".BUILDINFO",
+        ".MTREE",
+        ".PKGINFO",
+        "ucrt64/",
+        "ucrt64/bin/",
+        "ucrt64/bin/libstdc++-6.dll",
+        "ucrt64/share/",
+        "ucrt64/share/licenses/",
+        "ucrt64/share/licenses/libstdc++/",
+        "ucrt64/share/licenses/libstdc++/COPYING.RUNTIME",
+        "ucrt64/share/licenses/libstdc++/COPYING3"
+      ],
+      "license_files": [
+        {
+          "path": "ucrt64/share/licenses/libstdc++/COPYING.RUNTIME",
+          "bytes": 3324,
+          "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74",
+          "identifies": "GCC Runtime Library Exception, version 3.1"
+        },
+        {
+          "path": "ucrt64/share/licenses/libstdc++/COPYING3",
+          "bytes": 35147,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+          "identifies": "GNU General Public License, version 3"
+        }
+      ],
+      "dependencies_from_package_metadata": [
+        "mingw-w64-ucrt-x86_64-libgcc=16.2.0-6",
+        "mingw-w64-ucrt-x86_64-libwinpthread",
+        "mingw-w64-ucrt-x86_64-tzdata"
+      ],
+      "disposition": "The package archive includes GPLv3 and Runtime Library Exception text. The package metadata also declares GFDL-1.3-or-later; applicability to this exact runtime artifact has not been resolved. The runtime binary's source correspondence and notices are not established by the recipe hash alone."
+    }
+  ],
+  "additional_indexed_dependencies": [
+    {
+      "name": "mingw-w64-ucrt-x86_64-libwinpthread",
+      "version": "14.0.0.r569.g34eeafb7d-1",
+      "archive_sha256": "b4ebe2826e848c5e790e06ea7b37d3e0594e005f42382b0506886f17df8127da",
+      "license_metadata": [
+        "spdx:MIT AND BSD-3-Clause"
+      ],
+      "existing_notice_path_hash": {
+        "path": "ucrt64/share/licenses/libwinpthread/COPYING",
+        "sha256": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177"
+      }
+    },
+    {
+      "name": "mingw-w64-ucrt-x86_64-tzdata",
+      "version": "2026f-1",
+      "archive_sha256": "dd8af2f770b3241d8c299343c12cd4d7e3b94c47195608158d28788a01575323",
+      "license_metadata": [
+        "custom: public domain"
+      ],
+      "existing_notice_path_hash": {
+        "path": "ucrt64/share/licenses/tzdata/LICENSE",
+        "sha256": "0613408568889f5739e5ae252b722a2659c02002839ad970a63dc5e9174b27cf"
+      }
+    }
+  ],
+  "limitations": [
+    "These package relationships are source-recipe and package-metadata evidence within an exploratory retained index; they are not an exact pacman resolver transaction.",
+    "The libwinpthread and tzdata notice hashes are path-audit evidence; their license texts and applicable terms were not adjudicated in this follow-up.",
+    "No complete source/build/artifact provenance, license compatibility, advisory disposition or owner approval is claimed."
+  ]
+}
