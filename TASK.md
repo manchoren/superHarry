@@ -59,63 +59,63 @@ Update the row whenever work starts, an assignment changes, a blocker appears, w
 | T028 | Implement app-level Django permissions and object authorization. | 🟢 T023, 🟢 T026, 🟢 T007 | Complete | Unassigned |
 | T029 | Implement required application audit events. | 🟢 T023, 🟢 T028, 🟢 T004 | In progress | Copilot |
 | T030 | Use Django's built-in first-admin creation workflow. | 🟢 T026, 🟢 T008 | Complete | Unassigned |
-| T031 | Implement later authenticated administrator recovery. | ⚪ T027, ⚪ T029, 🟢 T030, 🟢 T008 | Pending | Unassigned |
+| T031 | Implement later authenticated administrator recovery. | ⚪ T027, 🟡 T029, 🟢 T030, 🟢 T008 | Pending | Unassigned |
 | T032 | Configure trusted HTTPS and private reachability. | 🟢 T021, 🟢 T011, 🟢 T030 | Blocked | Unassigned |
-| T033 | Implement the constrained network broker. | 🟢 T012, ⚪ T028, ⚪ T029, 🔴 T032 | Pending | Unassigned |
+| T033 | Implement the constrained network broker. | 🟢 T012, 🟢 T028, 🟡 T029, 🔴 T032 | Pending | Unassigned |
 | T034 | Implement transactional network setup and reconnection. | ⚪ T033 | Pending | Unassigned |
-| T035 | Implement temporary guest sessions and admission limits. | 🟢 T026, ⚪ T028, ⚪ T029, 🟢 T007 | Pending | Unassigned |
-| T036 | Implement scoped file storage and authorized delivery. | 🟡 T023, ⚪ T028, ⚪ T029, 🟢 T025 | Pending | Unassigned |
-| T037 | Implement authorized Django SSE chat views. | 🟢 T026, ⚪ T028, 🟢 T025 | Work recorded | Unassigned |
+| T035 | Implement temporary guest sessions and admission limits. | 🟢 T026, 🟢 T028, 🟡 T029, 🟢 T007 | Pending | Unassigned |
+| T036 | Implement scoped file storage and authorized delivery. | 🟢 T023, 🟢 T028, 🟡 T029, 🟢 T025 | Pending | Unassigned |
+| T037 | Implement authorized Django SSE chat views. | 🟢 T026, 🟢 T028, 🟢 T025 | Work recorded | Unassigned |
 | T038 | Build the bilingual responsive Django template shell. | 🟢 T168 | Complete | Unassigned |
 | T039 | Build login, account and guest UI flows. | 🟢 T038, 🟢 T026, ⚪ T027, ⚪ T035 | Pending | Unassigned |
-| T040 | Build streamed chat and attachment interactions. | 🟢 T038, ⚪ T036, ⚪ T037, ⚪ T028 | Pending | Unassigned |
+| T040 | Build streamed chat and attachment interactions. | 🟢 T038, ⚪ T036, 🔵 T037, 🟢 T028 | Pending | Unassigned |
 | T041 | Add translation and responsive/accessibility checks. | 🟢 T038, ⚪ T039, ⚪ T040, 🟢 T020 | Pending | Unassigned |
-| T042 | Validate the secure basic chat slice in ARM64. | ⚪ T029, 🔴 T032, ⚪ T034, ⚪ T039, ⚪ T040, ⚪ T041, 🟢 T021 | Pending | Unassigned |
-| T043 | Implement complete constitution/context delivery. | 🟢 T168, 🟢 T010 | Pending | Unassigned |
+| T042 | Validate the secure basic chat slice in ARM64. | 🟡 T029, 🔴 T032, ⚪ T034, ⚪ T039, ⚪ T040, ⚪ T041, 🟢 T021 | Pending | Unassigned |
+| T043 | Implement complete constitution/context delivery. | 🟢 T168, 🟢 T010 | Work recorded | Unassigned |
 | T044 | Implement the provider-neutral model interface. | 🟢 T009, 🟢 T010, 🟢 T168 | Work recorded | Unassigned |
-| T045 | Implement the authorized tool-call boundary. | ⚪ T028, ⚪ T029, ⚪ T043, 🟢 T025 | Pending | Unassigned |
-| T046 | Implement OpenAI premium integration. | ⚪ T044, 🟢 T019, 🟢 T009 | Pending | Unassigned |
-| T047 | Implement provisional local inference. | ⚪ T044, 🟢 T018, 🟢 T167, ⚪ T043 | Pending | Unassigned |
-| T048 | Implement token/cost ledgers and hard limits. | 🟡 T023, ⚪ T044, 🟢 T009, ⚪ T029 | Pending | Unassigned |
-| T049 | Implement routing, circuit breaking and model controls. | ⚪ T046, ⚪ T047, ⚪ T048, ⚪ T043 | Pending | Unassigned |
-| T050 | Implement the shared heavy-job resource governor. | 🟢 T010, 🟡 T023, ⚪ T047, 🔴 T022 | Pending | Unassigned |
+| T045 | Implement the authorized tool-call boundary. | 🟢 T028, 🟡 T029, 🔵 T043, 🟢 T025 | Pending | Unassigned |
+| T046 | Implement OpenAI premium integration. | 🔵 T044, 🟢 T019, 🟢 T009 | Pending | Unassigned |
+| T047 | Implement provisional local inference. | 🔵 T044, 🟢 T018, 🟢 T167, 🔵 T043 | Pending | Unassigned |
+| T048 | Implement token/cost ledgers and hard limits. | 🟢 T023, 🔵 T044, 🟢 T009, 🟡 T029 | Pending | Unassigned |
+| T049 | Implement routing, circuit breaking and model controls. | ⚪ T046, ⚪ T047, ⚪ T048, 🔵 T043 | Pending | Unassigned |
+| T050 | Implement the shared heavy-job resource governor. | 🟢 T010, 🟢 T023, ⚪ T047, 🟡 T022 | Pending | Unassigned |
 | T051 | Implement guest scheduling and fair admission. | ⚪ T035, ⚪ T050, ⚪ T049 | Pending | Unassigned |
-| T052 | Implement durable pending tasks and safe continuation. | 🟡 T023, ⚪ T045, ⚪ T049, ⚪ T050, 🟢 T010 | Pending | Unassigned |
-| T053 | Implement reply-language and capability degradation policies. | ⚪ T043, ⚪ T049, ⚪ T045, 🟢 T038 | Pending | Unassigned |
+| T052 | Implement durable pending tasks and safe continuation. | 🟢 T023, ⚪ T045, ⚪ T049, ⚪ T050, 🟢 T010 | Pending | Unassigned |
+| T053 | Implement reply-language and capability degradation policies. | 🔵 T043, ⚪ T049, ⚪ T045, 🟢 T038 | Pending | Unassigned |
 | T054 | Build model, budget and mode administration UI. | ⚪ T039, ⚪ T048, ⚪ T049, ⚪ T053 | Pending | Unassigned |
 | T055 | Implement capability-aware agent orchestration. | ⚪ T045, ⚪ T049, ⚪ T050, ⚪ T052, ⚪ T053 | Pending | Unassigned |
-| T056 | Build the repeatable model and agent evaluation harness. | 🟢 T015, ⚪ T044, ⚪ T055 | Pending | Unassigned |
+| T056 | Build the repeatable model and agent evaluation harness. | 🟢 T015, 🔵 T044, ⚪ T055 | Pending | Unassigned |
 | T057 | Validate secure chat with real routing in ARM64. | ⚪ T042, ⚪ T051, ⚪ T054, ⚪ T055, ⚪ T056 | Pending | Unassigned |
-| T058 | Finalize memory and persistent-domain schema designs. | 🟢 T006, ⚪ T043, 🟢 T015 | Pending | Unassigned |
-| T059 | Implement isolated conversation histories. | 🟡 T023, ⚪ T028, ⚪ T037, ⚪ T058 | Pending | Unassigned |
-| T060 | Implement memory repositories and provenance. | 🟡 T023, ⚪ T028, ⚪ T058, ⚪ T029 | Pending | Unassigned |
-| T061 | Implement bounded semantic retrieval with keyword fallback. | ⚪ T060, ⚪ T043, 🟢 T167, ⚪ T050 | Pending | Unassigned |
+| T058 | Finalize memory and persistent-domain schema designs. | 🟢 T006, 🔵 T043, 🟢 T015 | Pending | Unassigned |
+| T059 | Implement isolated conversation histories. | 🟢 T023, 🟢 T028, 🔵 T037, ⚪ T058 | Pending | Unassigned |
+| T060 | Implement memory repositories and provenance. | 🟢 T023, 🟢 T028, ⚪ T058, 🟡 T029 | Pending | Unassigned |
+| T061 | Implement bounded semantic retrieval with keyword fallback. | ⚪ T060, 🔵 T043, 🟢 T167, ⚪ T050 | Pending | Unassigned |
 | T062 | Implement safe memory extraction and staleness handling. | ⚪ T060, ⚪ T055 | Pending | Unassigned |
-| T063 | Implement personality and fixed-directive administration. | ⚪ T060, ⚪ T028, ⚪ T029, ⚪ T043 | Pending | Unassigned |
+| T063 | Implement personality and fixed-directive administration. | ⚪ T060, 🟢 T028, 🟡 T029, 🔵 T043 | Pending | Unassigned |
 | T064 | Implement user memory controls and visibility policy. | ⚪ T060, ⚪ T039 | Pending | Unassigned |
 | T065 | Integrate scoped memory into agent responses. | ⚪ T061, ⚪ T062, ⚪ T063, ⚪ T055 | Pending | Unassigned |
-| T066 | Build persistent admin and user settings. | 🟡 T023, ⚪ T039, ⚪ T054, ⚪ T064 | Pending | Unassigned |
+| T066 | Build persistent admin and user settings. | 🟢 T023, ⚪ T039, ⚪ T054, ⚪ T064 | Pending | Unassigned |
 | T067 | Finalize optional memory encryption and recovery design. | ⚪ T058, 🟢 T011, 🟢 T004 | Pending | Unassigned |
-| T068 | Implement memory encryption and transactional conversion. | ⚪ T060, ⚪ T067, 🟢 T167, ⚪ T029 | Pending | Unassigned |
-| T069 | Implement the minimal persistent maintenance scheduler. | 🟡 T023, ⚪ T029, ⚪ T050, 🟢 T010 | Pending | Unassigned |
+| T068 | Implement memory encryption and transactional conversion. | ⚪ T060, ⚪ T067, 🟢 T167, 🟡 T029 | Pending | Unassigned |
+| T069 | Implement the minimal persistent maintenance scheduler. | 🟢 T023, 🟡 T029, ⚪ T050, 🟢 T010 | Pending | Unassigned |
 | T070 | Implement application-managed access and workspace quotas. | ⚪ T036, ⚪ T059, ⚪ T060, ⚪ T066 | Pending | Unassigned |
 | T071 | Implement storage-pressure cleanup and restart checks. | ⚪ T069, ⚪ T070 | Pending | Unassigned |
 | T072 | Implement idle-time memory consolidation. | ⚪ T069, ⚪ T062, ⚪ T071, ⚪ T065 | Pending | Unassigned |
-| T073 | Build scheduled maintenance and storage status views. | ⚪ T066, ⚪ T071, ⚪ T072, 🔴 T022 | Pending | Unassigned |
+| T073 | Build scheduled maintenance and storage status views. | ⚪ T066, ⚪ T071, ⚪ T072, 🟡 T022 | Pending | Unassigned |
 | T074 | Design consistent backups and transactional restores. | 🟢 T006, ⚪ T067, ⚪ T058, 🟢 T004 | Pending | Unassigned |
 | T075 | Implement manual admin backup and download. | ⚪ T074, ⚪ T068, ⚪ T059, ⚪ T066, ⚪ T069, ⚪ T036 | Pending | Unassigned |
-| T076 | Implement reviewed restore and latest recovery retention. | ⚪ T075, ⚪ T029 | Pending | Unassigned |
+| T076 | Implement reviewed restore and latest recovery retention. | ⚪ T075, 🟡 T029 | Pending | Unassigned |
 | T077 | Validate encryption, backup and restore failure paths. | ⚪ T068, ⚪ T075, ⚪ T076, ⚪ T071 | Pending | Unassigned |
 | T078 | Design release integrity, updates and data rollback. | 🟢 T003, 🟢 T004, ⚪ T074, 🟢 T006 | Pending | Unassigned |
-| T079 | Implement admin-initiated application updates. | ⚪ T078, ⚪ T076, ⚪ T029, 🔴 T022 | Pending | Unassigned |
+| T079 | Implement admin-initiated application updates. | ⚪ T078, ⚪ T076, 🟡 T029, 🟡 T022 | Pending | Unassigned |
 | T080 | Validate the persistence/admin milestone. | ⚪ T059, ⚪ T064, ⚪ T065, ⚪ T066, ⚪ T073, ⚪ T077, ⚪ T079, ⚪ T057 | Pending | Unassigned |
 | T081 | Finalize sandbox isolation and boundary design. | 🟢 T004, 🟢 T010, ⚪ T036, 🟢 T011 | Pending | Unassigned |
-| T082 | Implement isolated execution and hard resource caps. | ⚪ T081, ⚪ T045, ⚪ T050, ⚪ T029, 🟢 T021 | Pending | Unassigned |
+| T082 | Implement isolated execution and hard resource caps. | ⚪ T081, ⚪ T045, ⚪ T050, 🟡 T029, 🟢 T021 | Pending | Unassigned |
 | T083 | Implement authorized public search, reading and downloads. | ⚪ T045, ⚪ T036, 🟢 T004, 🟢 T167 | Pending | Unassigned |
 | T084 | Implement validated offline sandbox file staging. | ⚪ T082, ⚪ T083, ⚪ T070 | Pending | Unassigned |
 | T085 | Implement sandbox tool dispatch and result handling. | ⚪ T084, ⚪ T055 | Pending | Unassigned |
 | T086 | Design and validate package-guard criteria. | 🟢 T004, 🟢 T015, ⚪ T081 | Pending | Unassigned |
-| T087 | Implement independent package decisions and audit. | ⚪ T086, ⚪ T045, ⚪ T029, ⚪ T083 | Pending | Unassigned |
+| T087 | Implement independent package decisions and audit. | ⚪ T086, ⚪ T045, 🟡 T029, ⚪ T083 | Pending | Unassigned |
 | T088 | Implement staged offline dependency installation and reuse. | ⚪ T087, ⚪ T084, ⚪ T070, ⚪ T071 | Pending | Unassigned |
 | T089 | Enable guarded task-library selection and alternative retry. | ⚪ T088, ⚪ T085, ⚪ T065 | Pending | Unassigned |
 | T090 | Select approved document-generation/conversion packages. | ⚪ T086, 🟢 T015 | Pending | Unassigned |
@@ -125,19 +125,19 @@ Update the row whenever work starts, an assignment changes, a blocker appears, w
 | T094 | Validate the complete tool/sandbox milestone. | ⚪ T092, ⚪ T093, ⚪ T091, ⚪ T057 | Pending | Unassigned |
 | T095 | Design the skill manifest and approval records. | 🟢 T004, 🟢 T005, 🟢 T006 | Complete | Unassigned |
 | T096 | Implement source intake and manifest validation. | 🟢 T095, ⚪ T036, ⚪ T045, ⚪ T083 | Pending | Unassigned |
-| T097 | Implement admin approval and integrity enforcement. | ⚪ T096, ⚪ T029 | Pending | Unassigned |
+| T097 | Implement admin approval and integrity enforcement. | ⚪ T096, 🟡 T029 | Pending | Unassigned |
 | T098 | Implement signature reporting and skill lifecycle. | ⚪ T097 | Pending | Unassigned |
 | T099 | Implement permission-bounded skill execution. | ⚪ T094, ⚪ T098 | Pending | Unassigned |
 | T100 | Build skill proposal/review/lifecycle interfaces. | ⚪ T039, ⚪ T098 | Pending | Unassigned |
 | T101 | Deliver reusable approved document skills. | ⚪ T091, ⚪ T099, ⚪ T100 | Pending | Unassigned |
 | T102 | Validate skill security and recovery integration. | ⚪ T101, ⚪ T076 | Pending | Unassigned |
 | T103 | Finalize user-job policy and recovery decisions. | ⚪ T069, 🟢 T007, 🟢 T010, ⚪ T065 | Pending | Unassigned |
-| T104 | Implement owned scheduled-job CRUD and persistence. | ⚪ T103, ⚪ T028, ⚪ T029, ⚪ T069 | Pending | Unassigned |
+| T104 | Implement owned scheduled-job CRUD and persistence. | ⚪ T103, 🟢 T028, 🟡 T029, ⚪ T069 | Pending | Unassigned |
 | T105 | Implement time zones and daylight-saving behavior. | ⚪ T104, ⚪ T066 | Pending | Unassigned |
 | T106 | Implement resource/budget guardrails and stop controls. | ⚪ T104, ⚪ T048, ⚪ T050, ⚪ T052 | Pending | Unassigned |
 | T107 | Implement missed-job review and safe restart recovery. | ⚪ T105, ⚪ T106, ⚪ T065 | Pending | Unassigned |
 | T108 | Build user job management and failure views. | ⚪ T104, ⚪ T105, ⚪ T106, ⚪ T039 | Pending | Unassigned |
-| T109 | Build admin job and resource oversight. | ⚪ T108, ⚪ T048, 🔴 T022 | Pending | Unassigned |
+| T109 | Build admin job and resource oversight. | ⚪ T108, ⚪ T048, 🟡 T022 | Pending | Unassigned |
 | T110 | Validate scheduler and maintenance coexistence. | ⚪ T107, ⚪ T109, ⚪ T071, ⚪ T072, ⚪ T102 | Pending | Unassigned |
 | T111 | Design image/OCR validation and fixtures. | 🟢 T004, 🟢 T015, ⚪ T036, ⚪ T081 | Pending | Unassigned |
 | T112 | Implement sandboxed image hygiene. | ⚪ T111, ⚪ T084, ⚪ T092 | Pending | Unassigned |
@@ -146,7 +146,7 @@ Update the row whenever work starts, an assignment changes, a blocker appears, w
 | T115 | Build image/OCR chat interactions. | ⚪ T114, ⚪ T040 | Pending | Unassigned |
 | T116 | Validate malicious image/OCR and model paths. | ⚪ T115, 🟢 T015 | Pending | Unassigned |
 | T117 | Design display ownership and OS/browser isolation. | 🟢 T004, 🟢 T011, 🟢 T007, ⚪ T045 | Pending | Unassigned |
-| T118 | Implement trusted display coordination and session lifecycle. | ⚪ T117, ⚪ T028, ⚪ T029, 🔴 T032 | Pending | Unassigned |
+| T118 | Implement trusted display coordination and session lifecycle. | ⚪ T117, 🟢 T028, 🟡 T029, 🔴 T032 | Pending | Unassigned |
 | T119 | Implement isolated Brave profile provisioning. | ⚪ T118, 🟢 T167 | Pending | Unassigned |
 | T120 | Implement secure handover and ownership invalidation. | ⚪ T119 | Pending | Unassigned |
 | T121 | Implement idle, playback and release behavior. | ⚪ T120 | Pending | Unassigned |
@@ -160,7 +160,7 @@ Update the row whenever work starts, an assignment changes, a blocker appears, w
 | T129 | Test display isolation, races and credential protection. | ⚪ T127, ⚪ T128, 🟢 T015 | Pending | Unassigned |
 | T130 | Validate image/display functional milestone. | ⚪ T116, ⚪ T129, ⚪ T034 | Pending | Unassigned |
 | T131 | Design channel adapters and identity-linking contracts. | 🟢 T004, 🟢 T005, 🟢 T007, ⚪ T045 | Pending | Unassigned |
-| T132 | Implement channel core and account-link management. | ⚪ T131, ⚪ T028, ⚪ T029, ⚪ T052, ⚪ T066, ⚪ T036 | Pending | Unassigned |
+| T132 | Implement channel core and account-link management. | ⚪ T131, 🟢 T028, 🟡 T029, ⚪ T052, ⚪ T066, ⚪ T036 | Pending | Unassigned |
 | T133 | Implement Telegram private-chat long polling. | ⚪ T132, ⚪ T083, ⚪ T112 | Pending | Unassigned |
 | T134 | Validate Telegram delivery and permissions. | ⚪ T133, ⚪ T055 | Pending | Unassigned |
 | T135 | Verify dedicated Gmail and design safe mail integration. | ⚪ T134, ⚪ T131 | Pending | Unassigned |
@@ -449,6 +449,7 @@ Sources: plan sections 3, 10, 11 and 12; Q-31-Q-39, P-26-P-31 and P-46-P-47.
 - [ ] **T029 - Implement required application audit events.** Depends: T023, T028, T004. Lane: observability. Gate: G-CONTRACT, G-SECURITY. Acceptance: record project-required privileged actions without secrets and prevent user/model code from altering audit records. Use Django-supported logging and admin facilities where applicable; do not duplicate Django's internal security implementation. Owner decision (2026-11-02): 90-day provisional retention subject to legal/operational review before production; read/export by the application `admin` role; proposed minimal authentication/session/reset/TOTP/privileged-recovery event classes and safe-field boundaries accepted; required audit-write failure blocks the associated login/privileged action with a generic error, preserving an already-committed attempt counter. Timing-distribution tests and legal hold remain deferred. See [security decisions proposal](docs/security-decisions-proposal.md#owner-decisions-2026-11-02). Owner-approved initial event inventory (2026-11-02): failed access and aggregated failed-session-resolution signals; session creation, login, logout and revocation; password recovery/reset and privileged recovery; user creation/deactivation/role changes; TOTP enrollment/confirmation/deactivation/recovery. Further owner-approved design choices (2026-11-02): internal user-ID snapshots without foreign keys; separate events for admin reads and exports; proposed event vocabulary; OS-mediated recovery attributed to the application service until operator identity is approved; same transaction for protected action and event when feasible; admin audit queries limited to 100 events/page and 31 days; exports limited to 1,000 events or 1 MiB, 31 days, and 5 per admin per hour. The owner approved the typed schema and transaction-boundary candidate and granted G-CONTRACT/G-SECURITY implementation approval on 2026-11-02. The owner selected disabling hard account deletion in Django admin in favor of deactivation until deletion semantics and audit are approved. Implemented the `AuditEvent` schema/migration and closed-vocabulary writer; successful login/session creation, logout, failed password-verification, admin user creation/deactivation/role changes are audited; account hard deletion is disabled; required audit-write failure returns a generic 503 and rolls back protected actions. All 47 Django tests pass, including migration/system checks. Remaining T029 work: implement bounded admin audit read/export, add remaining TOTP/recovery event call sites when T027 exists, and define retention/purge only after legal/operational review. See [T029 audit contract proposal](docs/t029-audit-contract-proposal.md).
 - [x] **T030 - Use Django's built-in first-admin creation workflow.** Depends: T026, T008. Lane: security. Gate: none for `createsuperuser`; G-OPS remains for deployment procedures. Acceptance: document and use Django's `createsuperuser` management command and admin site instead of a custom bootstrap token protocol. Evidence: [README.md](README.md) documents `migrate`, Django's `createsuperuser` command and the built-in `/admin/` site; no custom bootstrap-token flow was added. Creating a real administrator account remains an operator action.
 - T029 continuation (2026-11-02): the approved bounded HTML/CSV admin audit interface is implemented and committed in `71ed5c0`. Audit events now reject instance re-save/delete and QuerySet update/delete through Django application APIs; SQLite remains explicitly not tamper-proof against raw SQL, database-file access or Django-process compromise. Focused immutability tests pass. Remaining T029 work is the TOTP/password-recovery/other not-yet-implemented event call sites when their owning T027 gates and flows are authorized, plus legal/operational review before any production retention purge.
+- T029 validation update (2026-11-02): reran the focused audit-access and event tests (20 passed) and the complete Django suite (71 passed); Django system checks passed. The implemented bounded admin read/export work is verified. T029 remains in progress for event call sites that depend on authorized T027 flows and for legal/operational retention review; no purge or production acceptance is claimed.
 - [ ] **T031 - Implement later authenticated administrator recovery.** Depends: T027, T029, T030, T008. Lane: security. Gate: G-SECURITY, G-OPS. Acceptance: approved OS-admin verification, MFA handling and audits work after lost app credentials; ordinary OS users, guests and remote unauthenticated callers are rejected; bootstrap stays closed.
 - [ ] **T032 - Configure trusted HTTPS and private reachability.** Depends: T021, T011, T030. Lane: platform. Gate: G-OPS. Acceptance: Caddy local CA, localhost/LAN hostname certificates, authenticated CA transfer/fingerprint checking, client trust, renewal/rotation and Tailscale are tested; setup is never proxied from LAN; no public app exposure or TLS bypass. Blocker: G-OPS approval for this deployment/network exposure is not recorded, and the current owner scope expressly excludes LAN exposure and host-firewall changes. Next: obtain explicit approval for a compatible private-reachability scope before configuring TLS, Tailscale, listeners or firewall rules.
 - [ ] **T033 - Implement the constrained network broker.** Depends: T012, T028, T029, T032. Lane: platform. Gate: G-OPS, G-SECURITY. Acceptance: separate privileged broker accepts only the API service OS identity through a protected Unix socket; validated operations have admin session checks; agent, guest, sandbox and other OS users cannot reach it.
@@ -468,7 +469,7 @@ T029 implementation update (2026-11-02): the approved audit model, writer, authe
 
 Sources: plan sections 3-4 and 12; Q-04-Q-08, Q-60-Q-61, P-03-P-08 and P-49-P-51.
 
-- [ ] **T043 - Implement complete constitution/context delivery.** Depends: T168, T010. Lane: application. Gate: G-MODEL, G-SECURITY. Acceptance: every runtime/delegated agent/model/channel gets the complete current constitution; version/hash and tokenizer checks detect updates/overflow; missing mandatory context blocks actions rather than truncating it.
+- [ ] **T043 - Implement complete constitution/context delivery.** Depends: T168, T010. Lane: application. Gate: G-MODEL, G-SECURITY. Acceptance: every runtime/delegated agent/model/channel gets the complete current constitution; version/hash and tokenizer checks detect updates/overflow; missing mandatory context blocks actions rather than truncating it. Work recorded: [T043 constitution and context-delivery contract proposal](docs/t043-constitution-context-contract-proposal.md) drafted for G-MODEL/G-SECURITY review; design only, not approved or implemented.
 - [ ] **T044 - Implement the provider-neutral model interface.** Depends: T009, T010, T168. Lane: models. Gate: G-MODEL, G-CONTRACT. Acceptance: typed streaming/capability/usage/error/cancellation contracts support OpenAI and a provisional local adapter, without an economy API provider. Work recorded: [T044 provider-neutral model interface proposal](docs/t044-provider-interface-proposal.md) drafted for G-MODEL/G-CONTRACT review; design only, not approved or implemented.
 - [ ] **T045 - Implement the authorized tool-call boundary.** Depends: T028, T029, T043, T025. Lane: core. Gate: G-SECURITY, G-CONTRACT. Acceptance: each tool declares role, schema, effects and audit behavior; validate output and requester context outside the model; guest receives no tools and model content cannot bypass confirmations or reach shell/SQL/eval unchecked.
 - [ ] **T046 - Implement OpenAI premium integration.** Depends: T044, T019, T009. Lane: models. Gate: G-MODEL. Acceptance: verified available default/model reasoning settings, timeouts, cancellation and usage mapping; only OpenAI is external; unsupported service-speed/reasoning options are reported accurately.
