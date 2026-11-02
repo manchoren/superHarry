@@ -36,9 +36,9 @@ The owner's direction changes the earlier ADR 0005 position that did not select 
 
 ### 2. Approve TOTP lifecycle and secret protection
 
-Implement the owner-selected enrollment, drift-window, replay, recovery-code and ordinary-user factor-reset requirements above. Select seed encryption, key custody, rotation, backup exclusion, recovery behavior and a supported dependency only after the applicable G-ARCH/G-SECURITY/G-CONTRACT and dependency reviews. ADR 0006's systemd-credential choice authorizes investigation only. Do not store plaintext seeds, improvise cryptography, or allow a password reset to disable MFA.
+Implement the owner-selected enrollment, drift-window, replay, recovery-code and ordinary-user factor-reset requirements above. The owner approved the host-bound systemd-credential key-custody direction under G-SECURITY on 2026-11-02, accepting the documented host-compromise and key-loss risks. Select key generation/provisioning, rotation, backup exclusion, recovery behavior, an AEAD dependency and schema only after the remaining G-OPS/G-ARCH/G-CONTRACT and dependency reviews. Do not store plaintext seeds, improvise cryptography, or allow a password reset to disable MFA.
 
-The owner selected preparing the [host-bound systemd-credential proposal](t027-totp-key-custody-proposal.md) on 2026-11-02. That proposal does not select or approve the production key mode, AEAD dependency, schema or service configuration.
+The [host-bound systemd-credential proposal](t027-totp-key-custody-proposal.md) records the approved direction and remaining boundaries; it does not approve the AEAD dependency, schema or service configuration.
 
 ### 3. Reconcile session and browser contracts
 

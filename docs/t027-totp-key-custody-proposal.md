@@ -1,10 +1,10 @@
 # T027 TOTP seed key-custody proposal
 
-Status: prepared after the owner's 2026-11-02 direction to develop the host-bound systemd-credential option. This is a proposal only: the key mode, dependency, schema, deployment and implementation are not approved. G-SECURITY, G-OPS, G-ARCH and G-CONTRACT remain applicable.
+Status: the owner approved the host-bound systemd-credential key-custody direction under G-SECURITY on 2026-11-02, accepting that it does not protect against privileged host compromise and key loss may make existing seeds unrecoverable. Target-OS validation, dependency, schema, deployment and implementation are not approved. G-OPS, G-ARCH and G-CONTRACT remain applicable.
 
 ## Proposed boundary
 
-Evaluate a dedicated, random 256-bit key, distinct from session, backup and memory keys. Use the selected host-bound systemd credential direction to deliver that key to the Django service at startup. The application would use a separately reviewed authenticated-encryption implementation to encrypt TOTP seeds before storing them in the database. A systemd credential protects delivery of the key to the service; it does not itself encrypt TOTP database fields.
+Use the approved host-bound systemd-credential direction to deliver a dedicated key to the Django service at startup. The candidate key is 256-bit, random, and distinct from session, backup and memory keys; its generation/provisioning is not approved. The application would use a separately reviewed authenticated-encryption implementation to encrypt TOTP seeds before storing them in the database. A systemd credential protects delivery of the key to the service; it does not itself encrypt TOTP database fields.
 
 Store only authenticated ciphertext and the metadata needed to decrypt it, including a unique nonce and an account-bound authenticated-data value. Keep the key and plaintext seed out of the database, logs, downloadable backups and agent/model context. Only the service should be able to read the decrypted credential. Never fall back to plaintext or generate a replacement key when the credential is missing, invalid or unavailable.
 
