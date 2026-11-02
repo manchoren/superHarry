@@ -56,7 +56,7 @@ The following are candidates for the remaining design work, not accepted policy.
 
 ## Research: implemented authentication alternatives
 
-Research-only comparison requested during T167; no product, dependency, license exception, architecture change or implementation is selected.
+Research-only comparison requested during T167. The owner selected Django for further evaluation and accepted the stock-session-key exception as a direction for formal review only; no product adoption, policy amendment, gate approval, dependency installation or architecture implementation is selected.
 
 ### Django authentication stack plus django-otp
 
@@ -80,9 +80,9 @@ Django's default 32-character session ID uses lowercase ASCII letters and digits
 
 Using the stock backend would also not by itself solve the lost-response case: safe recovery needs a durable login-attempt-to-session binding and a reviewed rule to reissue or replace the cookie, while keeping credentials out of audit records. Preserve the accepted session lifetime, secure cookie attributes, CSRF/Origin enforcement, non-reuse of preauth state and mandatory lifecycle audit unless separately revised. The framework default needs an explicitly flushed anonymous session before login, transaction integration for session/audit persistence, an approved recovery rule and negative tests before it is a viable implementation candidate. OWASP's comparison is [Session Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html#session-id-entropy); Django references and source are linked above. No security gate has approved the raw-at-rest exception.
 
-#### Proposed G-SECURITY exception for stock session keys (owner requested; pending acceptance)
+#### Proposed G-SECURITY exception for stock session keys (owner accepted direction for review; gate pending)
 
-If the owner elects to use the stock backend, propose replacing the 256-bit/hash-only rule with: accept Django's CSPRNG-generated 32-character lower-alphanumeric session ID (about 165 bits, above OWASP's published minimum/recommendation), and allow the live session database to contain that raw key. This is a material increase in the impact of read-only database/backup exposure; it is not equivalent to the prior verifier-only design.
+The owner accepted preparing this candidate exception for G-SECURITY review: replace the 256-bit/hash-only rule with acceptance of Django's CSPRNG-generated 32-character lower-alphanumeric session ID (about 165 bits, above OWASP's published minimum/recommendation), and allow the live session database to contain that raw key. This is a material increase in the impact of read-only database/backup exposure; it is not equivalent to the prior verifier-only design. The owner has not yet accepted the policy change itself, and G-SECURITY has not approved the exception.
 
 The exception should be limited to the session table and require all of the following before approval: only the Python/Django service identity can read or write the database and its `-wal`/`-shm` files; TypeScript and other processes are denied access by demonstrated OS ACLs; backups are encrypted with keys protected separately from the database, access is limited and retention/restore paths are reviewed; raw session keys and `Set-Cookie` headers are excluded from application, proxy, SQL, diagnostics, audit and crash logs; cookies remain HTTPS-only, host-only, `HttpOnly`, `SameSite=Strict`, `Path=/`; sessions retain the selected 60-minute idle/24-hour absolute expiry and revoke on logout, disablement, password reset and role change; an exposure response can invalidate all live database sessions before service resumes. Encryption protects offline media but does not stop a process with database read access from obtaining active keys. Security review must accept that residual risk explicitly.
 
