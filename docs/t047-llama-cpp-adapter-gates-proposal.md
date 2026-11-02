@@ -1,6 +1,6 @@
 # T047 llama.cpp adapter gate proposal
 
-**Status:** Owner review requested. This is a design proposal only; it does not approve or implement a runtime, model, build, download, installation, service, configuration, or model invocation.
+**Status:** Owner approved the bounded protocol direction on 2026-11-02. This is still a design proposal only; the approval does not approve or implement a runtime, model, build, download, installation, service, configuration, or model invocation.
 
 **Constitution basis:** The complete current `constitution.md` was read for this proposal. Its SHA-256 is `D09E90AA0EFE609A7D335A7B10ECC5623DAB1E757B5A00D4E7C82526CE9DC489`. The constitution requires full protected context, local-only guest inference, deny-by-default authorization, and no silent omission or truncation.
 
@@ -58,6 +58,6 @@ The existing T044 synchronous interface is the intended consumer. Review any ada
 - Changing systemd, Django settings, dependencies, environment secrets, network/firewall exposure, public APIs, schemas, routing, tool permissions, channels, or audit vocabulary.
 - Claiming T043, T044, T047, or T050 complete.
 
-## Owner decision requested
+## Owner decision recorded
 
-Approve or reject only the **bounded protocol design direction** (llama.cpp HTTP API at the reviewed source commit, preflight through `/chat/completions/input_tokens`, no resumable header, loopback-only future adapter). Such approval would not close G-ARCH/G-MODEL, authorize an artifact or model, or permit runtime installation/execution. Those require the separate evidence and decisions listed above.
+On 2026-11-02, the owner approved only the **bounded protocol design direction**: llama.cpp HTTP API at the reviewed source commit, preflight through `/chat/completions/input_tokens`, no resumable header, and loopback-only future adapter. This does not close G-ARCH/G-MODEL, authorize an artifact or model, or permit runtime installation/execution. Those require the separate evidence and decisions listed above.
