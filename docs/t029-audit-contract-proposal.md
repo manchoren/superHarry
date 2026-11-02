@@ -56,8 +56,8 @@ Use a closed vocabulary with one event per recorded outcome:
 | `auth.totp_enrollment_confirmed` | `success` | Authorized actor and affected account. |
 | `auth.totp_deactivated` | `success` | Authorized actor and affected account. |
 | `auth.totp_recovery_used` | `success` | Account actor/target; never include a recovery code or verifier. |
-| `admin.audit_read` | `success` | Authorized admin actor; emit for each permitted query, without storing search terms or returned event contents. |
-| `admin.audit_exported` | `success` | Authorized admin actor; record only bounded export metadata, not exported content. |
+| `admin.audit_read` | `success` | Authorized admin actor; emit for each permitted query, without storing search terms or returned event contents. Maximum 100 events per page and 31-day query range. |
+| `admin.audit_exported` | `success` | Authorized admin actor; record only bounded export metadata, not exported content. Maximum 1,000 events or 1 MiB per export, 31-day range, and 5 exports per admin per hour. |
 
 `admin.audit_read` and `admin.audit_exported` are proposed to provide accountability for the previously approved admin read/export capability. If approved, rate/volume bounding must avoid letting audit-query logging become a denial-of-service vector.
 
@@ -70,6 +70,7 @@ The initial inventory does not imply a public password-reset workflow. Reset iss
 - Approve the proposed closed event vocabulary above as the initial event set.
 - Attribute OS-admin-mediated recovery to the responsible application service until a human OS-operator identity mechanism is approved under T031/G-OPS.
 - Keep each protected state transition and its required audit event in the same transaction when feasible. Define and test exact transaction boundaries per action during G-CONTRACT review; do not claim success if a required audit write fails.
+- Bound admin audit queries to 100 events per page and a 31-day range. Bound exports to 1,000 events or 1 MiB, a 31-day range, and 5 exports per admin per hour.
 
 These are owner policy/design decisions, not completion of G-CONTRACT/G-SECURITY review.
 
@@ -91,7 +92,7 @@ For failed authentication, a known account may be correlated by its internal ID;
 
 ## Decisions required before implementation
 
-1. Confirm exact storage field types for the selected Django user primary key and safe metadata for admin reads/exports, including quantitative query/export bounds.
+1. Confirm exact storage field types for the selected Django user primary key and safe metadata for admin reads/exports.
 2. Specify and review transaction boundaries for each event/action pair, including failed-login counters, session transitions, reset/recovery, TOTP changes, and role changes.
 3. Confirm the approved initial operation set against any additional privileged operations introduced by dependent tasks.
 4. Confirm the 90-day retention and purge operation after the required legal/operational review.
