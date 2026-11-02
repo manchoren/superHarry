@@ -7,3 +7,4 @@ db.sqlite3
 .env.*
 !.env.example
 staticfiles/
+caddy_windows_amd64.exe
