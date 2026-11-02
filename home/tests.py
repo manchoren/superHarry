@@ -8,6 +8,7 @@ from uuid import UUID
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser, Permission
 from django.contrib.sessions.models import Session
+from django.db import OperationalError, transaction
 from django.http import Http404, HttpResponse
 from django.middleware.csrf import CSRF_SESSION_KEY
 from django.test import Client, TestCase, override_settings
@@ -20,8 +21,9 @@ from home.authorization import (
     owned_conversations,
     owned_messages,
 )
+from home.audit import AuditUnavailable, record_event
 from home.middleware import SessionLifetimeMiddleware
-from home.models import Conversation, Message
+from home.models import AuditEvent, Conversation, Message
 from home.views import home
 
 
@@ -176,6 +178,154 @@ class ConversationAuthorizationTests(TestCase):
                     )
 
 
+class AuditEventTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="audit-user",
+            password="test-password-123",
+        )
+
+    def test_writer_persists_only_the_approved_typed_fields(self):
+        event = record_event(
+            event_type=AuditEvent.EventType.LOGIN_SUCCEEDED,
+            outcome=AuditEvent.Outcome.SUCCESS,
+            actor_kind=AuditEvent.ActorKind.USER,
+            actor_user_id=self.user.pk,
+            target_user_id=self.user.pk,
+        )
+
+        self.assertEqual(event.event_type, AuditEvent.EventType.LOGIN_SUCCEEDED)
+        self.assertEqual(event.actor_user_id, self.user.pk)
+        self.assertEqual(event.target_user_id, self.user.pk)
+        self.assertIsNotNone(event.event_id)
+        self.assertTrue(timezone.is_aware(event.occurred_at))
+        self.assertEqual(
+            {field.name for field in AuditEvent._meta.fields},
+            {
+                "event_id",
+                "occurred_at",
+                "event_type",
+                "outcome",
+                "actor_kind",
+                "actor_user_id",
+                "target_user_id",
+                "aggregate_count",
+                "request_id",
+            },
+        )
+
+    def test_unknown_account_failure_does_not_store_a_target_identity(self):
+        event = record_event(
+            event_type=AuditEvent.EventType.PASSWORD_VERIFICATION_FAILED,
+            outcome=AuditEvent.Outcome.FAILURE,
+            actor_kind=AuditEvent.ActorKind.SERVICE,
+        )
+
+        self.assertIsNone(event.actor_user_id)
+        self.assertIsNone(event.target_user_id)
+
+    def test_aggregate_signal_requires_a_positive_count_and_target(self):
+        event = record_event(
+            event_type=AuditEvent.EventType.SESSION_RESOLUTION_FAILURE_SIGNAL,
+            outcome=AuditEvent.Outcome.SIGNAL,
+            actor_kind=AuditEvent.ActorKind.SERVICE,
+            target_user_id=self.user.pk,
+            aggregate_count=5,
+        )
+
+        self.assertEqual(event.aggregate_count, 5)
+        with self.assertRaises(ValueError):
+            record_event(
+                event_type=AuditEvent.EventType.SESSION_RESOLUTION_FAILURE_SIGNAL,
+                outcome=AuditEvent.Outcome.SIGNAL,
+                actor_kind=AuditEvent.ActorKind.SERVICE,
+                target_user_id=self.user.pk,
+                aggregate_count=0,
+            )
+        with self.assertRaises(ValueError):
+            record_event(
+                event_type=AuditEvent.EventType.SESSION_RESOLUTION_FAILURE_SIGNAL,
+                outcome=AuditEvent.Outcome.SIGNAL,
+                actor_kind=AuditEvent.ActorKind.SERVICE,
+                aggregate_count=1,
+            )
+
+    def test_writer_rejects_mismatched_event_outcome_and_actor(self):
+        with self.assertRaises(ValueError):
+            record_event(
+                event_type=AuditEvent.EventType.LOGIN_SUCCEEDED,
+                outcome=AuditEvent.Outcome.FAILURE,
+                actor_kind=AuditEvent.ActorKind.USER,
+                actor_user_id=self.user.pk,
+                target_user_id=self.user.pk,
+            )
+        with self.assertRaises(ValueError):
+            record_event(
+                event_type=AuditEvent.EventType.LOGIN_SUCCEEDED,
+                outcome=AuditEvent.Outcome.SUCCESS,
+                actor_kind=AuditEvent.ActorKind.SERVICE,
+                target_user_id=self.user.pk,
+            )
+        with self.assertRaises(ValueError):
+            record_event(
+                event_type="auth.unapproved_event",
+                outcome=AuditEvent.Outcome.SUCCESS,
+                actor_kind=AuditEvent.ActorKind.USER,
+                actor_user_id=self.user.pk,
+            )
+
+    def test_writer_maps_database_failures_to_audit_unavailable(self):
+        with patch(
+            "home.audit.AuditEvent.objects.create",
+            side_effect=OperationalError("synthetic database failure"),
+        ):
+            with self.assertRaises(AuditUnavailable):
+                record_event(
+                    event_type=AuditEvent.EventType.LOGIN_SUCCEEDED,
+                    outcome=AuditEvent.Outcome.SUCCESS,
+                    actor_kind=AuditEvent.ActorKind.USER,
+                    actor_user_id=self.user.pk,
+                    target_user_id=self.user.pk,
+                )
+
+    def test_event_and_protected_change_can_roll_back_together(self):
+        with self.assertRaises(RuntimeError):
+            with transaction.atomic():
+                record_event(
+                    event_type=AuditEvent.EventType.LOGIN_SUCCEEDED,
+                    outcome=AuditEvent.Outcome.SUCCESS,
+                    actor_kind=AuditEvent.ActorKind.USER,
+                    actor_user_id=self.user.pk,
+                    target_user_id=self.user.pk,
+                )
+                raise RuntimeError("synthetic protected-operation failure")
+
+        self.assertFalse(
+            AuditEvent.objects.filter(
+                event_type=AuditEvent.EventType.LOGIN_SUCCEEDED,
+                actor_user_id=self.user.pk,
+            ).exists()
+        )
+
+    def test_user_id_snapshots_survive_account_deletion(self):
+        user_id = self.user.pk
+        record_event(
+            event_type=AuditEvent.EventType.USER_DEACTIVATED,
+            outcome=AuditEvent.Outcome.SUCCESS,
+            actor_kind=AuditEvent.ActorKind.USER,
+            actor_user_id=user_id,
+            target_user_id=user_id,
+        )
+
+        self.user.delete()
+
+        event = AuditEvent.objects.get(
+            event_type=AuditEvent.EventType.USER_DEACTIVATED,
+        )
+        self.assertEqual(event.actor_user_id, user_id)
+        self.assertEqual(event.target_user_id, user_id)
+
+
 class HomeRouteTests(TestCase):
     def test_root_route_is_registered_by_home_app(self):
         self.assertEqual(reverse("home"), "/")
@@ -224,6 +374,141 @@ class AuthenticationPageTests(TestCase):
 
         self.assertRedirects(response, reverse("home"))
         self.assertFalse(response.wsgi_request.user.is_authenticated)
+
+
+@override_settings(
+    PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"],
+    SUPERHARRY_HOSTNAME="testserver",
+)
+class AuditedAuthenticationLifecycleTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = get_user_model().objects.create_user(
+            username="audit-lifecycle-user",
+            password="test-password-123",
+        )
+
+    def test_successful_login_records_login_and_session_creation(self):
+        response = self.client.post(
+            reverse("login"),
+            {"username": self.user.username, "password": "test-password-123"},
+            secure=True,
+            HTTP_ORIGIN="https://testserver",
+        )
+
+        self.assertRedirects(response, reverse("home"))
+        self.assertSetEqual(
+            set(
+                AuditEvent.objects.filter(actor_user_id=self.user.pk).values_list(
+                    "event_type",
+                    flat=True,
+                )
+            ),
+            {
+                AuditEvent.EventType.LOGIN_SUCCEEDED,
+                AuditEvent.EventType.SESSION_CREATED,
+            },
+        )
+
+    def test_logout_records_event_within_the_session_transition(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("logout"),
+            secure=True,
+            HTTP_ORIGIN="https://testserver",
+        )
+
+        self.assertRedirects(response, reverse("home"))
+        self.assertTrue(
+            AuditEvent.objects.filter(
+                event_type=AuditEvent.EventType.LOGOUT_SUCCEEDED,
+                actor_user_id=self.user.pk,
+                target_user_id=self.user.pk,
+            ).exists()
+        )
+
+    def test_failed_password_audit_correlates_only_known_accounts(self):
+        response = self.client.post(
+            reverse("login"),
+            {"username": self.user.username, "password": "incorrect-password"},
+            secure=True,
+            HTTP_ORIGIN="https://testserver",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        known_failure = AuditEvent.objects.get(
+            event_type=AuditEvent.EventType.PASSWORD_VERIFICATION_FAILED,
+        )
+        self.assertEqual(known_failure.target_user_id, self.user.pk)
+        self.assertIsNone(known_failure.actor_user_id)
+
+        response = self.client.post(
+            reverse("login"),
+            {"username": "unknown-account", "password": "incorrect-password"},
+            secure=True,
+            HTTP_ORIGIN="https://testserver",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        unknown_failure = AuditEvent.objects.latest("occurred_at")
+        self.assertEqual(
+            unknown_failure.event_type,
+            AuditEvent.EventType.PASSWORD_VERIFICATION_FAILED,
+        )
+        self.assertIsNone(unknown_failure.target_user_id)
+
+    def test_failed_login_fails_closed_when_audit_write_is_unavailable(self):
+        with patch(
+            "home.auth_views.record_event",
+            side_effect=AuditUnavailable,
+        ):
+            response = self.client.post(
+                reverse("login"),
+                {"username": self.user.username, "password": "incorrect-password"},
+                secure=True,
+                HTTP_ORIGIN="https://testserver",
+            )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertFalse(
+            AuditEvent.objects.filter(
+                event_type=AuditEvent.EventType.PASSWORD_VERIFICATION_FAILED,
+            ).exists()
+        )
+
+    def test_login_fails_closed_when_required_audit_write_is_unavailable(self):
+        with patch(
+            "home.auth_views.record_event",
+            side_effect=AuditUnavailable,
+        ):
+            response = self.client.post(
+                reverse("login"),
+                {"username": self.user.username, "password": "test-password-123"},
+                secure=True,
+                HTTP_ORIGIN="https://testserver",
+            )
+
+        self.assertEqual(response.status_code, 503)
+        subsequent_response = self.client.get(reverse("home"))
+        self.assertFalse(subsequent_response.wsgi_request.user.is_authenticated)
+
+    def test_logout_fails_closed_when_required_audit_write_is_unavailable(self):
+        self.client.force_login(self.user)
+
+        with patch(
+            "home.auth_views.record_event",
+            side_effect=AuditUnavailable,
+        ):
+            response = self.client.post(
+                reverse("logout"),
+                secure=True,
+                HTTP_ORIGIN="https://testserver",
+            )
+
+        self.assertEqual(response.status_code, 503)
+        subsequent_response = self.client.get(reverse("home"))
+        self.assertTrue(subsequent_response.wsgi_request.user.is_authenticated)
 
 
 @override_settings(

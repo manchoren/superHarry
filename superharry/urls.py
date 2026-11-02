@@ -1,7 +1,11 @@
 from django.contrib import admin
 from django.urls import include, path
 
-from home.auth_views import FreshAdminSessionLoginView, FreshSessionLoginView
+from home.auth_views import (
+    FreshAdminSessionLoginView,
+    FreshSessionLoginView,
+    FreshSessionLogoutView,
+)
 
 urlpatterns = [
     path("admin/login/", FreshAdminSessionLoginView.as_view(), name="admin-login"),
@@ -14,6 +18,7 @@ urlpatterns = [
         ),
         name="login",
     ),
+    path("accounts/logout/", FreshSessionLogoutView.as_view(), name="logout"),
     path("accounts/", include("django.contrib.auth.urls")),
     path("", include("home.urls")),
 ]
