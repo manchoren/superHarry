@@ -1,6 +1,6 @@
 # T027 account, TOTP and password-reset flows
 
-Status: prepared for owner review on 2026-11-02. This is a decision packet, not G-SECURITY or G-CONTRACT approval and not implementation authorization. T027 remains pending. Constitution baseline 2026-10-29, SHA-256 `d09e90aa0efe609a7d335a7b10ecc5623dab1e757b5a00d4e7c82526ce9dc489`.
+Status: prepared for owner review on 2026-11-02; the owner selected the reset-token direction below on 2026-11-02. This is not G-SECURITY or G-CONTRACT approval and not implementation authorization. T027 remains pending. Constitution baseline 2026-10-29, SHA-256 `d09e90aa0efe609a7d335a7b10ecc5623dab1e757b5a00d4e7c82526ce9dc489`.
 
 ## Scope
 
@@ -13,28 +13,29 @@ The current application uses Django's built-in user, login/logout, session and C
 - Account creation remains admin-controlled; there is no public self-registration.
 - TOTP is optional for both `admin` and `user`. WebAuthn/passkeys remain deferred.
 - Login uses a username, password and optional TOTP in one submission. Use generic credential failures; do not reveal whether an account exists or has TOTP enabled.
+- After password verification, a missing, invalid or replayed TOTP for an enrolled account, or an unexpected TOTP for an account without enrollment, counts once against the same five-failures-in-15-minutes account delay, emits the selected security event, returns the generic failure and creates no session. The TOTP counter and audit event are to commit atomically; failure semantics and event storage remain subject to T029/G-SECURITY/G-CONTRACT review.
+- The owner-selected TOTP starting policy specifies a unique random seed, 30-second step, six digits, acceptance of the current step and one adjacent step on each side, rate limiting, and atomic rejection of a previously accepted step. Enroll only after recent reauthentication, explicit confirmation and verification of a valid code. Provide ten single-use recovery codes per account, each with 128 bits of randomness, shown once and stored only as verifiers. An application admin may reset an ordinary user's TOTP only after recent reauthentication, explicit confirmation and mandatory audit; that user must re-enroll. Recovery codes do not replace the OS-admin path for an admin who loses all factors. These directions do not approve seed custody, schemas, dependencies or implementation.
 - Passwords use the selected Argon2id policy and validation rules. Password reset must not bypass those rules or send passwords to a remote service.
-- The accepted ordinary-user recovery direction is authorized OS-administrator-assisted reset, with MFA retained and auditing required (ADR 0005). It does not approve an OS identity check, a token flow, token delivery, session revocation, implementation details or an email/messaging channel.
+- The owner selected an OS-admin-issued, expiring, single-use reset token on 2026-11-02 (amendment to ADR 0005). MFA must be retained and auditing is required. OS identity checks, token expiry duration/entropy/storage, delivery, session revocation and implementation details remain open; no email or messaging channel is approved.
 - The active ADR 0007 contract specifies separate pre-authentication and authenticated session cookies and a CSRF flow. A later Django single-cookie topology is recorded only as a direction for an ADR amendment; it has not amended ADR 0007.
 - Required security events must not contain credentials or TOTP material. T027 cannot claim audit approval or bypass the independent T029/G-SECURITY/G-CONTRACT decisions.
 
 ## Decisions required before implementation
 
-### 1. Reconcile password-reset policy
+### 1. Complete password-reset policy
 
-The project plan and T027 acceptance call for expiring single-use reset tokens. ADR 0005 instead records the owner's selection of OS-admin-assisted password reset and explicitly says that token delivery and reset procedure were not selected; it notes that the alternative of a human-delivered web reset code was not selected. These directions do not define one implementable flow.
+The owner selected an OS-admin-issued, expiring, single-use token, amending ADR 0005. The direction aligns with T027's reset-token requirement but does not define an implementable flow. Specify:
 
-Choose one direction:
+- Which OS identity and privilege check authorize token issuance.
+- Token entropy, lifetime, verifier storage, one-use/replay behavior and cleanup.
+- How the token is conveyed to the user. No channel is selected; email, messaging and unauthenticated self-service remain unapproved.
+- Reset confirmation, password validation, MFA retention, session revocation and crash/audit-failure behavior.
 
-1. **Keep ADR 0005 unchanged.** An authorized OS administrator performs the password reset without a user-facing token. This requires an explicit amendment to T027's token acceptance; it does not authorize implementation until the OS authority, reset mechanism, MFA/session handling, auditing and failure behavior are approved.
-2. **Amend ADR 0005 to use an OS-admin-issued, expiring, single-use token.** Specify how the OS administrator is authenticated and authorized, how the token is generated and stored, how it is conveyed to the user without a new unapproved delivery channel, its expiry/replay behavior, and how the reset preserves MFA and revokes sessions. This changes the previously selected recovery direction and requires renewed G-SECURITY/G-CONTRACT approval.
-3. **Propose another recovery channel or mechanism.** Name it explicitly and review its identity, delivery, privacy, expiry, replay, MFA, revocation and failure properties before approval. Email, messaging and unauthenticated self-service are not approved by implication.
-
-No option is selected in this proposal.
+The owner's direction changes the earlier ADR 0005 position that did not select a token-based reset; it does not approve implementation or any of these details.
 
 ### 2. Approve TOTP lifecycle and secret protection
 
-Define enrollment initiation and proof of account control, verification before activation, disablement and replacement, clock-drift window, replay/concurrent-use handling, account recovery and session transition. Select seed encryption, key custody, rotation, backup exclusion, recovery behavior and a supported dependency only after the applicable G-ARCH/G-SECURITY/G-CONTRACT and dependency reviews. ADR 0006's systemd-credential choice authorizes investigation only. Do not store plaintext seeds, improvise cryptography, or allow a reset to disable MFA.
+Implement the owner-selected enrollment, drift-window, replay, recovery-code and ordinary-user factor-reset requirements above. Select seed encryption, key custody, rotation, backup exclusion, recovery behavior and a supported dependency only after the applicable G-ARCH/G-SECURITY/G-CONTRACT and dependency reviews. ADR 0006's systemd-credential choice authorizes investigation only. Do not store plaintext seeds, improvise cryptography, or allow a password reset to disable MFA.
 
 ### 3. Reconcile session and browser contracts
 
