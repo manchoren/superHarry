@@ -1,6 +1,6 @@
 # T022 observability contract proposal
 
-Status: draft for owner review under G-CONTRACT. No endpoint, log sink, setting, permission, metric, migration, or deployment configuration is authorized by this proposal.
+Status: owner approved the JSON event schema, aggregate-only health responses, staff-only Prometheus endpoint, application-owned local sink, and deferral of detailed content logging under G-CONTRACT on 2026-11-02. G-OPS approval remains necessary before configuring the host state directory, backup exclusions, service environment, or deployment.
 
 ## Scope and existing constraints
 
@@ -30,7 +30,7 @@ Never log request paths with identifiers, query strings, request/response bodies
 
 The JSON event contract does not itself authorize persistent storage. The selected sink must honor the default-off setting and 30-day expiry, use restrictive local access, avoid backups unless separately approved, and keep diagnostic data separate from `AuditEvent`. Security audit events remain mandatory and fail-closed regardless of diagnostic settings.
 
-## Proposed health endpoints
+## Approved health endpoints
 
 | Route | Authorization | Success | Failure and data boundary |
 |---|---|---|---|
@@ -39,7 +39,7 @@ The JSON event contract does not itself authorize persistent storage. The select
 
 Both responses use `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`. They accept GET only. These endpoints reveal only service availability, not dependency details. Network binding and external reachability remain outside this contract and require G-OPS approval.
 
-## Proposed metrics endpoint
+## Approved metrics endpoint
 
 - `GET /metrics` is authorized for active Django staff users only. Anonymous users are redirected to the existing admin login; authenticated non-staff users receive 403.
 - Return the Prometheus text exposition format version `0.0.4`, `Content-Type: text/plain; version=0.0.4; charset=utf-8`, and `Cache-Control: no-store`.
@@ -48,14 +48,15 @@ Both responses use `Cache-Control: no-store` and `X-Content-Type-Options: nosnif
 - CPU temperature, RAM/storage pressure, queue depth, token/cost usage, and sandbox-run measurements are omitted until the responsible platform/domain task provides a trusted source. Unsupported measurements are omitted and identified as unavailable in authorized UI/reporting, never emitted as synthetic zeroes.
 - Scraping metrics does not create an `AuditEvent`; no new audit vocabulary is approved here. Diagnostics about the scrape itself follow the same setting and redaction rules above.
 
-## Decisions required before implementation
+## Approved decisions and remaining boundaries
 
-1. Approve or amend the JSON event names and exact allowlisted fields, including the prohibition on exception text and user/request-derived labels.
-2. Approve the two unauthenticated, aggregate-only health responses and the database-only readiness criterion.
-3. Approve the staff-only Prometheus exposition endpoint and its bounded, process-local HTTP metrics; confirm no `AuditEvent` is written for each scrape.
-4. Choose the diagnostics persistence boundary:
-   - **Recommended:** an application-owned private local log sink, disabled by default and automatically purged after 30 days while enabled; exclude it from backups. This needs a documented data-directory location and G-OPS review before deployment.
-   - **Alternative:** emit JSON to stderr and let systemd/journald own storage and expiry; this requires separate G-OPS approval of journal persistence, access, rotation and retention. “Disabled by default” must be reconciled with any system journal that persists output.
-5. Confirm that detailed content logging remains a separate future contract and is not included in the initial T022 implementation.
+- The approved initial implementation uses `SUPERHARRY_DIAGNOSTICS_ENABLED` (default false) and requires `SUPERHARRY_DIAGNOSTIC_LOG_PATH` when enabled. The configured directory must already exist; the application does not create or select a host path. Files are created with owner-only mode where supported, rotated at UTC midnight with 29 backups, and expired rotated files are pruned after 30 days on startup and on each emitted event. There is no background cleanup while a process is idle, so strict expiry during long idle periods remains incomplete. The service operator must select and protect the path under G-OPS and exclude it from backups.
+- The diagnostic toggle is currently an operator environment setting, not an administrator UI. The plan's administrator-facing enable/disable control and its persistence across restart still need a separate approved UI/state contract; T022 is not complete until that control or an explicit scope amendment is resolved.
+- Detailed content logging remains deferred to a separate contract and approval.
+- No systemd, journald, Caddy, listener, firewall, network, backup, or external notification configuration is included.
 
-Until these choices are approved, do not add logging packages, persistence, settings, endpoints, permissions, migrations, service configuration, or network exposure.
+The implementation adds no logging dependency, migration, or automatic diagnostic data collection when the setting is disabled.
+
+## Implementation status
+
+The approved health endpoints, staff-protected metrics view, bounded per-process request counters/histograms, redacted JSON formatter, optional owner-only rotating file sink, and startup/event-triggered pruning are implemented. The sink is not enabled or configured in the current environment. All 66 Django tests, `manage.py check`, and `makemigrations --check --dry-run` pass. T022 remains in progress pending strict idle-period expiry, the administrator-facing toggle/state contract, and G-OPS approval/configuration of the service data directory and backup exclusion.

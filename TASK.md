@@ -50,7 +50,7 @@ Update the row whenever work starts, an assignment changes, a blocker appears, w
 | T019 | Implement configuration and secret loading. | 🟢 T168 | Complete | Unassigned |
 | T020 | Implement local engineering checks. | 🟢 T168 | Complete | Unassigned |
 | T021 | Validate clean ARM64 installation and process startup. | 🟢 T018, 🟢 T019, 🟢 T020 | Complete | Unassigned |
-| T022 | Add structured logging, health and basic metrics primitives. | 🟢 T019, 🟢 T005, 🟢 T020 | Blocked | Unassigned |
+| T022 | Add structured logging, health and basic metrics primitives. | 🟢 T019, 🟢 T005, 🟢 T020 | In progress | Copilot |
 | T023 | Implement Django-managed SQLite models and migrations. | 🟢 T020, 🟢 T021 | Complete | Unassigned |
 | T024 | Implement the protected API/core transport. | 🟢 T005, 🟢 T007, ⚪ T016, ⚪ T017, 🟢 T019, 🟢 T020 | Superseded by T168 | Unassigned |
 | T025 | Organize application routes using Django URL configurations. | 🟢 T168, 🟢 T007 | Complete | Unassigned |

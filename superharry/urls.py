@@ -6,10 +6,13 @@ from home.auth_views import (
     FreshSessionLoginView,
     FreshSessionLogoutView,
 )
+from home.health_views import metrics
 
 urlpatterns = [
     path("admin/login/", FreshAdminSessionLoginView.as_view(), name="admin-login"),
     path("admin/audit/", include("home.audit_urls")),
+    path("health/", include("home.health_urls")),
+    path("metrics", metrics, name="metrics"),
     path("admin/", admin.site.urls),
     path(
         "accounts/login/",

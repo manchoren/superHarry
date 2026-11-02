@@ -11,6 +11,25 @@ if debug_value not in {"0", "1", "false", "true"}:
     raise ImproperlyConfigured("DJANGO_DEBUG must be one of: 0, 1, false, true.")
 DEBUG = debug_value in {"1", "true"}
 
+diagnostics_value = os.environ.get("SUPERHARRY_DIAGNOSTICS_ENABLED", "0").strip().lower()
+if diagnostics_value not in {"0", "1", "false", "true"}:
+    raise ImproperlyConfigured(
+        "SUPERHARRY_DIAGNOSTICS_ENABLED must be one of: 0, 1, false, true."
+    )
+SUPERHARRY_DIAGNOSTICS_ENABLED = diagnostics_value in {"1", "true"}
+SUPERHARRY_DIAGNOSTIC_LOG_PATH = os.environ.get(
+    "SUPERHARRY_DIAGNOSTIC_LOG_PATH",
+    "",
+).strip()
+if SUPERHARRY_DIAGNOSTICS_ENABLED and not SUPERHARRY_DIAGNOSTIC_LOG_PATH:
+    raise ImproperlyConfigured(
+        "SUPERHARRY_DIAGNOSTIC_LOG_PATH must be set when diagnostic logging is enabled."
+    )
+if SUPERHARRY_DIAGNOSTIC_LOG_PATH:
+    from home.observability import purge_expired_diagnostic_logs
+
+    purge_expired_diagnostic_logs(SUPERHARRY_DIAGNOSTIC_LOG_PATH)
+
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 if not SECRET_KEY:
     if not DEBUG:
@@ -39,6 +58,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "home.observability.ObservabilityMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -50,6 +70,50 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "superharry_json": {
+            "()": "home.observability.JsonEventFormatter",
+        },
+    },
+    "handlers": (
+        {
+            "superharry_null": {
+                "class": "logging.NullHandler",
+            },
+            "superharry_diagnostics": {
+                "()": "home.observability.PrivateTimedRotatingFileHandler",
+                "filename": SUPERHARRY_DIAGNOSTIC_LOG_PATH,
+                "when": "midnight",
+                "interval": 1,
+                "backupCount": 29,
+                "utc": True,
+                "encoding": "utf-8",
+                "formatter": "superharry_json",
+            },
+        }
+        if SUPERHARRY_DIAGNOSTICS_ENABLED
+        else {
+            "superharry_null": {
+                "class": "logging.NullHandler",
+            },
+        }
+    ),
+    "loggers": {
+        "superharry.diagnostics": {
+            "handlers": (
+                ["superharry_diagnostics"]
+                if SUPERHARRY_DIAGNOSTICS_ENABLED
+                else ["superharry_null"]
+            ),
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
 
 ROOT_URLCONF = "superharry.urls"
 

@@ -1,4 +1,9 @@
+import json
+import logging
+import os
 import re
+import tempfile
+import time
 from datetime import datetime, timedelta, timezone as datetime_timezone
 from pathlib import Path
 from types import SimpleNamespace
@@ -26,6 +31,12 @@ from home.audit import AuditUnavailable, record_event
 from home.admin import AuditedUserAdmin
 from home.middleware import SessionLifetimeMiddleware
 from home.models import AuditEvent, AuditEventMutationError, Conversation, Message
+from home.observability import (
+    DIAGNOSTIC_RETENTION_SECONDS,
+    JsonEventFormatter,
+    PrivateTimedRotatingFileHandler,
+    purge_expired_diagnostic_logs,
+)
 from home.views import home
 
 
@@ -350,6 +361,159 @@ class AuditEventTests(TestCase):
 
         event.refresh_from_db()
         self.assertEqual(event.outcome, AuditEvent.Outcome.SUCCESS)
+
+
+@override_settings(SUPERHARRY_HOSTNAME="testserver")
+class ObservabilityEndpointTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+    def _get(self, url):
+        return self.client.get(url, secure=True)
+
+    def test_liveness_is_generic_and_does_not_probe_database(self):
+        with patch(
+            "home.health_views.connection.cursor",
+            side_effect=AssertionError("liveness must not use the database"),
+        ):
+            response = self._get(reverse("health-live"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": "ok"})
+        self.assertEqual(response["Cache-Control"], "no-store")
+        self.assertEqual(response["X-Content-Type-Options"], "nosniff")
+
+    def test_readiness_returns_only_generic_database_state(self):
+        response = self._get(reverse("health-ready"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": "ready"})
+
+        with patch(
+            "home.health_views.connection.cursor",
+            side_effect=OperationalError("synthetic private database details"),
+        ):
+            failed_response = self._get(reverse("health-ready"))
+
+        self.assertEqual(failed_response.status_code, 503)
+        self.assertEqual(failed_response.json(), {"status": "not_ready"})
+        self.assertNotIn(b"synthetic private database details", failed_response.content)
+
+    def test_metrics_requires_active_staff_and_uses_bounded_prometheus_output(self):
+        response = self._get(reverse("metrics"))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("admin:login"))
+
+        user = get_user_model().objects.create_user(
+            username="metrics-user",
+            password="test-password-123",
+        )
+        self.client.force_login(user)
+        response = self._get(reverse("metrics"))
+        self.assertEqual(response.status_code, 403)
+
+        staff_user = get_user_model().objects.create_superuser(
+            username="metrics-admin",
+            email="metrics-admin@example.test",
+            password="test-password-123",
+        )
+        self.client.force_login(staff_user)
+        response = self._get(reverse("metrics"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response["Content-Type"],
+            "text/plain; version=0.0.4; charset=utf-8",
+        )
+        self.assertEqual(response["Cache-Control"], "no-store")
+        self.assertContains(
+            response,
+            'superharry_http_requests_total{route="health-live",method="GET",status_class="2xx"}',
+        )
+        self.assertContains(response, "superharry_http_request_duration_seconds_bucket")
+        self.assertNotIn(b"metrics-admin", response.content)
+        self.assertNotIn(b"actor_user_id=", response.content)
+        self.assertNotIn(b"user=", response.content)
+
+    def test_json_formatter_omits_arbitrary_message_and_unknown_fields(self):
+        record = logging.LogRecord(
+            "test",
+            logging.INFO,
+            __file__,
+            1,
+            "password=secret-message",
+            (),
+            None,
+        )
+        record.event_name = "http.request"
+        record.request_id = "server-generated-id"
+        record.route = "home"
+        record.method = "GET"
+        record.status_code = 200
+        record.duration_ms = 1.25
+        record.username = "must-not-be-serialized"
+
+        formatted = JsonEventFormatter().format(record)
+        payload = json.loads(formatted)
+
+        self.assertEqual(payload["event"], "http.request")
+        self.assertEqual(payload["route"], "home")
+        self.assertNotIn("password=secret-message", formatted)
+        self.assertNotIn("username", payload)
+        self.assertNotIn("must-not-be-serialized", formatted)
+
+    def test_private_diagnostic_handler_writes_only_redacted_json(self):
+        with tempfile.TemporaryDirectory() as directory:
+            log_path = Path(directory) / "diagnostics.jsonl"
+            handler = PrivateTimedRotatingFileHandler(
+                str(log_path),
+                when="midnight",
+                backupCount=29,
+                utc=True,
+                encoding="utf-8",
+            )
+            handler.setFormatter(JsonEventFormatter())
+            record = logging.LogRecord(
+                "diagnostic-test",
+                logging.INFO,
+                __file__,
+                1,
+                "submitted secret text",
+                (),
+                None,
+            )
+            record.event_name = "http.request"
+            record.route = "home"
+            record.method = "GET"
+            record.status_code = 200
+            handler.handle(record)
+            handler.close()
+
+            output = log_path.read_text(encoding="utf-8")
+            self.assertEqual(json.loads(output)["event"], "http.request")
+            self.assertNotIn("submitted secret text", output)
+            if os.name != "nt":
+                self.assertEqual(log_path.stat().st_mode & 0o777, 0o600)
+
+    def test_expired_rotated_logs_are_removed_without_touching_other_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            log_path = Path(directory) / "diagnostics.jsonl"
+            expired = Path(f"{log_path}.2026-10-01")
+            recent = Path(f"{log_path}.2026-10-31")
+            unrelated = Path(directory) / "other.jsonl.2026-10-01"
+            expired.write_text("expired", encoding="utf-8")
+            recent.write_text("recent", encoding="utf-8")
+            unrelated.write_text("unrelated", encoding="utf-8")
+            now = time.time()
+            old_timestamp = now - DIAGNOSTIC_RETENTION_SECONDS - 1
+            recent_timestamp = now - DIAGNOSTIC_RETENTION_SECONDS + 1
+            os.utime(expired, (old_timestamp, old_timestamp))
+            os.utime(recent, (recent_timestamp, recent_timestamp))
+
+            purge_expired_diagnostic_logs(str(log_path), now=now)
+
+            self.assertFalse(expired.exists())
+            self.assertTrue(recent.exists())
+            self.assertTrue(unrelated.exists())
 
 
 @override_settings(SUPERHARRY_HOSTNAME="testserver")
