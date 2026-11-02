@@ -104,6 +104,7 @@ The initial inventory does not imply a public password-reset workflow. Reset iss
 - Attribute OS-admin-mediated recovery to the responsible application service until a human OS-operator identity mechanism is approved under T031/G-OPS.
 - Keep each protected state transition and its required audit event in the same transaction when feasible. Define and test exact transaction boundaries per action during G-CONTRACT review; do not claim success if a required audit write fails.
 - Bound admin audit queries to 100 events per page and a 31-day range. Bound exports to 1,000 events or 1 MiB, a 31-day range, and 5 exports per admin per hour.
+- Disable hard deletion of accounts through Django admin; use deactivation instead until account-deletion semantics and a corresponding audited event are separately approved. This prevents an unreviewed user deletion from cascading to owned conversation data.
 
 These are owner policy/design decisions, not completion of G-CONTRACT/G-SECURITY review.
 

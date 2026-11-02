@@ -5,13 +5,14 @@ from types import SimpleNamespace
 from unittest.mock import patch
 from uuid import UUID
 
+from django.contrib import admin as django_admin
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AnonymousUser, Permission
+from django.contrib.auth.models import AnonymousUser, Group, Permission
 from django.contrib.sessions.models import Session
 from django.db import OperationalError, transaction
 from django.http import Http404, HttpResponse
 from django.middleware.csrf import CSRF_SESSION_KEY
-from django.test import Client, TestCase, override_settings
+from django.test import Client, RequestFactory, TestCase, override_settings
 from django.urls import resolve, reverse
 from django.utils import timezone
 
@@ -22,6 +23,7 @@ from home.authorization import (
     owned_messages,
 )
 from home.audit import AuditUnavailable, record_event
+from home.admin import AuditedUserAdmin
 from home.middleware import SessionLifetimeMiddleware
 from home.models import AuditEvent, Conversation, Message
 from home.views import home
@@ -324,6 +326,121 @@ class AuditEventTests(TestCase):
         )
         self.assertEqual(event.actor_user_id, user_id)
         self.assertEqual(event.target_user_id, user_id)
+
+
+@override_settings(
+    PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"],
+    SUPERHARRY_HOSTNAME="testserver",
+)
+class AuditedUserAdminTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.admin_user = user_model.objects.create_superuser(
+            username="audit-admin",
+            email="audit-admin@example.test",
+            password="test-password-123",
+        )
+        self.target_user = user_model.objects.create_user(
+            username="audit-target",
+            password="test-password-123",
+        )
+        self.user_admin = AuditedUserAdmin(user_model, django_admin.site)
+        self.request = RequestFactory().post("/admin/auth/user/")
+        self.request.user = self.admin_user
+
+    def test_user_creation_is_audited(self):
+        user_model = get_user_model()
+        new_user = user_model(username="audit-created")
+
+        self.user_admin.save_model(self.request, new_user, form=None, change=False)
+
+        self.assertTrue(
+            AuditEvent.objects.filter(
+                event_type=AuditEvent.EventType.USER_CREATED,
+                actor_user_id=self.admin_user.pk,
+                target_user_id=new_user.pk,
+            ).exists()
+        )
+
+    def test_admin_user_creation_and_audit_write_are_atomic(self):
+        self.client.force_login(self.admin_user)
+        url = reverse("admin:auth_user_add")
+        response = self.client.post(
+            url,
+            {
+                "username": "admin-created-user",
+                "password1": "test-password-123",
+                "password2": "test-password-123",
+            },
+            secure=True,
+            HTTP_ORIGIN="https://testserver",
+        )
+
+        self.assertEqual(response.status_code, 302, response.content.decode())
+        created_user = get_user_model().objects.get(username="admin-created-user")
+        self.assertTrue(
+            AuditEvent.objects.filter(
+                event_type=AuditEvent.EventType.USER_CREATED,
+                actor_user_id=self.admin_user.pk,
+                target_user_id=created_user.pk,
+            ).exists()
+        )
+
+        with patch("home.admin.record_event", side_effect=AuditUnavailable):
+            failed_response = self.client.post(
+                url,
+                {
+                    "username": "audit-failure-user",
+                    "password1": "test-password-123",
+                    "password2": "test-password-123",
+                },
+                secure=True,
+                HTTP_ORIGIN="https://testserver",
+            )
+
+        self.assertEqual(failed_response.status_code, 503)
+        self.assertFalse(
+            get_user_model().objects.filter(username="audit-failure-user").exists()
+        )
+
+    def test_user_deactivation_and_role_changes_are_audited(self):
+        self.target_user.is_active = False
+        self.target_user.is_staff = True
+        self.user_admin.save_model(
+            self.request,
+            self.target_user,
+            form=None,
+            change=True,
+        )
+        group = Group.objects.create(name="audit-role-change")
+        form = SimpleNamespace(
+            instance=self.target_user,
+            save_m2m=lambda: self.target_user.groups.add(group),
+        )
+        self.user_admin.save_related(
+            self.request,
+            form,
+            formsets=[],
+            change=True,
+        )
+
+        event_types = set(
+            AuditEvent.objects.filter(
+                actor_user_id=self.admin_user.pk,
+                target_user_id=self.target_user.pk,
+            ).values_list("event_type", flat=True)
+        )
+        self.assertSetEqual(
+            event_types,
+            {
+                AuditEvent.EventType.USER_DEACTIVATED,
+                AuditEvent.EventType.ROLE_CHANGED,
+            },
+        )
+
+    def test_hard_deletion_is_disabled_and_audit_model_is_not_registered(self):
+        self.assertFalse(self.user_admin.has_delete_permission(self.request))
+        self.assertFalse(django_admin.site.is_registered(AuditEvent))
 
 
 class HomeRouteTests(TestCase):
