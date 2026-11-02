@@ -1,6 +1,6 @@
 ﻿# AArch64 QEMU firmware alternatives
 
-Status: T003 research, 2026-10-30. The owner provisionally selected the EDK2 images bundled with QEMU 11.1.3-1 as the firmware candidate for continued review; this is not approval to acquire, install or execute them, nor risk acceptance or G-ARCH/G-OPS approval. Complete constitution read; SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`. The existing bundled-image findings are in [qemu-firmware-review.md](qemu-firmware-review.md). Sources below were inspected on this date; refresh versions and advisories before any decision.
+Status: T003 research dated 2026-10-30; owner decision updated 2026-11-01. The owner selected the EDK2 images bundled with QEMU 11.1.3-1 and accepted the documented residual risks for the disposable local VM only, conditioned on no network/PXE exposure before guest OS startup. This is a scoped owner decision, not a security clearance or production approval; details are in [ADR 0011](adr/0011-development-vm-baseline.md) and [qemu-firmware-review.md](qemu-firmware-review.md). Complete constitution read; SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`. Sources below were inspected on 2026-10-30; refresh versions and advisories before any broader use.
 
 ## Candidate: Debian Trixie AAVMF image
 
@@ -16,7 +16,7 @@ The [Debian edk2 security tracker](https://security-tracker.debian.org/tracker/s
 
 ## Alternatives and decision
 
-- **Bundled MSYS2/QEMU images:** provisionally selected by the owner as the design candidate for continued review; they match files in the QEMU 11.1.3 source tree, but their recorded EDK2/OpenSSL provenance, licensing and advisory exposure remain open. Candidate selection is not approval or acceptance merely because they are bundled.
+- **Installed QEMU bundle:** selected and accepted by the owner for the disposable local VM with no network/PXE exposure while UEFI is running. The installed code/VARS hashes match the earlier QEMU firmware pair reviewed against the QEMU 11.1.3 source tree; this does not establish the installed package's provenance or the exact image's EDK2/OpenSSL composition. Licensing and advisory exposure remain unresolved; acceptance is not security clearance or approval for other uses.
 - **Debian AAVMF candidate above:** separately maintained distribution source and identifiable package/checksum, with open advisories and cross-platform extraction/boot questions. It adds an external artifact and requires G-ARCH/G-OPS approval.
 - **Reproducible custom build:** potentially permits a narrowly scoped module set and fresh source, but exact EDK2 commit, compiler/build tools, patches, reproducibility, notices, provenance and maintenance would all need review and approval. No build inputs or commands are approved.
 
