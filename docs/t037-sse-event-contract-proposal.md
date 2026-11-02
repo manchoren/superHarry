@@ -1,6 +1,6 @@
 # T037 public Django chat SSE event contract proposal
 
-Status: Draft for review only; **not approved**. Task: T037. Required gate: G-CONTRACT for the public HTTP/SSE contract. No implementation, route, schema, migration, dependency, or approval is authorized by this proposal.
+Status: Owner accepted this proposal as a design direction on 2026-11-02. It remains a proposal, not G-CONTRACT approval or implementation authorization; unresolved decisions below still require review. Task: T037. No route, schema, migration, or dependency is authorized by this proposal.
 
 Constitution baseline: 2026-10-29. SHA-256 of the current `constitution.md` read for this draft: `d09e90aa0efe609a7d335a7b10ecc5623dab1e757b5a00d4e7c82526ce9dc489`.
 

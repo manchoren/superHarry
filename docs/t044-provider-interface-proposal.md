@@ -1,6 +1,6 @@
 # T044: Provider-neutral model interface proposal
 
-**Status:** Design proposal only; not approved and not implemented. Prepared for later **G-MODEL** and **G-CONTRACT** review. No provider SDK, inference runtime, model, public API, schema, migration, or deployment behavior is selected here.
+**Status:** Owner accepted this proposal as a design direction on 2026-11-02. It remains a proposal, not G-MODEL/G-CONTRACT approval or implementation authorization; unresolved decisions below still require review. No provider SDK, inference runtime, model, public API, schema, migration, or deployment behavior is selected here.
 
 **Constitution basis:** `constitution.md` has no explicit version identifier; its stated baseline is 2026-10-29. SHA-256 of the complete current file read for this proposal: `D09E90AA0EFE609A7D335A7B10ECC5623DAB1E757B5A00D4E7C82526CE9DC489`.
 

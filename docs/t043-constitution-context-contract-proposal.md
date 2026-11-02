@@ -1,6 +1,6 @@
 # T043 constitution and context-delivery contract proposal
 
-**Status:** Design proposal only; not approved or implemented. Prepared for later **G-MODEL** and **G-SECURITY** review, with G-CONTRACT/G-ARCH review where applicable. This document does not approve an implementation, dependency, model, tokenizer, API, schema, migration, or deployment behavior.
+**Status:** Owner accepted this proposal as a design direction on 2026-11-02. It remains a proposal, not G-MODEL/G-SECURITY approval or implementation authorization; unresolved decisions below still require review. This document does not approve an implementation, dependency, model, tokenizer, API, schema, migration, or deployment behavior. G-CONTRACT/G-ARCH review may also apply.
 
 **Constitution baseline read:** baseline date `2026-10-29`; the current constitution declares no separate version identifier. SHA-256 of the complete `constitution.md` read for this proposal: `D09E90AA0EFE609A7D335A7B10ECC5623DAB1E757B5A00D4E7C82526CE9DC489`. Record this as the source baseline, not as a newly assigned constitution version.
 
