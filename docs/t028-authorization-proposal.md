@@ -1,6 +1,6 @@
 # T028 Django authorization contract proposal
 
-Status: owner-approved policy recorded 2026-11-02; G-SECURITY review remains pending. This document defines the application boundary for the existing `Conversation` and `Message` models and future routes. It does not claim implementation or authorize new persistence, guest records, or administrative capabilities.
+Status: owner-approved policy and G-SECURITY approval recorded 2026-11-02. The owner-scoped query boundary for the existing `Conversation` and `Message` models is implemented and tested. Future routes must preserve this contract. This does not authorize new persistence, guest records, or additional administrative capabilities.
 
 ## Current implementation boundary
 
@@ -16,7 +16,7 @@ T028 should establish a reusable authorization rule before chat, streaming, file
 - Ownership cannot be changed through ordinary application endpoints.
 - Guests create no persistent `Conversation` or `Message` records. Their temporary, session-scoped context is separate and remains in T035.
 
-These are policy decisions, not G-SECURITY approval or implementation authorization.
+The owner formally approved this contract for G-SECURITY on 2026-11-02.
 
 ## Enforcement contract
 
@@ -48,7 +48,7 @@ Until those endpoints exist, keep tests for the owner-filtering service/query bo
 
 ## Review items
 
-G-SECURITY review should confirm the policy and enforcement contract against the accepted role capability matrix, including superuser behavior and linked-channel privilege ceilings. G-CONTRACT review remains necessary for each new request/response contract and persistence change. The following remain outside this proposal and require their own task scope and approval:
+The T028 query boundary was reviewed against the accepted role capability matrix, including superuser behavior and linked-channel privilege ceilings. G-CONTRACT review remains necessary for each new request/response contract and persistence change. The following remain outside this proposal and require their own task scope and approval:
 
 - User/role administration and permission/group assignment.
 - Admin access to another user's conversation content, including support or moderation access.
