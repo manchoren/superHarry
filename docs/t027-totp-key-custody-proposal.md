@@ -10,10 +10,20 @@ Store only authenticated ciphertext and the metadata needed to decrypt it, inclu
 
 The host-bound option is not a hardware-backed guarantee. It may not protect against privileged access to the host, and losing the host credential may make existing TOTP seeds unrecoverable. Do not assume TPM availability or copy a host-bound credential to another device as a recovery method.
 
+## Authenticated-encryption dependency candidate
+
+PyCA [`cryptography==50.0.2`](https://pypi.org/project/cryptography/50.0.2/) is a candidate for review, not a selected or approved dependency. [PyPI metadata](https://pypi.org/pypi/cryptography/50.0.2/json) records its release date as 2026-09-30, `Requires-Python >=3.9` (excluding 3.9.0 and 3.9.1), and license expression `Apache-2.0 OR BSD-3-Clause`. Its CPython metadata requires `cffi>=2.0.0`; the complete dependency closure and bundled component notices have not been reviewed.
+
+PyPI lists a 4,731,146-byte CPython stable-ABI ARM64 wheel, `cryptography-50.0.2-cp311-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.whl`, SHA-256 `79def8d059362e7831389ed3be0ecdf58a89386e1271e35dd9f5af84e81bffd0`. This is a publisher-listed artifact and digest, not a trusted-provenance or compatibility decision. The [official installation guide](https://cryptography.io/en/latest/installation/) lists Debian Trixie testing on x86-64 and ARM64 Ubuntu/Alpine, but not ARM64 Debian; the artifact's platform tag alone does not establish target compatibility.
+
+The [official AEAD documentation](https://cryptography.io/en/latest/hazmat/primitives/aead/) describes `ChaCha20Poly1305` as requiring a 32-byte key and a 12-byte nonce, and warns that nonce reuse with the same key compromises security. This matches the key size direction but does not choose the algorithm, nonce-allocation method, dependency or schema constraint.
+
+T014/G-ARCH work remains before any selection or installation: review the complete `cffi`/`pycparser` and bundled OpenSSL component graph, exact notices and license disposition, current advisories, publisher artifact evidence under the project's trust policy, and ARM64 runtime compatibility. No artifact was downloaded or executed.
+
 ## Decisions and evidence still needed
 
 - Select and verify the actual target OS, systemd version, credential directives, service identity, filesystem permissions and behavior after restart. The Debian ARM64 development guest is not proof of Raspberry Pi OS behavior.
-- Review an exact authenticated-encryption library/version and its license, provenance, dependency graph and ARM64 support under G-ARCH. No encryption package is selected or approved.
+- Complete the T014/G-ARCH review for the candidate dependency above or select a different reviewed implementation. No encryption package is selected or approved.
 - Approve the TOTP storage schema under G-CONTRACT. The existing T023 approval covers only `Conversation` and `Message`; the reset-grant approval does not cover TOTP fields or recovery-code records.
 - Specify secure initial key generation/provisioning, permission boundaries, replacement/rotation, backup/restore treatment and failure recovery. A credential outage or authentication failure must not silently disable MFA or create an empty key.
 - Decide how the service behaves when the key is unavailable, including existing sessions, new logins and TOTP enrollment, without weakening authentication or irreversibly changing records.
