@@ -25,7 +25,7 @@ from home.authorization import (
 from home.audit import AuditUnavailable, record_event
 from home.admin import AuditedUserAdmin
 from home.middleware import SessionLifetimeMiddleware
-from home.models import AuditEvent, Conversation, Message
+from home.models import AuditEvent, AuditEventMutationError, Conversation, Message
 from home.views import home
 
 
@@ -326,6 +326,30 @@ class AuditEventTests(TestCase):
         )
         self.assertEqual(event.actor_user_id, user_id)
         self.assertEqual(event.target_user_id, user_id)
+
+    def test_audit_events_are_append_only_through_model_and_queryset_apis(self):
+        event = record_event(
+            event_type=AuditEvent.EventType.LOGIN_SUCCEEDED,
+            outcome=AuditEvent.Outcome.SUCCESS,
+            actor_kind=AuditEvent.ActorKind.USER,
+            actor_user_id=self.user.pk,
+            target_user_id=self.user.pk,
+        )
+
+        event.outcome = AuditEvent.Outcome.FAILURE
+        with self.assertRaises(AuditEventMutationError):
+            event.save()
+        with self.assertRaises(AuditEventMutationError):
+            event.delete()
+        with self.assertRaises(AuditEventMutationError):
+            AuditEvent.objects.filter(pk=event.pk).update(
+                outcome=AuditEvent.Outcome.FAILURE,
+            )
+        with self.assertRaises(AuditEventMutationError):
+            AuditEvent.objects.filter(pk=event.pk).delete()
+
+        event.refresh_from_db()
+        self.assertEqual(event.outcome, AuditEvent.Outcome.SUCCESS)
 
 
 @override_settings(SUPERHARRY_HOSTNAME="testserver")

@@ -131,12 +131,12 @@ For failed authentication, a known account may be correlated by its internal ID;
 ## Write, access, retention, and failure boundaries
 
 - Route all event creation through one server-side audit service with closed event types and validated fields. User-controlled inputs cannot select actor identity, event type, timestamps, or audit attributes.
-- Do not expose ordinary application update/delete operations for audit events. Django admin must not provide edit/delete controls for this model.
+- Audit events are append-only through the Django application API: instance saves after insertion, instance deletion, and queryset `update()`/`delete()` raise `AuditEventMutationError`. Django admin must not provide edit/delete controls for this model.
 - The application `admin` role may read/export through an explicitly authorized, bounded interface. Recheck authorization on every request. Never allow a user, guest, model, tool, or client to query or mutate audit storage directly.
 - Append the event in the same SQLite transaction as the protected state transition when both use the same database and atomicity is required. If the event cannot be committed, do not report the protected login or privileged action as successful.
 - Preserve the approved exception for failed-password accounting: if the attempt counter has already committed, an audit failure does not roll it back.
 - Retain events for 90 days provisionally. Purge only through a core-owned maintenance task after G-OPS/legal review confirms the retention policy and cleanup behavior.
-- Do not describe the SQLite table as tamper-proof. Application-level append-only APIs and admin restrictions do not protect records from an attacker who can modify the database file or compromise the Django process. Stronger external/OS-level integrity controls require a separate approved design.
+- Do not describe the SQLite table as tamper-proof. Application-level append-only APIs and admin restrictions do not protect records from raw SQL, an attacker who can modify the database file, or a compromised Django process. Stronger external/OS-level integrity controls require a separate approved design.
 
 ## Decisions required before implementing admin audit access
 
@@ -148,4 +148,4 @@ For failed authentication, a known account may be correlated by its internal ID;
 
 ## Verification required
 
-Tests must prove that every approved action writes exactly the expected event; unknown-account failures contain no submitted identity; aggregate signals honor their threshold/cooldown; no event contains credential, session, TOTP, IP, Origin, or free-text data; user/guest/model callers cannot read or alter events; admin reads/exports enforce authorization and bounds; required audit failure does not claim the protected operation succeeded; and approved transaction boundaries commit or roll back consistently. Include concurrent writes, malformed event data, retention boundaries, and SQLite failure handling.
+Tests must prove that every approved action writes exactly the expected event; unknown-account failures contain no submitted identity; aggregate signals honor their threshold/cooldown; no event contains credential, session, TOTP, IP, Origin, or free-text data; user/guest/model callers cannot read or alter events through application APIs; admin reads/exports enforce authorization and bounds; required audit failure does not claim the protected operation succeeded; and approved transaction boundaries commit or roll back consistently. Include concurrent writes, malformed event data, retention boundaries, and SQLite failure handling.

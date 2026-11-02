@@ -5,6 +5,22 @@ from django.db import models
 from django.utils import timezone
 
 
+class AuditEventMutationError(RuntimeError):
+    pass
+
+
+class AuditEventQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise AuditEventMutationError("Audit events are append-only.")
+
+    def delete(self):
+        raise AuditEventMutationError("Audit events are append-only.")
+
+
+class AuditEventManager(models.Manager.from_queryset(AuditEventQuerySet)):
+    pass
+
+
 class Conversation(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     owner = models.ForeignKey(
@@ -113,6 +129,15 @@ class AuditEvent(models.Model):
     target_user_id = models.PositiveBigIntegerField(null=True, blank=True)
     aggregate_count = models.PositiveIntegerField(null=True, blank=True)
     request_id = models.UUIDField(null=True, blank=True)
+    objects = AuditEventManager()
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise AuditEventMutationError("Audit events are append-only.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise AuditEventMutationError("Audit events are append-only.")
 
     class Meta:
         constraints = [
