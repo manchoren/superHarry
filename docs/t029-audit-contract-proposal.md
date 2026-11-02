@@ -56,9 +56,10 @@ Use a closed vocabulary with one event per recorded outcome:
 | `auth.totp_enrollment_confirmed` | `success` | Authorized actor and affected account. |
 | `auth.totp_deactivated` | `success` | Authorized actor and affected account. |
 | `auth.totp_recovery_used` | `success` | Account actor/target; never include a recovery code or verifier. |
+| `admin.audit_read` | `success` | Authorized admin actor; emit for each permitted query, without storing search terms or returned event contents. |
 | `admin.audit_exported` | `success` | Authorized admin actor; record only bounded export metadata, not exported content. |
 
-`admin.audit_exported` is proposed to provide accountability for the previously approved admin read/export capability. A read-only admin query that does not export data should use an equivalent event or be explicitly excluded by G-CONTRACT before implementation.
+`admin.audit_read` and `admin.audit_exported` are proposed to provide accountability for the previously approved admin read/export capability. If approved, rate/volume bounding must avoid letting audit-query logging become a denial-of-service vector.
 
 The initial inventory does not imply a public password-reset workflow. Reset issuance remains limited to the approved OS-admin-mediated process; the event vocabulary must not create or suggest an unauthenticated reset endpoint or delivery channel. Exact actor attribution for the OS administrator remains subject to T031/G-OPS review; until an approved identity assertion exists, do not claim that a service actor identifies the human OS operator.
 
@@ -82,7 +83,7 @@ For failed authentication, a known account may be correlated by its internal ID;
 
 1. Approve the exact field names/types and the snapshot representation for Django user primary keys.
 2. Approve the closed event names, actor/target rules, and outcome vocabulary.
-3. Decide whether admin audit reads as well as exports generate an `admin.audit_exported`-style event, and confirm the exact event name and safe bounded metadata.
+3. Approve separate events for admin audit reads and exports, and confirm their safe bounded metadata.
 4. Approve transaction boundaries for each event/action pair, including failed-login counters, session transitions, reset/recovery, TOTP changes, and role changes.
 5. Confirm whether the initial operation set omits any required privileged action or includes an event that should be deferred.
 6. Confirm the 90-day retention and purge operation after the required legal/operational review.
