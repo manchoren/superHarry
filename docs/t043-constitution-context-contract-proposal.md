@@ -1,10 +1,22 @@
 # T043 constitution and context-delivery contract proposal
 
-**Status:** Owner accepted this proposal as a design direction on 2026-11-02. It remains a proposal, not G-MODEL/G-SECURITY approval or implementation authorization; unresolved decisions below still require review. This document does not approve an implementation, dependency, model, tokenizer, API, schema, migration, or deployment behavior. G-CONTRACT/G-ARCH review may also apply.
+**Status:** Owner accepted this proposal as a design direction on 2026-11-02 and subsequently approved the bounded generic implementation scope below. That approval does not approve a provider, model, tokenizer, release trust anchor, deployment behavior, or end-to-end runtime/channel integration. Remaining decisions and implementation gaps are listed below.
 
 **Constitution baseline read:** baseline date `2026-10-29`; the current constitution declares no separate version identifier. SHA-256 of the complete `constitution.md` read for this proposal: `D09E90AA0EFE609A7D335A7B10ECC5623DAB1E757B5A00D4E7C82526CE9DC489`. Record this as the source baseline, not as a newly assigned constitution version.
 
-**Scope:** Define a candidate source-of-truth, integrity, freshness, budgeting, and fail-closed delivery contract for T043 and its consumers T045/T049/T055. No code, tests, dependency manifests, migrations, other documents, or task records are changed by this proposal.
+**Scope:** Define a candidate source-of-truth, integrity, freshness, budgeting, and fail-closed delivery contract for T043 and its consumers T045/T049/T055.
+
+## Owner-approved bounded implementation
+
+The approved code scope is limited to a generic, fail-closed Django application module:
+
+- Read the full constitution as raw bytes for each preparation, verify it against a required caller-injected SHA-256, decode strict UTF-8 without normalization, and retain an immutable snapshot. The module does not choose or establish the trustworthiness of the hash provider.
+- Build an immutable in-memory manifest for only the constitution and current user request. Its versioned digest uses domain separation and length-prefixed fields.
+- Require a caller-supplied adapter profile with versioned serialization, token-count upper-bound, context-capacity, output-reserve, and margin data. Missing or invalid profile data, serialization/count errors, and overflow must prevent preparation; there are no guessed defaults.
+- Revalidate the source identity after preparation. Consumers must also revalidate immediately before dispatch and before using a result for any action; if the identity changed, discard the result and block actions.
+- Do not add optional history/retrieval, request segmentation, model/channel wiring, caching, deployment configuration, provider calls, or a new audit event for a preparation failure that performs no action.
+
+This is a preparation boundary only. It does not establish that an adapter serializes the constitution in a protected role, that its counter is accurate for a real backend, or that a deployment supplies a trusted hash/profile. T043 remains incomplete until full runtime, model, delegated-agent, channel, update, and action-boundary coverage is implemented and verified under the remaining gates.
 
 ## Evidence and governing constraints
 
@@ -18,7 +30,7 @@ The following material was read for this draft:
 
 These existing documents establish the binding requirement to supply the full current constitution as protected instruction context, prohibit silent omission/truncation, require blocking when mandatory context cannot fit or be verified, and permit trimming only optional context. They also require role/channel enforcement outside the model and safe privacy-conscious operations. They do **not** fully define the exact source/version/hash manifest, release trust anchor, end-to-end tokenizer verification, update/revocation freshness, channel-wide checks, or deterministic T043 acceptance contract proposed here. This draft supplements those high-level constraints without changing them.
 
-ADR 0010 governs the architecture: keep the delivery coordinator and model integrations in ordinary Django application modules. Do not recreate the superseded service or TypeScript/Python transport boundary. This contract does not authorize code changes or approve T044/T045/T049/T055 designs.
+ADR 0010 governs the architecture: keep the delivery coordinator and model integrations in ordinary Django application modules. Do not recreate the superseded service or TypeScript/Python transport boundary. The bounded approval above does not approve the designs or implementations of T044/T045/T049/T055.
 
 ## Proposed contract
 
@@ -144,12 +156,13 @@ Any implementation must add tests for its verified tokenizer/capacity profiles a
 
 ## Explicit decisions still open
 
-The following require recorded owner/gate decisions before implementation; this draft selects none of the underlying products or values:
+The owner approval resolves only the generic preparation boundary described above. These items remain open before runtime integration or task completion:
 
-1. G-MODEL approval of the context manifest fields and semantics, protected-message representation, exact/conservative token-count acceptance criterion, tokenizer/profile source and validation evidence, per-profile context capacities/margins, output reserve, and treatment of unobservable backend framing.
-2. G-SECURITY/G-OPS approval of the trusted expected-hash location, release provenance/signature or equivalent protection, atomic update procedure, worker/cache invalidation mechanism, revocation propagation guarantee, and stale-result handling policy.
-3. G-CONTRACT/G-ARCH review of Django module ownership/interfaces, error codes, manifest serialization/canonical digest encoding, audit event linkage, and any integration with model, tool, channel, or operation records. No schema or public contract is approved here.
-4. Owner/G-MODEL approval of optional-context trimming order, whether user-confirmed request segmentation is ever allowed, behavior when a valid prompt cannot fit any permitted model, and exact restart/continuation policy after an update.
-5. G-SECURITY approval of per-channel content-transfer disclosures and handling of any channel that cannot carry protected context; existing guest, privacy, authorization, confirmation, and external-provider restrictions remain binding meanwhile.
+1. **G-MODEL:** Select actual adapters and versioned capability profiles; establish evidence for each serializer's protected-message behavior, tokenizer/counter accuracy, supported framing, context capacity, output reserve, and margin. The generic profile protocol does not certify any of these values.
+2. **G-SECURITY/G-OPS:** Choose and protect the trusted expected-hash source; define release provenance/signature or equivalent protection, atomic update procedure, process/worker invalidation, and revocation propagation. The current module requires an injected hash but does not choose its provider or deployment.
+3. **G-CONTRACT/G-ARCH:** Review concrete adapter integration, error mapping, and wiring into model, tool, channel, and operation records. The generic module adds no database schema or public API.
+4. **Owner/G-MODEL:** Define optional-history/retrieval trimming only if such context is added, decide whether user-confirmed segmentation is allowed, and specify restart/continuation behavior for any future queued work. The bounded implementation includes no optional context and rejects overflow.
+5. **G-SECURITY:** Approve per-channel transfer and disclosure behavior. No new channel or guest path is enabled by this implementation.
+6. **Integration and acceptance:** T043 still needs coverage for all runtime/delegated/model/channel paths, revalidation immediately before dispatch and action handling, update/revocation behavior, and adapter-specific tests. Unit tests for this generic boundary do not prove complete constitution delivery or release authenticity.
 
-Until those decisions are recorded, this is a concrete review proposal—not G-MODEL/G-SECURITY approval, implementation authorization, or permission to weaken the constitution’s full-delivery requirement.
+Existing guest, privacy, authorization, confirmation, and external-provider restrictions remain binding. Nothing in this bounded approval permits omission, truncation, demotion, or unsafe fallback of the full current constitution.
