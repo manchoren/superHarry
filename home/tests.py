@@ -6,14 +6,20 @@ from unittest.mock import patch
 from uuid import UUID
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import AnonymousUser, Permission
 from django.contrib.sessions.models import Session
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.middleware.csrf import CSRF_SESSION_KEY
 from django.test import Client, TestCase, override_settings
 from django.urls import resolve, reverse
 from django.utils import timezone
 
+from home.authorization import (
+    get_owned_conversation,
+    get_owned_message,
+    owned_conversations,
+    owned_messages,
+)
 from home.middleware import SessionLifetimeMiddleware
 from home.models import Conversation, Message
 from home.views import home
@@ -76,6 +82,98 @@ class ConversationStorageTests(TestCase):
 
         self.assertFalse(Conversation.objects.filter(pk=conversation.pk).exists())
         self.assertFalse(Message.objects.filter(pk=message.pk).exists())
+
+
+class ConversationAuthorizationTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        user_model = get_user_model()
+        cls.owner = user_model.objects.create_user(
+            username="conversation-owner",
+            password="test-password-123",
+        )
+        cls.other_user = user_model.objects.create_user(
+            username="conversation-other",
+            password="test-password-123",
+        )
+        cls.staff_user = user_model.objects.create_user(
+            username="conversation-staff",
+            password="test-password-123",
+            is_staff=True,
+        )
+        cls.superuser = user_model.objects.create_superuser(
+            username="conversation-superuser",
+            email="superuser@example.test",
+            password="test-password-123",
+        )
+        cls.conversation = Conversation.objects.create(owner=cls.owner)
+        cls.message = Message.objects.create(
+            conversation=cls.conversation,
+            role=Message.Role.USER,
+            content="Private conversation content",
+        )
+
+    def test_owner_can_query_only_their_conversations_and_messages(self):
+        self.assertEqual(list(owned_conversations(self.owner)), [self.conversation])
+        self.assertEqual(
+            get_owned_conversation(self.owner, self.conversation.pk),
+            self.conversation,
+        )
+        self.assertEqual(
+            list(owned_messages(self.owner, self.conversation.pk)),
+            [self.message],
+        )
+        self.assertEqual(
+            get_owned_message(
+                self.owner,
+                self.conversation.pk,
+                self.message.pk,
+            ),
+            self.message,
+        )
+
+    def test_other_user_gets_404_for_conversation_and_message(self):
+        self.assertFalse(owned_conversations(self.other_user).exists())
+        self.assertFalse(
+            owned_messages(self.other_user, self.conversation.pk).exists()
+        )
+        with self.assertRaises(Http404):
+            get_owned_conversation(self.other_user, self.conversation.pk)
+        with self.assertRaises(Http404):
+            get_owned_message(
+                self.other_user,
+                self.conversation.pk,
+                self.message.pk,
+            )
+
+    def test_anonymous_user_cannot_query_persistent_conversations_or_messages(self):
+        anonymous_user = AnonymousUser()
+
+        self.assertFalse(owned_conversations(anonymous_user).exists())
+        self.assertFalse(
+            owned_messages(anonymous_user, self.conversation.pk).exists()
+        )
+        with self.assertRaises(Http404):
+            get_owned_conversation(anonymous_user, self.conversation.pk)
+        with self.assertRaises(Http404):
+            get_owned_message(
+                anonymous_user,
+                self.conversation.pk,
+                self.message.pk,
+            )
+
+    def test_staff_and_superuser_roles_do_not_bypass_owner_scope(self):
+        for privileged_user in (self.staff_user, self.superuser):
+            with self.subTest(user=privileged_user.username):
+                self.assertFalse(owned_conversations(privileged_user).exists())
+                with self.assertRaises(Http404):
+                    get_owned_conversation(privileged_user, self.conversation.pk)
+                with self.assertRaises(Http404):
+                    get_owned_message(
+                        privileged_user,
+                        self.conversation.pk,
+                        self.message.pk,
+                    )
 
 
 class HomeRouteTests(TestCase):
