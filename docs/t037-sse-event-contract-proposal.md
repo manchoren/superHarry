@@ -1,20 +1,22 @@
 # T037 public Django chat SSE event contract proposal
 
-Status: Owner accepted this proposal as a design direction on 2026-11-02. It remains a proposal, not G-CONTRACT approval or implementation authorization; unresolved decisions below still require review. Task: T037. No route, schema, migration, or dependency is authorized by this proposal.
+Status: Owner approved the bounded T037 G-CONTRACT implementation scope and T029 audit extension on 2026-11-02. Routes, the `ChatTurn`/`ChatEvent` schema and migration, the selected audit events, request semantics, payload bounds and an injectable fail-closed dispatcher seam are authorized within this scope. No provider, executor, worker, deployment configuration or production-readiness claim is authorized.
 
-**Owner-selected design decisions (2026-11-02):** use the proposed versioned turn routes, `Idempotency-Key` start semantics, and `turn.*` event vocabulary; retain durable ordered events while a turn is active and for 24 hours after terminal state, then return `EVENT_HISTORY_UNAVAILABLE` for expired history; use the proposed request/output/event/buffer byte bounds; and audit accepted turn creation and cancellation requests, but not individual deltas or ordinary reconnections. These decisions do not approve the schema, migration, event storage, audit fields/failure behavior, implementation, or deployment.
+**Owner-selected design decisions (2026-11-02):** use the versioned turn routes, `Idempotency-Key` start semantics, and `turn.*` event vocabulary; retain durable ordered events while a turn is active and for 24 hours after terminal state, then return `EVENT_HISTORY_UNAVAILABLE` for expired history; apply the selected request/output/event/buffer byte bounds; and audit accepted turn creation and cancellation requests, but not individual deltas or ordinary reconnections.
 
-**Additional owner-selected design decisions (2026-11-02):** permit at most one active turn per conversation and reject another with `409 TURN_ALREADY_ACTIVE`, without queuing; retain the idempotency key/digest for the lifetime of the conversation; require successful audit recording before accepting either a turn start or cancellation request, otherwise fail with a generic unavailable response and make no corresponding state transition; defer numeric deadlines, reader/queue capacity and deployment stream limits to T010/G-MODEL/T149, with validation required before deployment. This does not authorize implementation or settle the durable schema or audit event vocabulary.
+**Additional owner-selected design decisions (2026-11-02):** permit at most one active turn per conversation and reject another with `409 TURN_ALREADY_ACTIVE`, without queuing; retain the idempotency key/digest for the lifetime of the conversation; require successful audit recording before accepting either a turn start or cancellation request, otherwise fail with a generic unavailable response and make no corresponding state transition; defer numeric deadlines, reader/queue capacity and deployment stream limits to T010/G-MODEL/T149, with validation required before deployment. If no dispatcher is configured, start/cancel requests fail with `503 UNAVAILABLE` before persisting a turn or changing its state; no improvised threads or permanently queued turns.
 
-**Storage and cursor decisions (2026-11-02):** use distinct durable `ChatTurn` and `ChatEvent` records; keep `Message` as the canonical user/assistant text record; expose browser replay only through `Last-Event-ID`, using a Django-signed cursor bound to the turn and sequence with a 24-hour maximum age; do not accept an `after` query parameter. Proposed T029 event identifiers are `chat.turn_created` and `chat.turn_cancel_requested`, correlated by a server-generated `request_id`, with no prompt, message content, per-delta event or reconnect data. These are owner-selected design directions; exact field constraints, physical cleanup mechanism, migrations, event vocabulary approval and signing-key rotation remain open.
+**SSE delivery decision (2026-11-02):** each connection drains a bounded batch of currently persisted events and closes; the browser's `EventSource` reconnects using the signed `Last-Event-ID` to fetch later events. Do not hold an open WSGI request while polling the database. The batch is limited by the approved 128-event/256-KiB bounds; production reader limits and deployment behavior remain deferred.
+
+**Storage and cursor decisions (2026-11-02):** use distinct durable `ChatTurn` and `ChatEvent` records; keep `Message` as the canonical user/assistant text record; expose browser replay only through `Last-Event-ID`, using a Django-signed cursor bound to the turn and sequence with a 24-hour maximum age; do not accept an `after` query parameter. T029 event identifiers are `chat.turn_created` and `chat.turn_cancel_requested`, correlated by a server-generated `request_id`, with no prompt, message content, per-delta event or reconnect data. Owner approval covers the candidate schema fields/constraints and migration in this document; T069 must still provide physical event cleanup and cursor signing-key rotation remains an operational consideration.
 
 Constitution baseline: 2026-10-29. SHA-256 of the current `constitution.md` read for this draft: `d09e90aa0efe609a7d335a7b10ecc5623dab1e757b5a00d4e7c82526ce9dc489`.
 
 ## Scope and design basis
 
-This proposes one browser-facing contract for progressive chat responses in the Django monolith. It does not specify the model-provider API, add a separate service, enable guests, define attachments, or authorize tools. Public names and limits below are candidate contract choices for G-CONTRACT review, not accepted requirements.
+This defines the approved browser-facing contract for progressive chat responses in the Django monolith. It does not specify the model-provider API, add a separate service, enable guests, define attachments, or authorize tools. Numeric operational limits remain deferred as described above.
 
-The applicable direction is ADR 0010: Django owns the web/application runtime; use Django URL/view, session, CSRF, ORM, and response mechanisms rather than reviving the former React/Fastify/access-service split or TypeScript-to-Python envelope. T025 supplies the route organization. The accepted T028 boundary scopes persistent conversations and messages to their owner; administrators and superusers do not gain access to another person's content. T026 supplies Django-native authenticated sessions and CSRF. The T023 schema currently contains only `Conversation` and `Message`; this proposal's turn identity, idempotency record, status, and replayable event history would need a separately reviewed schema before implementation.
+The applicable direction is ADR 0010: Django owns the web/application runtime; use Django URL/view, session, CSRF, ORM, and response mechanisms rather than reviving the former React/Fastify/access-service split or TypeScript-to-Python envelope. T025 supplies the route organization. The accepted T028 boundary scopes persistent conversations and messages to their owner; administrators and superusers do not gain access to another person's content. T026 supplies Django-native authenticated sessions and CSRF. T037's approved migration extends the T023 `Conversation`/`Message` schema with durable turn identity, idempotency and replayable event history.
 
 The older T005 proposal and ADR 0002 approve only a limited initial chat HTTP/SSE fragment and general request-identity, error, reconnect, cancellation, and compatibility principles. They explicitly leave payload limits, event retention/durability, operation schemas, and event shapes open. Their older `chat.read_events` internal-envelope candidate is not this Django public API and must not be reintroduced as a separate transport. No existing inspected document fully defines this public Django event contract.
 
@@ -52,7 +54,7 @@ Return `202 Accepted` with `application/json`, `Cache-Control: no-store`:
 }
 ```
 
-Do not begin a second inference when the caller retries this POST. Starting a turn is the only proposed operation that accepts a new user message; opening or reconnecting to its event URL is read-only.
+Do not begin a second inference when the caller retries this POST. Starting a turn is the only operation that accepts a new user message; opening or reconnecting to its event URL is read-only.
 
 ### Read or resume events
 
@@ -72,7 +74,7 @@ Cancellation means “stop further work as soon as safely possible”; it cannot
 
 ## Proposed durable schema and request identity
 
-The owner selected separate durable turn and event records, but the schema itself still requires G-CONTRACT approval. Candidate Django models:
+The owner approved separate durable turn and event records under G-CONTRACT:
 
 | Model | Proposed fields and constraints |
 |---|---|
@@ -81,13 +83,13 @@ The owner selected separate durable turn and event records, but the schema itsel
 
 Use the existing owner-scoped conversation selector for every route and event query; derive the requester from the authenticated session and the turn's conversation owner. Check that the referenced user/assistant `Message` belongs to the same conversation. Never accept owner IDs, turn state, event sequence, or audit claims from the client. Initial turn creation atomically records the `ChatTurn`, user `Message`, queued state, and `chat.turn_created` audit event before inference dispatch. Final assistant `Message`, terminal state/event, and cancellation transitions are likewise committed before their corresponding terminal event is exposed. Propose one `chat.turn_created` or `chat.turn_cancel_requested` audit record for each first accepted state transition; idempotent retries that make no new transition produce no additional record. The audit event uses the existing typed fields with the authenticated actor/target user IDs and request ID only, and stores no conversation ID, turn ID, prompt, or message content. A start/cancel audit write failure rolls back the corresponding accepted state transition.
 
-The request digest must bind validated semantic fields, not arbitrary JSON serialization. Candidate deterministic encoding: `SHA256("superharry.chat.turn.v1\0" || uint32_be(len(message_utf8)) || message_utf8 || uint16_be(len(model_mode_ascii)) || model_mode_ascii)`. Apply the approved default `model_mode="automatic"` before hashing; reject duplicate JSON members, unknown fields, invalid UTF-8, and unsupported mode before creating state. Do not Unicode-normalize the message. The precise encoding, input parser, constraint portability and transaction behavior still require G-CONTRACT review and tests.
+The request digest must bind validated semantic fields, not arbitrary JSON serialization. Use deterministic encoding: `SHA256("superharry.chat.turn.v1\0" || uint32_be(len(message_utf8)) || message_utf8 || uint16_be(len(model_mode_ascii)) || model_mode_ascii)`. Apply the approved default `model_mode="automatic"` before hashing; reject duplicate JSON members, unknown fields, invalid UTF-8, and unsupported mode before creating state. Do not Unicode-normalize the message.
 
 `ChatEvent` payloads contain private response data and are logically replayable only while active and for 24 hours after terminal state. Propose a `prune_chat_events` management command to physically delete expired event rows while retaining `ChatTurn` idempotency metadata and canonical `Message` records until conversation deletion. T069 must provide an approved periodic execution mechanism before production use; until then, expiration checks must return `410 EVENT_HISTORY_UNAVAILABLE`, but physical retention beyond 24 hours remains an explicit deployment blocker. No cleanup command, model, migration or periodic job is authorized by this proposal.
 
 ## Common SSE frame and ordering
 
-Each data frame uses UTF-8 SSE framing. `event` is one of the closed names below; `id` is an opaque replay cursor; `data` is one JSON object. Candidate common data fields:
+Each data frame uses UTF-8 SSE framing. `event` is one of the closed names below; `id` is an opaque replay cursor; `data` is one JSON object. Common data fields:
 
 ```json
 {
@@ -102,7 +104,7 @@ Each data frame uses UTF-8 SSE framing. `event` is one of the closed names below
 
 For a turn, emit events in persisted sequence order. `turn.started` precedes progress/model/output events; `model.selected` precedes the first `message.delta`; all deltas precede `turn.completed`. Emit exactly one terminal event: `turn.completed`, `turn.failed`, or `turn.cancelled`. No application event follows a terminal event. A disconnect is not a terminal event. A reconnect replays only events with a sequence greater than its cursor. Duplicate delivery at a network boundary is possible; clients deduplicate by `(turn_id, sequence)` and apply events idempotently.
 
-Candidate event names and typed event-specific fields follow. All include the common fields above.
+Approved event names and typed event-specific fields follow. All include the common fields above.
 
 | SSE event | Additional payload fields | Meaning |
 |---|---|---|
@@ -135,9 +137,9 @@ Use Django's existing session, CSRF, strict-origin and HTTPS configuration. The 
 
 On reconnect, accept only the browser-provided `Last-Event-ID`; do not accept a cursor query parameter. An absent cursor means replay from the first retained event. A cursor must be valid, signed, bound to the route's turn, and within retained history. A cursor is only a position; it never grants access.
 
-Use an opaque Django-signed cursor containing the contract version, turn ID, last delivered sequence, and issuance time. Validate signature, structure and a maximum age of 24 hours, but always perform fresh owner authorization. A malformed or cross-turn cursor is `400 INVALID_INPUT`; an expired cursor or one older than the retained event range is `410 EVENT_HISTORY_UNAVAILABLE`, not a silent jump to the latest event. A stream starting from a valid cursor returns every later event in strict sequence and then waits for more; after terminal replay it closes. No event is skipped to make the stream appear current.
+Use an opaque Django-signed cursor containing the contract version, turn ID, last delivered sequence, and issuance time. Validate signature, structure and a maximum age of 24 hours, but always perform fresh owner authorization. A malformed or cross-turn cursor is `400 INVALID_INPUT`; an expired cursor or one older than the retained event range is `410 EVENT_HISTORY_UNAVAILABLE`, not a silent jump to the latest event. A request starting from a valid cursor returns the next bounded batch of later events in strict sequence, then closes. The browser reconnects to receive additional events. After terminal replay, the connection closes and the browser stops when the terminal state is represented. No event is skipped to make the stream appear current.
 
-Reliable reconnect across process restart requires durable replay state, not just an in-memory queue. The owner selected separate durable `ChatTurn` and `ChatEvent` records, keeping idempotency metadata for the lifetime of the conversation and retaining ordered events while active and for 24 hours after terminal state. `Message` remains the canonical user/assistant text record. `ChatEvent` rows become unavailable for replay after the window; the physical cleanup mechanism, storage fields/constraints, cursor signing-key rotation, and behavior after event pruning remain open. No migration or schema is approved here.
+Reliable reconnect across process restart requires durable replay state, not just an in-memory queue. The owner approved separate durable `ChatTurn` and `ChatEvent` records, keeping idempotency metadata for the lifetime of the conversation and retaining ordered events while active and for 24 hours after terminal state. `Message` remains the canonical user/assistant text record. `ChatEvent` rows become unavailable for replay after the window; physical cleanup remains a T069 requirement, and cursor signing-key rotation remains an operational consideration.
 
 ## Idempotency and side-effect safety
 
@@ -151,7 +153,7 @@ The client treats `turn_id` as the UI operation identity. Replayed sequence numb
 
 Cancellation is an authenticated owner operation, not a browser disconnect. A disconnect only detaches a reader; work may continue and remain replayable. Cancellation marks the durable turn once, signals the producer, and prevents new work from starting. The producer emits `turn.cancel_requested` when accepted and emits `turn.cancelled` only after it has stopped. If completion won the race, return/replay the existing completed terminal state. Do not claim an already-dispatched external effect was undone.
 
-Candidate initial limits for review, not approved caps:
+Approved implementation caps:
 
 - Request message: at most 16 KiB UTF-8; reject oversize input before creating a message or turn.
 - Assistant output: at most 64 KiB UTF-8; terminate with `OUTPUT_LIMIT` if the safe bound is reached.
@@ -161,25 +163,26 @@ Candidate initial limits for review, not approved caps:
 
 The producer must use bounded buffers. Apply backpressure by pausing/coalescing generation where supported. Never silently drop a persisted event or terminal state. If a client cannot keep up and the pending buffer reaches its limit, close that connection without advancing past undelivered data; the client reconnects from its last cursor. Persisted replay state remains bounded by the turn output cap and retention policy. The terminal event must be deliverable/replayable even after a slow-reader disconnect.
 
-Do not admit unbounded work: enforce the accepted single-heavy-job resource governor and a bounded queue. Propose at most one active turn per conversation; reject or defer additional work using a structured response. Numeric queue capacity, per-user admission/rate limits, timeout behavior, maximum concurrent SSE readers, heartbeat interval, maximum stream lifetime, and the exact recovery/cleanup behavior require capacity evidence and explicit approval. The current Django WSGI deployment means open streams can occupy workers; the supported server mode and concurrency limits must be validated before implementation/deployment claims.
+The terminal event repeats the authoritative assistant snapshot inside its JSON/SSE envelope. The implementation therefore caps the text payload below the 64-KiB ceiling by a fixed serialization reserve so the complete terminal frame remains within the selected per-event limit.
+
+Do not admit unbounded work: enforce the accepted single-heavy-job resource governor and a bounded queue. Permit at most one active turn per conversation; reject another with `409 TURN_ALREADY_ACTIVE`. Numeric queue capacity, per-user admission/rate limits, timeout behavior, maximum concurrent SSE readers, and exact recovery/cleanup behavior require capacity evidence and explicit approval. Batch-and-close SSE avoids holding a WSGI request open while polling; the supported server mode and concurrency limits must still be validated before production claims.
 
 ## Privacy, audit, and observability
 
 Conversation text, deltas, final content, prompts, provider request/response bodies, and tool content are private conversation data. Return them only to the owner over the authenticated stream. Do not place content, session IDs, idempotency keys, cursor contents, credentials, or raw provider errors in ordinary diagnostics or security audit records. Diagnostic content logging remains disabled by default and any detailed mode remains separately opt-in and time-limited under the plan.
 
-Do not invent a T029 audit vocabulary for every token or reconnect. The owner selected `chat.turn_created` and `chat.turn_cancel_requested` events for accepted turn creation and cancellation requests, correlated with a server-generated `request_id`, but not for each SSE read, delta, idempotency conflict, or ordinary reconnection. Audit writes must be transactionally coupled to accepting the corresponding turn/cancellation state transition; audit failure prevents that transition and returns a generic unavailable response. Exact event fields, outcome/actor constraints, database transaction boundaries and migration must be reconciled with T029 and approved before implementation. Required security audit writes remain independent of diagnostic settings and must follow T029's fail-closed behavior.
+Do not invent a T029 audit vocabulary for every token or reconnect. The owner selected `chat.turn_created` and `chat.turn_cancel_requested` events for accepted turn creation and cancellation requests, correlated with a server-generated `request_id`, but not for each SSE read, delta, idempotency conflict, or ordinary reconnection. Audit writes are transactionally coupled to accepting the corresponding turn/cancellation state transition; audit failure prevents that transition and returns a generic unavailable response. Required security audit writes remain independent of diagnostic settings and follow T029's fail-closed behavior.
 
 Model metadata should disclose only the server-selected mode, provider, and stable safe model identifier needed for user transparency. Do not expose raw provider IDs that contain account details, remote URLs, API headers, internal routing, budgets, or credentials. Token/cost usage metadata is deferred to its own approved contract (including T048); do not infer a usage schema here.
 
-## Unresolved decisions before G-CONTRACT approval or implementation
+## Remaining implementation and production gates
 
-1. Final schema and compatibility contract: exact JSON fields, response/status/error mappings, semantic digest canonicalization, UUID/key grammar and concurrent duplicate transaction behavior. The owner-selected paths/event vocabulary and `TURN_ALREADY_ACTIVE` response still require exact schema review.
-2. Durable representation: exact `ChatTurn`/`ChatEvent` fields, unique/partial constraints, atomicity with user/assistant messages, event reconstruction after restart, physical cleanup procedure for the selected 24-hour replay window, and cursor signing-key rotation. Keep the idempotency record with the conversation as selected.
-3. Capacity/admission: queue/readers/rate limits, generation and cancellation deadlines, heartbeat, maximum stream lifetime, and evidence that the selected worker model can serve bounded SSE streams. The owner deferred numeric deadlines/capacity to T010/G-MODEL/T149; do not claim deployment readiness until validated. The selected payload/buffer caps still require capacity and serializer tests.
+1. Complete runtime behavior: prove concurrent duplicate handling and the approved response/error mappings against the supported database and deployment.
+2. Durable representation: event reconstruction after restart, physical cleanup procedure for the selected 24-hour replay window, and cursor signing-key rotation. Keep the idempotency record with the conversation as selected.
+3. Capacity/admission: queue/readers/rate limits, generation and cancellation deadlines, and evidence that the selected worker model can serve bounded SSE batches. The owner deferred numeric deadlines/capacity to T010/G-MODEL/T149; do not claim deployment readiness until validated. The selected payload/buffer caps still require capacity and serializer tests.
 4. Model metadata: display-safe model catalog identifiers, fallback vocabulary, when model selection is known, and whether any usage data belongs in these events.
 5. Cancellation races and recovery for provider requests or future side effects with uncertain outcomes; T010 must settle durable action states before claiming safe resume.
-6. T029 audit event fields/outcome/actor constraints and migration, transaction boundaries and redacted diagnostics for the selected `chat.turn_created`/`chat.turn_cancel_requested` events.
-7. Whether any guest SSE flow is needed; it must remain separate from persistent owner-scoped conversations and be designed under T035.
-8. Proxy buffering/timeouts, supported WSGI/ASGI serving mode, and validation of behavior through the selected Caddy deployment.
+6. Whether any guest SSE flow is needed; it must remain separate from persistent owner-scoped conversations and be designed under T035.
+7. Proxy buffering/timeouts, supported WSGI/ASGI serving mode, and validation of behavior through the selected Caddy deployment.
 
-The owner-selected choices above constrain the G-CONTRACT review but do not complete it. Explicit G-CONTRACT approval and implementation authorization remain outstanding; T037 must not change APIs or code until the remaining contract decisions are resolved and approved.
+The owner-approved scope permits implementation of this contract. T037 remains incomplete until implementation tests pass; numeric capacity/deadline validation, physical event cleanup under T069, dispatcher/worker integration under T052, and deployment validation remain separate prerequisites before production use.

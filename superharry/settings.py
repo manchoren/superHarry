@@ -112,6 +112,7 @@ LOGGING = {
 }
 
 ROOT_URLCONF = "superharry.urls"
+CSRF_FAILURE_VIEW = "home.api_errors.csrf_failure"
 
 TEMPLATES = [
     {

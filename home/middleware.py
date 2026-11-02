@@ -9,6 +9,8 @@ from django.middleware.csrf import CSRF_SESSION_KEY
 from django.utils import timezone
 from django.utils.deprecation import MiddlewareMixin
 
+from home.api_errors import api_error, is_chat_api_path
+
 _PREAUTH_STARTED_AT = "_superharry_preauth_started_at"
 _AUTHENTICATED_STARTED_AT = "_superharry_authenticated_started_at"
 _AUTHENTICATED_LAST_ACTIVITY_AT = "_superharry_authenticated_last_activity_at"
@@ -91,19 +93,27 @@ class StrictOriginMiddleware(MiddlewareMixin):
         if request.method in _SAFE_METHODS:
             return None
         if not _trusted_https_proxy(request):
+            if is_chat_api_path(request.path):
+                return api_error(request, "FORBIDDEN", 403)
             return HttpResponseForbidden()
 
         origin = request.META.get("HTTP_ORIGIN")
         request_host = request.get_host()
         request_authority = _origin_authority(f"https://{request_host}")
         if request_authority is None:
+            if is_chat_api_path(request.path):
+                return api_error(request, "FORBIDDEN", 403)
             return HttpResponseForbidden()
         if not settings.DEBUG and (
             request_authority[0] != settings.SUPERHARRY_HOSTNAME
             or request_authority[1] != 443
         ):
+            if is_chat_api_path(request.path):
+                return api_error(request, "FORBIDDEN", 403)
             return HttpResponseForbidden()
         if _origin_authority(origin) != request_authority:
+            if is_chat_api_path(request.path):
+                return api_error(request, "FORBIDDEN", 403)
             return HttpResponseForbidden()
         request.META["HTTP_ORIGIN"] = f"https://{request_host}"
         return None

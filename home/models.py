@@ -64,6 +64,119 @@ class Message(models.Model):
         ]
 
 
+class ChatTurn(models.Model):
+    class ModelMode(models.TextChoices):
+        AUTOMATIC = "automatic", "Automatic"
+        LOCAL = "local", "Local"
+
+    class State(models.TextChoices):
+        QUEUED = "queued", "Queued"
+        RUNNING = "running", "Running"
+        CANCEL_REQUESTED = "cancel_requested", "Cancel requested"
+        COMPLETED = "completed", "Completed"
+        FAILED = "failed", "Failed"
+        CANCELLED = "cancelled", "Cancelled"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    conversation = models.ForeignKey(
+        Conversation,
+        on_delete=models.CASCADE,
+        related_name="turns",
+    )
+    user_message = models.OneToOneField(
+        Message,
+        on_delete=models.CASCADE,
+        related_name="chat_turn_user",
+    )
+    assistant_message = models.OneToOneField(
+        Message,
+        on_delete=models.CASCADE,
+        related_name="chat_turn_assistant",
+        null=True,
+        blank=True,
+    )
+    idempotency_key = models.UUIDField()
+    request_digest = models.CharField(max_length=64)
+    model_mode = models.CharField(max_length=16, choices=ModelMode.choices)
+    state = models.CharField(
+        max_length=24,
+        choices=State.choices,
+        default=State.QUEUED,
+    )
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+    terminal_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["conversation", "idempotency_key"],
+                name="home_chatturn_conv_idem_uniq",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(request_digest__regex=r"^[a-f0-9]{64}$"),
+                name="home_chatturn_digest_hex_ck",
+            ),
+            models.UniqueConstraint(
+                fields=["conversation"],
+                condition=models.Q(
+                    state__in=("queued", "running", "cancel_requested")
+                ),
+                name="home_chatturn_active_conv_uniq",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["conversation", "state"],
+                name="home_chatturn_conv_state_idx",
+            ),
+        ]
+
+
+class ChatEvent(models.Model):
+    class EventType(models.TextChoices):
+        TURN_STARTED = "turn.started", "Turn started"
+        TURN_PROGRESS = "turn.progress", "Turn progress"
+        MODEL_SELECTED = "model.selected", "Model selected"
+        MESSAGE_DELTA = "message.delta", "Message delta"
+        TURN_CANCEL_REQUESTED = (
+            "turn.cancel_requested",
+            "Turn cancellation requested",
+        )
+        TURN_COMPLETED = "turn.completed", "Turn completed"
+        TURN_FAILED = "turn.failed", "Turn failed"
+        TURN_CANCELLED = "turn.cancelled", "Turn cancelled"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    turn = models.ForeignKey(
+        ChatTurn,
+        on_delete=models.CASCADE,
+        related_name="events",
+    )
+    sequence = models.PositiveIntegerField()
+    event_type = models.CharField(max_length=32, choices=EventType.choices)
+    payload = models.JSONField()
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["turn", "sequence"],
+                name="home_chatevent_turn_seq_uniq",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(sequence__gte=1),
+                name="home_chatevent_seq_positive_ck",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["created_at"],
+                name="home_chatevent_created_idx",
+            ),
+        ]
+
+
 class AuditEvent(models.Model):
     class EventType(models.TextChoices):
         PASSWORD_VERIFICATION_FAILED = (
@@ -113,6 +226,11 @@ class AuditEvent(models.Model):
         ADMIN_DIAGNOSTICS_DISABLED = (
             "admin.diagnostics_disabled",
             "Diagnostic logging disabled",
+        )
+        CHAT_TURN_CREATED = "chat.turn_created", "Chat turn created"
+        CHAT_TURN_CANCEL_REQUESTED = (
+            "chat.turn_cancel_requested",
+            "Chat turn cancellation requested",
         )
 
     class Outcome(models.TextChoices):
