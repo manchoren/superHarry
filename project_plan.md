@@ -561,6 +561,7 @@ Besides OWASP Top 10, we follow the **OWASP Top 10 for LLM Applications**.
 - Test pyramid: many unit, some integration, few end-to-end.
 - Arrange–Act–Assert; deterministic and independent tests; no real network in unit tests.
 - Every bug fix ships with a regression test.
+- Owner-selected validation sequence (2026-11-01): build and run the portable application test suite first on the generic ARM64 Debian `virt-11.1` development guest, then run that same suite on the Raspberry Pi before hardware acceptance. Keep hardware-dependent tests separate and run them only on the Pi. Keep unit tests network-independent; use QEMU `virtio-net-pci` with its user-mode DHCP/NAT backend for virtual Ethernet integration checks after Linux starts, not as evidence of Raspberry Pi Ethernet/Wi-Fi behavior. The virtual machine is a development/test environment, not a production-equivalence claim.
 - **Mock model calls in automated unit and integration tests; agent evaluations may use real models.** ✅ **Q-45 (resolved in part 2026-10-29):** Maintain a small agent evaluation suite in the public repository, covering Spanish conversations, memory, web search, file creation and permission enforcement. Run it after model changes or significant agent changes to detect regressions. Contributors changing the agent or models update affected cases; project maintainers make final decisions on results. Exact cases and expected outcomes remain to be defined.
 - ✅ **Q-46 (resolved 2026-10-29):** Do not impose a global coverage percentage initially. Require meaningful tests of critical behavior, including authentication, authorization, sandbox isolation, memory and updates; add regression tests for bug fixes.
 
@@ -575,7 +576,7 @@ Besides OWASP Top 10, we follow the **OWASP Top 10 for LLM Applications**.
 - **Commits:** [Conventional Commits](https://www.conventionalcommits.org/) (`feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`); one logical change per commit.
 - **Pull requests:** small (ideally < 400 changed lines), clear description, ≥ 1 approval, local checks passing, all comments resolved.
 - **Local checks (minimum):** reproducible install (lockfiles) → lint/format → type-check → unit + integration tests → dependency & secret scanning → build. Deployment with rollback is a separate operation.
-- ✅ **Q-47 (resolved 2026-10-29):** Run project checks locally; use a public GitHub repository for this free project. Hardware-specific checks run on the Pi.
+- ✅ **Q-47 (modified by owner 2026-11-01):** Run project checks locally and the portable application suite first on generic ARM64 emulation, then unchanged on the Pi. Hardware-specific checks run only on the Pi; emulation is not Pi hardware acceptance.
 - **Review checklist:** meets requirement · readable · tested · errors/edge cases handled · **authorization & injection impact considered** · docs updated.
 
 ### Definition of Done
@@ -696,7 +697,7 @@ Use this table to record outcomes. Status: `open` · `accepted` · `rejected` ·
 | Q-44 | Ops | Single device vs multi-device? | **accepted** | One Raspberry Pi initially; multi-device operation deferred (2026-10-29). |
 | Q-45 | Testing | Eval suite definition & owner? | **accepted (partial)** | Contributors update affected cases; maintainers review results. Exact cases and expected outcomes remain open (2026-10-29). |
 | Q-46 | Testing | Coverage targets? | **accepted** | No initial global percentage; test critical behavior and add bug regression tests (2026-10-29). |
-| Q-47 | CI | Where CI runs; repo visibility? | **accepted** | Local checks; public GitHub repository (2026-10-29). |
+| Q-47 | CI | Where CI runs; repo visibility? | **modified** | Local checks; public GitHub repository. Run the portable application suite first on generic ARM64 emulation and then unchanged on the Pi; hardware-specific checks remain Pi-only (2026-11-01). |
 | Q-48 | Roadmap | Confirm/reorder phases? | **accepted** | Revised phased roadmap accepted (2026-10-29). |
 | Q-49 | Channels | Telegram: long polling vs webhook; groups allowed? | **accepted** | Long polling and private chats only initially (2026-10-29). |
 | Q-50 | Channels | WhatsApp strategy: A official API / B unofficial / C defer? | **accepted** | WhatsApp remains in scope, deferred until after Telegram and email; review current API terms before choosing integration (2026-10-29). |
