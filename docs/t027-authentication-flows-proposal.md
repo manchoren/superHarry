@@ -47,7 +47,9 @@ On 2026-11-02 the owner additionally approved, as G-SECURITY/G-CONTRACT policy o
 
 ### 3. Reconcile session and browser contracts
 
-Confirm whether T027 follows the active ADR 0007 separate-cookie/pre-authentication contract or waits for a reviewed amendment to the Django single-cookie direction. Specify CSRF and Origin checks for enrollment, reset, account changes and TOTP transitions; session rotation/revocation on password reset, TOTP changes, disablement and role changes; and the safe result when persistence or audit fails. Django's built-in login/logout completion in T026 does not approve a changed lifecycle contract.
+The browser and CSRF baseline is resolved by the owner-approved 2026-11-02 amendment to [ADR 0007](adr/0007-csrf-contract.md): use Django's native session and CSRF mechanisms, one host-only `__Host-superharry_session` cookie, flush anonymous state on successful sign-in, and enforce the approved same-origin HTTPS Origin policy. T027 must use `CsrfViewMiddleware` and the existing strict-Origin middleware; it must not restore the superseded two-cookie/pre-authentication endpoint design.
+
+The remaining lifecycle decision is session invalidation after password reset and TOTP enrollment, disablement or reset. Recommend preserving TOTP across password reset and revoking every authenticated session for the affected account after a successful password reset or factor disable/reset, requiring a fresh sign-in; do not silently revoke unrelated users' sessions. The owner must approve the exact scope and recovery behavior before implementation. Apply the already-approved T029 transaction boundaries for each state transition and its required audit event; on audit failure, roll back the protected change and return a generic unavailable response. Django's built-in login/logout completion in T026 does not itself implement these T027 lifecycle changes.
 
 ### 4. Resolve password-policy prerequisites and audit boundary
 
