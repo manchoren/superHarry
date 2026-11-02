@@ -1,10 +1,21 @@
 # T044: Provider-neutral model interface proposal
 
-**Status:** Owner accepted this proposal as a design direction on 2026-11-02. It remains a proposal, not G-MODEL/G-CONTRACT approval or implementation authorization; unresolved decisions below still require review. No provider SDK, inference runtime, model, public API, schema, migration, or deployment behavior is selected here.
+**Status:** Owner accepted this proposal as a design direction on 2026-11-02 and approved the bounded synchronous in-process interface scope below. The approval does not select or authorize provider adapters, SDKs, an inference runtime/model, paid calls, public API, database schema, or deployment behavior. Remaining decisions and implementation gaps are listed below.
 
 **Constitution basis:** `constitution.md` has no explicit version identifier; its stated baseline is 2026-10-29. SHA-256 of the complete current file read for this proposal: `D09E90AA0EFE609A7D335A7B10ECC5623DAB1E757B5A00D4E7C82526CE9DC489`.
 
 **Scope:** Define a candidate in-process Python contract for T044, not provider integrations (T046/T047), routing (T049), constitution delivery (T043), tool authorization (T045), or persistent usage ledgers (T048). The contract must fit the accepted Django monolith and the current project security boundaries.
+
+## Owner-approved bounded implementation
+
+The approved code scope is limited to a dependency-free contract module and deterministic fake-adapter tests:
+
+- Use immutable request, invocation, message/content, options, capability, context-manifest, error, usage, and event values. Reuse T043's `PreparedContext` as the context manifest; require the full constitution exactly once in a protected system/developer message and the current request as the final user message.
+- Define a synchronous `ModelAdapter` protocol that returns an iterator of closed, typed events. Require `Started` first, contiguous sequence numbers, and exactly one terminal (`Completed`, `Failed`, or `Cancelled`); premature stream closure is an interrupted outcome, never synthesized success.
+- Keep tool calls as inert proposals, errors as safe project-owned codes, and capability states explicit (`supported`, `unsupported`, `unverified`) with caller-supplied validity timestamps. Missing/stale/unverified requirements fail validation.
+- Keep authorization, routing, retries, budgets, tool execution, persistence, and UI/API serialization outside the adapter. Do not add providers, SDKs, runtime processes, credentials, numeric deadlines/capacity policies, network calls, database changes, or public endpoints.
+
+This contract does not establish adapter behavior, account entitlement, model capability, cancellation effectiveness, pricing, or hardware performance. T044 remains incomplete until the separately gated provider-neutral integration and adapter conformance work is implemented and reviewed.
 
 ## Prior art and constraints
 
@@ -22,7 +33,7 @@ These are constraints and design inputs, not blanket approval of this proposal.
 
 Place a small, dependency-light model domain interface inside the Django application. Django views, authorization, orchestration, persistence, the resource governor, and routing remain outside provider adapters. An adapter translates a validated domain request to one configured backend and translates its response back to domain events; it does not decide user permissions, budgets, routing, tool execution, or data retention.
 
-The interface should use ordinary Python types/protocols and project-owned value objects. Avoid exposing provider SDK classes, HTTP response objects, Django `HttpRequest`/ORM instances, database connections, credentials, or provider-specific exceptions to callers. Exact module location, sync/async calling convention, and any implementation dependency remain for G-ARCH/G-CONTRACT and implementation review.
+The owner selected an ordinary Python interface in `home/model_interface.py` using a synchronous iterator and no new dependency. Avoid exposing provider SDK classes, HTTP response objects, Django `HttpRequest`/ORM instances, database connections, credentials, or provider-specific exceptions to callers.
 
 ## Typed request and invocation context
 
@@ -40,7 +51,7 @@ Proposed request value objects:
 
 Identifiers and authorization metadata are for application enforcement and auditing, not instructions to the model. Credentials are supplied to an adapter only through its trusted configuration and never placed in the request, context, events, or logs. Guest routing must be enforced before adapter selection and again at the external-provider boundary.
 
-The exact field names, serialization, payload bounds, retention, and any persisted representation are undecided. This proposal defines an in-process conceptual contract, not a public HTTP/SSE schema or a database schema.
+The field names and validation rules within the approved in-process scope are implemented below. Provider wire serialization, payload bounds, retention, and persisted representation remain undecided; this is not a public HTTP/SSE schema or database schema.
 
 ## Streaming result and capability metadata
 
@@ -104,4 +115,11 @@ Tests establish contract behavior only. They do not prove provider entitlement, 
 
 ## Decisions explicitly left open
 
-G-MODEL and G-CONTRACT have not approved this proposal. Review must settle the exact types and event vocabulary, iteration/cancellation semantics, capability source and freshness, request/result bounds, error and usage schemas, deadline and retry coordination, and interaction with budget reservations and durable operation state. Any dependency or runtime requires its own applicable approval. Until those decisions are recorded, this document authorizes neither implementation nor paid/model execution.
+Owner approval covers only the bounded synchronous interface described above. G-MODEL/G-CONTRACT and later task review must still settle:
+
+1. Actual adapter capability sources, freshness policy, backend-specific serialization and input/output bounds.
+2. Cancellation effectiveness and deadline values/policy, retry/routing coordination, and interaction with budget reservations and durable operation state.
+3. Usage settlement, request/result payload bounds, persistence/retention, and integration with T043/T045/T048/T049.
+4. Provider SDK, API/profile/account access, local runtime/model, dependencies, and adapter-specific test evidence under T046/T047 and their applicable gates.
+
+No provider, paid/model execution, dependency, runtime, or deployment behavior is approved by this bounded interface decision.
