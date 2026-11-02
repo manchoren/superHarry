@@ -38,6 +38,8 @@ The owner's direction changes the earlier ADR 0005 position that did not select 
 
 Implement the owner-selected enrollment, drift-window, replay, recovery-code and ordinary-user factor-reset requirements above. Select seed encryption, key custody, rotation, backup exclusion, recovery behavior and a supported dependency only after the applicable G-ARCH/G-SECURITY/G-CONTRACT and dependency reviews. ADR 0006's systemd-credential choice authorizes investigation only. Do not store plaintext seeds, improvise cryptography, or allow a password reset to disable MFA.
 
+The owner selected preparing the [host-bound systemd-credential proposal](t027-totp-key-custody-proposal.md) on 2026-11-02. That proposal does not select or approve the production key mode, AEAD dependency, schema or service configuration.
+
 ### 3. Reconcile session and browser contracts
 
 Confirm whether T027 follows the active ADR 0007 separate-cookie/pre-authentication contract or waits for a reviewed amendment to the Django single-cookie direction. Specify CSRF and Origin checks for enrollment, reset, account changes and TOTP transitions; session rotation/revocation on password reset, TOTP changes, disablement and role changes; and the safe result when persistence or audit fails. Django's built-in login/logout completion in T026 does not approve a changed lifecycle contract.
