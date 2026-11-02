@@ -33,6 +33,39 @@ Identifiers are snapshots rather than foreign keys so that deleting an account d
 
 Do not record Django's session key or any other bearer/session cookie value. The application uses Django-native sessions under ADR 0007; the audit event does not need a session identifier to satisfy the approved event inventory.
 
+### Typed schema candidate for G-CONTRACT
+
+The following exact Django field layout is proposed for review; the owner has not approved the types or indexes yet:
+
+| Field | Candidate Django field | Constraints/indexing |
+|---|---|---|
+| `event_id` | `UUIDField(primary_key=True, default=uuid.uuid4, editable=False)` | Generated only by the application. |
+| `occurred_at` | `DateTimeField(default=timezone.now, editable=False)` | Store aware UTC values; index for bounded time-range queries. |
+| `event_type` | `CharField(max_length=64, choices=...)` | Closed vocabulary in this proposal; no arbitrary values. |
+| `outcome` | `CharField(max_length=16, choices=...)` | Closed values `success`, `failure`, `signal`. |
+| `actor_kind` | `CharField(max_length=16, choices=...)` | Closed values `user`, `service`. |
+| `actor_user_id` | `PositiveBigIntegerField(null=True, blank=True)` | Snapshot of current Django user primary key; no foreign key. |
+| `target_user_id` | `PositiveBigIntegerField(null=True, blank=True)` | Snapshot of current Django user primary key; no foreign key. |
+| `aggregate_count` | `PositiveIntegerField(null=True, blank=True)` | Required only for aggregate signals; null for other events. |
+| `request_id` | `UUIDField(null=True, blank=True)` | Optional; populate only from a server-generated request context, never a client-provided header. No request-ID middleware currently exists. |
+
+Proposed indexes: `(occurred_at, event_id)` for deterministic time ordering and `(target_user_id, occurred_at)` for bounded account review. Exact index selection should be verified against the approved query filters. Do not add a JSON/free-text metadata field.
+
+### Candidate transaction boundaries for review
+
+These are proposed boundaries to make “same transaction when feasible” testable; G-CONTRACT/G-SECURITY must approve them before implementation:
+
+| Operation | Proposed transaction and failure behavior |
+|---|---|
+| Successful login / authenticated session creation | Persist the authenticated Django database session and its required login/session-created events in one database transaction before returning success. If the required audit append fails, roll back the new session and return a generic unavailable error. Never persist or audit the bearer session key. Confirm this against Django's session rotation/save lifecycle. |
+| Failed password verification | Commit the approved failed-attempt counter independently first. Then append the minimal failure event. If append fails, return generic `UNAVAILABLE`/503 but preserve the already-committed counter. Do not store submitted username/password. |
+| Aggregated failed-session-resolution signal | Atomically update its bounded aggregation/cooldown state and append the signal. If the required event cannot persist, fail closed without issuing context or treating the resolution as successful. |
+| Logout or explicit session revocation | Delete/flush the database session and append its lifecycle event in one transaction. If audit append fails, do not report logout/revocation as successful and leave the session active. Automatic expiry remains unaudited. |
+| Password reset/recovery, TOTP change, user creation/deactivation/role change | Persist the protected state transition and required event in one transaction. On audit failure, roll back the protected change and return a generic error. |
+| Authorized admin audit read/export | Run the bounded query, append the read/export event before returning any result bytes, then return the already-bounded results. If the audit append fails, withhold the data. The query result is computed before its own access event is appended, so it does not include that same event. |
+
+If an operation spans state that cannot participate in the same SQLite transaction, do not silently claim atomicity or use an unreviewed compensation path; document and obtain approval for its exact recovery semantics.
+
 ## Proposed event vocabulary
 
 Use a closed vocabulary with one event per recorded outcome:
@@ -92,8 +125,8 @@ For failed authentication, a known account may be correlated by its internal ID;
 
 ## Decisions required before implementation
 
-1. Confirm exact storage field types for the selected Django user primary key and safe metadata for admin reads/exports.
-2. Specify and review transaction boundaries for each event/action pair, including failed-login counters, session transitions, reset/recovery, TOTP changes, and role changes.
+1. Approve or amend the typed schema and index candidate, including the optional server-generated `request_id` field.
+2. Approve or amend the proposed transaction boundaries for login/session transitions, failed-login counters, aggregated signals, logout/revocation, privileged changes, and admin reads/exports.
 3. Confirm the approved initial operation set against any additional privileged operations introduced by dependent tasks.
 4. Confirm the 90-day retention and purge operation after the required legal/operational review.
 5. Approve database/audit unavailability recovery and monitoring behavior, preserving the already-approved generic error and attempt-counter behavior.
