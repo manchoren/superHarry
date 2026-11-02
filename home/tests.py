@@ -1,6 +1,14 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
-from django.urls import reverse
+from django.urls import resolve, reverse
+
+from home.views import home
+
+
+class HomeRouteTests(TestCase):
+    def test_root_route_is_registered_by_home_app(self):
+        self.assertEqual(reverse("home"), "/")
+        self.assertIs(resolve("/").func, home)
 
 
 class AuthenticationPageTests(TestCase):

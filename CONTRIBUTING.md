@@ -8,6 +8,18 @@ Use short-lived `feature/`, `fix/` or `chore/` branches and Conventional Commits
 
 Every behavior change needs appropriate tests; bug fixes need regression tests. Cover critical authorization, sandbox, memory and update behavior without imposing a global coverage percentage. Keep unit tests deterministic and independent, without real network access. Mock model calls in automated unit and integration tests; explicitly controlled agent evaluations are separate. Run the agent evaluation suite after model changes or significant agent changes, update affected cases, and submit results for maintainer review (Q-45; T056). Add new user-visible strings to both English and Spanish catalogs.
 
-For the current Django application, run `python manage.py check`, `python manage.py test` and `python manage.py makemigrations --check --dry-run`; regenerate translation binaries with `python manage.py compilemessages` when GNU gettext's `msgfmt` is on `PATH`. Before declaring broader implementation complete, add the applicable lint, format, dependency and secret checks through T020 and report actual results, environment and limits. Do not disable tests or suppress failures. Emulation cannot establish real-Pi performance, physical isolation, HDMI or thermal behavior.
+## Local Django checks
+
+From the repository root with the project's Python environment active, run this baseline in order:
+
+```text
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test
+```
+
+These use Django's built-in system, migration-state and test checks; all three must succeed. The migration command only checks for missing migrations and does not create them. Regenerate translation binaries with `python manage.py compilemessages` when GNU gettext's `msgfmt` is on `PATH`.
+
+Additional lint, format, dependency and secret-scanning tools are not part of this baseline; their selection remains gated on approval through T020. Do not disable tests or suppress failures. Report actual results, environment and limits. Emulation cannot establish real-Pi performance, physical isolation, HDMI or thermal behavior.
 
 Never commit secrets or personal data; use synthetic fixtures and redacted evidence. Treat external content as untrusted. Preserve mandatory privileged-action audit records even when diagnostic logging is disabled. Runtime-generated task code and untrusted document processing require the isolated sandbox described in the constitution; trusted repository development follows the normal review and deployment process.
