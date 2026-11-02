@@ -39,8 +39,12 @@ Generate exactly ten recovery codes during enrollment; display them once and do 
 - Recovery-code consumption is one-time and must not weaken the separate OS-admin recovery flow for an administrator who loses all factors.
 - TOTP seed and recovery-code records are not audit records. Required enrollment, reset, disablement, factor-recovery and failure events remain in T029 and must not contain seeds, raw codes or verifiers.
 
+## Proposed nonce-uniqueness amendment
+
+The approved schema requires nonce non-reuse under the same key, but it does not yet declare a database uniqueness constraint. For safe concurrent enrollment and future re-encryption, propose adding `UniqueConstraint(fields=("key_version", "nonce"), name="totp_key_version_nonce_unique")` to `TOTPDevice`. The application must retry encryption with a fresh nonce if this constraint rejects a candidate; a key version must never be reused for a different key. This is a schema amendment, not covered by the approval above, and requires separate G-CONTRACT approval.
+
 ## Open before implementation
 
-Approval of this exact schema would cover G-CONTRACT for these two models only. It would not approve the AEAD library, key generation/provisioning or rotation protocol, seed-encryption implementation, TOTP HTTP/login contract, OS-admin privilege checks, audit storage/transactions or deployment. The exact AEAD nonce length and ciphertext representation depend on a separately reviewed dependency. Define expiry/cleanup for abandoned pending enrollments and whether disabling a device deletes or retains its encrypted record before implementation.
+The schema approval covers these two models only. The proposed nonce-uniqueness amendment above remains unapproved. Neither approval covers the AEAD library, key generation/provisioning or rotation protocol, seed-encryption implementation, TOTP HTTP/login contract, OS-admin privilege checks, audit storage/transactions or deployment. The exact AEAD nonce length and ciphertext representation depend on a separately reviewed dependency. Define expiry/cleanup for abandoned pending enrollments and whether disabling a device deletes or retains its encrypted record before implementation.
 
 Validate migration behavior, staged enrollment, TOTP/recovery-code replay and concurrency, account/device cascades, ciphertext tampering, key-version mismatch, and audit/database failures after the required approvals. No dependency was installed, no schema was implemented, and no secret or TOTP test was created for this proposal.
