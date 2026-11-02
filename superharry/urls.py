@@ -9,6 +9,7 @@ from home.auth_views import (
 
 urlpatterns = [
     path("admin/login/", FreshAdminSessionLoginView.as_view(), name="admin-login"),
+    path("admin/audit/", include("home.audit_urls")),
     path("admin/", admin.site.urls),
     path(
         "accounts/login/",

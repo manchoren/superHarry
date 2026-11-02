@@ -1,5 +1,5 @@
 import re
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone as datetime_timezone
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -326,6 +326,285 @@ class AuditEventTests(TestCase):
         )
         self.assertEqual(event.actor_user_id, user_id)
         self.assertEqual(event.target_user_id, user_id)
+
+
+@override_settings(SUPERHARRY_HOSTNAME="testserver")
+class AuditedAuditAccessTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.admin_user = get_user_model().objects.create_superuser(
+            username="audit-reader",
+            email="audit-reader@example.test",
+            password="test-password-123",
+        )
+        self.client.force_login(self.admin_user)
+
+    def _get(self, url, data=None, **extra):
+        return self.client.get(url, data, secure=True, **extra)
+
+    def _create_export_event(self, *, occurred_at=None):
+        return AuditEvent.objects.create(
+            event_type=AuditEvent.EventType.ADMIN_AUDIT_EXPORTED,
+            outcome=AuditEvent.Outcome.SUCCESS,
+            actor_kind=AuditEvent.ActorKind.USER,
+            actor_user_id=self.admin_user.pk,
+            occurred_at=occurred_at or timezone.now() - timedelta(minutes=5),
+        )
+
+    def _grant_audit_permission(self, user):
+        permission = Permission.objects.get(
+            content_type__app_label="home",
+            codename="view_auditevent",
+        )
+        user.user_permissions.add(permission)
+
+    def test_anonymous_and_unauthorized_users_cannot_read_audit_events(self):
+        self.client.logout()
+        response = self._get(reverse("admin-audit-list"))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("admin:login"))
+
+        staff_user = get_user_model().objects.create_user(
+            username="audit-staff",
+            password="test-password-123",
+            is_staff=True,
+        )
+        self.client.force_login(staff_user)
+        for route in ("admin-audit-list", "admin-audit-export"):
+            response = self._get(reverse(route))
+            self.assertEqual(response.status_code, 403)
+        self.assertNotContains(self._get(reverse("home")), reverse("admin-audit-list"))
+        self.assertFalse(AuditEvent.objects.exists())
+
+        non_staff = get_user_model().objects.create_user(
+            username="audit-permitted-user",
+            password="test-password-123",
+        )
+        self._grant_audit_permission(non_staff)
+        self.client.force_login(non_staff)
+        for route in ("admin-audit-list", "admin-audit-export"):
+            response = self._get(reverse(route))
+            self.assertEqual(response.status_code, 403)
+        self.assertFalse(AuditEvent.objects.exists())
+
+    def test_staff_user_with_permission_can_read_and_read_is_audited(self):
+        user = get_user_model().objects.create_user(
+            username="audit-permitted-staff",
+            password="test-password-123",
+            is_staff=True,
+        )
+        self._grant_audit_permission(user)
+        self.client.force_login(user)
+
+        response = self._get(reverse("admin-audit-list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Audit events")
+        self.assertTrue(
+            AuditEvent.objects.filter(
+                event_type=AuditEvent.EventType.ADMIN_AUDIT_READ,
+                actor_user_id=user.pk,
+            ).exists()
+        )
+        self.assertContains(self._get(reverse("home")), reverse("admin-audit-list"))
+        self.assertEqual(response["Cache-Control"], "no-store")
+
+    def test_audit_page_is_localized_in_spanish(self):
+        response = self._get(
+            reverse("admin-audit-list"),
+            HTTP_ACCEPT_LANGUAGE="es",
+        )
+
+        self.assertContains(response, "Eventos de auditoría")
+
+    def test_filters_use_utc_exclusive_end_and_reject_invalid_ranges(self):
+        included = self._create_export_event(
+            occurred_at=datetime(2026, 1, 1, 23, 59, tzinfo=datetime_timezone.utc),
+        )
+        self._create_export_event(
+            occurred_at=datetime(2026, 1, 2, 0, 0, tzinfo=datetime_timezone.utc),
+        )
+        response = self._get(
+            reverse("admin-audit-list"),
+            {"start_date": "2026-01-01", "end_date": "2026-01-02"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([event.pk for event in response.context["events"]], [included.pk])
+        self.assertEqual(
+            AuditEvent.objects.filter(
+                event_type=AuditEvent.EventType.ADMIN_AUDIT_READ,
+                actor_user_id=self.admin_user.pk,
+            ).count(),
+            1,
+        )
+
+        invalid_response = self._get(
+            reverse("admin-audit-list"),
+            {"start_date": "2026-01-01", "end_date": "2026-02-02"},
+        )
+        self.assertEqual(invalid_response.status_code, 400)
+        self.assertEqual(
+            AuditEvent.objects.filter(
+                event_type=AuditEvent.EventType.ADMIN_AUDIT_READ,
+                actor_user_id=self.admin_user.pk,
+            ).count(),
+            1,
+        )
+
+    def test_signed_cursor_paginates_without_offsets_or_duplicates(self):
+        timestamp = timezone.now() - timedelta(days=1)
+        events = [
+            self._create_export_event(occurred_at=timestamp)
+            for _ in range(101)
+        ]
+        params = {
+            "start_date": (timezone.localdate() - timedelta(days=2)).isoformat(),
+            "end_date": timezone.localdate().isoformat(),
+        }
+
+        first_response = self._get(reverse("admin-audit-list"), params)
+        self.assertEqual(first_response.status_code, 200)
+        first_page = first_response.context["events"]
+        self.assertEqual(len(first_page), 100)
+        self.assertTrue(first_response.context["next_cursor"])
+
+        params["cursor"] = first_response.context["next_cursor"]
+        second_response = self._get(reverse("admin-audit-list"), params)
+        self.assertEqual(second_response.status_code, 200)
+        second_page = second_response.context["events"]
+        self.assertEqual(len(second_page), 1)
+        self.assertTrue(set(event.pk for event in first_page).isdisjoint(
+            event.pk for event in second_page
+        ))
+        self.assertEqual(
+            set(event.pk for event in first_page + second_page),
+            {event.pk for event in events},
+        )
+
+        params["event_type"] = AuditEvent.EventType.ADMIN_AUDIT_EXPORTED
+        mismatched_response = self._get(reverse("admin-audit-list"), params)
+        self.assertEqual(mismatched_response.status_code, 400)
+
+    def test_audit_read_failure_withholds_page_data(self):
+        self._create_export_event()
+        with patch("home.audit_views.record_event", side_effect=AuditUnavailable):
+            response = self._get(reverse("admin-audit-list"))
+
+        self.assertEqual(response.status_code, 503)
+        self.assertNotIn(
+            AuditEvent.EventType.ADMIN_AUDIT_EXPORTED.encode(),
+            response.content,
+        )
+
+    def test_csv_export_is_bounded_and_audited_without_exposing_profile_data(self):
+        self._create_export_event()
+
+        response = self._get(reverse("admin-audit-export"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/csv; charset=utf-8")
+        self.assertLessEqual(len(response.content), 1024 * 1024)
+        self.assertTrue(response.content.startswith(b"event_id,occurred_at,event_type"))
+        self.assertNotIn(b"audit-reader", response.content)
+        self.assertTrue(
+            AuditEvent.objects.filter(
+                event_type=AuditEvent.EventType.ADMIN_AUDIT_EXPORTED,
+                actor_user_id=self.admin_user.pk,
+            ).exists()
+        )
+
+    def test_csv_rejects_more_than_1000_rows_without_logging_export(self):
+        AuditEvent.objects.bulk_create(
+            [
+                AuditEvent(
+                    event_type=AuditEvent.EventType.ADMIN_AUDIT_EXPORTED,
+                    outcome=AuditEvent.Outcome.SUCCESS,
+                    actor_kind=AuditEvent.ActorKind.USER,
+                    actor_user_id=self.admin_user.pk + 100000,
+                )
+                for _ in range(1001)
+            ]
+        )
+
+        response = self._get(reverse("admin-audit-export"))
+
+        self.assertEqual(response.status_code, 413)
+        self.assertEqual(
+            AuditEvent.objects.filter(
+                event_type=AuditEvent.EventType.ADMIN_AUDIT_EXPORTED,
+                actor_user_id=self.admin_user.pk + 100000,
+                occurred_at__gte=timezone.now() - timedelta(hours=1),
+            ).count(),
+            1001,
+        )
+
+    def test_csv_rejects_encoded_output_over_one_mebibyte(self):
+        with patch(
+            "home.audit_views._csv_bytes",
+            return_value=b"x" * (1024 * 1024 + 1),
+        ):
+            response = self._get(reverse("admin-audit-export"))
+
+        self.assertEqual(response.status_code, 413)
+        self.assertEqual(
+            AuditEvent.objects.filter(
+                event_type=AuditEvent.EventType.ADMIN_AUDIT_EXPORTED,
+                actor_user_id=self.admin_user.pk,
+            ).count(),
+            0,
+        )
+
+    def test_csv_quota_is_per_admin_and_fails_closed_at_five_exports(self):
+        for _ in range(5):
+            self._create_export_event()
+
+        response = self._get(reverse("admin-audit-export"))
+
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(
+            AuditEvent.objects.filter(
+                event_type=AuditEvent.EventType.ADMIN_AUDIT_EXPORTED,
+                actor_user_id=self.admin_user.pk,
+            ).count(),
+            5,
+        )
+
+    def test_csv_quota_ignores_exports_older_than_one_hour(self):
+        expired_at = timezone.now() - timedelta(hours=1, minutes=1)
+        for _ in range(5):
+            self._create_export_event(occurred_at=expired_at)
+
+        response = self._get(reverse("admin-audit-export"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            AuditEvent.objects.filter(
+                event_type=AuditEvent.EventType.ADMIN_AUDIT_EXPORTED,
+                actor_user_id=self.admin_user.pk,
+                occurred_at__gte=timezone.now() - timedelta(hours=1),
+            ).count(),
+            1,
+        )
+
+    def test_csv_audit_failure_withholds_export_data(self):
+        self._create_export_event()
+        exports_before = AuditEvent.objects.filter(
+            event_type=AuditEvent.EventType.ADMIN_AUDIT_EXPORTED,
+            actor_user_id=self.admin_user.pk,
+        ).count()
+        with patch("home.audit_views.record_event", side_effect=AuditUnavailable):
+            response = self._get(reverse("admin-audit-export"))
+
+        self.assertEqual(response.status_code, 503)
+        self.assertNotIn(b"event_id,occurred_at,event_type", response.content)
+        self.assertEqual(
+            AuditEvent.objects.filter(
+                event_type=AuditEvent.EventType.ADMIN_AUDIT_EXPORTED,
+                actor_user_id=self.admin_user.pk,
+            ).count(),
+            exports_before,
+        )
 
 
 @override_settings(

@@ -1,0 +1,75 @@
+{% load i18n %}
+<!doctype html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% translate "Audit events" %} · superHarry</title>
+</head>
+<body>
+    <main>
+        <h1>{% translate "Audit events" %}</h1>
+        <form method="get" action="{% url 'admin-audit-list' %}">
+            <label for="start-date">{% translate "Start date (UTC, inclusive)" %}</label>
+            <input id="start-date" name="start_date" type="date" value="{{ filters.start_date }}" required>
+            <label for="end-date">{% translate "End date (UTC, exclusive)" %}</label>
+            <input id="end-date" name="end_date" type="date" value="{{ filters.end_date }}" required>
+            <label for="event-type">{% translate "Event type" %}</label>
+            <select id="event-type" name="event_type">
+                <option value="">{% translate "All event types" %}</option>
+                {% for value, label in event_types %}
+                    <option value="{{ value }}"{% if filters.event_type == value %} selected{% endif %}>{{ value }}</option>
+                {% endfor %}
+            </select>
+            <label for="actor-user-id">{% translate "Actor user ID" %}</label>
+            <input id="actor-user-id" name="actor_user_id" type="number" min="1" value="{{ filters.actor_user_id }}">
+            <label for="target-user-id">{% translate "Target user ID" %}</label>
+            <input id="target-user-id" name="target_user_id" type="number" min="1" value="{{ filters.target_user_id }}">
+            <button type="submit">{% translate "Apply filters" %}</button>
+        </form>
+
+        <p>
+            <a href="{% url 'admin-audit-export' %}?start_date={{ filters.start_date|urlencode }}&amp;end_date={{ filters.end_date|urlencode }}&amp;event_type={{ filters.event_type|urlencode }}&amp;actor_user_id={{ filters.actor_user_id|urlencode }}&amp;target_user_id={{ filters.target_user_id|urlencode }}">{% translate "Export matching events as CSV" %}</a>
+        </p>
+
+        {% if events %}
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">{% translate "Event ID" %}</th>
+                        <th scope="col">{% translate "Occurred at (UTC)" %}</th>
+                        <th scope="col">{% translate "Event type" %}</th>
+                        <th scope="col">{% translate "Outcome" %}</th>
+                        <th scope="col">{% translate "Actor kind" %}</th>
+                        <th scope="col">{% translate "Actor user ID" %}</th>
+                        <th scope="col">{% translate "Target user ID" %}</th>
+                        <th scope="col">{% translate "Aggregate count" %}</th>
+                        <th scope="col">{% translate "Request ID" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in events %}
+                        <tr>
+                            <td>{{ event.event_id }}</td>
+                            <td>{{ event.occurred_at|date:"c" }}</td>
+                            <td>{{ event.event_type }}</td>
+                            <td>{{ event.outcome }}</td>
+                            <td>{{ event.actor_kind }}</td>
+                            <td>{{ event.actor_user_id|default_if_none:"-" }}</td>
+                            <td>{{ event.target_user_id|default_if_none:"-" }}</td>
+                            <td>{{ event.aggregate_count|default_if_none:"-" }}</td>
+                            <td>{{ event.request_id|default_if_none:"-" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>{% translate "No audit events match these filters." %}</p>
+        {% endif %}
+
+        {% if next_cursor %}
+            <a href="{% url 'admin-audit-list' %}?start_date={{ filters.start_date|urlencode }}&amp;end_date={{ filters.end_date|urlencode }}&amp;event_type={{ filters.event_type|urlencode }}&amp;actor_user_id={{ filters.actor_user_id|urlencode }}&amp;target_user_id={{ filters.target_user_id|urlencode }}&amp;cursor={{ next_cursor|urlencode }}">{% translate "Next page" %}</a>
+        {% endif %}
+    </main>
+</body>
+</html>

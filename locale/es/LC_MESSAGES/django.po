@@ -103,3 +103,54 @@ msgstr "Enviar"
 msgctxt "chat.composer.status"
 msgid "Sending messages is not available in this interface yet."
 msgstr "El envío de mensajes todavía no está disponible en esta interfaz."
+
+msgid "Audit events"
+msgstr "Eventos de auditoría"
+
+msgid "Start date (UTC, inclusive)"
+msgstr "Fecha inicial (UTC, incluida)"
+
+msgid "End date (UTC, exclusive)"
+msgstr "Fecha final (UTC, no incluida)"
+
+msgid "Event type"
+msgstr "Tipo de evento"
+
+msgid "All event types"
+msgstr "Todos los tipos de evento"
+
+msgid "Actor user ID"
+msgstr "ID de usuario actor"
+
+msgid "Target user ID"
+msgstr "ID de usuario objetivo"
+
+msgid "Apply filters"
+msgstr "Aplicar filtros"
+
+msgid "Export matching events as CSV"
+msgstr "Exportar eventos coincidentes como CSV"
+
+msgid "Event ID"
+msgstr "ID del evento"
+
+msgid "Occurred at (UTC)"
+msgstr "Fecha y hora (UTC)"
+
+msgid "Outcome"
+msgstr "Resultado"
+
+msgid "Actor kind"
+msgstr "Tipo de actor"
+
+msgid "Aggregate count"
+msgstr "Recuento agregado"
+
+msgid "Request ID"
+msgstr "ID de solicitud"
+
+msgid "No audit events match these filters."
+msgstr "Ningún evento de auditoría coincide con estos filtros."
+
+msgid "Next page"
+msgstr "Página siguiente"

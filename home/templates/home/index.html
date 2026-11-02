@@ -26,6 +26,13 @@
                             </a>
                         </li>
                     {% endif %}
+                    {% if user.is_authenticated and user.is_staff and perms.home.view_auditevent %}
+                        <li>
+                            <a class="navigation-link" href="{% url 'admin-audit-list' %}">
+                                {% translate "Audit events" %}
+                            </a>
+                        </li>
+                    {% endif %}
                 </ul>
             </nav>
             <div class="account-panel">
