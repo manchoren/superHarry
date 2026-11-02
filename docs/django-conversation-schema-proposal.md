@@ -1,6 +1,6 @@
 # Django conversation storage schema proposal
 
-Status: Proposed; not approved or implemented. Task: T023. Gate: G-CONTRACT. Constitution baseline 2026-10-29, SHA-256 `d09e90aa0efe609a7d335a7b10ecc5623dab1e757b5a00d4e7c82526ce9dc489`.
+Status: Accepted in part by the project owner on 2026-11-02 for the exact `Conversation` and `Message` field set and semantics below. Gate: G-CONTRACT is satisfied only for this schema scope. Task: T023 remains in progress. Constitution baseline 2026-10-29, SHA-256 `d09e90aa0efe609a7d335a7b10ecc5623dab1e757b5a00d4e7c82526ce9dc489`.
 
 ## Context and scope
 
@@ -43,16 +43,18 @@ Order a conversation's messages by `(created_at, id)` for a stable total order. 
 
 ## Migration and validation proposal
 
-After explicit G-CONTRACT approval, create one normal Django migration for these two tables and their indexes, then test:
+The owner approved this exact limited schema in response to the approval request on 2026-11-02. The implementation is `home.models.Conversation` and `home.models.Message`, recorded in `home/migrations/0001_initial.py`.
 
-1. A clean database migration and an upgrade from the current Django-only schema.
-2. Owner-scoped reads and mutations, including cross-user denial at the application boundary.
-3. Stable message ordering, UTC-aware timestamps, and conversation/message cascade deletion.
-4. `last_accessed_at` updates only on successful authorized access and the exact six-month retention boundary.
-5. Transaction rollback for conversation creation with its first message and deletion failure behavior.
+Validation completed on 2026-11-02:
+
+- `manage.py check` and `makemigrations --check --dry-run` passed.
+- Django applied `home.0001_initial` to the local development database.
+- `manage.py test` passed all 11 tests; the test database was created from migrations and exercised UUID ownership, UTC-aware timestamps, stable message ordering and both cascade paths.
+
+The accepted schema does not implement conversation views, owner-scoped application authorization, access timestamp updates, cleanup, audit events, or multi-record chat transactions. Those behaviors remain assigned to T028, T029, T037 and T059 and their applicable gates.
 
 No separate migration runner, dependency, custom SQL API, guest persistence, audit ledger, or production database operation is proposed. Changes to the fields, deletion semantics, retention policy, or covered domain require renewed review and approval.
 
-## Unresolved approval
+## Remaining limits
 
-This document is a concrete proposal only. The project owner must explicitly approve, reject, or request changes to the complete field set, identifiers, ordering, indexes, cascade semantics, and access/retention assumptions before any model or migration is implemented. Approval of this proposal does not approve T028 authorization, T029 auditing, T035 guest sessions, T058 memory, or production deployment.
+The owner's approval covers only the exact schema above; it does not approve additional fields, schemas or migration policy. Approval does not cover T028 authorization, T029 auditing, T035 guest sessions, T058 memory, T059 conversation behavior, or production deployment. T023 remains in progress while other required project-owned schemas and their respective gates are unresolved.

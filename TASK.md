@@ -51,20 +51,20 @@ Update the row whenever work starts, an assignment changes, a blocker appears, w
 | T020 | Implement local engineering checks. | 🟢 T168 | Complete | Unassigned |
 | T021 | Validate clean ARM64 installation and process startup. | 🟢 T018, 🟢 T019, 🟢 T020 | Complete | Unassigned |
 | T022 | Add structured logging, health and basic metrics primitives. | 🟢 T019, 🟢 T005, 🟢 T020 | Blocked | Unassigned |
-| T023 | Implement Django-managed SQLite models and migrations. | 🟢 T020, 🟢 T021 | Blocked | Unassigned |
+| T023 | Implement Django-managed SQLite models and migrations. | 🟢 T020, 🟢 T021 | In progress | Unassigned |
 | T024 | Implement the protected API/core transport. | 🟢 T005, 🟢 T007, ⚪ T016, ⚪ T017, 🟢 T019, 🟢 T020 | Superseded by T168 | Unassigned |
 | T025 | Organize application routes using Django URL configurations. | 🟢 T168, 🟢 T007 | Complete | Unassigned |
 | T026 | Use Django authentication, password and session mechanisms. | 🟢 T168 | Complete | Unassigned |
 | T027 | Implement account, TOTP and password-reset flows. | 🟢 T026, 🟢 T008 | Pending | Unassigned |
-| T028 | Implement app-level Django permissions and object authorization. | 🔴 T023, 🟢 T026, 🟢 T007 | Pending | Unassigned |
-| T029 | Implement required application audit events. | 🔴 T023, ⚪ T028, 🟢 T004 | Pending | Unassigned |
+| T028 | Implement app-level Django permissions and object authorization. | 🟡 T023, 🟢 T026, 🟢 T007 | Pending | Unassigned |
+| T029 | Implement required application audit events. | 🟡 T023, ⚪ T028, 🟢 T004 | Pending | Unassigned |
 | T030 | Use Django's built-in first-admin creation workflow. | 🟢 T026, 🟢 T008 | Complete | Unassigned |
 | T031 | Implement later authenticated administrator recovery. | ⚪ T027, ⚪ T029, 🟢 T030, 🟢 T008 | Pending | Unassigned |
 | T032 | Configure trusted HTTPS and private reachability. | 🟢 T021, 🟢 T011, 🟢 T030 | Blocked | Unassigned |
 | T033 | Implement the constrained network broker. | 🟢 T012, ⚪ T028, ⚪ T029, 🔴 T032 | Pending | Unassigned |
 | T034 | Implement transactional network setup and reconnection. | ⚪ T033 | Pending | Unassigned |
 | T035 | Implement temporary guest sessions and admission limits. | 🟢 T026, ⚪ T028, ⚪ T029, 🟢 T007 | Pending | Unassigned |
-| T036 | Implement scoped file storage and authorized delivery. | 🔴 T023, ⚪ T028, ⚪ T029, 🟢 T025 | Pending | Unassigned |
+| T036 | Implement scoped file storage and authorized delivery. | 🟡 T023, ⚪ T028, ⚪ T029, 🟢 T025 | Pending | Unassigned |
 | T037 | Implement authorized Django SSE chat views. | 🟢 T026, ⚪ T028, 🟢 T025 | Pending | Unassigned |
 | T038 | Build the bilingual responsive Django template shell. | 🟢 T168 | Complete | Unassigned |
 | T039 | Build login, account and guest UI flows. | 🟢 T038, 🟢 T026, ⚪ T027, ⚪ T035 | Pending | Unassigned |
@@ -76,28 +76,28 @@ Update the row whenever work starts, an assignment changes, a blocker appears, w
 | T045 | Implement the authorized tool-call boundary. | ⚪ T028, ⚪ T029, ⚪ T043, 🟢 T025 | Pending | Unassigned |
 | T046 | Implement OpenAI premium integration. | ⚪ T044, 🟢 T019, 🟢 T009 | Pending | Unassigned |
 | T047 | Implement provisional local inference. | ⚪ T044, 🟢 T018, 🟢 T167, ⚪ T043 | Pending | Unassigned |
-| T048 | Implement token/cost ledgers and hard limits. | 🔴 T023, ⚪ T044, 🟢 T009, ⚪ T029 | Pending | Unassigned |
+| T048 | Implement token/cost ledgers and hard limits. | 🟡 T023, ⚪ T044, 🟢 T009, ⚪ T029 | Pending | Unassigned |
 | T049 | Implement routing, circuit breaking and model controls. | ⚪ T046, ⚪ T047, ⚪ T048, ⚪ T043 | Pending | Unassigned |
-| T050 | Implement the shared heavy-job resource governor. | 🟢 T010, 🔴 T023, ⚪ T047, 🔴 T022 | Pending | Unassigned |
+| T050 | Implement the shared heavy-job resource governor. | 🟢 T010, 🟡 T023, ⚪ T047, 🔴 T022 | Pending | Unassigned |
 | T051 | Implement guest scheduling and fair admission. | ⚪ T035, ⚪ T050, ⚪ T049 | Pending | Unassigned |
-| T052 | Implement durable pending tasks and safe continuation. | 🔴 T023, ⚪ T045, ⚪ T049, ⚪ T050, 🟢 T010 | Pending | Unassigned |
+| T052 | Implement durable pending tasks and safe continuation. | 🟡 T023, ⚪ T045, ⚪ T049, ⚪ T050, 🟢 T010 | Pending | Unassigned |
 | T053 | Implement reply-language and capability degradation policies. | ⚪ T043, ⚪ T049, ⚪ T045, 🟢 T038 | Pending | Unassigned |
 | T054 | Build model, budget and mode administration UI. | ⚪ T039, ⚪ T048, ⚪ T049, ⚪ T053 | Pending | Unassigned |
 | T055 | Implement capability-aware agent orchestration. | ⚪ T045, ⚪ T049, ⚪ T050, ⚪ T052, ⚪ T053 | Pending | Unassigned |
 | T056 | Build the repeatable model and agent evaluation harness. | 🟢 T015, ⚪ T044, ⚪ T055 | Pending | Unassigned |
 | T057 | Validate secure chat with real routing in ARM64. | ⚪ T042, ⚪ T051, ⚪ T054, ⚪ T055, ⚪ T056 | Pending | Unassigned |
 | T058 | Finalize memory and persistent-domain schema designs. | 🟢 T006, ⚪ T043, 🟢 T015 | Pending | Unassigned |
-| T059 | Implement isolated conversation histories. | 🔴 T023, ⚪ T028, ⚪ T037, ⚪ T058 | Pending | Unassigned |
-| T060 | Implement memory repositories and provenance. | 🔴 T023, ⚪ T028, ⚪ T058, ⚪ T029 | Pending | Unassigned |
+| T059 | Implement isolated conversation histories. | 🟡 T023, ⚪ T028, ⚪ T037, ⚪ T058 | Pending | Unassigned |
+| T060 | Implement memory repositories and provenance. | 🟡 T023, ⚪ T028, ⚪ T058, ⚪ T029 | Pending | Unassigned |
 | T061 | Implement bounded semantic retrieval with keyword fallback. | ⚪ T060, ⚪ T043, 🟢 T167, ⚪ T050 | Pending | Unassigned |
 | T062 | Implement safe memory extraction and staleness handling. | ⚪ T060, ⚪ T055 | Pending | Unassigned |
 | T063 | Implement personality and fixed-directive administration. | ⚪ T060, ⚪ T028, ⚪ T029, ⚪ T043 | Pending | Unassigned |
 | T064 | Implement user memory controls and visibility policy. | ⚪ T060, ⚪ T039 | Pending | Unassigned |
 | T065 | Integrate scoped memory into agent responses. | ⚪ T061, ⚪ T062, ⚪ T063, ⚪ T055 | Pending | Unassigned |
-| T066 | Build persistent admin and user settings. | 🔴 T023, ⚪ T039, ⚪ T054, ⚪ T064 | Pending | Unassigned |
+| T066 | Build persistent admin and user settings. | 🟡 T023, ⚪ T039, ⚪ T054, ⚪ T064 | Pending | Unassigned |
 | T067 | Finalize optional memory encryption and recovery design. | ⚪ T058, 🟢 T011, 🟢 T004 | Pending | Unassigned |
 | T068 | Implement memory encryption and transactional conversion. | ⚪ T060, ⚪ T067, 🟢 T167, ⚪ T029 | Pending | Unassigned |
-| T069 | Implement the minimal persistent maintenance scheduler. | 🔴 T023, ⚪ T029, ⚪ T050, 🟢 T010 | Pending | Unassigned |
+| T069 | Implement the minimal persistent maintenance scheduler. | 🟡 T023, ⚪ T029, ⚪ T050, 🟢 T010 | Pending | Unassigned |
 | T070 | Implement application-managed access and workspace quotas. | ⚪ T036, ⚪ T059, ⚪ T060, ⚪ T066 | Pending | Unassigned |
 | T071 | Implement storage-pressure cleanup and restart checks. | ⚪ T069, ⚪ T070 | Pending | Unassigned |
 | T072 | Implement idle-time memory consolidation. | ⚪ T069, ⚪ T062, ⚪ T071, ⚪ T065 | Pending | Unassigned |
@@ -437,7 +437,7 @@ Sources: plan sections 4.1.1, 14, 15 and 17.
 
 Sources: plan sections 3, 10, 11 and 12; Q-31-Q-39, P-26-P-31 and P-46-P-47.
 
-- [ ] **T023 - Implement Django-managed SQLite models and migrations.** Depends: T020, T021. Lane: data. Gate: G-CONTRACT for project-owned schemas. Acceptance: use Django's ORM and migration workflow; keep data ownership rules explicit without duplicating database/security mechanisms Django provides. Blocker: the T006 storage proposal and ADR 0009 leave concrete schemas unapproved, so G-CONTRACT is not satisfied. A proposal for the first persistent conversation/message schema is recorded in [Django conversation schema proposal](docs/django-conversation-schema-proposal.md); no schema or migration has been approved or created. Next: obtain explicit owner approval or requested revisions to that proposal before implementation; other domain schemas remain separately gated.
+- [ ] **T023 - Implement Django-managed SQLite models and migrations.** Depends: T020, T021. Lane: data. Gate: G-CONTRACT for project-owned schemas. Acceptance: use Django's ORM and migration workflow; keep data ownership rules explicit without duplicating database/security mechanisms Django provides. Scope approved in part: on 2026-11-02 the owner approved the exact `Conversation` and `Message` schema in [Django conversation schema proposal](docs/django-conversation-schema-proposal.md). Implemented `home.models` and `home/migrations/0001_initial.py`; migration check and application succeeded, and all 11 Django tests passed, including clean test-database migration, timestamps, deterministic ordering, and cascades. T023 remains in progress: this approval excludes audit, guest context, memory, tasks, files, settings and other project-owned schemas. Obtain each applicable contract/security approval before extending the schema.
 - **T024 - Superseded.** Django replaces the separate access/core transport; no TypeScript/Python internal authentication protocol is required.
 - [x] **T025 - Organize application routes using Django URL configurations.** Depends: T168, T007. Lane: application. Gate: none for ordinary URL configuration; future shared schemas and authorization behavior retain their gates. Acceptance: the home app owns its URLconf, included by the project URLconf, with no custom dynamic plugin registry. Evidence: `reverse("home")` resolves to `/`, `/` resolves to the home view, and `manage.py test` (5 tests) plus `manage.py check` pass. Feature-specific permissions remain T028.
 - [x] **T026 - Use Django authentication, password and session mechanisms.** Depends: T168. Lane: security. Gate: none; owner decision Q-62. Acceptance: use supported Django auth views, password validation, sessions, CSRF middleware and documented cookie settings rather than bespoke replacements. Evidence: login/logout integration tests pass; no custom password/session protocol was added.

@@ -1,11 +1,73 @@
 from pathlib import Path
+from uuid import UUID
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.test import TestCase
 from django.urls import resolve, reverse
+from django.utils import timezone
 
+from home.models import Conversation, Message
 from home.views import home
+
+
+class ConversationStorageTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="storage-user",
+            password="test-password-123",
+        )
+
+    def test_conversation_has_uuid_owner_and_aware_access_timestamps(self):
+        conversation = Conversation.objects.create(owner=self.user)
+
+        self.assertEqual(conversation.owner, self.user)
+        self.assertIsInstance(conversation.id, UUID)
+        self.assertTrue(timezone.is_aware(conversation.created_at))
+        self.assertTrue(timezone.is_aware(conversation.last_accessed_at))
+
+    def test_messages_are_ordered_by_creation_time_then_primary_key(self):
+        conversation = Conversation.objects.create(owner=self.user)
+        created_at = timezone.now()
+        first = Message.objects.create(
+            conversation=conversation,
+            role=Message.Role.USER,
+            content="First",
+            created_at=created_at,
+        )
+        second = Message.objects.create(
+            conversation=conversation,
+            role=Message.Role.ASSISTANT,
+            content="Second",
+            created_at=created_at,
+        )
+
+        self.assertEqual(list(conversation.messages.all()), [first, second])
+
+    def test_deleting_conversation_cascades_to_messages(self):
+        conversation = Conversation.objects.create(owner=self.user)
+        message = Message.objects.create(
+            conversation=conversation,
+            role=Message.Role.USER,
+            content="Synthetic content",
+        )
+
+        conversation.delete()
+
+        self.assertFalse(Message.objects.filter(pk=message.pk).exists())
+
+    def test_deleting_user_cascades_to_conversations_and_messages(self):
+        conversation = Conversation.objects.create(owner=self.user)
+        message = Message.objects.create(
+            conversation=conversation,
+            role=Message.Role.USER,
+            content="Synthetic content",
+        )
+
+        self.user.delete()
+
+        self.assertFalse(Conversation.objects.filter(pk=conversation.pk).exists())
+        self.assertFalse(Message.objects.filter(pk=message.pk).exists())
 
 
 class HomeRouteTests(TestCase):
