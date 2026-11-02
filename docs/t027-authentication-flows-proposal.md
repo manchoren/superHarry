@@ -45,6 +45,23 @@ Confirm whether T027 follows the active ADR 0007 separate-cookie/pre-authenticat
 
 Approve the exact Argon2id dependency/version and configuration after dependency review; define the production status and import procedure of the selected offline password list. Existing policy requires fail-closed validation for new or changed passwords when the required list is absent or unusable, while existing login remains available. Define the T027 event requirements and failure semantics through T029 before enabling privileged mutations that require durable audit.
 
+## Candidate password-reset grant schema
+
+This exact candidate is submitted for a separate, narrow G-CONTRACT decision. It is not part of the T023 Conversation/Message approval and is not authorized for implementation.
+
+| Field | Candidate type and semantics |
+|---|---|
+| `id` | Django `BigAutoField` primary key |
+| `user` | One-to-one foreign key to `settings.AUTH_USER_MODEL`, `on_delete=CASCADE`, related name `password_reset_grant`; at most one current grant per account |
+| `token_digest` | Unique 64-character lowercase hex SHA-256 digest of the 32 random token bytes; never store the raw token |
+| `issued_at` | `DateTimeField(default=timezone.now, editable=False)` |
+| `expires_at` | Required `DateTimeField`; issuance sets it to ten minutes after `issued_at` |
+| `consumed_at` | Nullable `DateTimeField`; set atomically with a successful password update |
+
+Issuing a replacement overwrites the single grant and invalidates the previously displayed token. A successful reset updates the password and consumes the matching unexpired grant in one database transaction; an expired, consumed or unknown token produces the same generic public failure. User deletion cascades to the grant. Keep no raw token, token URL, or user-supplied password in logs. T029 audit events and actor identity are separate and must not be added as fields here without review.
+
+The schema intentionally does not choose an OS identity field because the authorized OS administrator may not be a Django user. It also does not define OS privilege proof, issuance command/interface, token display safeguards, reset throttling, audit transaction policy, or how every authenticated session is synchronously invalidated. Review concurrency/SQLite failure behavior before approving the consume-and-update guarantee. Approval of these fields alone would not satisfy G-SECURITY, dependency review, session/CSRF contract approval or authorize implementation.
+
 ## Proposed validation after approval
 
 Tests must cover admin-only account creation; role and active-state changes; generic login responses for unknown user, wrong password, missing/invalid/replayed TOTP and disabled accounts; TOTP enrollment and revocation; reset authorization, expiry, single use, concurrent redemption and interruption; MFA preservation; password-policy enforcement; session/CSRF rotation and revocation; audit unavailability; secret redaction; and no email or other unapproved channel. Include migration tests only after the exact approved schema and dependencies are known. Run applicable dependency, ARM64 and target-hardware validation only under their separate approvals.
