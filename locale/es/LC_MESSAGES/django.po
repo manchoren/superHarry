@@ -27,3 +27,79 @@ msgstr "Cerrar sesión"
 
 msgid "Your username and password didn't match. Please try again."
 msgstr "El usuario y la contraseña no coinciden. Inténtalo de nuevo."
+
+msgctxt "chat.shell.document_title"
+msgid "Chat · superHarry"
+msgstr "Chat · superHarry"
+
+msgctxt "chat.accessibility.skip_link"
+msgid "Skip to main content"
+msgstr "Saltar al contenido principal"
+
+msgctxt "chat.navigation.landmark"
+msgid "Application navigation"
+msgstr "Navegación de la aplicación"
+
+msgctxt "chat.navigation.home_link"
+msgid "superHarry home"
+msgstr "Inicio de superHarry"
+
+msgctxt "chat.navigation.primary_landmark"
+msgid "Primary navigation"
+msgstr "Navegación principal"
+
+msgctxt "chat.navigation.chat"
+msgid "Chat"
+msgstr "Chat"
+
+msgctxt "chat.navigation.administration"
+msgid "Administration"
+msgstr "Administración"
+
+msgctxt "chat.account.signed_in_as"
+msgid "Signed in as %(username)s"
+msgstr "Sesión iniciada como %(username)s"
+
+msgctxt "chat.account.sign_out"
+msgid "Sign out"
+msgstr "Cerrar sesión"
+
+msgctxt "chat.account.sign_in"
+msgid "Sign in"
+msgstr "Iniciar sesión"
+
+msgctxt "chat.shell.heading"
+msgid "Chat"
+msgstr "Chat"
+
+msgctxt "chat.shell.introduction"
+msgid "A space to chat with superHarry."
+msgstr "Un espacio para conversar con superHarry."
+
+msgctxt "chat.empty_state.heading"
+msgid "Start a conversation"
+msgstr "Iniciar una conversación"
+
+msgctxt "chat.empty_state.description"
+msgid "Your conversation will appear here."
+msgstr "La conversación aparecerá aquí."
+
+msgctxt "chat.composer.landmark"
+msgid "Message composer"
+msgstr "Área para escribir mensajes"
+
+msgctxt "chat.composer.message_label"
+msgid "Message"
+msgstr "Mensaje"
+
+msgctxt "chat.composer.placeholder"
+msgid "Message input is not active."
+msgstr "El campo para escribir mensajes no está activo."
+
+msgctxt "chat.composer.send"
+msgid "Send"
+msgstr "Enviar"
+
+msgctxt "chat.composer.status"
+msgid "Sending messages is not available in this interface yet."
+msgstr "El envío de mensajes todavía no está disponible en esta interfaz."

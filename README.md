@@ -25,4 +25,6 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-The built-in admin is available at `/admin/`. The development server is not for production. Django creates a temporary development secret key when `DJANGO_SECRET_KEY` is unset; set `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=0` and `DJANGO_ALLOWED_HOSTS` for non-development settings. The application is still intended for LAN/VPN access over HTTPS only; do not expose it publicly or forward ports. ARM64 and real-Pi acceptance remain future work.
+`createsuperuser` creates the first administrator through Django's supported management command; use the built-in admin site at `/admin/` for account administration. This project does not add a custom bootstrap token or unauthenticated administrator-creation flow. The command above only creates a local development account; deployment and administrator-recovery procedures remain separately gated.
+
+The development server is not for production. Django creates a temporary development secret key when `DJANGO_SECRET_KEY` is unset; set `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=0` and `DJANGO_ALLOWED_HOSTS` for non-development settings. The application is still intended for LAN/VPN access over HTTPS only; do not expose it publicly or forward ports. ARM64 and real-Pi acceptance remain future work.

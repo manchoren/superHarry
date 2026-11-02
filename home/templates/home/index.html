@@ -1,24 +1,72 @@
-{% load i18n %}
+{% load i18n static %}
 <!doctype html>
 <html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>superHarry</title>
+    <title>{% translate "Chat · superHarry" context "chat.shell.document_title" %}</title>
+    <link rel="stylesheet" href="{% static 'home/chat.css' %}">
 </head>
 <body>
-    <main>
-        <h1>{% translate "Welcome to superHarry" %}</h1>
-        <p>{% translate "Your personal AI assistant." %}</p>
-        {% if user.is_authenticated %}
-            <p>{% blocktranslate with username=user.get_username %}Signed in as {{ username }}{% endblocktranslate %}</p>
-            <form action="{% url 'logout' %}" method="post">
-                {% csrf_token %}
-                <button type="submit">{% translate "Sign out" %}</button>
-            </form>
-        {% else %}
-            <a href="{% url 'login' %}">{% translate "Sign in" %}</a>
-        {% endif %}
-    </main>
+    <a class="skip-link" href="#main-content">{% translate "Skip to main content" context "chat.accessibility.skip_link" %}</a>
+    <div class="app-shell">
+        <aside class="sidebar" aria-label="{% translate 'Application navigation' context 'chat.navigation.landmark' %}">
+            <a class="brand" href="{% url 'home' %}" aria-label="{% translate 'superHarry home' context 'chat.navigation.home_link' %}">superHarry</a>
+            <nav aria-label="{% translate 'Primary navigation' context 'chat.navigation.primary_landmark' %}">
+                <ul class="navigation-list">
+                    <li>
+                        <a class="navigation-link" href="#chat" aria-current="page">
+                            {% translate "Chat" context "chat.navigation.chat" %}
+                        </a>
+                    </li>
+                    {% if user.is_authenticated and user.is_staff and perms.auth.view_user %}
+                        <li>
+                            <a class="navigation-link" href="{% url 'admin:index' %}">
+                                {% translate "Administration" context "chat.navigation.administration" %}
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            <div class="account-panel">
+                {% if user.is_authenticated %}
+                    <p class="account-name">
+                        {% blocktranslate with username=user.get_username context "chat.account.signed_in_as" %}Signed in as {{ username }}{% endblocktranslate %}
+                    </p>
+                    <form action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        <button class="account-action" type="submit">{% translate "Sign out" context "chat.account.sign_out" %}</button>
+                    </form>
+                {% else %}
+                    <a class="account-action" href="{% url 'login' %}">{% translate "Sign in" context "chat.account.sign_in" %}</a>
+                {% endif %}
+            </div>
+        </aside>
+
+        <main class="main-content" id="main-content">
+            <section class="chat-workspace" id="chat" aria-labelledby="chat-title">
+                <header class="chat-header">
+                    <h1 id="chat-title">{% translate "Chat" context "chat.shell.heading" %}</h1>
+                    <p>{% translate "A space to chat with superHarry." context "chat.shell.introduction" %}</p>
+                </header>
+
+                <div class="conversation-area">
+                    <section class="empty-state" aria-labelledby="empty-state-title">
+                        <h2 id="empty-state-title">{% translate "Start a conversation" context "chat.empty_state.heading" %}</h2>
+                        <p>{% translate "Your conversation will appear here." context "chat.empty_state.description" %}</p>
+                    </section>
+                </div>
+
+                <form class="message-composer" aria-label="{% translate 'Message composer' context 'chat.composer.landmark' %}">
+                    <label for="chat-message">{% translate "Message" context "chat.composer.message_label" %}</label>
+                    <textarea id="chat-message" name="message" rows="1" disabled
+                              aria-describedby="composer-status"
+                              placeholder="{% translate 'Message input is not active.' context 'chat.composer.placeholder' %}"></textarea>
+                    <button type="submit" disabled>{% translate "Send" context "chat.composer.send" %}</button>
+                    <p id="composer-status">{% translate "Sending messages is not available in this interface yet." context "chat.composer.status" %}</p>
+                </form>
+            </section>
+        </main>
+    </div>
 </body>
 </html>

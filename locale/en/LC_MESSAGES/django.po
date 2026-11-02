@@ -27,3 +27,79 @@ msgstr "Sign out"
 
 msgid "Your username and password didn't match. Please try again."
 msgstr "Your username and password didn't match. Please try again."
+
+msgctxt "chat.shell.document_title"
+msgid "Chat · superHarry"
+msgstr "Chat · superHarry"
+
+msgctxt "chat.accessibility.skip_link"
+msgid "Skip to main content"
+msgstr "Skip to main content"
+
+msgctxt "chat.navigation.landmark"
+msgid "Application navigation"
+msgstr "Application navigation"
+
+msgctxt "chat.navigation.home_link"
+msgid "superHarry home"
+msgstr "superHarry home"
+
+msgctxt "chat.navigation.primary_landmark"
+msgid "Primary navigation"
+msgstr "Primary navigation"
+
+msgctxt "chat.navigation.chat"
+msgid "Chat"
+msgstr "Chat"
+
+msgctxt "chat.navigation.administration"
+msgid "Administration"
+msgstr "Administration"
+
+msgctxt "chat.account.signed_in_as"
+msgid "Signed in as %(username)s"
+msgstr "Signed in as %(username)s"
+
+msgctxt "chat.account.sign_out"
+msgid "Sign out"
+msgstr "Sign out"
+
+msgctxt "chat.account.sign_in"
+msgid "Sign in"
+msgstr "Sign in"
+
+msgctxt "chat.shell.heading"
+msgid "Chat"
+msgstr "Chat"
+
+msgctxt "chat.shell.introduction"
+msgid "A space to chat with superHarry."
+msgstr "A space to chat with superHarry."
+
+msgctxt "chat.empty_state.heading"
+msgid "Start a conversation"
+msgstr "Start a conversation"
+
+msgctxt "chat.empty_state.description"
+msgid "Your conversation will appear here."
+msgstr "Your conversation will appear here."
+
+msgctxt "chat.composer.landmark"
+msgid "Message composer"
+msgstr "Message composer"
+
+msgctxt "chat.composer.message_label"
+msgid "Message"
+msgstr "Message"
+
+msgctxt "chat.composer.placeholder"
+msgid "Message input is not active."
+msgstr "Message input is not active."
+
+msgctxt "chat.composer.send"
+msgid "Send"
+msgstr "Send"
+
+msgctxt "chat.composer.status"
+msgid "Sending messages is not available in this interface yet."
+msgstr "Sending messages is not available in this interface yet."

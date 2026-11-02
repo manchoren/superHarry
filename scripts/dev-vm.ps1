@@ -7,7 +7,10 @@ param(
     [string]$FirmwareCodeSha256,
     [string]$FirmwareVarsSha256,
     [string]$InstallerIso,
-    [string]$InstallerSha256
+    [string]$InstallerSha256,
+    [ValidateSet('debian-13.7-arm64-base.qcow2', 'debian-13-nocloud-configured-base.qcow2', 'debian-13-nocloud-arm64-base.qcow2')]
+    [string]$RunBaseName = 'debian-13.7-arm64-base.qcow2',
+    [switch]$ResumeInstall
 )
 
 Set-StrictMode -Version Latest
@@ -120,7 +123,7 @@ function Assert-QemuCandidate {
         Stop-WithError 'This QEMU build does not advertise the selected CPU cortex-a76.'
     }
     $devices = Invoke-Probe -Executable $script:QemuPath -Arguments @('-device', 'help') -Label 'QEMU device list'
-    foreach ($device in @('virtio-blk-device', 'virtio-scsi-device', 'scsi-cd', 'virtio-net-pci')) {
+    foreach ($device in @('virtio-blk-device', 'virtio-scsi-device', 'scsi-cd', 'virtio-net-pci', 'pcie-root-port', 'virtio-serial-device', 'virtserialport')) {
         $devicePattern = '(?m)^\s*(?:name\s+)?["'']?{0}["'']?(?:\s|,|$)' -f [regex]::Escape($device)
         if ($devices -notmatch $devicePattern) {
             Stop-WithError "This QEMU build does not advertise the required device $device."
@@ -134,7 +137,7 @@ function Assert-QemuCandidate {
     Write-Host "qemu-img SHA-256: $imgHash"
     Write-Host ($imgVersion.Trim())
     Write-Host 'Machine: virt-11.1 (exact identifier confirmed)'
-    Write-Host 'CPU/devices: cortex-a76, virtio-blk-device, virtio-scsi-device, scsi-cd, virtio-net-pci'
+    Write-Host 'CPU/devices: cortex-a76, virtio-blk-device, virtio-scsi-device, scsi-cd, pcie-root-port, virtio-net-pci, virtio-serial-device, virtserialport'
 }
 
 function Get-ExpectedFirmwarePins {
@@ -301,10 +304,39 @@ function Assert-CleanBaseDisk {
     param([Parameter(Mandatory)][string]$Path)
     $info = Get-Qcow2Info -Path $Path
     if ($info.format -ne 'qcow2' -or [long]$info.'virtual-size' -ne $script:DiskBytes) {
-        Stop-WithError "Base disk must be QCOW2 with exactly 32 GiB virtual size."
+        Stop-WithError "Base disk must be QCOW2 with the selected virtual size of $($script:DiskBytes / 1GB) GiB."
     }
-    if (-not [string]::IsNullOrWhiteSpace([string]$info.'backing-filename')) {
-        Stop-WithError "Base disk unexpectedly has a backing file: $($info.'backing-filename')"
+    $backingFilename = $info.PSObject.Properties['backing-filename']
+    if ($null -ne $backingFilename -and -not [string]::IsNullOrWhiteSpace([string]$backingFilename.Value)) {
+        Stop-WithError "Base disk unexpectedly has a backing file: $($backingFilename.Value)"
+    }
+}
+
+function Assert-PristineEmptyBaseDisk {
+    param([Parameter(Mandatory)][string]$Path)
+
+    Invoke-Probe -Executable $script:QemuImgPath -Arguments @('check', '-f', 'qcow2', $Path) -Label "qemu-img check for $Path" | Out-Null
+    $output = Invoke-Probe -Executable $script:QemuImgPath -Arguments @('map', '--output=json', $Path) -Label "qemu-img map for $Path"
+    try {
+        $parsedExtents = ConvertFrom-Json -InputObject $output -ErrorAction Stop
+        $extents = @($parsedExtents | ForEach-Object { $_ })
+    } catch {
+        Stop-WithError "Could not parse qemu-img map for $Path. $($_.Exception.Message)"
+    }
+
+    $nextOffset = [long]0
+    foreach ($extent in $extents) {
+        if ([long]$extent.start -ne $nextOffset -or
+            [long]$extent.length -le 0 -or
+            $extent.present -or
+            $extent.data -or
+            -not $extent.zero) {
+            Stop-WithError "Existing base disk is not a pristine empty image; refusing to resume installation: $Path"
+        }
+        $nextOffset += [long]$extent.length
+    }
+    if ($nextOffset -ne $script:DiskBytes) {
+        Stop-WithError "Existing base disk map does not cover exactly 32 GiB; refusing to resume installation: $Path"
     }
 }
 
@@ -352,6 +384,19 @@ function New-SessionId {
     return '{0}-{1}' -f (Get-Date -Format 'yyyyMMdd-HHmmss'), ([guid]::NewGuid().ToString('N'))
 }
 
+function Assert-LoopbackPortAvailable {
+    param([Parameter(Mandatory)][ValidateRange(1, 65535)][int]$Port)
+
+    $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
+    try {
+        $listener.Start()
+    } catch {
+        Stop-WithError "SSH forwarding requires 127.0.0.1:$Port to be available. Stop the process using that port and retry. $($_.Exception.Message)"
+    } finally {
+        $listener.Stop()
+    }
+}
+
 Assert-QemuCandidate
 Get-ExpectedFirmwarePins
 
@@ -381,16 +426,30 @@ if ($Mode -eq 'Install') {
     Set-NewVmRootAcl
     Assert-FreeSpace
     $baseDisk = Assert-VmChildPath -Path (Join-Path $script:VmRoot $script:BaseDiskName) -ExpectedName $script:BaseDiskName
-    if (Test-Path -LiteralPath $baseDisk) {
+    $baseDiskExists = Test-Path -LiteralPath $baseDisk
+    if ($baseDiskExists -and -not $ResumeInstall) {
         Stop-WithError "Install will not overwrite an existing base disk: $baseDisk. Preserve and inspect it; choose an owner-reviewed recovery action."
+    }
+    if (-not $baseDiskExists -and $ResumeInstall) {
+        Stop-WithError "ResumeInstall requires an existing base disk to validate: $baseDisk"
     }
 
     $sessionId = New-SessionId
     $installVarsName = "install-vars-$sessionId.fd"
     $installVars = Assert-VmChildPath -Path (Join-Path $script:VmRoot $installVarsName) -ExpectedName $installVarsName
-    & $script:QemuImgPath create -f qcow2 $baseDisk 32G
-    if ($LASTEXITCODE -ne 0) {
-        Stop-WithError "qemu-img could not create the 32 GiB QCOW2 base disk (exit code $LASTEXITCODE). Any partial artifact is preserved."
+    if ($baseDiskExists) {
+        Assert-VmFile -Path $baseDisk -ExpectedName $script:BaseDiskName | Out-Null
+        if ((Get-Item -LiteralPath $baseDisk).Attributes -band [System.IO.FileAttributes]::ReadOnly) {
+            Stop-WithError "ResumeInstall requires a writable pristine base disk: $baseDisk"
+        }
+        Assert-CleanBaseDisk -Path $baseDisk
+        Assert-PristineEmptyBaseDisk -Path $baseDisk
+        Write-Host 'Resuming installation with the existing base disk verified clean and entirely empty.'
+    } else {
+        & $script:QemuImgPath create -f qcow2 $baseDisk 32G
+        if ($LASTEXITCODE -ne 0) {
+            Stop-WithError "qemu-img could not create the 32 GiB QCOW2 base disk (exit code $LASTEXITCODE). Any partial artifact is preserved."
+        }
     }
     Assert-VmFile -Path $baseDisk -ExpectedName $script:BaseDiskName | Out-Null
     Assert-CleanBaseDisk -Path $baseDisk
@@ -409,6 +468,7 @@ if ($Mode -eq 'Install') {
         '-drive', "if=none,id=installer,file=$script:InstallerIso,format=raw,media=cdrom,readonly=on",
         '-device', 'virtio-scsi-device,id=scsi',
         '-device', 'scsi-cd,drive=installer,bus=scsi.0',
+        '-device', 'pcie-root-port,id=netrp,bus=pcie.0,addr=0x1,chassis=1,slot=1',
         '-boot', 'order=d',
         '-nic', 'none',
         '-display', 'none',
@@ -450,10 +510,17 @@ if ($Mode -eq 'Install') {
 
 Assert-VmRoot
 Assert-FreeSpace
-$baseDisk = Assert-VmFile -Path (Join-Path $script:VmRoot $script:BaseDiskName) -ExpectedName $script:BaseDiskName
+$baseDisk = Assert-VmFile -Path (Join-Path $script:VmRoot $RunBaseName) -ExpectedName $RunBaseName
 if (-not ((Get-Item -LiteralPath $baseDisk).Attributes -band [System.IO.FileAttributes]::ReadOnly)) {
     Stop-WithError "Base disk is not marked read-only; refusing to run: $baseDisk"
 }
+$baseInfo = Get-Qcow2Info -Path $baseDisk
+if ($baseInfo.format -ne 'qcow2' -or
+    [long]$baseInfo.'virtual-size' -lt 3GB -or
+    [long]$baseInfo.'virtual-size' -gt 32GB) {
+    Stop-WithError 'Run base disk must be QCOW2 with a virtual size from 3 GiB through 32 GiB.'
+}
+$script:DiskBytes = [long]$baseInfo.'virtual-size'
 Assert-CleanBaseDisk -Path $baseDisk
 
 $sessionId = New-SessionId
@@ -461,6 +528,7 @@ $overlayName = "session-$sessionId.qcow2"
 $varsName = "session-vars-$sessionId.fd"
 $overlay = Assert-VmChildPath -Path (Join-Path $script:VmRoot $overlayName) -ExpectedName $overlayName
 $sessionVars = Assert-VmChildPath -Path (Join-Path $script:VmRoot $varsName) -ExpectedName $varsName
+Assert-LoopbackPortAvailable -Port 2222
 Copy-Item -LiteralPath $script:FirmwareVarsPath -Destination $sessionVars -ErrorAction Stop
 Assert-VmFile -Path $sessionVars -ExpectedName $varsName | Out-Null
 & $script:QemuImgPath create -f qcow2 -F qcow2 -b $baseDisk $overlay
@@ -479,6 +547,7 @@ $runArguments = @(
     '-drive', "if=pflash,format=raw,unit=1,file=$sessionVars",
     '-drive', "if=none,id=rootdisk,file=$overlay,format=qcow2",
     '-device', 'virtio-blk-device,drive=rootdisk',
+    '-device', 'pcie-root-port,id=netrp,bus=pcie.0,addr=0x1,chassis=1,slot=1',
     '-boot', 'order=c',
     '-nic', 'none',
     '-display', 'none',
@@ -487,7 +556,11 @@ $runArguments = @(
 $qemuReturned = $false
 $qemuExitCode = $null
 try {
-    Write-Host 'Run mode: starts with no NIC/backend. Wait for the installed Debian OS login, then follow the runbook to add networking.'
+    Write-Host 'Run mode: starts without a NIC or network backend. Log in to Debian first; only then switch to the QEMU monitor (Ctrl+A, C) and run:'
+    Write-Host '  netdev_add user,id=guestnet,hostfwd=tcp:127.0.0.1:2222-:22'
+    Write-Host '  device_add virtio-net-pci,bus=netrp,netdev=guestnet,id=guestnic'
+    Write-Host 'Use Ctrl+A, C to return to the guest serial console. Do not attach networking before login.'
+    Write-Host 'SSH forwarding is bound only to 127.0.0.1:2222; no LAN listener is configured.'
     & $script:QemuPath @runArguments
     $qemuExitCode = $LASTEXITCODE
     $qemuReturned = $true
