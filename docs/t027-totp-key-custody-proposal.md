@@ -20,6 +20,8 @@ The host-bound option is not a hardware-backed guarantee. It may not protect aga
 - Preserve the selected TOTP policy: 30-second steps, six digits, the current step plus one adjacent step on each side, rate limiting, atomic rejection of an accepted step, verification before enrollment activation, and ten single-use 128-bit recovery codes stored only as verifiers. These selections do not approve their schema or implementation.
 - Require a separate, audited OS-admin recovery flow for an administrator who loses all factors. Ordinary-user recovery codes do not replace that process; T031 remains separately gated.
 
+The candidate field set and semantics are documented in the [T027 TOTP storage schema proposal](t027-totp-schema-proposal.md); they are not yet approved.
+
 ## Validation after approval
 
 Before any deployment, test authenticated-ciphertext integrity, account binding, nonce uniqueness, unavailable/wrong credentials, corruption, service restart, backup exclusion, key rotation/re-encryption failure and recovery behavior. Confirm through negative OS-level access checks that other processes cannot read the decrypted credential. Run dependency and ARM64 checks only after the exact package and environment receive their approvals. No key was generated, package installed, schema changed, secret provisioned or TOTP test run for this proposal.
