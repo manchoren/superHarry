@@ -1,6 +1,6 @@
 # T027 account, TOTP and password-reset flows
 
-Status: prepared for owner review on 2026-11-02; the owner selected the reset-token direction below on 2026-11-02. This is not G-SECURITY or G-CONTRACT approval and not implementation authorization. T027 remains pending. Constitution baseline 2026-10-29, SHA-256 `d09e90aa0efe609a7d335a7b10ecc5623dab1e757b5a00d4e7c82526ce9dc489`.
+Status: prepared for owner review on 2026-11-02; the owner selected the reset-token direction and approved the exact grant schema below for G-CONTRACT only on 2026-11-02. This is not G-SECURITY approval or implementation authorization. T027 remains pending. Constitution baseline 2026-10-29, SHA-256 `d09e90aa0efe609a7d335a7b10ecc5623dab1e757b5a00d4e7c82526ce9dc489`.
 
 ## Scope
 
@@ -47,7 +47,7 @@ Approve the exact Argon2id dependency/version and configuration after dependency
 
 ## Candidate password-reset grant schema
 
-This exact candidate is submitted for a separate, narrow G-CONTRACT decision. It is not part of the T023 Conversation/Message approval and is not authorized for implementation.
+The owner approved this exact field set and semantics on 2026-11-02 for G-CONTRACT only. This approval is separate from T023's Conversation/Message approval. It does not approve the reset endpoint, issuance operation, OS identity, password/MFA/session behavior, audit handling, dependency, G-SECURITY controls or implementation. No model or migration is authorized until the remaining required gates are satisfied.
 
 | Field | Candidate type and semantics |
 |---|---|
