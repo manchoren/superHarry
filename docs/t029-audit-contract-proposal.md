@@ -106,7 +106,21 @@ The initial inventory does not imply a public password-reset workflow. Reset iss
 - Bound admin audit queries to 100 events per page and a 31-day range. Bound exports to 1,000 events or 1 MiB, a 31-day range, and 5 exports per admin per hour.
 - Disable hard deletion of accounts through Django admin; use deactivation instead until account-deletion semantics and a corresponding audited event are separately approved. This prevents an unreviewed user deletion from cascading to owned conversation data.
 
-These are owner policy/design decisions, not completion of G-CONTRACT/G-SECURITY review.
+The typed event schema, initial vocabulary, and transaction-boundary baseline have owner approval for G-CONTRACT/G-SECURITY implementation. The separate read/export HTTP contract and production retention/purge remain subject to their own review and approval.
+
+## Admin audit read/export interface candidate
+
+The event schema and transaction-boundary candidate have separate owner approval for G-CONTRACT/G-SECURITY implementation. This HTTP interface is a new request/response contract and requires its own G-CONTRACT review before implementation.
+
+- Provide an HTML page at `GET /admin/audit/` and a CSV download at `GET /admin/audit/export.csv`. Do not register `AuditEvent` in Django admin, since its unbounded changelist would bypass query bounds and read-event recording.
+- Require both `request.user.is_staff` and Django's `home.view_auditevent` permission on every request. Django superusers satisfy the permission check through Django's standard behavior, but staff status is still required. Anonymous requests go to the admin login; authenticated users without permission receive 403.
+- Accept only these filters: `start_date` and `end_date` as ISO `YYYY-MM-DD` dates (UTC; inclusive start and exclusive end), `event_type` from the closed vocabulary, and positive `actor_user_id`/`target_user_id` snapshots. Default to the preceding seven UTC days when no date filters are provided. Reject invalid dates and ranges longer than 31 days.
+- Show at most 100 records per page, ordered by `occurred_at DESC, event_id DESC`. Use a signed, expiring cursor bound to the active date and event filters; do not allow arbitrary offsets. The page displays only audit schema fields, never usernames, email, request bodies, secrets, or free-text metadata.
+- A CSV export uses the same filters and order, is capped at 1,000 records and 1 MiB, and is limited to five successful exports per admin per rolling hour. If the matching record set exceeds 1,000 or the encoded file exceeds 1 MiB, return a generic 413 without returning partial data. When the quota is exhausted return 429 without `Retry-After`.
+- Record `admin.audit_read` after selecting a valid page and before returning it; record `admin.audit_exported` after the export is bounded and before returning bytes. Do not return the selected page/export if the corresponding event cannot be appended; return generic 503. Each read/export event stores only the authorized actor and safe typed fields, not filter values or returned records.
+- All query and event-write steps occur in one transaction. For exports, check the rolling-hour count and write the export event in the same transaction. SQLite contention or audit-write failures deny the response rather than bypassing quota or audit. No response should disclose database details.
+
+The candidate deliberately defines no free-text search, usernames, IP/origin filters, arbitrary ordering, client-selected page size, offset pagination, or JSON API. A future requirement for those features needs a separate contract and security review.
 
 ## Data excluded from every event
 
@@ -124,13 +138,13 @@ For failed authentication, a known account may be correlated by its internal ID;
 - Retain events for 90 days provisionally. Purge only through a core-owned maintenance task after G-OPS/legal review confirms the retention policy and cleanup behavior.
 - Do not describe the SQLite table as tamper-proof. Application-level append-only APIs and admin restrictions do not protect records from an attacker who can modify the database file or compromise the Django process. Stronger external/OS-level integrity controls require a separate approved design.
 
-## Decisions required before implementation
+## Decisions required before implementing admin audit access
 
-1. Approve or amend the typed schema and index candidate, including the optional server-generated `request_id` field.
-2. Approve or amend the proposed transaction boundaries for login/session transitions, failed-login counters, aggregated signals, logout/revocation, privileged changes, and admin reads/exports.
-3. Confirm the approved initial operation set against any additional privileged operations introduced by dependent tasks.
-4. Confirm the 90-day retention and purge operation after the required legal/operational review.
-5. Approve database/audit unavailability recovery and monitoring behavior, preserving the already-approved generic error and attempt-counter behavior.
+1. Approve or amend the admin HTML/CSV interface, exact routes, filter grammar, default seven-day window, UTC date handling, signed cursor, and response/error behavior above.
+2. Approve the `is_staff` plus `home.view_auditevent` authorization rule for the application admin capability.
+3. Confirm that read/export access logging itself, performed before response delivery and without query filters or result contents, satisfies the accepted event policy.
+4. Confirm the rolling-hour export quota will use persisted successful export events and fail closed on SQLite contention.
+5. Confirm the approved initial event set against additional privileged operations introduced by dependent tasks. The 90-day retention and purge operation still require legal/operational review before production.
 
 ## Verification required
 
