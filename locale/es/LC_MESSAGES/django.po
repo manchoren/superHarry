@@ -1,0 +1,29 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: superHarry\n"
+"PO-Revision-Date: 2026-11-01 00:00+0000\n"
+"Last-Translator: Project contributors\n"
+"Language-Team: Spanish\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: es\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Welcome to superHarry"
+msgstr "Te damos la bienvenida a superHarry"
+
+msgid "Your personal AI assistant."
+msgstr "Tu asistente personal de IA."
+
+msgid "Signed in as %(username)s"
+msgstr "Has iniciado sesión como %(username)s"
+
+msgid "Sign in"
+msgstr "Iniciar sesión"
+
+msgid "Sign out"
+msgstr "Cerrar sesión"
+
+msgid "Your username and password didn't match. Please try again."
+msgstr "El usuario y la contraseña no coinciden. Inténtalo de nuevo."

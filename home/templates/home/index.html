@@ -1,0 +1,24 @@
+{% load i18n %}
+<!doctype html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>superHarry</title>
+</head>
+<body>
+    <main>
+        <h1>{% translate "Welcome to superHarry" %}</h1>
+        <p>{% translate "Your personal AI assistant." %}</p>
+        {% if user.is_authenticated %}
+            <p>{% blocktranslate with username=user.get_username %}Signed in as {{ username }}{% endblocktranslate %}</p>
+            <form action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button type="submit">{% translate "Sign out" %}</button>
+            </form>
+        {% else %}
+            <a href="{% url 'login' %}">{% translate "Sign in" %}</a>
+        {% endif %}
+    </main>
+</body>
+</html>

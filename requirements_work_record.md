@@ -43,3 +43,7 @@ The approval register and task dependencies in [TASK.md](TASK.md#approval-and-de
 ## Work evidence
 
 T001 inspected the complete constitution, the plan's status rules, outstanding items and complete Q/P decision register, and the backlog's gates. The record is documentation only; no executable behavior or dependency was changed. Validation: checked source hashes and decision IDs against the register. Review/PR and commit evidence are pending the repository review process; real-device validation is outside this task.
+
+## Owner override: Django monolith (2026-11-01)
+
+The owner selected a Django monolith, replacing the former TypeScript/Fastify access service, React/Vite client and separately hosted Python core where those choices conflict. Django's supported security mechanisms and defaults take precedence over bespoke authentication, password, session and CSRF designs. The owner explicitly chose to trust the current stable Django implementation without auditing Django internals; this does not remove project configuration, app-level authorization, dependency updates or integration tests. At decision time, Django's official download page listed 6.1.2 as its latest official release. See [ADR 0010](docs/adr/0010-django-monolith.md) and [Q-62/P-52](project_plan.md#19-decision-register). The historical inventory above is retained as a record of the former decisions, not as the current stack.

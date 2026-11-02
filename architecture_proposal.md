@@ -1,6 +1,6 @@
-# ADR proposal: application boundaries and repository layout
+# Historical architecture proposal: application boundaries and repository layout
 
-Status: T002 proposal finalized. Owner approval is recorded in part in [ADR 0001](docs/adr/0001-repository-layout.md) for the repository layout and ownership boundaries only; this is not blanket G-ARCH clearance. No implementation or dependency approval is implied. Constitution baseline 2026-10-29, SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`.
+Status: Superseded on 2026-11-01 by the owner-approved [Django monolith decision](docs/adr/0010-django-monolith.md). This file records the former React/Fastify/separate-core proposal for history only; do not implement it. The prior partial layout approval in [ADR 0001](docs/adr/0001-repository-layout.md) is superseded where it conflicts with ADR 0010.
 
 ## Context and accepted constraints
 

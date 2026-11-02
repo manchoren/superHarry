@@ -6,7 +6,8 @@ Notable changes will be recorded here using the Keep a Changelog structure. Entr
 
 ### Added
 
+- Initial Django monolith scaffold using Django's built-in authentication, sessions, CSRF, ORM and admin.
 - Project requirements and constitution work record (T001).
 - Contributor guidance and ADR conventions (T013).
 
-No application release, executable implementation or hardware acceptance has been established.
+The scaffold is not a complete application or production deployment; ARM64 and real-Pi acceptance remain outstanding.

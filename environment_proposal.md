@@ -1,11 +1,11 @@
-# Development and deployment environment proposal
+# Development and deployment environment proposal (partially superseded)
 
-Status: T003 design proposal complete, 2026-10-30; operational validation and approvals remain pending. The owner selected Windows/MSYS2 UCRT64 with QEMU as the current development-emulator direction, subject to reconsideration if a blocking issue arises. This design decision does not approve installation, package acquisition, service configuration, or VM execution. Task T003 depends on the proposed T002 architecture. Constitution baseline 2026-10-29, SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`.
+Status: Historical T003 proposal. Its React/Node application runtime and npm command interface were superseded on 2026-11-01 by the owner-approved [Django monolith](docs/adr/0010-django-monolith.md). ARM64 emulator, OS, hardware and deployment research remains unapproved and is not changed by the Django decision.
 
 ## Candidate baseline
 
 - Target image for review: Raspberry Pi OS 64-bit Desktop, release 2026-10-06, Debian 13 Trixie, kernel 6.18, published image SHA-256 `976766570bee2aaf3047dd78649cfe82abb8fe9687b7f15030cd533ba4e9f7a9`. The [official image listing](https://www.raspberrypi.com/software/raspberry-pi-desktop/) identifies it as compatible with Pi 5. Record the precise downloaded artifact and verify its published checksum before use; updates require an explicit new baseline.
-- Candidate Node.js: 24.22.2 LTS, as listed in the [official release index](https://nodejs.org/en/blog/release). Confirm Linux ARM64 artifact, integrity, package compatibility, npm version and security support at approval time.
+- Node.js 24.22.2 LTS was a candidate for the superseded React/Fastify stack; it is not part of the Django application.
 - Python: candidate Debian ARM64 `python3.13` package `3.13.5-2+deb13u5` and matching `python3.13-venv`, as listed in the [package review](docs/dependency-approval-inventory.md); this is a distribution build, not upstream's `3.13.18` and not evidence of the interpreter version in the Raspberry Pi image. Confirm current package metadata, security backports and repository snapshot before pinning.
 - Selected emulator direction: native Windows x64 development host, MSYS2 UCRT64, and the cataloged `mingw-w64-ucrt-x86_64-qemu` package `11.1.3-1`, using `qemu-system-aarch64.exe` for ARM64 system emulation. The package version is a reviewed candidate, not an approved or pinned install input; repository snapshot, trust, dependency closure, firmware, advisories and rollback policy remain unresolved. Do not silently substitute WSL/Debian if this candidate is blocked; return to the owner to reconsider the environment decision.
 - Owner-selected guest direction (2026-10-30): Debian 13 ARM64 in QEMU's generic `virt` machine, installed as a minimal guest without a desktop environment. Debian `debian-13.7.0-arm64-netinst.iso` is the recorded image candidate whose digest matches a signature-checked checksum file; independent key trust/revocation assessment and selection/pinning remain pending. Use a serial console for the proposed headless guest; UI acceptance is not implied by this profile. This generic guest is for ARM64 functional development; it is not Raspberry Pi hardware or a Pi firmware image, and its differences from Raspberry Pi OS Desktop are documented below.
@@ -33,9 +33,9 @@ The accepted target includes Caddy and Tailscale; service accounts, systemd unit
 
 After exact tools and versions are approved, use one documented entry point for clean setup, separate commands for lint/format, strict type checks, unit and integration tests with model calls mocked, dependency and secret scanning, and builds. The owner selected npm package scripts as the command entry-point mechanism, without an additional task runner; exact script definitions, checks and versions remain unimplemented and require review. Record executable versions and lockfile integrity. Validate script behavior under Windows and the ARM64 Linux guest, avoiding shell-specific assumptions. An ARM64 smoke run should verify clean installation, startup, shutdown and restart with synthetic data; report failures and OS mismatches. No CI service or workflow is authorized by this proposal.
 
-### Proposed local command interface (npm scripts; not implemented or approved)
+### Superseded local command interface (npm scripts)
 
-For contributors, use repository-local npm scripts with the following names; npm is the proposed entry point, not an additional runner. The scripts, checks and package versions remain for G-ARCH review. These are command-interface proposals, not executable commands or permission to install tools.
+The former npm-script entry point was replaced by the Python/Django commands documented in [README.md](README.md). The table below remains historical only.
 
 | Proposed invocation | Intended behavior |
 |---|---|

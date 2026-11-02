@@ -18,6 +18,7 @@ When directives conflict, prioritize safety and privacy, then permissions, then 
 
 ## Security and privacy
 
+- For application security behavior provided by the currently supported stable Django release, use Django's built-in, documented mechanisms and secure defaults rather than duplicating them. The project does not audit Django's internal implementation as application code. This does not replace correct project configuration, app-level authorization, dependency updates, or tests of our integration and domain rules.
 - Enforce deny-by-default authorization in code for every request, tool call, stored object and channel. The agent acts within the requesting user's permissions; never rely on model judgment for access control.
 - Separate users' memories, conversations, workspaces and browser sessions. Guests cannot access global or user memory, persistent memory, tools, sandbox, external models or messaging channels.
 - Only user and admin accounts may link messaging channels, whose privilege ceiling is `user` even for admins. Administrative actions require the web app. Only authenticated users and admins may claim the shared display; guests cannot. Only its controller may control or capture the browser session; admin takeover follows the plan.

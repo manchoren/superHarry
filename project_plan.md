@@ -30,11 +30,11 @@ These are unresolved implementation decisions, not new policies:
 
 ```
                  ┌────────────────────────────────────────────┐
- Browser ──TLS──►│ Reverse proxy (Caddy) ─► Node API server   │
- (React app)     │   authN/authZ · rate limit · audit · SSE   │
+ Browser ──TLS──►│ Reverse proxy (Caddy) ─► Django application│
+                 │ auth · sessions · CSRF · permissions · SSE│
                  └───────────────┬────────────────────────────┘
                                  │
-                         Python agent core (orchestrator)
+                         Django app modules
         ┌───────────┬────────────┼─────────────┬──────────────┐
    Model router   Memory      Tool layer      Scheduler     Vision/OCR
    (local+cloud)  (SQLite)    (RBAC-gated)    (cron)        (pipeline)
@@ -44,7 +44,7 @@ These are unresolved implementation decisions, not new policies:
            (isolated exec)  (approved)     (outside webroot)
 ```
 
-- ✅ **Q-03 (resolved 2026-10-29):** Use **TypeScript** for the access server and **Python** for the internal agent core. The interface and communication between them remain to be designed. Sandbox isolation remains a separate requirement.
+- **Q-03 (superseded 2026-11-01):** The owner selected a Django monolith. Django/Python is the web and application runtime; the separate TypeScript/Fastify access service and TypeScript-to-Python trust boundary are removed. AI integrations remain Python modules within the Django project unless a later decision changes that structure. Django's built-in security facilities take precedence over conflicting bespoke proposals.
 - ✅ **P-03 (accepted 2026-10-29):** A **tool layer** is the only way the model can perform actions. Every tool declares its required role, input schema, side effects and audit behavior; authorization and validation are enforced outside the model.
 
 ---
@@ -76,7 +76,7 @@ Options considered:
 | Component | Approx. RAM | Notes |
 |-----------|-------------|-------|
 | Raspberry Pi OS Desktop (64-bit) | 0.5–0.8 GB | Existing headless estimate, not a desktop measurement; remeasure with HDMI and Brave. |
-| Node API + Python agent core + SQLite | 0.3–0.5 GB | Estimate; validate the combined processes on the Pi. |
+| Django application + SQLite | 0.3–0.5 GB | Previous stack estimate; measure the Django monolith on the Pi. |
 | Local LLM (3–4B, Q4_K_M, with context) | 2.5–4 GB | Main consumer |
 | Whisper `base` (on demand) | ~0.3–0.5 GB | |
 | Piper `high` voice (on demand) | ~0.2–0.4 GB | |
@@ -290,7 +290,7 @@ Real authentication (not cosmetic), aligned with **OWASP Top 10**.
 ### 10.2 Authentication
 - ✅ Passwords hashed with **Argon2id**. Minimum length policy; check against breached-password lists where feasible.
 - ✅ **Q-31 — Sessions (resolved 2026-10-29):** Use server-managed sessions that can be revoked server-side.
-- ✅ **P-26 — Cookie settings (accepted 2026-10-29):** Use HTTPS and an `HttpOnly`, `Secure`, `SameSite=Strict` cookie for the session identifier.
+- **P-26 — Cookie settings (modified 2026-11-01):** Use Django's documented session-cookie settings and defaults; do not impose the former `SameSite=Strict` design over Django's defaults. Enable `Secure` for HTTPS production deployment.
 - ✅ **CSRF** protection on all state-changing requests; strict CORS (no wildcard).
 - ✅ **Rate limiting** and progressive lockout on login; generic error messages (no user enumeration).
 - ✅ **Q-32 / P-27 — MFA (resolved 2026-10-29):** TOTP is optional for both `admin` and `user`. Defer WebAuthn/passkeys until after the beta.
@@ -362,15 +362,15 @@ Hierarchy: `admin` > `user` > `guest`. Enforced **server-side** on every route a
 
 ### 11.1 Requirements ✅
 - Chat UI with **file and image attachments**, inspired by ChatGPT/Claude-style interfaces.
-- ✅ **Q-36 visual direction (2026-10-29):** The interface should look and feel as close to ChatGPT as practical, including its chat-centered layout and familiar interactions. Use Tailwind CSS and shadcn/ui components, styled to match that direction; this does not imply an identical internal stack to ChatGPT.
+- ✅ **Q-36 visual direction (2026-10-29):** The interface should look and feel as close to ChatGPT as practical, including its chat-centered layout and familiar interactions. Implement it with Django templates first; a client-side framework is not part of the selected stack.
 - Views for: **cron jobs**, **memory**, **skills** (installed/scheduled).
 - **Extensible** for future sections.
 - Role-aware UI (hide what a role can't use) — **but the server is the real gate**.
 
 ### 11.2 Technical rules
-- ✅ **Q-36 / P-29 — Stack (resolved 2026-10-29):** React + TypeScript + Vite for the interface, Tailwind CSS + shadcn/ui for styling and components, and Node with Fastify for the TypeScript access server. The internal agent core remains Python (Q-03).
+- **Q-36 / P-29 — Stack (superseded 2026-11-01):** The owner selected a Django monolith, replacing React/Vite, Node/Fastify and the separate Python core. Use Django templates and supported Django application patterns. Do not recreate authentication, password hashing, sessions or CSRF mechanisms where Django provides them.
 - ✅ **Q-37 / P-30 — Streaming (resolved 2026-10-29):** Use SSE to stream agent responses progressively to the web interface.
-- ✅ **P-31 — Extensibility (accepted 2026-10-29):** Use a module/plugin registry on server and UI: modules register API routes with required roles and their UI panels and navigation entries. Core modules (chat, scheduler, memory and skills) use the same mechanism as future modules; the server enforces authorization.
+- **P-31 — Extensibility (modified 2026-11-01):** Organize features as ordinary Django apps, URL configurations and permission checks. Do not build a custom dynamic server/UI plugin registry.
 - ✅ Uploaded files: accept arbitrary file formats as opaque attachments within an enforced size limit; determine the content type from file bytes rather than trusting the client MIME header or filename extension. If detection is unknown or ambiguous, retain the file as `application/octet-stream`; acceptance does not imply that the application can parse, preview, scan or declare it safe. Any format-specific processing requires a separately reviewed processor and sandbox boundary. Optionally scan for malware; store **outside the webroot** with random names, serve only through authorized download endpoints as attachments, and never execute. Guests cannot upload.
 - ✅ Render model output as **sanitized** markdown (no raw HTML injection / XSS); strict CSP.
 - ✅ **Q-38 (resolved 2026-10-29):** Persist chat histories per user in SQLite, separately from memory. Users can view and delete their own conversations; enforce user isolation at the data-access layer. Apply the storage-pressure cleanup policy in Q-13 to conversations. `guest` has no persistent chat history.
@@ -385,9 +385,8 @@ Hierarchy: `admin` > `user` > `guest`. Enforced **server-side** on every route a
 - ✅ The **API returns structured error codes + parameters**, not translated error prose; the UI translates them. Logs, audit entries and developer-facing messages stay in English.
 - ✅ Each user has a persisted `locale` setting. Detection order: user setting → `Accept-Language` → `en`.
 - ✅ **P-46 — Agent reply language.** The agent replies in the **language of the user's message**, unless the user explicitly requests another language. If the language is ambiguous, use the recent conversation language, then the user's `locale`, then English. The interface language is independent of the reply language. The personality/system prompt is language-neutral and the language instruction is injected per request. Voice replies use the Spanish Piper voice; for replies in another language, send text only and briefly indicate that voice is currently available only in Spanish. Additional voices may be added later.
-- ✅ **P-47 — Internationalization conventions (accepted 2026-10-29).** Each module maintains its own translation catalogs; local checks detect missing or extra keys between English and Spanish.
-  - ✅ **Q-58 (resolved 2026-10-29):** Use **i18next + react-i18next**.
-  - ✅ **Namespaces per module**, so modules in the registry (P-31) ship their own catalogs.
+- **P-47 — Internationalization conventions (modified 2026-11-01).** Preserve English and Spanish translation catalogs using Django's built-in translation facilities and translated templates. React-specific tooling and per-module i18next namespaces no longer apply.
+  - **Q-58 (superseded 2026-11-01):** Use Django translation catalogs and template translation tags.
   - ✅ Use stable semantic keys such as `module.section.element`, not English text as the key. Keep complete messages in catalogs and use interpolation and language-appropriate plural rules instead of concatenating fragments.
   - ✅ Layouts accommodate longer translated text by allowing resizing or wrapping without obscuring controls or overflowing the screen, including on mobile.
   - ✅ Local checks for **missing/extra keys** between `en` and `es`, plus an optional **pseudo-locale** build for development to catch hardcoded strings and overflow; the pseudo-locale is not a user-selectable language.
@@ -653,7 +652,7 @@ Use this table to record outcomes. Status: `open` · `accepted` · `rejected` ·
 |----|-------|------------------|--------|------------------|
 | Q-01 | Scope | Extra channels (Telegram, WhatsApp, email, voice)? | **accepted** | All four in scope (2026-10-29). Details in §11A. |
 | Q-02 | Language | Agent replies/UI in user's language; i18n? | **accepted (partial)** | UI i18n-ready from day one (en + es); spoken language Spanish (2026-10-29). Text-reply policy → Q-57. |
-| Q-03 | Stack | Agent core in TypeScript vs Python? | **accepted** | TypeScript access server; Python internal agent core (2026-10-29). |
+| Q-03 | Stack | Agent core in TypeScript vs Python? | **superseded** | Replaced by owner-selected Django monolith (Q-62, 2026-11-01); see ADR 0010. |
 | Q-04 | Models | Local-model strategy (A/B/C/D)? | **accepted** | Premium cloud → on-Pi when the premium token budget is exhausted; local model selected after bake-off (2026-10-29). |
 | Q-05 | Hardware | Pi 5 RAM size; accelerator? | **accepted** | Pi 5, 8 GB, no accelerator (2026-10-29). AI HAT wouldn't help LLM decoding. |
 | Q-06 | Models | External provider(s)? | **accepted** | OpenAI only; default `gpt-6.1-terra` with `low` reasoning, configurable by admin. Fast mode is admin-configurable when supported; verify availability and pricing (2026-10-29). |
@@ -686,7 +685,7 @@ Use this table to record outcomes. Status: `open` · `accepted` · `rejected` ·
 | Q-33 | Auth | Account creation; how guests are issued? | **accepted** | LAN/VPN guest button; initially 3 new sessions per hour per origin, configurable (2026-10-29). |
 | Q-34 | Guest | Define "restrictive questions" for guest | **accepted (partial)** | General questions, no memory/tools, 24-hour sessions, 10 questions/hour/session, one pending question and configurable 10-minute queue timeout; idle-only low priority (2026-10-29). |
 | Q-35 | Exposure | LAN/VPN only vs public? | **accepted** | Web application accessible over LAN and VPN only initially; no public exposure (2026-10-29). |
-| Q-36 | App | Node framework & UI library? | **accepted** | ChatGPT-like interface with React, Vite, Tailwind and shadcn/ui; Fastify access server (2026-10-29). |
+| Q-36 | App | Node framework & UI library? | **superseded** | Stack replaced by Q-62; preserve the chat-centered visual direction with Django templates. |
 | Q-37 | App | SSE vs WebSocket? | **accepted** | SSE for progressive web responses (2026-10-29). |
 | Q-38 | App | Chat history storage & retention? | **accepted** | Per-user SQLite histories, view and delete own conversations; Q-13 storage-pressure cleanup applies (2026-10-29). |
 | Q-39 | App | Mobile/PWA requirements? | **accepted** | Responsive mobile-browser UI from the start; installable PWA deferred (2026-10-29). |
@@ -708,10 +707,11 @@ Use this table to record outcomes. Status: `open` · `accepted` · `rejected` ·
 | Q-55 | Channels/RBAC | May `guest` use channels? | **accepted** | Only linked user and admin accounts may use messaging channels; guest excluded (2026-10-29). |
 | Q-56 | Channels/RBAC | Confirm `user` privilege ceiling + one-time-code identity linking? | **accepted** | Channels limited to user privileges; Telegram links through a short-lived single-use code entered in the authenticated LAN/VPN app (2026-10-29). |
 | Q-57 | i18n | Agent text-reply language policy; voice fallback for non-Spanish replies? | **accepted** | P-46 accepted (2026-10-29). |
-| Q-58 | i18n | i18next/react-i18next vs FormatJS/react-intl? | **accepted** | i18next + react-i18next (2026-10-29); P-47 conventions accepted. |
+| Q-58 | i18n | i18next/react-i18next vs FormatJS/react-intl? | **superseded** | Use Django's built-in translation system with English and Spanish catalogs; React-specific i18next choices no longer apply (Q-62, 2026-11-01). |
 | Q-59 | i18n | Spanish variant for UI copy (es-419 / es-ES / country)? | **accepted** | Neutral `es-419` UI; agent adapts to the user's form of address (2026-10-29). |
 | Q-60 | Models | Include Tier 2 (DeepSeek V4 Flash via API)? | **rejected** | No economy API tier; premium → on-Pi when the premium token budget is exhausted (2026-10-29). |
 | Q-61 | Models | Run the Tier 3 Spanish bake-off (P-51); who/when? | **accepted** | Tier 3 model stays tentative until measured on the Pi (Phase 10). See §17.1. |
+| Q-62 | App | What web/application framework and security approach? | **accepted** | Owner selected a Django monolith on 2026-11-01. Use the latest official stable Django release; at selection, Django 6.1.2 was listed as latest official release. Trust Django's supported security implementation without auditing its internals; configure and test our own integration and retain domain authorization rules. See ADR 0010. |
 
 ### 19.2 Proposals
 
@@ -742,12 +742,12 @@ Use this table to record outcomes. Status: `open` · `accepted` · `rejected` ·
 | P-23 | Users can view/edit/export/delete own memory; admin can hide it | **accepted** | When hidden, users cannot view/edit/export but may delete all their own memories (2026-10-29). |
 | P-24 | Spanish and English OCR; benchmark candidate engines on Pi | **accepted (partial)** | Languages and benchmark accepted; engine selection deferred. |
 | P-25 | Image hygiene (magic bytes, bombs, EXIF) | **accepted** | Validate and limit images, strip metadata, process in sandbox (2026-10-29). |
-| P-26 | HttpOnly, Secure, SameSite=Strict session cookie | **accepted** | HTTPS and session-cookie settings accepted (2026-10-29). |
+| P-26 | Django session-cookie behavior under HTTPS | **modified** | Use Django's documented session-cookie settings and defaults; former SameSite=Strict design superseded by Q-62. Enable Secure for HTTPS production deployment. |
 | P-27 | Optional TOTP for admin and user | **accepted** | Passkeys deferred until after beta (Q-32). |
 | P-28 | LAN/VPN-only web application; no port forwarding | **accepted (partial)** | Tailscale VPN and Caddy local HTTPS selected; provisioning details remain open. |
-| P-29 | React + TS + Vite, Tailwind + shadcn/ui; Node + Fastify | **accepted** | Q-36 resolved (2026-10-29). |
+| P-29 | React + TS + Vite, Tailwind + shadcn/ui; Node + Fastify | **superseded** | Replaced by owner-selected Django monolith; see P-52 and ADR 0010 (2026-11-01). |
 | P-30 | SSE for streaming | **accepted** | Q-37 resolved (2026-10-29). |
-| P-31 | Module/plugin registry for API + UI | **accepted** | Server enforces route authorization (2026-10-29). |
+| P-31 | Module/plugin registry for API + UI | **modified** | Use ordinary Django apps, URL configuration and permissions; no custom dynamic plugin registry is selected. |
 | P-32 | Local security suite (injection/escape/cross-user) | **accepted** | 2026-10-29 |
 | P-33 | 256 GB microSDXC storage | **accepted** | Q-41 resolved; validate performance and monitor storage health. |
 | P-34 | Active cooling + UPS/graceful shutdown | **accepted (partial)** | Active cooling required; UPS tentative pending battery repair and compatibility evaluation (2026-10-29). |
@@ -763,16 +763,18 @@ Use this table to record outcomes. Status: `open` · `accepted` · `rejected` ·
 | P-44 | Voice degradation per capability matrix; queue/serialize audio jobs | **accepted** | Coordinate audio and local inference; text fallback where possible (2026-10-29). |
 | P-45 | Spoken-style replies (no markdown/code/URLs read aloud; Spanish text normalization) | **accepted** | 2026-10-29 |
 | P-46 | Agent reply language and Spanish voice fallback | **accepted** | Q-57 resolved (2026-10-29). |
-| P-47 | i18n conventions: i18next, per-module namespaces, local key checks, pseudo-locale | **accepted** | Optional development pseudo-locale; translation catalogs, keys and adaptable layouts accepted (2026-10-29). |
+| P-47 | i18n conventions: i18next, per-module namespaces, local key checks, pseudo-locale | **modified** | Preserve English/Spanish catalogs and adaptable layouts using Django's built-in translation facilities; React-specific tooling is superseded by Q-62. |
 | P-48 | Voice `es_AR-daniela-high` gated by Pi 5 benchmark (RTF ≤ 0.5 idle, < 1.0 under load); fallback `es_MX-ald-medium` | **accepted** | LLM loaded without inference; predefined background workload respects heavy-job serialization. Final voice depends on Pi benchmark. |
 | P-49 | Model tiers: premium cloud → on-Pi 3–4B; micro ≤1.7B for internal use | **accepted (partial)** | Premium → on-Pi accepted in Q-04; local model and micro tier remain undecided. Economy API tier rejected in Q-60. |
 | P-50 | Local-mode design: streaming, short prompts, fewer tools, resource governor | **accepted (partial)** | Principles accepted; exact limits require Pi testing (2026-10-29). |
 | P-51 | Tier 3 shortlist (Qwen3-4B, Gemma 3 4B, Llama 3.2 3B + Spanish wildcard) and bake-off protocol | **accepted** | 2026-10-29 |
+| P-52 | Django monolith with Django templates and built-in security mechanisms | **accepted** | Owner decision Q-62; Django 6.1.2 official latest stable on 2026-11-01; replaces P-29 and Q-03's split runtime. |
 
 ### 19.3 Changelog
 
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
+| 0.4.51-draft | 2026-11-01 | Q-62/P-52 accepted: replace the React/Fastify/separate-core architecture with a Django monolith and prefer Django's supported security defaults over conflicting bespoke designs. | Project owner |
 | 0.1.0-draft | 2026-10-29 | Initial project-specific draft with open questions and proposals | @your-username |
 | 0.2.0-draft | 2026-10-29 | Q-01 resolved (Telegram, WhatsApp, email, voice in scope). Added §11A, voice/STT/TTS proposals, WhatsApp policy note, new Q-49–Q-56 and P-37–P-45. | @your-username |
 | 0.3.0-draft | 2026-10-29 | Q-02 resolved in part (UI i18n en/es from day one; spoken language Spanish). P-43 accepted for Piper. Added §11.3 (i18n), Spanish voice candidates, Q-57–Q-59, P-46–P-47. | @your-username |

@@ -1,6 +1,6 @@
 ﻿# ADR 0001: Repository layout and component responsibilities
 
-Status: Accepted in part, 2026-10-30. Task: T002. Gate: G-ARCH.
+Status: Partially superseded by [ADR 0010](0010-django-monolith.md), 2026-11-01. Task: T002. Gate: G-ARCH.
 
 ## Context
 
@@ -12,4 +12,4 @@ The project owner explicitly approved the directory structure and responsibiliti
 
 ## Scope and limits
 
-This approval covers the proposed layout and ownership boundaries only. It does not approve exact dependencies or versions, public or internal contracts, storage schemas, security mechanisms, deployment or operational changes. Those retain their respective gates. Changes to the approved layout and boundaries require applicable review and approval. No implementation, testing, review by another contributor or hardware acceptance is asserted.
+The former React/Fastify/Python process boundaries and their associated contracts are superseded by ADR 0010. This record remains historical for the directory layout and responsibilities approved in 2026-10-30 only to the extent they do not conflict with the Django monolith. It does not approve deployment, operational changes or hardware acceptance.
