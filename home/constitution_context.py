@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
+from django.conf import settings
+
 
 _CONTEXT_MANIFEST_DOMAIN = b"superharry.context-bundle\x00v1\x00"
 _CONTEXT_MANIFEST_FORMAT = "superharry.context-bundle.v1"
@@ -166,6 +168,20 @@ def prepare_context(
     return prepared
 
 
+def prepare_release_context(
+    *,
+    user_request: str,
+    profile: ContextProfile | None,
+) -> PreparedContext:
+    source_path, expected_sha256 = _release_constitution_identity()
+    return prepare_context(
+        source_path=source_path,
+        expected_sha256=expected_sha256,
+        user_request=user_request,
+        profile=profile,
+    )
+
+
 def ensure_context_is_current(
     prepared: PreparedContext,
     *,
@@ -178,6 +194,30 @@ def ensure_context_is_current(
         or current.byte_length != prepared.constitution.byte_length
     ):
         raise ContextPreparationError("constitution_changed")
+
+
+def ensure_release_context_is_current(prepared: PreparedContext) -> None:
+    source_path, expected_sha256 = _release_constitution_identity()
+    ensure_context_is_current(
+        prepared,
+        source_path=source_path,
+        expected_sha256=expected_sha256,
+    )
+
+
+def _release_constitution_identity() -> tuple[Path, str]:
+    base_dir = getattr(settings, "BASE_DIR", None)
+    expected_sha256 = getattr(
+        settings,
+        "SUPERHARRY_CONSTITUTION_SHA256",
+        None,
+    )
+    if not isinstance(base_dir, (str, Path)) or not isinstance(
+        expected_sha256,
+        str,
+    ):
+        raise ContextPreparationError("release_identity_unavailable")
+    return Path(base_dir) / "constitution.md", expected_sha256
 
 
 def _validate_profile(profile: ContextProfile) -> None:

@@ -5,12 +5,17 @@ from dataclasses import FrozenInstanceError
 from pathlib import Path
 from unittest import TestCase
 
+from django.conf import settings
+from django.test import override_settings
+
 from home.constitution_context import (
     ContextPreparationError,
     ContextProfile,
     ensure_context_is_current,
+    ensure_release_context_is_current,
     load_verified_constitution,
     prepare_context,
+    prepare_release_context,
 )
 
 
@@ -77,6 +82,43 @@ class ConstitutionContextTests(TestCase):
         self.assertEqual(snapshot.text, "Policy\r\nfull text")
         self.assertEqual(snapshot.sha256, self.expected_sha256)
         self.assertEqual(snapshot.byte_length, len(self.source_bytes))
+
+    def test_release_metadata_pins_repository_constitution(self):
+        snapshot = load_verified_constitution(
+            settings.BASE_DIR / "constitution.md",
+            settings.SUPERHARRY_CONSTITUTION_SHA256,
+        )
+
+        self.assertEqual(snapshot.sha256, settings.SUPERHARRY_CONSTITUTION_SHA256)
+
+    def test_release_preparation_uses_pinned_identity(self):
+        with override_settings(
+            BASE_DIR=self.source_path.parent,
+            SUPERHARRY_CONSTITUTION_SHA256=self.expected_sha256,
+        ):
+            prepared = prepare_release_context(
+                user_request="hello",
+                profile=self._profile(),
+            )
+            ensure_release_context_is_current(prepared)
+
+        self.assertEqual(prepared.constitution.sha256, self.expected_sha256)
+
+    def test_release_preparation_fails_without_pinned_identity(self):
+        with override_settings(
+            BASE_DIR=self.source_path.parent,
+            SUPERHARRY_CONSTITUTION_SHA256=None,
+        ):
+            with self.assertRaises(ContextPreparationError) as raised:
+                prepare_release_context(
+                    user_request="hello",
+                    profile=self._profile(),
+                )
+
+        self.assertEqual(
+            raised.exception.code,
+            "release_identity_unavailable",
+        )
 
     def test_rejects_missing_or_malformed_expected_hash(self):
         for expected_hash in ("", "f" * 63, "F" * 64):

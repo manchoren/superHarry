@@ -5,6 +5,9 @@ from django.core.exceptions import ImproperlyConfigured
 from django.core.management.utils import get_random_secret_key
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+SUPERHARRY_CONSTITUTION_SHA256 = (
+    "d09e90aa0efe609a7d335a7b10ecc5623dab1e757b5a00d4e7c82526ce9dc489"
+)
 
 debug_value = os.environ.get("DJANGO_DEBUG", "1").strip().lower()
 if debug_value not in {"0", "1", "false", "true"}:

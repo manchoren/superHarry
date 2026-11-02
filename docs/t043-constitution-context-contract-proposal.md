@@ -1,6 +1,6 @@
 # T043 constitution and context-delivery contract proposal
 
-**Status:** Owner accepted this proposal as a design direction on 2026-11-02 and subsequently approved the bounded generic implementation scope below. That approval does not approve a provider, model, tokenizer, release trust anchor, deployment behavior, or end-to-end runtime/channel integration. Remaining decisions and implementation gaps are listed below.
+**Status:** Owner accepted this proposal as a design direction on 2026-11-02, approved the bounded generic implementation scope, and selected a source-controlled release-pinned constitution hash. These decisions do not approve a provider, model, tokenizer, independent release authenticity/signature, deployment behavior, or end-to-end runtime/channel integration. Remaining decisions and implementation gaps are listed below.
 
 **Constitution baseline read:** baseline date `2026-10-29`; the current constitution declares no separate version identifier. SHA-256 of the complete `constitution.md` read for this proposal: `D09E90AA0EFE609A7D335A7B10ECC5623DAB1E757B5A00D4E7C82526CE9DC489`. Record this as the source baseline, not as a newly assigned constitution version.
 
@@ -10,13 +10,14 @@
 
 The approved code scope is limited to a generic, fail-closed Django application module:
 
-- Read the full constitution as raw bytes for each preparation, verify it against a required caller-injected SHA-256, decode strict UTF-8 without normalization, and retain an immutable snapshot. The module does not choose or establish the trustworthiness of the hash provider.
+- For the normal application path, read `BASE_DIR/constitution.md` and compare it with the non-environment-overridable `SUPERHARRY_CONSTITUTION_SHA256` source constant in `superharry/settings.py`. Read full raw bytes on each preparation, decode strict UTF-8 without normalization, and retain an immutable snapshot. The generic verifier remains injectable for deterministic tests.
+- This co-versioned hash detects disagreement between the document and its application release; it does not independently authenticate a release if an attacker can change both. Release provenance/signing and host/deployment protection remain open under T078/T149.
 - Build an immutable in-memory manifest for only the constitution and current user request. Its versioned digest uses domain separation and length-prefixed fields.
 - Require a caller-supplied adapter profile with versioned serialization, token-count upper-bound, context-capacity, output-reserve, and margin data. Missing or invalid profile data, serialization/count errors, and overflow must prevent preparation; there are no guessed defaults.
 - Revalidate the source identity after preparation. Consumers must also revalidate immediately before dispatch and before using a result for any action; if the identity changed, discard the result and block actions.
 - Do not add optional history/retrieval, request segmentation, model/channel wiring, caching, deployment configuration, provider calls, or a new audit event for a preparation failure that performs no action.
 
-This is a preparation boundary only. It does not establish that an adapter serializes the constitution in a protected role, that its counter is accurate for a real backend, or that a deployment supplies a trusted hash/profile. T043 remains incomplete until full runtime, model, delegated-agent, channel, update, and action-boundary coverage is implemented and verified under the remaining gates.
+This is a preparation boundary only. It does not establish that an adapter serializes the constitution in a protected role, that its counter is accurate for a real backend, or that the application release itself is authentic. T043 remains incomplete until full runtime, model, delegated-agent, channel, update, and action-boundary coverage is implemented and verified under the remaining gates.
 
 ## Evidence and governing constraints
 
@@ -28,7 +29,7 @@ The following material was read for this draft:
 - ADR 0010, which selects Django as the sole web/application runtime and supersedes the former TypeScript/Fastify-to-Python service boundary.
 - `docs/resource-governance-proposal.md` (T010), `docs/model-routing-proposal.md` (T009), `docs/t044-provider-interface-proposal.md`, `docs/threat-model.md`, `docs/security-open-decisions.md`, `docs/security-decisions-proposal.md`, and `docs/t022-observability-contract-proposal.md`.
 
-These existing documents establish the binding requirement to supply the full current constitution as protected instruction context, prohibit silent omission/truncation, require blocking when mandatory context cannot fit or be verified, and permit trimming only optional context. They also require role/channel enforcement outside the model and safe privacy-conscious operations. They do **not** fully define the exact source/version/hash manifest, release trust anchor, end-to-end tokenizer verification, update/revocation freshness, channel-wide checks, or deterministic T043 acceptance contract proposed here. This draft supplements those high-level constraints without changing them.
+These existing documents establish the binding requirement to supply the full current constitution as protected instruction context, prohibit silent omission/truncation, require blocking when mandatory context cannot fit or be verified, and permit trimming only optional context. They also require role/channel enforcement outside the model and safe privacy-conscious operations. They do **not** fully define the exact source/version/hash manifest, independent release authenticity, end-to-end tokenizer verification, update/revocation freshness, channel-wide checks, or deterministic T043 acceptance contract proposed here. This draft supplements those high-level constraints without changing them.
 
 ADR 0010 governs the architecture: keep the delivery coordinator and model integrations in ordinary Django application modules. Do not recreate the superseded service or TypeScript/Python transport boundary. The bounded approval above does not approve the designs or implementations of T044/T045/T049/T055.
 
@@ -40,7 +41,7 @@ ADR 0010 governs the architecture: keep the delivery coordinator and model integ
 2. There is one effective current constitution per installed application release. Do not merge fragments, reconstruct from prior revisions, use a remote copy, or silently fall back to a cached/previous constitution if the current source cannot be read or verified.
 3. Treat the raw file bytes as the identity being checked. Read one immutable snapshot; compute SHA-256 and byte length over those exact bytes; decode strictly using the explicitly approved text encoding; reject decoding errors. Do not normalize whitespace, line endings, Unicode, or a byte-order mark before computing the source hash. The same decoded content must be delivered in full.
 4. Because the document currently has no formal version field, use the baseline date plus full SHA-256 as a **proposed derived identity**, e.g. `baseline-date=2026-10-29; sha256=<64 lowercase hex characters>`. Do not claim that this is an owner-assigned semantic version. A future explicit version field and its change policy require approval.
-5. Bind the expected hash to trusted release/deployment metadata independently of the bytes being checked. A hash detects mismatch only when compared with a trusted expected value; it is not by itself proof of authorship, safety, or integrity if an attacker can change both file and expected hash. Release signing/provenance, protected metadata location, generation and verification tooling remain explicit approval decisions.
+5. The owner selected the source-controlled `SUPERHARRY_CONSTITUTION_SHA256` release constant, stored separately from the checked document and co-versioned with it. A hash detects mismatch only when compared with that expected value; it is not by itself proof of authorship, safety, or integrity if an attacker can change both file and expected hash. Independent release signing/provenance, generation and verification tooling remain open.
 6. If the current source is missing, unreadable, malformed, has a hash/length/identity mismatch, or has no trusted expected identity, mark constitution delivery unavailable and deny model dispatch and tool/action execution. Do not use a previous release as an implicit fallback.
 
 ### 2. Proposed context manifest and integrity
@@ -159,7 +160,7 @@ Any implementation must add tests for its verified tokenizer/capacity profiles a
 The owner approval resolves only the generic preparation boundary described above. These items remain open before runtime integration or task completion:
 
 1. **G-MODEL:** Select actual adapters and versioned capability profiles; establish evidence for each serializer's protected-message behavior, tokenizer/counter accuracy, supported framing, context capacity, output reserve, and margin. The generic profile protocol does not certify any of these values.
-2. **G-SECURITY/G-OPS:** Choose and protect the trusted expected-hash source; define release provenance/signature or equivalent protection, atomic update procedure, process/worker invalidation, and revocation propagation. The current module requires an injected hash but does not choose its provider or deployment.
+2. **G-SECURITY/G-OPS:** Protect the source-controlled expected-hash setting through release provenance/signature or equivalent independent protection; define atomic update procedure, process/worker invalidation, and revocation propagation. The source constant and path are selected, but release authenticity and deployment controls are not.
 3. **G-CONTRACT/G-ARCH:** Review concrete adapter integration, error mapping, and wiring into model, tool, channel, and operation records. The generic module adds no database schema or public API.
 4. **Owner/G-MODEL:** Define optional-history/retrieval trimming only if such context is added, decide whether user-confirmed segmentation is allowed, and specify restart/continuation behavior for any future queued work. The bounded implementation includes no optional context and rejects overflow.
 5. **G-SECURITY:** Approve per-channel transfer and disclosure behavior. No new channel or guest path is enabled by this implementation.
