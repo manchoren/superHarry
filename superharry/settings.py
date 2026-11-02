@@ -22,10 +22,11 @@ ALLOWED_HOSTS = [
     for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")
     if host.strip()
 ]
+SUPERHARRY_HOSTNAME = "superharry.local"
 if not ALLOWED_HOSTS:
     if not DEBUG:
         raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must be set when DJANGO_DEBUG is disabled.")
-    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]"]
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]", SUPERHARRY_HOSTNAME]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -42,8 +43,10 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "home.middleware.StrictOriginMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "home.middleware.SessionLifetimeMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -103,5 +106,13 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"
 
-SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_NAME = "__Host-superharry_session"
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Strict"
+SESSION_COOKIE_PATH = "/"
+SESSION_COOKIE_DOMAIN = None
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
+CSRF_USE_SESSIONS = True
 CSRF_COOKIE_SECURE = not DEBUG
+CSRF_TRUSTED_ORIGINS = [f"https://{SUPERHARRY_HOSTNAME}"]
