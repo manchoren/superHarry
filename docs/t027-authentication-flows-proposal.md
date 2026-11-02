@@ -16,7 +16,7 @@ The current application uses Django's built-in user, login/logout, session and C
 - After password verification, a missing, invalid or replayed TOTP for an enrolled account, or an unexpected TOTP for an account without enrollment, counts once against the same five-failures-in-15-minutes account delay, emits the selected security event, returns the generic failure and creates no session. The TOTP counter and audit event are to commit atomically; failure semantics and event storage remain subject to T029/G-SECURITY/G-CONTRACT review.
 - The owner-selected TOTP starting policy specifies a unique random seed, 30-second step, six digits, acceptance of the current step and one adjacent step on each side, rate limiting, and atomic rejection of a previously accepted step. Enroll only after recent reauthentication, explicit confirmation and verification of a valid code. Provide ten single-use recovery codes per account, each with 128 bits of randomness, shown once and stored only as verifiers. An application admin may reset an ordinary user's TOTP only after recent reauthentication, explicit confirmation and mandatory audit; that user must re-enroll. Recovery codes do not replace the OS-admin path for an admin who loses all factors. These directions do not approve seed custody, schemas, dependencies or implementation.
 - Passwords use the selected Argon2id policy and validation rules. Password reset must not bypass those rules or send passwords to a remote service.
-- The owner selected an OS-admin-issued, expiring, single-use reset token on 2026-11-02 (amendment to ADR 0005). MFA must be retained and auditing is required. OS identity checks, token expiry duration/entropy/storage, delivery, session revocation and implementation details remain open; no email or messaging channel is approved.
+- The owner selected an OS-admin-issued, expiring, single-use reset token shown once to an authenticated OS administrator for direct in-person handoff on 2026-11-02 (amendment to ADR 0005). MFA must be retained and auditing is required. OS identity checks, token expiry duration/entropy/storage, display protections, session revocation and implementation details remain open; no email or messaging channel is approved.
 - The active ADR 0007 contract specifies separate pre-authentication and authenticated session cookies and a CSRF flow. A later Django single-cookie topology is recorded only as a direction for an ADR amendment; it has not amended ADR 0007.
 - Required security events must not contain credentials or TOTP material. T027 cannot claim audit approval or bypass the independent T029/G-SECURITY/G-CONTRACT decisions.
 
@@ -24,11 +24,11 @@ The current application uses Django's built-in user, login/logout, session and C
 
 ### 1. Complete password-reset policy
 
-The owner selected an OS-admin-issued, expiring, single-use token, amending ADR 0005. The direction aligns with T027's reset-token requirement but does not define an implementable flow. Specify:
+The owner selected an OS-admin-issued, expiring, single-use token shown once to an authenticated OS administrator for direct in-person handoff, amending ADR 0005. The direction aligns with T027's reset-token requirement but does not define an implementable flow. Specify:
 
 - Which OS identity and privilege check authorize token issuance.
 - Token entropy, lifetime, verifier storage, one-use/replay behavior and cleanup.
-- How the token is conveyed to the user. No channel is selected; email, messaging and unauthenticated self-service remain unapproved.
+- How the one-time display and in-person handoff are protected and authenticated. Email, messaging and unauthenticated self-service remain unapproved.
 - Reset confirmation, password validation, MFA retention, session revocation and crash/audit-failure behavior.
 
 The owner's direction changes the earlier ADR 0005 position that did not select a token-based reset; it does not approve implementation or any of these details.
