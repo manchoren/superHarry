@@ -1,6 +1,6 @@
 # T029 application audit contract proposal
 
-Status: proposal for G-CONTRACT/G-SECURITY review. The owner approved the initial event categories and listed policy on 2026-11-02; this proposal makes the event shape and application boundary concrete for review. It does not authorize a model, migration, endpoint, or implementation.
+Status: owner-approved design choices recorded 2026-11-02; proposal remains subject to G-CONTRACT/G-SECURITY review. It does not authorize a model, migration, endpoint, or implementation.
 
 ## Approved scope
 
@@ -63,6 +63,16 @@ Use a closed vocabulary with one event per recorded outcome:
 
 The initial inventory does not imply a public password-reset workflow. Reset issuance remains limited to the approved OS-admin-mediated process; the event vocabulary must not create or suggest an unauthenticated reset endpoint or delivery channel. Exact actor attribution for the OS administrator remains subject to T031/G-OPS review; until an approved identity assertion exists, do not claim that a service actor identifies the human OS operator.
 
+## Owner-approved choices (2026-11-02)
+
+- Store internal user IDs as snapshots without foreign keys; do not retain usernames or email addresses.
+- Record admin audit reads and exports as separate events, without search terms or returned event contents.
+- Approve the proposed closed event vocabulary above as the initial event set.
+- Attribute OS-admin-mediated recovery to the responsible application service until a human OS-operator identity mechanism is approved under T031/G-OPS.
+- Keep each protected state transition and its required audit event in the same transaction when feasible. Define and test exact transaction boundaries per action during G-CONTRACT review; do not claim success if a required audit write fails.
+
+These are owner policy/design decisions, not completion of G-CONTRACT/G-SECURITY review.
+
 ## Data excluded from every event
 
 Never persist passwords, password verifiers, reset tokens, TOTP seeds, provisioning URIs, recovery codes, CSRF values, session keys/cookies, authentication headers, submitted usernames, email addresses, IP addresses, Origin/Referer values, raw request or response bodies, exception text, free-form descriptions, or arbitrary client-provided metadata.
@@ -81,13 +91,11 @@ For failed authentication, a known account may be correlated by its internal ID;
 
 ## Decisions required before implementation
 
-1. Approve the exact field names/types and the snapshot representation for Django user primary keys.
-2. Approve the closed event names, actor/target rules, and outcome vocabulary.
-3. Approve separate events for admin audit reads and exports, and confirm their safe bounded metadata.
-4. Approve transaction boundaries for each event/action pair, including failed-login counters, session transitions, reset/recovery, TOTP changes, and role changes.
-5. Confirm whether the initial operation set omits any required privileged action or includes an event that should be deferred.
-6. Confirm the 90-day retention and purge operation after the required legal/operational review.
-7. Approve the failure behavior and operational response for database/audit unavailability, preserving the already-approved generic error and attempt-counter behavior.
+1. Confirm exact storage field types for the selected Django user primary key and safe metadata for admin reads/exports, including quantitative query/export bounds.
+2. Specify and review transaction boundaries for each event/action pair, including failed-login counters, session transitions, reset/recovery, TOTP changes, and role changes.
+3. Confirm the approved initial operation set against any additional privileged operations introduced by dependent tasks.
+4. Confirm the 90-day retention and purge operation after the required legal/operational review.
+5. Approve database/audit unavailability recovery and monitoring behavior, preserving the already-approved generic error and attempt-counter behavior.
 
 ## Verification required
 
