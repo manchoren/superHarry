@@ -40,7 +40,7 @@ Implement the owner-selected enrollment, drift-window, replay, recovery-code and
 
 The [host-bound systemd-credential proposal](t027-totp-key-custody-proposal.md) records the approved direction and remaining boundaries; it does not approve the AEAD dependency, schema or service configuration.
 
-The candidate device and recovery-code fields are separately documented in the [TOTP storage schema proposal](t027-totp-schema-proposal.md), which awaits its own G-CONTRACT approval.
+The exact device and recovery-code fields are approved for G-CONTRACT only in the [TOTP storage schema proposal](t027-totp-schema-proposal.md). This does not authorize implementation.
 
 ### 3. Reconcile session and browser contracts
 

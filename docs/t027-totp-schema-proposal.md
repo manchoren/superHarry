@@ -1,6 +1,8 @@
 # T027 TOTP storage schema proposal
 
-Status: prepared for a separate, narrow G-CONTRACT decision. The owner-approved TOTP behavior and host-bound key-custody direction do not approve this schema. No model or migration is authorized.
+Status: the owner approved the exact field set and semantics below for G-CONTRACT only on 2026-11-02. This does not approve the AEAD dependency, OS configuration, TOTP endpoints or implementation. No model or migration is authorized until the remaining required gates are satisfied.
+
+This approval is separate from T023's `Conversation`/`Message` approval and the T027 reset-grant schema. It does not approve enrollment/login behavior, audit handling, dependency selection or implementation.
 
 ## Candidate models
 
