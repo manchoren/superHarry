@@ -14,6 +14,7 @@ from django.contrib import admin as django_admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser, Group, Permission
 from django.contrib.sessions.models import Session
+from django.core.management import call_command
 from django.db import OperationalError, transaction
 from django.http import Http404, HttpResponse
 from django.middleware.csrf import CSRF_SESSION_KEY
@@ -30,9 +31,16 @@ from home.authorization import (
 from home.audit import AuditUnavailable, record_event
 from home.admin import AuditedUserAdmin
 from home.middleware import SessionLifetimeMiddleware
-from home.models import AuditEvent, AuditEventMutationError, Conversation, Message
+from home.models import (
+    AuditEvent,
+    AuditEventMutationError,
+    Conversation,
+    DiagnosticSettings,
+    Message,
+)
 from home.observability import (
     DIAGNOSTIC_RETENTION_SECONDS,
+    DiagnosticEnabledFilter,
     JsonEventFormatter,
     PrivateTimedRotatingFileHandler,
     purge_expired_diagnostic_logs,
@@ -472,6 +480,10 @@ class ObservabilityEndpointTests(TestCase):
                 encoding="utf-8",
             )
             handler.setFormatter(JsonEventFormatter())
+            handler.addFilter(DiagnosticEnabledFilter())
+            setting = DiagnosticSettings.objects.get(pk=1)
+            setting.enabled = True
+            setting.save()
             record = logging.LogRecord(
                 "diagnostic-test",
                 logging.INFO,
@@ -486,34 +498,85 @@ class ObservabilityEndpointTests(TestCase):
             record.method = "GET"
             record.status_code = 200
             handler.handle(record)
+            setting.enabled = False
+            setting.save()
+            handler.handle(
+                logging.LogRecord(
+                    "diagnostic-test",
+                    logging.INFO,
+                    __file__,
+                    1,
+                    "disabled event",
+                    (),
+                    None,
+                )
+            )
             handler.close()
 
             output = log_path.read_text(encoding="utf-8")
             self.assertEqual(json.loads(output)["event"], "http.request")
             self.assertNotIn("submitted secret text", output)
+            self.assertNotIn("disabled event", output)
             if os.name != "nt":
                 self.assertEqual(log_path.stat().st_mode & 0o777, 0o600)
 
     def test_expired_rotated_logs_are_removed_without_touching_other_files(self):
         with tempfile.TemporaryDirectory() as directory:
             log_path = Path(directory) / "diagnostics.jsonl"
+            expired_active = log_path
             expired = Path(f"{log_path}.2026-10-01")
             recent = Path(f"{log_path}.2026-10-31")
             unrelated = Path(directory) / "other.jsonl.2026-10-01"
+            expired_active.write_text("expired", encoding="utf-8")
             expired.write_text("expired", encoding="utf-8")
             recent.write_text("recent", encoding="utf-8")
             unrelated.write_text("unrelated", encoding="utf-8")
             now = time.time()
             old_timestamp = now - DIAGNOSTIC_RETENTION_SECONDS - 1
             recent_timestamp = now - DIAGNOSTIC_RETENTION_SECONDS + 1
+            os.utime(expired_active, (old_timestamp, old_timestamp))
             os.utime(expired, (old_timestamp, old_timestamp))
             os.utime(recent, (recent_timestamp, recent_timestamp))
 
             purge_expired_diagnostic_logs(str(log_path), now=now)
 
+            self.assertFalse(expired_active.exists())
             self.assertFalse(expired.exists())
             self.assertTrue(recent.exists())
             self.assertTrue(unrelated.exists())
+
+    def test_prune_command_removes_stale_active_and_rotated_logs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            log_path = Path(directory) / "diagnostics.jsonl"
+            expired_active = log_path
+            expired_rotated = Path(f"{log_path}.2026-10-01")
+            expired_active.write_text("expired", encoding="utf-8")
+            expired_rotated.write_text("expired", encoding="utf-8")
+            old_timestamp = time.time() - DIAGNOSTIC_RETENTION_SECONDS - 1
+            os.utime(expired_active, (old_timestamp, old_timestamp))
+            os.utime(expired_rotated, (old_timestamp, old_timestamp))
+
+            with override_settings(SUPERHARRY_DIAGNOSTIC_LOG_PATH=str(log_path)):
+                call_command("prune_diagnostic_logs")
+
+            self.assertFalse(expired_active.exists())
+            self.assertFalse(expired_rotated.exists())
+
+    def test_diagnostic_filter_reads_the_persistent_setting(self):
+        record = logging.LogRecord("test", logging.INFO, __file__, 1, "event", (), None)
+        setting = DiagnosticSettings.objects.get(pk=1)
+        diagnostic_filter = DiagnosticEnabledFilter()
+
+        setting.enabled = False
+        setting.save()
+        self.assertFalse(diagnostic_filter.filter(record))
+
+        setting.enabled = True
+        setting.save()
+        self.assertTrue(diagnostic_filter.filter(record))
+
+        setting.enabled = False
+        setting.save()
 
 
 @override_settings(SUPERHARRY_HOSTNAME="testserver")
@@ -908,6 +971,88 @@ class AuditedUserAdminTests(TestCase):
     def test_hard_deletion_is_disabled_and_audit_model_is_not_registered(self):
         self.assertFalse(self.user_admin.has_delete_permission(self.request))
         self.assertFalse(django_admin.site.is_registered(AuditEvent))
+
+
+@override_settings(SUPERHARRY_HOSTNAME="testserver")
+class DiagnosticSettingsAdminTests(TestCase):
+    def setUp(self):
+        self.admin_user = get_user_model().objects.create_superuser(
+            username="diagnostics-admin",
+            email="diagnostics-admin@example.test",
+            password="test-password-123",
+        )
+        self.client.force_login(self.admin_user)
+        self.url = reverse("admin:home_diagnosticsettings_change", args=[1])
+
+    def test_enabling_requires_a_configured_log_path(self):
+        with override_settings(SUPERHARRY_DIAGNOSTIC_LOG_PATH=""):
+            response = self.client.post(
+                self.url,
+                {"enabled": "on"},
+                secure=True,
+                HTTP_ORIGIN="https://testserver",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(DiagnosticSettings.objects.get(pk=1).enabled)
+        self.assertFalse(
+            AuditEvent.objects.filter(
+                event_type=AuditEvent.EventType.ADMIN_DIAGNOSTICS_ENABLED,
+            ).exists()
+        )
+
+    def test_enable_and_disable_are_persistent_and_audited(self):
+        with tempfile.TemporaryDirectory() as directory:
+            log_path = str(Path(directory) / "diagnostics.jsonl")
+            with override_settings(SUPERHARRY_DIAGNOSTIC_LOG_PATH=log_path):
+                enabled_response = self.client.post(
+                    self.url,
+                    {"enabled": "on"},
+                    secure=True,
+                    HTTP_ORIGIN="https://testserver",
+                )
+                disabled_response = self.client.post(
+                    self.url,
+                    {"enabled": ""},
+                    secure=True,
+                    HTTP_ORIGIN="https://testserver",
+                )
+
+        self.assertEqual(enabled_response.status_code, 302)
+        self.assertEqual(disabled_response.status_code, 302)
+        self.assertFalse(DiagnosticSettings.objects.get(pk=1).enabled)
+        self.assertEqual(
+            list(
+                AuditEvent.objects.filter(
+                    actor_user_id=self.admin_user.pk,
+                    event_type__in=(
+                        AuditEvent.EventType.ADMIN_DIAGNOSTICS_ENABLED,
+                        AuditEvent.EventType.ADMIN_DIAGNOSTICS_DISABLED,
+                    ),
+                ).values_list("event_type", flat=True)
+            ),
+            [
+                AuditEvent.EventType.ADMIN_DIAGNOSTICS_ENABLED,
+                AuditEvent.EventType.ADMIN_DIAGNOSTICS_DISABLED,
+            ],
+        )
+
+    def test_failed_audit_rolls_back_diagnostics_toggle(self):
+        with tempfile.TemporaryDirectory() as directory:
+            log_path = str(Path(directory) / "diagnostics.jsonl")
+            with (
+                override_settings(SUPERHARRY_DIAGNOSTIC_LOG_PATH=log_path),
+                patch("home.admin.record_event", side_effect=AuditUnavailable),
+            ):
+                response = self.client.post(
+                    self.url,
+                    {"enabled": "on"},
+                    secure=True,
+                    HTTP_ORIGIN="https://testserver",
+                )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertFalse(DiagnosticSettings.objects.get(pk=1).enabled)
 
 
 class HomeRouteTests(TestCase):

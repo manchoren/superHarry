@@ -1,6 +1,6 @@
 # T022 observability contract proposal
 
-Status: owner approved the JSON event schema, aggregate-only health responses, staff-only Prometheus endpoint, application-owned local sink, and deferral of detailed content logging under G-CONTRACT on 2026-11-02. G-OPS approval remains necessary before configuring the host state directory, backup exclusions, service environment, or deployment.
+Status: owner approved the JSON event schema, aggregate-only health responses, staff-only Prometheus endpoint, application-owned local sink, deferral of detailed content logging, a persistent audited administrator toggle, and a system timer for retention cleanup. G-OPS approval remains necessary before configuring the host state directory, backup exclusions, service environment, timer unit paths, or deployment.
 
 ## Scope and existing constraints
 
@@ -50,8 +50,9 @@ Both responses use `Cache-Control: no-store` and `X-Content-Type-Options: nosnif
 
 ## Approved decisions and remaining boundaries
 
-- The approved initial implementation uses `SUPERHARRY_DIAGNOSTICS_ENABLED` (default false) and requires `SUPERHARRY_DIAGNOSTIC_LOG_PATH` when enabled. The configured directory must already exist; the application does not create or select a host path. Files are created with owner-only mode where supported, rotated at UTC midnight with 29 backups, and expired rotated files are pruned after 30 days on startup and on each emitted event. There is no background cleanup while a process is idle, so strict expiry during long idle periods remains incomplete. The service operator must select and protect the path under G-OPS and exclude it from backups.
-- The diagnostic toggle is currently an operator environment setting, not an administrator UI. The plan's administrator-facing enable/disable control and its persistence across restart still need a separate approved UI/state contract; T022 is not complete until that control or an explicit scope amendment is resolved.
+- Saving diagnostics remains disabled by default. `DiagnosticSettings` is a database-backed singleton initialized disabled; the Django admin change permission controls its toggle. Enabling requires `SUPERHARRY_DIAGNOSTIC_LOG_PATH`, an existing directory and a writable private log file. The path is not created or selected by the application. Each state transition and its setting change are recorded atomically in the mandatory audit log using dedicated event types. A filter reads the shared database state for each emitted event so worker processes observe changes without a restart; database errors discard the diagnostic event and emit a safe operational error.
+- Diagnostic files are created with owner-only mode where supported, rotated at UTC midnight with 29 backups, and pruned after 30 days by modification time. The application prunes at startup and when emitting events; `manage.py prune_diagnostic_logs` also removes an expired active file and rotated files while the app is idle. Schedule that command hourly with a persistent systemd timer so a missed run is caught after reboot. The timer has not been installed: its user, project/virtualenv paths and protected environment file are host-specific G-OPS decisions. A powered-off host cannot execute cleanup until it boots again.
+- The database toggle, audit events and cleanup command are implemented. The service operator must still select and protect the log path under G-OPS, exclude it from backups, and install the timer using approved host-specific paths before unattended expiry is active.
 - Detailed content logging remains deferred to a separate contract and approval.
 - No systemd, journald, Caddy, listener, firewall, network, backup, or external notification configuration is included.
 
@@ -59,4 +60,4 @@ The implementation adds no logging dependency, migration, or automatic diagnosti
 
 ## Implementation status
 
-The approved health endpoints, staff-protected metrics view, bounded per-process request counters/histograms, redacted JSON formatter, optional owner-only rotating file sink, and startup/event-triggered pruning are implemented. The sink is not enabled or configured in the current environment. All 66 Django tests, `manage.py check`, and `makemigrations --check --dry-run` pass. T022 remains in progress pending strict idle-period expiry, the administrator-facing toggle/state contract, and G-OPS approval/configuration of the service data directory and backup exclusion.
+The approved health endpoints, staff-protected metrics view, bounded per-process request counters/histograms, redacted JSON formatter, persistent audited administrator toggle, optional owner-only rotating file sink, and startup/event/management-command pruning are implemented. The sink is not configured in the current environment. The management command is ready for an hourly persistent systemd timer, but no host unit or directory has been configured. T022 remains in progress pending G-OPS approval/configuration of the service data directory and backup exclusion and installation of the timer with approved service paths. Domain metrics without trusted sources remain intentionally omitted.

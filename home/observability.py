@@ -9,6 +9,8 @@ from datetime import datetime, timezone
 from logging.handlers import TimedRotatingFileHandler
 from uuid import uuid4
 
+from django.db import DatabaseError
+
 HTTP_HISTOGRAM_BUCKETS = (0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5)
 HTTP_METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE"}
 DIAGNOSTIC_RETENTION_SECONDS = 30 * 24 * 60 * 60
@@ -20,6 +22,8 @@ _REQUEST_DURATION_BUCKET_COUNTS = defaultdict(
 )
 _REQUEST_DURATION_COUNTS = defaultdict(int)
 _REQUEST_DURATION_SUMS = defaultdict(float)
+_DIAGNOSTICS_STATE_WARNING_LOCK = threading.Lock()
+_DIAGNOSTICS_STATE_WARNING_EMITTED = False
 
 
 class JsonEventFormatter(logging.Formatter):
@@ -77,6 +81,20 @@ class PrivateTimedRotatingFileHandler(TimedRotatingFileHandler):
 
     def emit(self, record):
         try:
+            if self.stream is not None:
+                try:
+                    stream_stat = os.fstat(self.stream.fileno())
+                    path_stat = os.stat(self.baseFilename, follow_symlinks=False)
+                except FileNotFoundError:
+                    self.stream.close()
+                    self.stream = None
+                else:
+                    if (stream_stat.st_dev, stream_stat.st_ino) != (
+                        path_stat.st_dev,
+                        path_stat.st_ino,
+                    ):
+                        self.stream.close()
+                        self.stream = None
             purge_expired_diagnostic_logs(self.baseFilename)
         except OSError:
             self.handleError(record)
@@ -84,23 +102,66 @@ class PrivateTimedRotatingFileHandler(TimedRotatingFileHandler):
         super().emit(record)
 
 
+class DiagnosticEnabledFilter(logging.Filter):
+    def filter(self, record):
+        global _DIAGNOSTICS_STATE_WARNING_EMITTED
+        from home.models import DiagnosticSettings
+
+        try:
+            enabled = DiagnosticSettings.objects.filter(pk=1).values_list(
+                "enabled",
+                flat=True,
+            ).first()
+        except DatabaseError:
+            with _DIAGNOSTICS_STATE_WARNING_LOCK:
+                if not _DIAGNOSTICS_STATE_WARNING_EMITTED:
+                    logging.getLogger("django").error(
+                        "Could not read the diagnostics setting; diagnostic event discarded."
+                    )
+                    _DIAGNOSTICS_STATE_WARNING_EMITTED = True
+            return False
+
+        with _DIAGNOSTICS_STATE_WARNING_LOCK:
+            _DIAGNOSTICS_STATE_WARNING_EMITTED = False
+        return enabled is True
+
+
+def validate_diagnostic_log_path(filename):
+    parent = os.path.dirname(os.path.abspath(filename))
+    if not os.path.isdir(parent):
+        raise OSError("Diagnostic log directory must already exist.")
+    flags = os.O_APPEND | os.O_CREAT | os.O_WRONLY
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    descriptor = os.open(filename, flags, 0o600)
+    try:
+        os.chmod(filename, 0o600)
+    finally:
+        os.close(descriptor)
+
+
 def purge_expired_diagnostic_logs(filename, *, now=None):
     directory = os.path.dirname(os.path.abspath(filename))
     if not os.path.isdir(directory):
-        return
-    prefix = os.path.basename(filename) + "."
+        return 0
+    basename = os.path.basename(filename)
+    prefix = basename + "."
     cutoff = (time.time() if now is None else now) - DIAGNOSTIC_RETENTION_SECONDS
+    removed = 0
     with os.scandir(directory) as entries:
         for entry in entries:
-            if not entry.name.startswith(prefix):
+            if entry.name != basename and not entry.name.startswith(prefix):
                 continue
-            suffix = entry.name[len(prefix):]
-            if not ROTATED_LOG_SUFFIX.fullmatch(suffix):
+            if entry.name != basename and not ROTATED_LOG_SUFFIX.fullmatch(
+                entry.name[len(prefix):]
+            ):
                 continue
             if not entry.is_file(follow_symlinks=False):
                 continue
             if entry.stat(follow_symlinks=False).st_mtime < cutoff:
                 os.unlink(entry.path)
+                removed += 1
+    return removed
 
 
 def record_http_request(route, method, status_code, duration_seconds):

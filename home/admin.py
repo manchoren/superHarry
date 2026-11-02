@@ -1,10 +1,14 @@
+import os
+
+from django import forms
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
+from django.conf import settings
 from django.http import HttpResponse
 
 from home.audit import AuditUnavailable, record_event
-from home.models import AuditEvent
+from home.models import AuditEvent, DiagnosticSettings
 
 
 class AuditedUserAdmin(UserAdmin):
@@ -75,6 +79,77 @@ class AuditedUserAdmin(UserAdmin):
         return False
 
 
+class DiagnosticSettingsAdminForm(forms.ModelForm):
+    class Meta:
+        model = DiagnosticSettings
+        fields = ("enabled",)
+
+    def clean_enabled(self):
+        enabled = self.cleaned_data["enabled"]
+        if not enabled:
+            return enabled
+
+        log_path = settings.SUPERHARRY_DIAGNOSTIC_LOG_PATH
+        if not log_path:
+            raise forms.ValidationError(
+                "Configure the protected diagnostic log path before enabling diagnostics."
+            )
+        parent = os.path.dirname(os.path.abspath(log_path))
+        if not os.path.isdir(parent):
+            raise forms.ValidationError(
+                "The configured diagnostic log directory does not exist."
+            )
+        try:
+            from home.observability import validate_diagnostic_log_path
+
+            validate_diagnostic_log_path(log_path)
+        except OSError as exc:
+            raise forms.ValidationError(
+                "The configured diagnostic log is not writable by the service."
+            ) from exc
+        return enabled
+
+
+class DiagnosticSettingsAdmin(admin.ModelAdmin):
+    form = DiagnosticSettingsAdminForm
+    fields = ("enabled",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        try:
+            return super().changeform_view(
+                request,
+                object_id,
+                form_url,
+                extra_context,
+            )
+        except AuditUnavailable:
+            return HttpResponse("Service temporarily unavailable.", status=503)
+
+    def save_model(self, request, obj, form, change):
+        previous_enabled = (
+            self.get_object(request, obj.pk).enabled if change else False
+        )
+        super().save_model(request, obj, form, change)
+        if previous_enabled != obj.enabled:
+            record_event(
+                event_type=(
+                    AuditEvent.EventType.ADMIN_DIAGNOSTICS_ENABLED
+                    if obj.enabled
+                    else AuditEvent.EventType.ADMIN_DIAGNOSTICS_DISABLED
+                ),
+                outcome=AuditEvent.Outcome.SUCCESS,
+                actor_kind=AuditEvent.ActorKind.USER,
+                actor_user_id=request.user.pk,
+            )
+
+
 user_model = get_user_model()
 admin.site.unregister(user_model)
 admin.site.register(user_model, AuditedUserAdmin)
+admin.site.register(DiagnosticSettings, DiagnosticSettingsAdmin)

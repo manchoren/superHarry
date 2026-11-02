@@ -106,6 +106,14 @@ class AuditEvent(models.Model):
         TOTP_RECOVERY_USED = "auth.totp_recovery_used", "TOTP recovery used"
         ADMIN_AUDIT_READ = "admin.audit_read", "Audit log read"
         ADMIN_AUDIT_EXPORTED = "admin.audit_exported", "Audit log exported"
+        ADMIN_DIAGNOSTICS_ENABLED = (
+            "admin.diagnostics_enabled",
+            "Diagnostic logging enabled",
+        )
+        ADMIN_DIAGNOSTICS_DISABLED = (
+            "admin.diagnostics_disabled",
+            "Diagnostic logging disabled",
+        )
 
     class Outcome(models.TextChoices):
         SUCCESS = "success", "Success"
@@ -181,3 +189,19 @@ class AuditEvent(models.Model):
                 name="home_audit_target_time_idx",
             ),
         ]
+
+
+class DiagnosticSettings(models.Model):
+    enabled = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        if self.pk not in (None, 1):
+            raise ValueError("Diagnostic settings use a fixed singleton identifier.")
+        self.pk = 1
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError("Diagnostic settings cannot be deleted.")
+
+    def __str__(self):
+        return "Diagnostic settings"

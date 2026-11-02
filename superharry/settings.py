@@ -11,20 +11,10 @@ if debug_value not in {"0", "1", "false", "true"}:
     raise ImproperlyConfigured("DJANGO_DEBUG must be one of: 0, 1, false, true.")
 DEBUG = debug_value in {"1", "true"}
 
-diagnostics_value = os.environ.get("SUPERHARRY_DIAGNOSTICS_ENABLED", "0").strip().lower()
-if diagnostics_value not in {"0", "1", "false", "true"}:
-    raise ImproperlyConfigured(
-        "SUPERHARRY_DIAGNOSTICS_ENABLED must be one of: 0, 1, false, true."
-    )
-SUPERHARRY_DIAGNOSTICS_ENABLED = diagnostics_value in {"1", "true"}
 SUPERHARRY_DIAGNOSTIC_LOG_PATH = os.environ.get(
     "SUPERHARRY_DIAGNOSTIC_LOG_PATH",
     "",
 ).strip()
-if SUPERHARRY_DIAGNOSTICS_ENABLED and not SUPERHARRY_DIAGNOSTIC_LOG_PATH:
-    raise ImproperlyConfigured(
-        "SUPERHARRY_DIAGNOSTIC_LOG_PATH must be set when diagnostic logging is enabled."
-    )
 if SUPERHARRY_DIAGNOSTIC_LOG_PATH:
     from home.observability import purge_expired_diagnostic_logs
 
@@ -79,6 +69,11 @@ LOGGING = {
             "()": "home.observability.JsonEventFormatter",
         },
     },
+    "filters": {
+        "superharry_diagnostics_enabled": {
+            "()": "home.observability.DiagnosticEnabledFilter",
+        },
+    },
     "handlers": (
         {
             "superharry_null": {
@@ -93,9 +88,10 @@ LOGGING = {
                 "utc": True,
                 "encoding": "utf-8",
                 "formatter": "superharry_json",
+                "filters": ["superharry_diagnostics_enabled"],
             },
         }
-        if SUPERHARRY_DIAGNOSTICS_ENABLED
+        if SUPERHARRY_DIAGNOSTIC_LOG_PATH
         else {
             "superharry_null": {
                 "class": "logging.NullHandler",
@@ -106,7 +102,7 @@ LOGGING = {
         "superharry.diagnostics": {
             "handlers": (
                 ["superharry_diagnostics"]
-                if SUPERHARRY_DIAGNOSTICS_ENABLED
+                if SUPERHARRY_DIAGNOSTIC_LOG_PATH
                 else ["superharry_null"]
             ),
             "level": "INFO",
