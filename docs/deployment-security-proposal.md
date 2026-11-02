@@ -1,6 +1,6 @@
 # HTTPS, service privileges and LAN/VPN deployment proposal
 
-Status: T011 design proposal coordinator-reviewed 2026-10-30 and complete at proposal scope. It addresses T011's design acceptance criteria; T003 and T008 design proposals are complete. G-OPS and relevant G-SECURITY decisions remain open, and no implementation or operational approval is implied. No service, firewall, certificate, VPN or network setting has been configured or tested. Constitution baseline 2026-10-29, SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`.
+Status: T011 design proposal coordinator-reviewed 2026-10-30 and complete at proposal scope. It addresses T011's design acceptance criteria; T003 and T008 design proposals are complete. G-OPS and relevant G-SECURITY decisions remain open, and no production implementation or operational approval is implied. A Windows-only local Caddy smoke setup is recorded below; no Pi service, firewall, VPN or production network setting has been configured or tested. Constitution baseline 2026-10-29, SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`.
 
 ## Scope and accepted baseline
 
@@ -43,6 +43,29 @@ Caddy documents automatic HTTPS, local certificate issuance and renewal ([automa
 
 No certificate format, Caddy configuration, CA path, client installation command, DNS provider or exact rotation sequence is approved by this proposal.
 
+## Windows local Caddy smoke test
+
+A development-only configuration is in the repository-root `Caddyfile`. Caddy v2.11.7 for Windows amd64 was downloaded from the [official release](https://github.com/caddyserver/caddy/releases/tag/v2.11.7) and its archive SHA-512 was checked against the published checksum before extraction. The executable, Caddy configuration/data, generated certificates and smoke-test files are kept under the ignored `.dev-vm\` directory. Do not copy the local CA private key to clients or commit any of this generated state.
+
+The Caddyfile serves `https://superharry.local` on `127.0.0.1:443` only, disables the admin endpoint and automatic HTTP redirects, uses `tls internal`, and proxies to a Django development server on `127.0.0.1:8000`. `skip_install_trust` deliberately prevents trust-store changes. No hosts-file or DNS changes are needed for the smoke test; `curl --resolve` maps the hostname to loopback for that request.
+
+Verified locally on 2026-11-02: `caddy validate` succeeded; the generated certificate SAN contains `DNS:superharry.local`; only loopback listeners were present on ports 443 and 8000, with no listener on port 80; HTTPS reached Django with HTTP 200; a same-origin login POST with a valid session-backed CSRF token passed CSRF validation, while a request without a token returned 403. The browser/client trust path is intentionally **not** validated: an ordinary certificate-verifying curl request failed, and the HTTPS smoke requests used certificate verification bypass solely for this local test. These results do not establish trusted-client setup, LAN/VPN exposure, production WSGI behavior, ARM64 compatibility, or Pi deployment readiness.
+
+To repeat after obtaining the ignored Windows binary, run Django and Caddy in separate PowerShell windows:
+
+```powershell
+.\.venv\Scripts\python.exe manage.py runserver 127.0.0.1:8000 --noreload
+```
+
+```powershell
+$env:XDG_DATA_HOME = "$PWD\.dev-vm\caddy-data"
+$env:XDG_CONFIG_HOME = "$PWD\.dev-vm\caddy-config"
+.\.dev-vm\caddy-tools\v2.11.7\caddy.exe validate --config .\Caddyfile --adapter caddyfile
+.\.dev-vm\caddy-tools\v2.11.7\caddy.exe run --config .\Caddyfile --adapter caddyfile
+```
+
+This loopback-bound file is an experiment, not a Pi deployment configuration. Production listener addresses, WSGI upstream, Caddy/systemd operation, client trust provisioning, certificate lifecycle and G-OPS/G-SECURITY approval remain open.
+
 ## Service identities and secret access
 
 The accepted direction is native least-privilege services, including a dedicated unprivileged API identity and a distinct restricted network broker as described by the project plan. Separate OS authority from application roles. An OS administrator provisions privileges and initiates the T008 bootstrap; neither the model nor an ordinary API request may elevate itself. The architecture proposal's service boundaries do not by themselves determine the required process identities or trust contract.
@@ -81,14 +104,14 @@ The following are public documentation facts or stated project-plan requirements
 
 ## Verification plan and future tests
 
-This design pass performs no configuration, installation, state-changing command, or network test. The checks below are future gates, to be planned and authorized against the selected environment; they are not reported as executed.
+The local Windows smoke test above is not a production configuration, exposure review or target-platform test. The checks below remain future gates, to be planned and authorized against the selected environment; only the explicitly scoped local smoke results above are reported as executed.
 
 1. **Read-only platform review (before configuration):** Record authenticated OS/image identity and versions. Review version-matched Caddy/Tailscale/systemd/firewall documentation and APIs, effective system capabilities, trust-store behavior and the proposed privilege/secret model. Resolve the decision register and obtain G-OPS/G-SECURITY (and G-ARCH/G-CONTRACT where applicable) decisions before setup.
 2. **Static boundary review (after a separately approved configuration):** Enumerate all Caddy, API, core, broker, SSH and setup listeners for IPv4/IPv6. Check binds, routes, redirects, proxy headers, admin endpoints, firewall policy, Tailscale policy, and router/no-forwarding assumptions against an approved path matrix. Verify setup is loopback-only and unavailable through LAN/VPN, including reverse-proxy and hostname aliases.
 3. **Synthetic negative and lifecycle tests (approved ARM64 environment):** Test unauthenticated/unauthorized LAN and VPN requests, guest access, spoofed forwarded headers, direct-upstream access, unauthorized tailnet peers, wrong hostname, untrusted or expired CA, unavailable trust store, renewal failure, hostname change, CA replacement, and access after old-root removal. Test service identity/file/socket permissions, API/core/broker peer denial, sandbox/agent denial, secret redaction, backup exclusion, audit failure and missing-key fail-closed behavior. Validate Caddy's HTTP redirect and administration listeners. Exercise startup/restart/failure using synthetic data only.
 4. **Real-Pi acceptance (separate future authorization):** Repeat listener and LAN/VPN access-boundary checks on the actual approved interfaces and client types; verify no public exposure or router/public forwarding, local operation and authenticated SSH-tunneled setup, certificate trust/renewal/rotation, service isolation, and recovery after failure. Validate physical HDMI/setup flows separately. Do not treat emulation as evidence of actual network exposure, trust-store interoperability, HDMI behavior or hardware acceptance.
 
-No external network probe or test has been performed for this proposal. Record future test evidence, configuration identity and limitations only after an authorized run; failures in audit, trust, peer identity, key access or exposure checks block enabling the affected path.
+No LAN/VPN/public-ingress probe or target-platform network test has been performed. Record future test evidence, configuration identity and limitations only after an authorized run; failures in audit, trust, peer identity, key access or exposure checks block enabling the affected path.
 
 ## Evidence and disposition
 
