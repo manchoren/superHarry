@@ -4,7 +4,7 @@ This guide creates a **local development checkout** from scratch. It does not
 install the persistent VM, configure a production service, or establish VM
 release acceptance. The owner chose to continue using the versions already
 installed for the current work; a version match alone does not verify an artifact's origin. The full application still requires a
-local or OpenAI model integration, authorization, storage, sandbox, operational
+local or configured free-tier model integration, authorization, storage, sandbox, operational
 and VM acceptance work; the included chat demo uses a deterministic fake.
 
 ## Prerequisites and exact-version evidence

@@ -192,3 +192,61 @@ class FakeDispatchTests(TestCase):
                 with self.assertRaises(FakeModelDispatchError) as raised:
                     dispatch_fake_model("hello", principal_id="1", adapter=adapter)
                 self.assertNotIn("sensitive", str(raised.exception))
+
+    def test_cancelled_signal_reaches_adapter_and_stops_without_output(self):
+        from home.fake_model_dispatch import DeterministicFakeAdapter
+
+        seen = []
+
+        class Cancelled:
+            is_cancelled = True
+
+        class Capture(DeterministicFakeAdapter):
+            def stream(inner_self, request, context):
+                seen.append((request.messages[0].parts[0].text.encode(), context.cancellation))
+                yield from super().stream(request, context)
+
+        signal = Cancelled()
+        with self.assertRaises(FakeModelDispatchError) as raised:
+            dispatch_fake_model("hello", principal_id="1", adapter=Capture(), cancellation=signal)
+        self.assertEqual(raised.exception.code, "fake_cancelled")
+        self.assertEqual(len(seen), 1)
+        self.assertEqual(seen[0][0], self.raw)
+        self.assertIs(seen[0][1], signal)
+
+    def test_adapter_failed_event_surfaces_public_code_only(self):
+        from home.fake_model_dispatch import DeterministicFakeAdapter
+        from home.model_interface import (
+            ModelError, ModelErrorCategory, ModelFailed, OutcomeCertainty,
+        )
+
+        class Failing(DeterministicFakeAdapter):
+            def stream(self, request, context):
+                yield ModelStarted(1, "fake", "1")
+                yield ModelFailed(2, ModelError(
+                    ModelErrorCategory.RATE_LIMIT, "rate_limited", True,
+                    OutcomeCertainty.DEFINITIVE,
+                ))
+
+        with self.assertRaises(FakeModelDispatchError) as raised:
+            dispatch_fake_model("hello", principal_id="1", adapter=Failing())
+        self.assertEqual(raised.exception.code, "rate_limited")
+        self.assertEqual(str(raised.exception), "rate_limited")
+
+    def test_usage_update_is_accepted_before_completion(self):
+        from home.fake_model_dispatch import DeterministicFakeAdapter
+        from home.model_interface import (
+            ModelCompleted, ModelUsageUpdate, UsageSource,
+        )
+
+        class WithUsage(DeterministicFakeAdapter):
+            def stream(self, request, context):
+                yield ModelStarted(1, "fake", "1")
+                yield ModelTextDelta(2, "answer")
+                yield ModelUsageUpdate(3, source=UsageSource.UNKNOWN, complete=True)
+                yield ModelCompleted(4)
+
+        self.assertEqual(
+            dispatch_fake_model("hello", principal_id="1", adapter=WithUsage()),
+            "answer",
+        )

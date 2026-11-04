@@ -2,6 +2,8 @@
 
 **Target override (owner, 2026-11-04):** [ADR 0012](../adr/0012-vm-first-product.md) makes the persistent Linux VM the complete product and release target. Earlier on-Pi/real-device model, speech, OCR, memory and release gates mean actual target-VM validation for this release; Pi physical display/Wi-Fi/microSD/thermal/power checks are optional-port T175/T176/T169 only. Retain stated security, privacy and benchmark criteria. Historical decisions/candidates below do not override this target change. Local STT means inside the guest, not a cloud transcription service.
 
+**Model-provider override (owner, 2026-11-04):** OpenAI is disabled for now. The application will route eligible authenticated requests through explicitly configured free-tier providers in administrator-configurable order; when a provider is exhausted, the next provider may be tried only if the prior outcome is known safe to retry. Block paid routes and routes whose zero cost cannot be verified. If all free providers are exhausted or unavailable, use local inference when available; otherwise inform the user. A provider that uses conversation data to improve models requires disclosure and explicit administrator enablement. The provider identities, free-tier eligibility and exact terms, privacy and retention, credential setup, shared-quota accounting, exhaustion classification, retry and recovery details remain to be verified. The complete current constitution must be delivered as protected context to each selected model; guests remain local-only. The prior OpenAI-only/default model and no-economy-provider choices (Q-04, Q-06, Q-60 and affected portions of P-06/P-49) are historical where inconsistent with this direction, not current requirements. Existing budget, authorization, privacy, cancellation, unknown-outcome and safe recovery controls still apply. This direction does not activate a provider or select specific model IDs. Groq, OpenRouter and Gemini are provisional candidates for further provider-specific review; their individual terms and current free eligibility are not acceptance evidence. See [current tasks](../../TASK.md) and T177-T179.
+
 Read only the sections relevant to the current task. This is the authoritative detail behind the [compact plan](../../project_plan.md), subordinate to the current [constitution](../../constitution.md). Accepted/proposed/open markers remain meaningful. Historical approval wording does not override standing development authorization. ADR 0010 supersedes split-stack references.
 
 # superHarry - Project Plan
@@ -60,7 +62,7 @@ These are unresolved implementation decisions, not new policies:
 ### 4.1 Reality check on the local model ✅ (fact)
 **DeepSeek V4 Flash is a ~284B-parameter Mixture-of-Experts model** and **cannot run on a Raspberry Pi 5** (max 16 GB RAM), even heavily quantized. What *is* realistic on a Pi 5 are models of roughly **1.5B–8B parameters** (Q4 quantization); e.g. a 1.5B distilled model gets ~9–10 tokens/s on a 16 GB Pi 5.
 
-✅ **Q-04 (resolved 2026-10-29):** Use the premium cloud model, switching directly to an on-Pi model when the premium token budget is exhausted. Select the on-Pi model after the hardware bake-off (P-51). The premium model is specified in Q-06; remaining integration details and any small model for internal tasks remain separate decisions.
+✅ **Q-04 (resolved 2026-10-29; cloud routing superseded 2026-11-04):** Use the premium cloud model, switching directly to an on-Pi model when the premium token budget is exhausted. Select the on-Pi model after the hardware bake-off (P-51). The premium model is specified in Q-06; remaining integration details and any small model for internal tasks remain separate decisions.
 
 Options considered:
 - **A)** A small real local model on the Pi (Qwen / Gemma / Llama / Phi, 1.5–4B) via llama.cpp or Ollama. Fully offline. Lowest capability.
@@ -69,9 +71,9 @@ Options considered:
 - **D)** Tiered combination: cloud-premium → on-Pi model when the premium budget is exhausted (Q-60).
 
 ✅ **Q-05 (resolved 2026-10-29)** Hardware is a **Raspberry Pi 5 with 8 GB RAM**, no accelerator. See §4.1.1.
-✅ **Q-06 (updated 2026-10-29):** OpenAI is the sole external provider for the premium model. Default to `gpt-6.1-terra` with `reasoning.effort` set to `low` (the requested light setting). An admin can configure the premium model and its supported default reasoning effort. Verify model availability, account access and supported settings before deployment.
+✅ **Q-06 (updated 2026-10-29; OpenAI-only selection superseded 2026-11-04):** OpenAI is the sole external provider for the premium model. Default to `gpt-6.1-terra` with `reasoning.effort` set to `low` (the requested light setting). An admin can configure the premium model and its supported default reasoning effort. Verify model availability, account access and supported settings before deployment.
 
-✅ **Fast mode (accepted 2026-10-29):** The admin can enable or disable OpenAI's faster service mode when supported by the selected model and account. It is a service-speed option, not a separate model or an economy fallback tier. Show the applicable cost before enabling it, account for actual usage in budget tracking, and enforce existing budget limits. Verify current provider support, request settings and pricing before implementation; do not silently claim fast mode is active when unavailable.
+✅ **Fast mode (accepted 2026-10-29; OpenAI disabled for now):** The admin can enable or disable OpenAI's faster service mode when supported by the selected model and account. It is a service-speed option, not a separate model or an economy fallback tier. Show the applicable cost before enabling it, account for actual usage in budget tracking, and enforce existing budget limits. Verify current provider support, request settings and pricing before implementation; do not silently claim fast mode is active when unavailable.
 
 ### 4.1.1 Hardware budget — Raspberry Pi 5, 8 GB ✅
 - ✅ **Target OS (accepted 2026-10-29):** Use Raspberry Pi OS Desktop, 64-bit, targeting the Debian 13 Trixie release as the current baseline. Check the supported release before deployment. Develop and functionally test in an emulated ARM64 environment aligned with the target OS and dependencies where practical; emulation does not validate Pi hardware or performance. Validate headless operation, HDMI, Brave, browser profile isolation, systemd services and resource use on the real Pi when available.
@@ -92,7 +94,7 @@ Options considered:
 Everything loaded at once approaches the 8 GB limit, hence the resource governor (P-50).
 - ✅ The selected storage is a **256 GB microSDXC card** (Q-41); **active cooling** is required for sustained inference. Validate storage performance and write behavior under realistic load.
 
-### 4.1.2 Model tiers 💡 **P-49** (Q-04 core strategy accepted; remaining details proposed)
+### 4.1.2 Model tiers 💡 **P-49** (Q-04 core strategy accepted; remaining details proposed) (historical cloud routing; see provider override above)
 
 | Tier | Model | Runs on | Used when | Roles |
 |------|-------|---------|-----------|-------|
@@ -103,7 +105,7 @@ Everything loaded at once approaches the 8 GB limit, hence the resource governor
 Notes:
 - When the premium token budget is exhausted, switch directly to the on-Pi model, without an intermediate economy API tier (Q-60). The on-Pi model supports offline operation with reduced capability.
 - The capability matrix (P-04) decides what each tier may do; the circuit breaker (P-06) moves between tiers automatically.
-- ✅ **Q-60 (resolved 2026-10-29):** Use the premium model, then switch directly to the on-Pi model when its token budget is exhausted; do not include an economy API tier.
+- ✅ **Q-60 (resolved 2026-10-29; provider exclusion superseded 2026-11-04):** Use the premium model, then switch directly to the on-Pi model when its token budget is exhausted; do not include an economy API tier.
 - ✅ **P-51 — Tier 3 shortlist and bake-off protocol (accepted 2026-10-29).**
   - **Evidence (2026-10-29):** no public benchmark covers *conversational* Spanish for 3–4B on-device models. Closest data: *La Leaderboard* (Spanish and languages of Spain/LatAm; its top models are ≥ 7B, e.g., Gemma-2-9B, Llama-3.1-8B-IT, quantized Qwen2.5 14B/32B, so too big for the Pi); a multilingual Elo table (data up to Dec 2024) where Gemma-2-2B-it scores above Llama-3.2-3B in Spanish; and a general, non-Spanish small-model benchmark favoring Qwen3-4B for QA and tool calling. The Llama 3 family officially lists Spanish as a supported language.
   - **Shortlist:** Qwen3-4B-Instruct, Gemma 3 4B, Llama 3.2 3B, plus a Spanish-focused wildcard (e.g., small variants of Salamandra or EuroLLM; verify sizes and licenses).
@@ -133,12 +135,12 @@ At ~2–7 tokens/s, local mode must be designed around slowness:
 | Voice (STT/TTS) | Local STT on the Pi; Piper TTS | Local STT on the Pi; Piper TTS | Transcription always stays on the Pi (Q-54); plain text reply if the audio pipeline is unavailable |
 
 - ✅ **P-05 — Budget tracking (accepted 2026-10-29).** Track tokens and cost daily and monthly, per user and globally. Configurable warning limits notify when approaching the budget; hard limits force local mode. Admins configure the values.
-- ✅ **P-06 — Circuit breaker (accepted 2026-10-29).** On provider errors, timeouts or rate limits, switch to local mode and periodically probe recovery with exponential backoff. Resume the premium model only when it is available and budget and user settings permit.
+- ✅ **P-06 — Circuit breaker (accepted 2026-10-29; premium-only routing superseded 2026-11-04).** On provider errors, timeouts or rate limits, switch to local mode and periodically probe recovery with exponential backoff. Resume the premium model only when it is available and budget and user settings permit.
 - ✅ **Interrupted premium tasks (accepted 2026-10-29):** If Internet connectivity is lost during a task using the premium model, attempt to continue locally when possible. If the local model cannot complete it, notify the user and leave the task pending until connectivity and premium access return. Respect the task queue, cancellation, permissions and action-confirmation rules; do not repeat side effects blindly.
-- ✅ **P-07 — Task queue (accepted 2026-10-29).** Persist tasks that require the premium model when it is unavailable, notify the user, and allow the user to cancel pending tasks. Resume them when the model and budget permit, subject to the owner's permissions and existing approval requirements.
+- ✅ **P-07 — Task queue (accepted 2026-10-29; premium-specific references are historical).** Persist tasks that require the premium model when it is unavailable, notify the user, and allow the user to cancel pending tasks. Resume them when the model and budget permit, subject to the owner's permissions and existing approval requirements.
 - ✅ **P-08 — Transparency (accepted 2026-10-29).** Indicate discreetly in the UI which model or mode produced each answer; include the same information in the API response.
 - ✅ Local inference is **single-request-at-a-time**; the router must queue and apply timeouts so the web server never starves.
-- ✅ **Q-07 (resolved 2026-10-29):** The interface lets `admin` and `user` select automatic or local mode and adjust the model's reasoning level for a request. Automatic mode uses the premium model while budget permits, then the on-Pi model. A selection cannot bypass budget limits. Show reasoning controls only where supported by the selected model; available settings depend on the model. `guest` is local-only (Q-08).
+- ✅ **Q-07 (resolved 2026-10-29; premium-specific routing superseded 2026-11-04):** The interface lets `admin` and `user` select automatic or local mode and adjust the model's reasoning level for a request. Automatic mode uses the premium model while budget permits, then the on-Pi model. A selection cannot bypass budget limits. Show reasoning controls only where supported by the selected model; available settings depend on the model. `guest` is local-only (Q-08).
 - ✅ **Q-08 (resolved 2026-10-29):** `guest` uses only the local model; guest prompts and responses are not sent to the external model provider.
 
 ---
@@ -558,7 +560,7 @@ Development procedures, checks, review and completion rules live in [CONTRIBUTIN
 | **0** | Foundations | Threat model before sandbox/skills; fixed directives, architecture, public repo, local checks, and reproducible ARM development environment. |
 | **1** | Emulated development environment | Set up an emulated ARM64 Linux environment aligned where practical with Raspberry Pi OS Desktop 64-bit and its dependencies for development, functional tests and deployment preparation; keep hardware-specific choices tentative. |
 | **2** | Secure access and chat | Django authentication, sessions, RBAC, audit, LAN/VPN access, template-based chat, SSE and English/Spanish UI. Deliver a basic end-to-end chat slice. |
-| **3** | Agent and model routing | Django application modules; OpenAI premium → on-Pi fallback, budget tracking, model/reasoning controls, guest isolation and resource scheduling. |
+| **3** | Agent and model routing | Django application modules; configured free-tier providers, safe exhaustion failover, quotas, model controls, guest isolation and resource scheduling. |
 | **4** | Persistence and administration | Per-user chat history and semantic memory, keyword fallback, admin settings, downloadable backups/restore, safe application updates, and a minimal persistent in-app scheduler for storage cleanup and idle-time memory consolidation, including restart recovery. |
 | **5** | Offline sandbox and web tools | nsjail isolation, permissions and limits, public web search/download staging, package guard, document generation and isolation/security tests. |
 | **6** | Skills | Approved SKILL.md skills, admin approval workflow, reusable document skills and lifecycle UI; runtime-generated code remains sandboxed. |
@@ -600,10 +602,10 @@ Use this table to record outcomes. Status: `open` · `accepted` · `rejected` ·
 | Q-01 | Scope | Extra channels (Telegram, WhatsApp, email, voice)? | **accepted** | All four in scope (2026-10-29). Details in §11A. |
 | Q-02 | Language | Agent replies/UI in user's language; i18n? | **accepted (partial)** | UI i18n-ready from day one (en + es); spoken language Spanish (2026-10-29). Text-reply policy → Q-57. |
 | Q-03 | Stack | Agent core in TypeScript vs Python? | **superseded** | Replaced by owner-selected Django monolith (Q-62, 2026-11-01); see ADR 0010. |
-| Q-04 | Models | Local-model strategy (A/B/C/D)? | **accepted** | Premium cloud → on-Pi when the premium token budget is exhausted; local model selected after bake-off (2026-10-29). |
+| Q-04 | Models | Local-model strategy (A/B/C/D)? | **superseded in part** | Configured free-tier providers rotate in administrator-configurable order on exhaustion when safe; use local inference if available when all fail, otherwise inform the user. Local model selection remains subject to bake-off. |
 | Q-05 | Hardware | Pi 5 RAM size; accelerator? | **accepted** | Pi 5, 8 GB, no accelerator (2026-10-29). AI HAT wouldn't help LLM decoding. |
-| Q-06 | Models | External provider(s)? | **accepted** | OpenAI only; default `gpt-6.1-terra` with `low` reasoning, configurable by admin. Fast mode is admin-configurable when supported; verify availability and pricing (2026-10-29). |
-| Q-07 | Router | User can force a model? Which roles? | **accepted** | `admin` and `user` can select automatic/local mode and adjust supported reasoning settings in the UI; budget limits apply (2026-10-29). |
+| Q-06 | Models | External provider(s)? | **superseded in part** | OpenAI is disabled for now; Groq, OpenRouter and Gemini are provisional candidates requiring provider-specific eligibility, zero-cost, privacy and capability verification. No provider is enabled and no model ID is selected. |
+| Q-07 | Router | User can force a model? Which roles? | **accepted in part** | User/admin may select automatic or local mode and supported reasoning options; configured free providers require their applicable quota and role checks. Guest remains local-only. |
 | Q-08 | Router | Guest data sent to external provider? | **accepted** | Guest uses only the local model; no guest prompts or responses to the external model provider (2026-10-29). |
 | Q-09 | Sandbox | Podman vs Docker vs bubblewrap/nsjail? | **accepted** | nsjail primary, subject to Pi validation; rootless Podman alternative (2026-10-29). |
 | Q-10 | Sandbox | Initial resource limits? | **accepted** | 60 s, one CPU core equivalent, 512 MB RAM, 256 MB temporary disk, 64 processes and 10 MB console output (2026-10-29). |
@@ -626,7 +628,7 @@ Use this table to record outcomes. Status: `open` · `accepted` · `rejected` ·
 | Q-27 | Memory | Can the agent propose personality edits? | **accepted** | Agent may autonomously adjust personality; fixed directives and permissions are protected (2026-10-29). |
 | Q-28 | Memory/Crypto | Encryption at rest & retention? | **accepted (partial)** | Optional admin-configurable encryption, an access-restricted key on the Pi for automatic unlock, and a pre-conversion recovery backup; loss of the required key makes affected encrypted data unrecoverable. Key protection and restore mechanics remain open (2026-10-29). |
 | Q-29 | OCR | Engine and languages? | **accepted (partial)** | Spanish and English initially; select engine after Pi accuracy, latency and RAM benchmarks (2026-10-29). |
-| Q-30 | Vision | Local vision model later? | **accepted** | Defer local vision pending Pi performance tests; premium image interpretation and local OCR initially (2026-10-29). |
+| Q-30 | Vision | Local vision model later? | **accepted in part** | Local vision remains deferred; image-capable external providers may be used only when their capability, eligibility, privacy and authorization are verified. Otherwise use permitted local OCR. |
 | Q-31 | Auth | Sessions vs JWT+refresh? | **accepted** | Server-managed, revocable sessions and secure cookie settings (2026-10-29). |
 | Q-32 | Auth | TOTP policy; WebAuthn later? | **accepted** | TOTP optional for admin and user; passkeys deferred until after beta (2026-10-29). |
 | Q-33 | Auth | Account creation; how guests are issued? | **accepted** | LAN/VPN guest button; initially 3 new sessions per hour per origin, configurable (2026-10-29). |
@@ -656,7 +658,7 @@ Use this table to record outcomes. Status: `open` · `accepted` · `rejected` ·
 | Q-57 | i18n | Agent text-reply language policy; voice fallback for non-Spanish replies? | **accepted** | P-46 accepted (2026-10-29). |
 | Q-58 | i18n | i18next/react-i18next vs FormatJS/react-intl? | **superseded** | Use Django's built-in translation system with English and Spanish catalogs; React-specific i18next choices no longer apply (Q-62, 2026-11-01). |
 | Q-59 | i18n | Spanish variant for UI copy (es-419 / es-ES / country)? | **accepted** | Neutral `es-419` UI; agent adapts to the user's form of address (2026-10-29). |
-| Q-60 | Models | Include Tier 2 (DeepSeek V4 Flash via API)? | **rejected** | No economy API tier; premium → on-Pi when the premium token budget is exhausted (2026-10-29). |
+| Q-60 | Models | Include an economy API tier? | **superseded in part** | Free-tier provider rotation supersedes the blanket exclusion of economy providers; no specific provider or model is selected by this decision. |
 | Q-61 | Models | Run the Tier 3 Spanish bake-off (P-51); who/when? | **accepted** | Tier 3 model stays tentative until measured on the Pi (Phase 10). See §17.1. |
 | Q-62 | App | What web/application framework and security approach? | **accepted** | Owner selected a Django monolith on 2026-11-01. Use the latest official stable Django release; at selection, Django 6.1.2 was listed as latest official release. Trust Django's supported security implementation without auditing its internals; configure and test our own integration and retain domain authorization rules. See ADR 0010. |
 
@@ -669,8 +671,8 @@ Use this table to record outcomes. Status: `open` · `accepted` · `rejected` ·
 | P-03 | Tool layer as the only action path (role + schema + audit) | **accepted** | 2026-10-29 |
 | P-04 | Capability matrix for per-feature degradation | **accepted** | Local code generation allowed under the same sandbox controls (2026-10-29). |
 | P-05 | Token/cost budget tracking with soft/hard limits | **accepted** | Admin-configurable warnings and hard limits, tracked per user and globally (2026-10-29). |
-| P-06 | Circuit breaker to local mode | **accepted** | Automatic local fallback and recovery checks with backoff (2026-10-29). |
-| P-07 | Persistent task queue for external-only tasks | **accepted** | Notify user, allow cancellation, resume when model and budget permit (2026-10-29). |
+| P-06 | Circuit breaker to local mode | **accepted in part** | Provider exhaustion can move to the next configured free provider only after a safe outcome; when free providers are exhausted or unavailable, use local inference if available, otherwise inform the user. Recovery must not repeat unknown effects. |
+| P-07 | Persistent queue for external-only tasks | **accepted** | Notify user, allow cancellation, and resume when an eligible external provider and quota permit; preserve permissions, confirmations and safe-retry rules. |
 | P-08 | Discreetly show which model/mode answered | **accepted** | Include model/mode in API response as well (2026-10-29). |
 | P-09 | nsjail isolated execution; rootless Podman alternative | **accepted** | Subject to Pi validation (Q-09). |
 | P-10 | Per-run resource limits | **accepted** | Initial time, CPU, RAM, temporary disk, process and console output limits accepted. |
@@ -712,7 +714,7 @@ Use this table to record outcomes. Status: `open` · `accepted` · `rejected` ·
 | P-46 | Agent reply language and Spanish voice fallback | **accepted** | Q-57 resolved (2026-10-29). |
 | P-47 | i18n conventions: i18next, per-module namespaces, local key checks, pseudo-locale | **modified** | Preserve English/Spanish catalogs and adaptable layouts using Django's built-in translation facilities; React-specific tooling is superseded by Q-62. |
 | P-48 | Voice `es_AR-daniela-high` gated by Pi 5 benchmark (RTF ≤ 0.5 idle, < 1.0 under load); fallback `es_MX-ald-medium` | **accepted** | LLM loaded without inference; predefined background workload respects heavy-job serialization. Final voice depends on Pi benchmark. |
-| P-49 | Model tiers: premium cloud → on-Pi 3–4B; micro ≤1.7B for internal use | **accepted (partial)** | Premium → on-Pi accepted in Q-04; local model and micro tier remain undecided. Economy API tier rejected in Q-60. |
+| P-49 | Model tiers and local model | **superseded in part** | Free-provider rotation replaces premium-only cloud selection; local model and micro tier remain undecided. |
 | P-50 | Local-mode design: streaming, short prompts, fewer tools, resource governor | **accepted (partial)** | Principles accepted; exact limits require Pi testing (2026-10-29). |
 | P-51 | Tier 3 shortlist (Qwen3-4B, Gemma 3 4B, Llama 3.2 3B + Spanish wildcard) and bake-off protocol | **accepted** | 2026-10-29 |
 | P-52 | Django monolith with Django templates and built-in security mechanisms | **accepted** | Owner decision Q-62; Django 6.1.2 official latest stable on 2026-11-01; replaces P-29 and Q-03's split runtime. |

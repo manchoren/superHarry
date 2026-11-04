@@ -4,6 +4,8 @@
 
 Consult for affected risks, shared resources and release coverage, not before every task. The [constitution](../../constitution.md) governs authorization; old gate wording does not require a second approval within standing development authorization. Historical parallel waves are planning context, not mandatory agent delegation.
 
+**Provider override (owner, 2026-11-04):** OpenAI is disabled for now; explicitly configured free-tier providers may be tried in administrator-configurable order on exhaustion only when the earlier outcome is known safe. Block paid/unverified-zero-cost routes; providers using conversation data for improvement require disclosure and explicit administrator enablement. If all are exhausted or unavailable, use local inference if available, otherwise inform the user. Preserve guest-local isolation, protected context, quotas and authorization; see T177-T179. Earlier premium-only text is historical where inconsistent.
+
 ## Approval and decision register
 
 These gates implement the constitution's Ask First rules. Approval to write this backlog is not approval to implement the designs it describes. Owner approval for repository changes is distinct from runtime admin confirmation of an action.
@@ -63,7 +65,7 @@ Use the current plan body to interpret these references; a partial decision maps
 |---|---|
 | Complete constitution delivery, protected directives and precedence | T001, T004, T043, T055, T063 |
 | Q-01-Q-03; P-01/P-02 rejected; P-29/P-31 | T002, T005, T016, T017, T024, T025, T038, T131-T147 |
-| Q-04-Q-08, Q-60/Q-61; P-03-P-08, P-49-P-51 | T009, T010, T043-T057, T150, T151, T165; no economy provider or mandatory micro tier |
+| Q-04-Q-08, Q-60/Q-61; P-03-P-08, P-49-P-51 | T009, T010, T043-T057, T150, T151, T165, T177-T179; configured free-tier rotation supersedes the earlier no-economy exclusion; no mandatory micro tier |
 | Q-05, Q-41/Q-43/Q-44; P-33/P-34 | T003, T018, T021, T148, T149, T157, T164, T165 |
 | Q-09-Q-15; P-09-P-13 | T070, T071, T081-T094, T156 |
 | Q-16-Q-18; P-14-P-18 | T095-T102 |

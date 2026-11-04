@@ -4,7 +4,7 @@ Binding on contributors and development agents; this document prevails over the 
 
 ## Purpose and protected context
 
-Build a free, public personal assistant for a persistent Linux VM: Django web UI, local/OpenAI models, controlled tools, scoped memory, scheduling, approved skills and optional voice, messaging and HDMI. Use the existing Debian ARM64 VM as the initial full deployment and acceptance target. Raspberry Pi is an optional future port, never a prerequisite for VM release. Validate VM functionality, performance, isolation and recovery on the target guest profile; local development tests provide fast feedback.
+Build a free, public personal assistant for a persistent Linux VM: Django web UI, local models and configured free-tier model providers, controlled tools, scoped memory, scheduling, approved skills and optional voice, messaging and HDMI. Use the existing Debian ARM64 VM as the initial full deployment and acceptance target. Raspberry Pi is an optional future port, never a prerequisite for VM release. Validate VM functionality, performance, isolation and recovery on the target guest profile; local development tests provide fast feedback.
 
 Every development agent/subagent reads this complete current document before acting and records its version/hash. Supply it in full as protected context to every runtime agent, model and channel. Never silently omit or truncate it; if delivery fails or mandatory context does not fit, block agent actions. Enforce security independently in code.
 
@@ -26,7 +26,7 @@ Protect safety and privacy; never intentionally cause harm. Respect authorized u
 
 ## Data and operations
 
-- OpenAI is the only premium provider; fall back directly to local inference on unavailability/budget exhaustion. Preserve interrupted work and resume safely without blindly repeating effects. Local inference, STT, TTS, OCR and heavy sandbox jobs share one heavy-job slot.
+- OpenAI is disabled for now. Route eligible authenticated requests through explicitly configured free-tier providers in administrator-configurable order; when a provider is exhausted, try the next only when the prior outcome is known safe to retry. Block paid routes and routes whose zero cost cannot be verified. A provider that uses conversation data to improve models requires disclosure and explicit administrator enablement. When free providers are exhausted or unavailable, use local inference if available; otherwise inform the user. Preserve interrupted work and resume safely without blindly repeating effects. Guests remain local-model-only. Local inference, STT, TTS, OCR and heavy sandbox jobs share one heavy-job slot.
 - Scope user data and follow accepted cleanup rules. Users may delete all their own memories even when visibility is hidden. Admins control budgets, network configuration, backups and updates.
 - LAN/VPN with HTTPS only: no public exposure or port forwarding. Backup, restore and updates preserve data and follow admin review/confirmation and recovery requirements. Memory/backup encryption is optional; losing a required key makes affected encrypted data unrecoverable.
 - Transcribe audio locally inside the deployment guest. Detailed diagnostic content needs separate time-limited opt-in; secrets remain excluded. The durable VM profile must preserve data across restart/update; disposable test overlays are not deployment storage. Physical Pi-specific checks belong to its future port. Exact operational criteria live in the [requirements](docs/reference/product-requirements.md).

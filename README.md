@@ -1,12 +1,12 @@
 # superHarry
 
-superHarry is a free, public personal AI agent running in a persistent Linux VM, with Raspberry Pi support planned as an optional later port. Its intended capabilities include an authenticated web interface, local and OpenAI models, controlled tools, user-scoped memory and scheduled work. Voice, messaging and an HDMI display are subject to the scope and sequencing in the project plan.
+superHarry is a free, public personal AI agent running in a persistent Linux VM, with Raspberry Pi support planned as an optional later port. Its intended capabilities include an authenticated web interface, local models and configured free-tier model providers, controlled tools, user-scoped memory and scheduled work. Voice, messaging and an HDMI display are subject to the scope and sequencing in the project plan.
 
 The repository now contains the initial Django monolith scaffold. It uses Django's built-in authentication, sessions, CSRF protection, ORM and admin rather than a separate TypeScript access service. This is a development foundation, not a complete application or production deployment.
 
 - [Constitution](constitution.md): binding project directives and change rules; it prevails over the plan. For Django-provided security behavior, use Django's supported defaults and mechanisms instead of duplicating them.
 - [Project plan](project_plan.md): compact scope and roadmap; links to detailed requirements and decisions.
-- [Task backlog](TASK.md): start with the current delivery priority (T171-T173); the full inventory tracks release scope and evidence.
+- [Task backlog](TASK.md): start with the current delivery priority (including T177-T179); the full inventory tracks release scope and evidence.
 - [Requirements work record](requirements_work_record.md): historical baseline inventory and source hashes; current task evidence records the current constitution hash.
 - [Contributing](CONTRIBUTING.md): review, security and local validation requirements.
 - [ADR conventions](docs/adr/README.md): decision and approval records.

@@ -4,14 +4,14 @@ The [constitution](constitution.md) governs policy and development authorization
 
 ## Product and architecture
 
-A free, public personal assistant running entirely in a persistent Linux VM: authenticated bilingual web UI, OpenAI premium and local fallback, scoped memory, controlled tools, scheduled work and approved skills. Voice, messaging and HDMI follow the delivery sequence below.
+A free, public personal assistant running entirely in a persistent Linux VM: authenticated bilingual web UI, configured free-tier model providers and local inference, scoped memory, controlled tools, scheduled work and approved skills. Voice, messaging and HDMI follow the delivery sequence below.
 
 Use the [Django monolith](docs/adr/0010-django-monolith.md): built-in auth, sessions, CSRF, ORM, admin and server-rendered templates; SQLite and application modules for models, tools, memory and scheduling. Older React/Fastify/separate-core references are superseded, not additional implementation requirements.
 
 ## Delivery sequence
 
 1. Finish the [current queue](TASK.md): verify app audit readiness, demonstrate authenticated text chat with a fake model, then validate protected-context dispatch.
-2. Integrate real models, budgets and the single-heavy-job resource governor; establish scoped conversations and memory.
+2. Integrate configured free-tier model providers and safe exhaustion failover, quotas and the single-heavy-job resource governor; establish scoped conversations and memory. OpenAI is disabled for now by owner direction.
 3. Add maintenance, backup/restore and safe updates; then isolated tools, package validation and approved skills.
 4. Extend scheduling, images/OCR and display functionality along their actual prerequisites.
 5. Deliver Telegram, email, voice notes/web push-to-talk, then review WhatsApp. Hands-free voice remains deferred.
