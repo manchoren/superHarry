@@ -156,22 +156,22 @@ msgid "Next page"
 msgstr "Página siguiente"
 
 msgid "Chat is unavailable. Please try again."
-msgstr "El chat no est? disponible. Int?ntalo de nuevo."
+msgstr "El chat no está disponible. Inténtalo de nuevo."
 
 msgid "Cancelled."
 msgstr "Cancelado."
 
-msgid "Generating response?"
-msgstr "Generando respuesta?"
+msgid "Generating response..."
+msgstr "Generando respuesta..."
 
 msgid "Cancel"
 msgstr "Cancelar"
 
 msgid "Sign in to chat."
-msgstr "Inicia sesi?n para conversar."
+msgstr "Inicia sesión para conversar."
 
 msgid "You"
-msgstr "T?"
+msgstr "Tú"
 
 msgid "Assistant"
 msgstr "Asistente"

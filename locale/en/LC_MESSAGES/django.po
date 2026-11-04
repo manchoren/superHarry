@@ -161,8 +161,8 @@ msgstr "Chat is unavailable. Please try again."
 msgid "Cancelled."
 msgstr "Cancelled."
 
-msgid "Generating response?"
-msgstr "Generating response?"
+msgid "Generating response..."
+msgstr "Generating response..."
 
 msgid "Cancel"
 msgstr "Cancel"

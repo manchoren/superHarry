@@ -64,7 +64,7 @@
                             <p><strong>{% if message.role == "user" %}{% translate "You" %}{% else %}{% translate "Assistant" %}{% endif %}:</strong> {{ message.content }}</p>
                         {% endfor %}
                     </div>
-                    <form class="message-composer" id="chat-form" data-url="{% url 'chat-turn-create' conversation.pk %}" data-error="{% translate 'Chat is unavailable. Please try again.' %}" data-cancelled="{% translate 'Cancelled.' %}" data-working="{% translate 'Generating response?' %}">
+                    <form class="message-composer" id="chat-form" data-url="{% url 'chat-turn-create' conversation.pk %}" data-error="{% translate 'Chat is unavailable. Please try again.' %}" data-cancelled="{% translate 'Cancelled.' %}" data-working="{% translate 'Generating response...' %}">
                         {% csrf_token %}
                         <label for="chat-message">{% translate "Message" context "chat.composer.message_label" %}</label>
                         <textarea id="chat-message" name="message" rows="3" required></textarea>
