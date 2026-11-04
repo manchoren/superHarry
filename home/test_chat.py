@@ -674,3 +674,64 @@ class ChatEventValidationTests(TestCase):
                     "text": "x",
                 },
             )
+
+@override_settings(DEBUG=True, ALLOWED_HOSTS=["testserver"])
+class FakeChatDemoTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username="demo-user", password="synthetic-password")
+        self.client.force_login(self.user)
+        self.conversation = Conversation.objects.create(owner=self.user)
+        self.dispatcher = FakeChatDispatcher()
+        configure_chat_dispatcher(self.dispatcher)
+        self.addCleanup(configure_chat_dispatcher, None)
+
+    def make_turn(self):
+        response = self.client.post(reverse("chat-turn-create", args=[self.conversation.pk]), data=json.dumps({"message": "hello"}), content_type="application/json", HTTP_IDEMPOTENCY_KEY=str(uuid.uuid4()), secure=True, HTTP_ORIGIN="https://testserver")
+        self.assertEqual(response.status_code, 202)
+        return ChatTurn.objects.get(pk=response.json()["turn_id"])
+
+    def test_home_uses_owned_conversation_and_escapes_content(self):
+        other = get_user_model().objects.create_user(username="other-demo")
+        foreign = Conversation.objects.create(owner=other)
+        Message.objects.create(conversation=foreign, role=Message.Role.USER, content="foreign secret")
+        Message.objects.create(conversation=self.conversation, role=Message.Role.USER, content="<script>bad</script>")
+        response = self.client.get(reverse("home"), secure=True)
+        self.assertContains(response, "&lt;script&gt;bad&lt;/script&gt;")
+        self.assertNotContains(response, "foreign secret")
+        self.assertContains(response, reverse("chat-turn-create", args=[self.conversation.pk]))
+
+    def test_fake_output_is_streamed_and_completes(self):
+        from home.fake_chat import _run
+        turn = self.make_turn()
+        observed = []
+        def observe(_seconds):
+            response = self.client.get(reverse("chat-turn-events", args=[self.conversation.pk, turn.pk]), secure=True)
+            observed.append(b"".join(response.streaming_content))
+        with patch("home.fake_chat.time.sleep", side_effect=observe):
+            _run(turn.pk)
+        turn.refresh_from_db()
+        self.assertEqual(turn.state, ChatTurn.State.COMPLETED)
+        self.assertIn(b"event: message.delta", observed[0])
+        self.assertNotIn(b"event: turn.completed", observed[0])
+        self.assertTrue(turn.assistant_message.content)
+
+    def test_cancel_between_deltas_is_terminal(self):
+        from home.fake_chat import _run
+        turn = self.make_turn()
+        def cancel(_seconds):
+            response = self.client.post(reverse("chat-turn-cancel", args=[self.conversation.pk, turn.pk]), secure=True, HTTP_ORIGIN="https://testserver")
+            self.assertEqual(response.status_code, 202)
+        with patch("home.fake_chat.time.sleep", side_effect=cancel):
+            _run(turn.pk)
+        turn.refresh_from_db()
+        self.assertEqual(turn.state, ChatTurn.State.CANCELLED)
+        self.assertIsNone(turn.assistant_message)
+
+    def test_fake_error_is_terminal_without_prompt_disclosure(self):
+        from home.fake_chat import _run
+        turn = self.make_turn()
+        with patch("home.fake_chat.dispatch_fake_model", side_effect=RuntimeError("secret")):
+            _run(turn.pk)
+        turn.refresh_from_db()
+        self.assertEqual(turn.state, ChatTurn.State.FAILED)
+        self.assertEqual(turn.events.order_by("sequence").last().payload["error"]["code"], "INTERNAL")

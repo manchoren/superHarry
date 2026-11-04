@@ -154,3 +154,24 @@ msgstr "No audit events match these filters."
 
 msgid "Next page"
 msgstr "Next page"
+
+msgid "Chat is unavailable. Please try again."
+msgstr "Chat is unavailable. Please try again."
+
+msgid "Cancelled."
+msgstr "Cancelled."
+
+msgid "Generating response?"
+msgstr "Generating response?"
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "Sign in to chat."
+msgstr "Sign in to chat."
+
+msgid "You"
+msgstr "You"
+
+msgid "Assistant"
+msgstr "Assistant"
