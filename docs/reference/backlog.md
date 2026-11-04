@@ -333,6 +333,8 @@ T059 message pagination (2026-11-04): owner-scoped history is read in batches of
 
 Owner direction (2026-11-04): use currently installed versions for ongoing project work and document a clean installation; see [clean local installation](../clean-local-install.md). This does not establish provenance or release acceptance.
 
+T174 consolidated status (2026-11-04): owner accepted the residual risks of the installed QEMU 11.1.0/firmware and Debian media, and the same-disk backup limit, recorded in the [decision packet](../t174-owner-decision-packet.md). The Debian 13.7.0 ARM64 netinst ISO is downloaded and its SHA-256 matches the Debian CD-signed list ([media evidence](../t174-media-preparation.md)); the signing key is not yet confirmed out-of-band. Not done: `C:\superHarry-vm` creation, restricted ACL, guest installation, boot, backup, restore or network exposure. Each still requires explicit owner approval and G-OPS review.
+
 T174 decision packet: [artifact review and owner directions](../t174-owner-decision-packet.md) record C: for now with accepted disk-loss exposure and requests to review the existing image and QEMU/firmware. Image provenance and executable signature validation remain unresolved; no artifact reuse, provisioning or additional risk acceptance is implied.
 
 T174 owner-requested risk reviews (2026-11-04): [existing image](../t174-image-risk-review.md) and [installed QEMU/firmware](../t174-qemu-risk-review.md) have documented evidence, controls and unresolved provenance. The draft inspection commands are unexecuted and do not yet constitute a reviewed safe procedure. No acceptance of artifact risk, guest execution or durable provisioning is implied.
