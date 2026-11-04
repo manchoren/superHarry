@@ -36,6 +36,7 @@ class FakeChatDispatcher:
         self.enqueued = []
         self.cancelled = []
         self.enqueue_error = None
+        self.cancel_error = None
 
     def enqueue(self, turn_id):
         if self.enqueue_error is not None:
@@ -43,6 +44,8 @@ class FakeChatDispatcher:
         self.enqueued.append(turn_id)
 
     def request_cancel(self, turn_id):
+        if self.cancel_error is not None:
+            raise self.cancel_error
         self.cancelled.append(turn_id)
 
 
@@ -327,6 +330,42 @@ class ChatTurnAPITests(TestCase):
         self.assertEqual(response.status_code, 503)
         self.assertEqual(turn.state, ChatTurn.State.QUEUED)
         self.assertEqual(ChatEvent.objects.count(), 0)
+
+    def test_cancel_dispatch_failure_rolls_back_state_event_and_audit(self):
+        turn = self._new_turn()
+        self.dispatcher.cancel_error = ChatDispatchError
+
+        response = self.client.post(
+            self._cancel_url(turn),
+            secure=True,
+            HTTP_ORIGIN="https://testserver",
+        )
+
+        turn.refresh_from_db()
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(turn.state, ChatTurn.State.QUEUED)
+        self.assertFalse(ChatEvent.objects.filter(turn=turn).exists())
+        self.assertFalse(AuditEvent.objects.filter(
+            event_type=AuditEvent.EventType.CHAT_TURN_CANCEL_REQUESTED,
+        ).exists())
+
+    def test_cancel_rejects_another_user_without_audit_or_dispatch(self):
+        turn = self._new_turn()
+        other_client = Client()
+        other_client.force_login(self.other_user)
+
+        response = other_client.post(
+            self._cancel_url(turn), secure=True, HTTP_ORIGIN="https://testserver"
+        )
+
+        turn.refresh_from_db()
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(turn.state, ChatTurn.State.QUEUED)
+        self.assertFalse(ChatEvent.objects.filter(turn=turn).exists())
+        self.assertFalse(AuditEvent.objects.filter(
+            event_type=AuditEvent.EventType.CHAT_TURN_CANCEL_REQUESTED,
+        ).exists())
+        self.assertEqual(self.dispatcher.cancelled, [])
 
     def test_events_are_bounded_replay_batches_with_signed_cursor(self):
         turn = self._new_turn()
