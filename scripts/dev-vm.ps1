@@ -22,7 +22,7 @@ $script:ExpectedSids = @(
     'S-1-5-32-544'
 )
 $script:RepositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$script:VmRoot = [System.IO.Path]::GetFullPath((Join-Path $script:RepositoryRoot '.dev-vm'))
+$script:VmRoot = [System.IO.Path]::GetFullPath('C:\superHarry-vm')
 $script:QemuDirectory = 'C:\Program Files\qemu'
 $script:QemuPath = Join-Path $script:QemuDirectory 'qemu-system-aarch64.exe'
 $script:QemuImgPath = Join-Path $script:QemuDirectory 'qemu-img.exe'
@@ -90,8 +90,16 @@ function Invoke-Probe {
         [Parameter(Mandatory)][string]$Label
     )
 
-    $output = @(& $Executable @Arguments 2>&1 | ForEach-Object { "$_" }) -join "`n"
-    $exitCode = $LASTEXITCODE
+    $stdoutPath = [System.IO.Path]::GetTempFileName()
+    $stderrPath = [System.IO.Path]::GetTempFileName()
+    try {
+        $quotedArguments = $Arguments | ForEach-Object { if ($_ -match '\s') { "`"$_`"" } else { $_ } }
+        $process = Start-Process -FilePath $Executable -ArgumentList $quotedArguments -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
+        $exitCode = $process.ExitCode
+        $output = (@(Get-Content -LiteralPath $stdoutPath) + @(Get-Content -LiteralPath $stderrPath)) -join "`n"
+    } finally {
+        Remove-Item -LiteralPath $stdoutPath, $stderrPath -ErrorAction SilentlyContinue
+    }
     if ($exitCode -ne 0) {
         Stop-WithError "$Label probe failed with exit code $exitCode.`n$output"
     }
@@ -181,7 +189,7 @@ function Assert-RestrictedAcl {
 
     $acl = Get-Acl -LiteralPath $Path
     if ($Directory -and -not $acl.AreAccessRulesProtected) {
-        Stop-WithError ".dev-vm ACL still inherits permissions from its parent: $Path"
+        Stop-WithError "superHarry-vm ACL still inherits permissions from its parent: $Path"
     }
     $rules = @($acl.GetAccessRules($true, $true, [System.Security.Principal.SecurityIdentifier]))
     $expected = Get-ExpectedAclSids
@@ -201,7 +209,7 @@ function Assert-RestrictedAcl {
         if ($Directory) {
             if ($rule.IsInherited -or
                 $rule.InheritanceFlags -ne ([System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [System.Security.AccessControl.InheritanceFlags]::ObjectInherit)) {
-                Stop-WithError "Unexpected inheritance flags on .dev-vm ACL entry for SID $sid."
+                Stop-WithError "Unexpected inheritance flags on superHarry-vm ACL entry for SID $sid."
             }
         } elseif (-not $rule.IsInherited) {
             Stop-WithError "Unexpected explicit ACL entry on VM file $Path for SID $sid."
@@ -215,7 +223,7 @@ function Assert-RestrictedAcl {
 function Set-NewVmRootAcl {
     if (Test-Path -LiteralPath $script:VmRoot) {
         if ((Get-Item -LiteralPath $script:VmRoot -Force).Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
-            Stop-WithError ".dev-vm must not be a reparse point: $script:VmRoot"
+            Stop-WithError "superHarry-vm must not be a reparse point: $script:VmRoot"
         }
         Assert-RestrictedAcl -Path $script:VmRoot -Directory $true
         return
@@ -245,7 +253,7 @@ function Assert-VmRoot {
         Stop-WithError "VM storage does not exist. Run Install first to create it with a restricted ACL: $script:VmRoot"
     }
     if ((Get-Item -LiteralPath $script:VmRoot -Force).Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
-        Stop-WithError ".dev-vm must not be a reparse point: $script:VmRoot"
+        Stop-WithError "superHarry-vm must not be a reparse point: $script:VmRoot"
     }
     Assert-RestrictedAcl -Path $script:VmRoot -Directory $true
 }
@@ -403,9 +411,9 @@ Get-ExpectedFirmwarePins
 if ($Mode -eq 'Validate') {
     if (Test-Path -LiteralPath $script:VmRoot -PathType Container) {
         Assert-VmRoot
-        Write-Host '.dev-vm exists and its ACL passed validation.'
+        Write-Host 'superHarry-vm exists and its ACL passed validation.'
     } else {
-        Write-Host '.dev-vm has not been created; Validate mode does not create repository state.'
+        Write-Host 'superHarry-vm has not been created; Validate mode does not create repository state.'
     }
     Write-Host 'Validation only: no disk/image was created and no VM was started.'
     return
