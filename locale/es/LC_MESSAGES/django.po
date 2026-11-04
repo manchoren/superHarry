@@ -206,3 +206,18 @@ msgstr "Mensajes recientes"
 
 msgid "Current turn"
 msgstr "Turno actual"
+
+msgid "Provider and model"
+msgstr "Proveedor y modelo"
+
+msgid "Automatic (current mode)"
+msgstr "Automático (modo actual)"
+
+msgid "not available yet"
+msgstr "todavía no disponible"
+
+msgid "A configured key does not mean a provider is ready. Provider and model selection is not available yet."
+msgstr "Una clave configurada no significa que el proveedor esté listo. La selección de proveedor y modelo todavía no está disponible."
+
+msgid "Gemini's free tier uses submitted content to improve Google's products. Administrator approval is required before enabling it."
+msgstr "El nivel gratuito de Gemini usa el contenido enviado para mejorar los productos de Google. Se requiere la aprobación de un administrador antes de habilitarlo."

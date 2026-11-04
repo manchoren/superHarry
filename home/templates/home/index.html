@@ -91,6 +91,15 @@
                     {% endif %}
                     <form class="message-composer" id="chat-form" data-url="{% url 'chat-turn-create' conversation.pk %}" data-error="{% translate 'Chat is unavailable. Please try again.' %}" data-cancelled="{% translate 'Cancelled.' %}" data-working="{% translate 'Generating response...' %}"{% if active_turn %} data-active-events-url="{% url 'chat-turn-events' conversation.pk active_turn.pk %}" data-active-state="{{ active_turn.state }}"{% endif %}>
                         {% csrf_token %}
+                        <label for="chat-provider">{% translate "Provider and model" %}</label>
+                        <select id="chat-provider" disabled aria-describedby="chat-provider-status">
+                            <option selected>{% translate "Automatic (current mode)" %}</option>
+                            {% if 'groq' in configured_provider_ids %}<option disabled>Groq — {% translate "not available yet" %}</option>{% endif %}
+                            {% if 'openrouter' in configured_provider_ids %}<option disabled>OpenRouter — {% translate "not available yet" %}</option>{% endif %}
+                            {% if 'gemini' in configured_provider_ids %}<option disabled>Gemini — {% translate "not available yet" %}</option>{% endif %}
+                        </select>
+                        <p id="chat-provider-status">{% translate "A configured key does not mean a provider is ready. Provider and model selection is not available yet." %}</p>
+                        {% if 'gemini' in configured_provider_ids %}<p>{% translate "Gemini's free tier uses submitted content to improve Google's products. Administrator approval is required before enabling it." %}</p>{% endif %}
                         <label for="chat-message">{% translate "Message" context "chat.composer.message_label" %}</label>
                         <textarea id="chat-message" name="message" rows="3" required></textarea>
                         <button type="submit">{% translate "Send" context "chat.composer.send" %}</button>

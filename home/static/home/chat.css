@@ -22,6 +22,7 @@ a {
 }
 
 button,
+select,
 textarea {
     font: inherit;
 }
@@ -219,6 +220,17 @@ textarea {
     resize: vertical;
     border: 1px solid #aeb8c4;
     border-radius: 0.45rem;
+    background: #f4f6f8;
+}
+
+.message-composer select {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.7rem;
+    border: 1px solid #aeb8c4;
+    border-radius: 0.45rem;
+    color: #526174;
     background: #f4f6f8;
 }
 

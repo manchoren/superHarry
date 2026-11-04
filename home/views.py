@@ -9,6 +9,7 @@ from django.views.decorators.http import require_POST
 
 from home.authorization import owned_conversations
 from home.models import ChatTurn, Conversation
+from home.provider_availability import configured_provider_ids
 
 MESSAGE_PAGE_SIZE = 50
 
@@ -87,6 +88,7 @@ def _render_history(request, conversation_id=None):
             "history_messages": history_messages,
             "older_cursor": older_cursor,
             "viewing_older": before is not None,
+            "configured_provider_ids": configured_provider_ids(),
         })
         if conversation is not None:
             scoped = conversations.filter(pk=conversation.pk)

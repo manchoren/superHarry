@@ -14,6 +14,9 @@ Status markers retain their historical meaning: accepted, proposed and open. A p
 
 **Baseline:** 2026-10-29; extracted from constitution version 0.4.173-draft.
 
+
+**Provider and model selection (owner, 2026-11-04):** The authenticated chat must provide a selector for the configured Groq, OpenRouter and Gemini provider/model options, as well as automatic selection. A configured credential makes its provider discoverable; selecting an option must actually route the request to the corresponding eligible model, not merely change the display. In local development, detect the provider keys in `.env`; deployments use environment variables or a secrets manager. Never expose credential values. Show unavailable options as unavailable and explain why where appropriate. Credential presence alone does not establish zero cost, provider eligibility or permission to send user data: apply the free-only, disclosure, administrator enablement, protected-context, role, quota and safe-retry rules above to every request. The admin-configurable provider order and safe fallback policy remain in effect. Exact model IDs and provider-specific evidence remain to be selected and verified. The current disabled selector is informational and does not satisfy this requirement.
+
 ## Outstanding design and coherence items
 
 These are unresolved implementation decisions, not new policies:
@@ -605,7 +608,7 @@ Use this table to record outcomes. Status: `open` · `accepted` · `rejected` ·
 | Q-04 | Models | Local-model strategy (A/B/C/D)? | **superseded in part** | Configured free-tier providers rotate in administrator-configurable order on exhaustion when safe; use local inference if available when all fail, otherwise inform the user. Local model selection remains subject to bake-off. |
 | Q-05 | Hardware | Pi 5 RAM size; accelerator? | **accepted** | Pi 5, 8 GB, no accelerator (2026-10-29). AI HAT wouldn't help LLM decoding. |
 | Q-06 | Models | External provider(s)? | **superseded in part** | OpenAI is disabled for now; Groq, OpenRouter and Gemini are provisional candidates requiring provider-specific eligibility, zero-cost, privacy and capability verification. No provider is enabled and no model ID is selected. |
-| Q-07 | Router | User can force a model? Which roles? | **accepted in part** | User/admin may select automatic or local mode and supported reasoning options; configured free providers require their applicable quota and role checks. Guest remains local-only. |
+| Q-07 | Router | User can force a model? Which roles? | **accepted in part** | User/admin may select automatic, local or an eligible configured provider/model through the chat selector; apply supported reasoning options and all free-price, privacy, quota and role checks. Guest remains local-only. Real provider selection is not yet implemented. |
 | Q-08 | Router | Guest data sent to external provider? | **accepted** | Guest uses only the local model; no guest prompts or responses to the external model provider (2026-10-29). |
 | Q-09 | Sandbox | Podman vs Docker vs bubblewrap/nsjail? | **accepted** | nsjail primary, subject to Pi validation; rootless Podman alternative (2026-10-29). |
 | Q-10 | Sandbox | Initial resource limits? | **accepted** | 60 s, one CPU core equivalent, 512 MB RAM, 256 MB temporary disk, 64 processes and 10 MB console output (2026-10-29). |
