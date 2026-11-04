@@ -143,6 +143,13 @@ Verify the key login before relying on SSH. Do not copy a private key into the g
 
 Post-login NIC hotplug, DHCP, and Internet access via `apt update` were confirmed in a Debian NoCloud session on 2026-11-01. The `Run` workflow requires manual post-login hotplug; installer-stage hotplug and the effective pre-OS firmware graph remain unverified. Outbound guest Internet is unrestricted once the backend is attached.
 
+Known pitfalls seen in the 2026-11-04 SSH check:
+
+- Pasting a long line into the QEMU serial console can drop characters. Split long commands or append the public key in pieces with `printf '%s'`.
+- Hotplug IDs are not reusable. If `netdev_add` or `device_add` fails with "Duplicate ID", the object already exists; check `info usernet` before adding it again. A `netdev` added without `hostfwd` does not open port 2222; use a new netdev ID and remove the old device first, because `netbus=netrp` has a single slot (`device_del <id>` before `device_add`).
+- Regenerating guest host keys changes the fingerprint seen by the host. Compare `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` in the guest with the fingerprint offered by the client before removing the stale entry with `ssh-keygen -R "[127.0.0.1]:2222"`.
+- Verify the effective server policy with `sudo sshd -T | grep -Ei 'passwordauthentication|kbdinteractive|permitrootlogin'`; all three must be `no`.
+
 ### ARM64 Django application smoke test (2026-11-02)
 
 The owner-accepted Debian 13.7 (`aarch64`) guest reported Python 3.13.5. Its system Python did not include `ensurepip`, so the owner explicitly authorized installing Debian's `python3.13-venv` package in the disposable guest. In a new project virtual environment, the project's `requirements.txt` installed Django 6.1.2 and passed `manage.py check`, `makemigrations --check --dry-run`, migrations, and all seven tests. A synthetic administrator account was created with an `.invalid` email; an expected invalid-port startup failure, successful requests to `/` and `/accounts/login/`, shutdown, database persistence, and restart were verified. The development server listened only on guest loopback; no app port was forwarded. This demonstrates functional ARM64 emulation only, not Pi hardware or performance acceptance. The guest image's source provenance remains unverified.
