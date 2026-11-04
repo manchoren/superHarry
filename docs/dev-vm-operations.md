@@ -6,13 +6,24 @@ This runbook and [`../scripts/dev-vm.ps1`](../scripts/dev-vm.ps1) use only the o
 
 Owner scope update (2026-11-02): the existing functional Debian NoCloud VM is accepted as the development/test guest, so acquiring and installing the separate Debian 13.7 netinst image is not required for the current T018 scope. The guest reports Debian GNU/Linux 13.7 (trixie); its source-image provenance has not been independently verified. The netinst instructions below are retained only as a future rebuild path; they still require signed-media verification before use. This generic guest is not Raspberry Pi OS and establishes no Pi hardware or performance equivalence. Future deployment scripts and hardware acceptance use the Pi's own distribution. The owner explicitly authorized this disposable-VM test scope and a host-loopback-only SSH forward (`127.0.0.1:2222` to guest port 22), enabled manually only after login. On 2026-11-02, post-login NIC attachment and key-based SSH access as `copilot` were confirmed; the host key fingerprint was checked against the guest console. This does not approve production deployment, LAN exposure, firewall changes, or Raspberry Pi acceptance.
 
+## Owner exception: durable root for the dev VM script (2026-11-04)
+
+The owner authorized `scripts/dev-vm.ps1` to use `C:\superHarry-vm` as its VM root instead of `.dev-vm\`. Every reference below to `.dev-vm\` in the script's Install, Run and cleanup behavior now means `C:\superHarry-vm\`. Scope and limits:
+
+- `C:\superHarry-vm` was created with a restricted ACL (inheritance removed; full control only for the current user, SYSTEM and Administrators). `Validate` checks this ACL.
+- Install creates the base disk in this root. Run creates a per-session overlay in the same root and deletes only its uniquely named session files on normal exit. It never removes the directory or the base.
+- The base in this root is the durable candidate. A disposable overlay or cleanup path that resolves to it would violate the constitution. This is not yet covered by synthetic tests against the durable base; treat that check as an open item before any durable data is written.
+- The owner accepted the residual QEMU 11.1.0 and firmware risks and the same-disk backup limitation (see the [T174 decision packet](t174-owner-decision-packet.md)). This does not verify those artifacts, approve durable data, or authorize LAN exposure.
+
+`.dev-vm\` remains the disposable workspace from before this exception and is not used by the script.
+
 ## Inputs and boundaries
 
 - Run from a normal, non-elevated Windows PowerShell session at the repository root. The QEMU executable and `qemu-img` paths are fixed in the script to `C:\Program Files\qemu\qemu-system-aarch64.exe` and its sibling `C:\Program Files\qemu\qemu-img.exe`; no path override or other QEMU installation is accepted. `Validate` requires the exact reported version/build lines `QEMU emulator version 11.1.0 (v11.1.0-12130-ge470268ff4)` and `qemu-img version 11.1.0 (v11.1.0-12130-ge470268ff4)` plus the locally recorded SHA-256 pins for both executables. It confirms `virt-11.1`, `cortex-a76`, and the required devices; it refuses the unversioned `virt` alias.
 - `Install` requires the exact Debian 13.7 ARM64 netinst ISO and a caller-supplied SHA-256. Before running it, authenticate the ISO using Debian's signed checksum metadata and a separately trusted Debian archive key; the script checks the given digest but does not establish that trust chain or download media.
 - If an earlier `Install` stopped before the guest wrote any disk data, retry with `-ResumeInstall`. This accepts only the existing writable base image when `qemu-img check` succeeds and `qemu-img map` confirms the entire 32 GiB image is still zero and unallocated; it never overwrites a nonempty or otherwise changed image.
 - Firmware paths remain explicit required inputs; they have no default. The script accepts only the owner-selected bundled code/VARS pair by its recorded SHA-256 values. The owner reported that stable202302 predates NetworkPkg fixes in stable202402/202405 and that CVE-2026-97631 concerns PXE boot, with applicability to the bundled binary unverified. The no-NIC startup procedure is the selected mitigation for this local disposable use; it does not resolve the underlying firmware finding.
-- The script creates `.dev-vm\` only in `Install`, and only if absent. Its protected directory ACL grants full control only to the current user, SYSTEM and local Administrators. VM files remain host-side; no shared folder is configured. Do not manually weaken the ACL, run QEMU elevated, add host networking/firewall rules, or use production secrets.
+- The script creates `C:\superHarry-vm\` only in `Install`, and only if absent (owner exception above). Its protected directory ACL grants full control only to the current user, SYSTEM and local Administrators. VM files remain host-side; no shared folder is configured. Do not manually weaken the ACL, run QEMU elevated, add host networking/firewall rules, or use production secrets.
 - All startup command lines specify `-nic none` and omit a network backend. **Firmware phase:** do not attach networking while UEFI is active or before Debian Linux starts; this prevents intentional PXE/network exposure under the owner-selected boundary. **Install phase:** once the Debian installer Linux kernel/menu is visibly running (firmware boot is finished), the operator may manually create a user-mode backend and hot-add `virtio-net-pci` to permit official Debian mirrors and security updates. **Run phase:** each normal VM session starts disconnected and stays offline until the operator has logged in to the installed OS. Only then switch to the local HMP monitor and manually add the outbound-only NAT backend, NIC, and SSH forward bound to host loopback. In a running Debian NoCloud session, the owner confirmed post-login NIC hotplug, interface `ens1` UP with DHCP address `10.0.2.15/24`, default route via `10.0.2.2`, and successful package downloads with `apt update` on 2026-11-01. Installer-stage sequence and effective pre-OS device graph remain unverified, so this is not a claim that the firmware boundary is enforced or G-OPS complete. The loopback SSH forward is the only approved host-forward exception; there is no LAN listener. No shared host directory or QMP/guest-agent management socket is configured. This does not change product deployment policy.
 - Check host RAM and disk capacity first. The script requires 64 GiB free on the repository drive before install or run. The installer-stage hotplug, effective firmware-visible device graph, inbound exposure and cleanup behavior still need owner/G-OPS review.
 
@@ -27,7 +38,7 @@ Set-Location C:\path\to\superHarry
   -FirmwareVarsSha256 'b3b855c5a80310168051164986855692d1bdb06e67619856177965cd87c6774f'
 ```
 
-This invokes QEMU version/help queries, checks explicit firmware file paths and the exact selected-pair digests, and (if present) validates `.dev-vm\` ACLs. It does not create VM files or start a guest. Expected failures identify the missing path or mismatch; do not substitute another QEMU machine or silently use `virt`.
+This invokes QEMU version/help queries, checks explicit firmware file paths and the exact selected-pair digests, and (if present) validates the ACLs of `C:\superHarry-vm\`. It does not create VM files or start a guest. Expected failures identify the missing path or mismatch; do not substitute another QEMU machine or silently use `virt`.
 
 ## 2. Install Debian 13.7 into a protected base disk
 
@@ -80,7 +91,7 @@ The currently used NoCloud image is separate from the netinst base above. If it 
 
    ```powershell
    $sourceOverlay = Read-Host 'Full path of the stopped NoCloud overlay'
-   $baseDisk = Join-Path (Resolve-Path '.dev-vm').Path 'debian-13-nocloud-arm64-base.qcow2'
+   $baseDisk = Join-Path (Resolve-Path 'C:\superHarry-vm').Path 'debian-13-nocloud-arm64-base.qcow2'
    if (Test-Path -LiteralPath $baseDisk) { throw "Refusing to overwrite $baseDisk" }
    & 'C:\Program Files\qemu\qemu-img.exe' convert -p -f qcow2 -O qcow2 $sourceOverlay $baseDisk
    if ($LASTEXITCODE -ne 0) { throw 'qemu-img convert failed; preserve both source and output for inspection.' }
@@ -138,7 +149,7 @@ The owner-accepted Debian 13.7 (`aarch64`) guest reported Python 3.13.5. Its sys
 
 ### Network boundary and cleanup
 
-The user-mode backend provides outbound connectivity from Debian; the sole approved inbound path is the manually enabled SSH forward on `127.0.0.1:2222`, restricted to the host itself. No QMP, guest-agent control socket, LAN listener or shared host directory is configured. Other inbound exposure still requires independent G-OPS review. On QEMU exit code 0, the script removes only those two uniquely named session files. If launch/exit is interrupted, returns nonzero, or deletion fails, preserve remaining artifacts; never delete `.dev-vm\` wholesale. Before any manual cleanup, verify QEMU is no longer running and has released the relevant files, then remove only the identified session artifacts. Retain the base image and the source firmware template.
+The user-mode backend provides outbound connectivity from Debian; the sole approved inbound path is the manually enabled SSH forward on `127.0.0.1:2222`, restricted to the host itself. No QMP, guest-agent control socket, LAN listener or shared host directory is configured. Other inbound exposure still requires independent G-OPS review. On QEMU exit code 0, the script removes only those two uniquely named session files. If launch/exit is interrupted, returns nonzero, or deletion fails, preserve remaining artifacts; never delete the VM root wholesale (`C:\superHarry-vm\` under the owner exception, `.dev-vm\` for the earlier disposable files). Before any manual cleanup, verify QEMU is no longer running and has released the relevant files, then remove only the identified session artifacts. Retain the base image and the source firmware template.
 
 ## Owner review and unresolved operational decisions
 
