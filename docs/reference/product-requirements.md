@@ -1,5 +1,7 @@
 # Detailed product requirements and decision register
 
+**Target override (owner, 2026-11-04):** [ADR 0012](../adr/0012-vm-first-product.md) makes the persistent Linux VM the complete product and release target. Earlier on-Pi/real-device model, speech, OCR, memory and release gates mean actual target-VM validation for this release; Pi physical display/Wi-Fi/microSD/thermal/power checks are optional-port T175/T176/T169 only. Retain stated security, privacy and benchmark criteria. Historical decisions/candidates below do not override this target change. Local STT means inside the guest, not a cloud transcription service.
+
 Read only the sections relevant to the current task. This is the authoritative detail behind the [compact plan](../../project_plan.md), subordinate to the current [constitution](../../constitution.md). Accepted/proposed/open markers remain meaningful. Historical approval wording does not override standing development authorization. ADR 0010 supersedes split-stack references.
 
 # superHarry - Project Plan
@@ -563,30 +565,29 @@ Development procedures, checks, review and completion rules live in [CONTRIBUTIN
 | **7** | Scheduled tasks | Extend the Phase 4 persistent in-app scheduler with user-created tasks, task permissions and resource accounting, missed-job recovery, time zones and admin visibility. |
 | **8** | Images, OCR and local display | Image validation, Spanish/English OCR, HDMI display, Brave sessions and authorized browser control; final hardware choices await Pi tests. |
 | **9** | Channels and voice | Channel identity linking and adapters, Telegram, email, voice modes and WhatsApp according to their pending decisions; final speech configuration awaits Pi tests. |
-| **10** | Real Pi validation and release hardening | After the application is built, install and test on the real Pi: model and audio benchmarks, HDMI, browser, sandbox, storage, security, backup/restore and update rollback. Refine hardware-dependent choices and operational documentation. |
+| **10** | VM deployment and release acceptance | Prepare a durable guest, deploy native services and test model/audio/OCR/memory selection, enabled display isolation, sandbox, storage, security, restart, backup/restore and update rollback on the target VM. Pi adaptation is optional later work. |
 
 ✅ **Q-48 (updated 2026-10-29):** A hardware impediment currently prevents testing on the real Pi, so develop and test first in an emulated ARM64 environment; validate on the real Pi after building the application when hardware permits. Emulation is not a Raspberry Pi 5 hardware or performance measurement. Hardware-dependent decisions remain tentative until validated. Auth, audit and file handling precede sandbox and skills; features may be delivered incrementally as dependencies allow.
 
-### 17.1 Decisions deferred to measurements on the real Pi ✅ (2026-10-29)
-**Principle:** choices that depend on Pi 5 performance or on Spanish quality stay **tentative** until measured on the actual device (8 GB, 256 GB microSDXC, active cooling, production OS) under realistic load. Numbers found on the web are hints, not decisions.
+### 17.1 VM acceptance and optional Pi compatibility
 
-| # | Pending decision | Candidates | What we measure | Gate / criterion | Ref | When |
-|---|------------------|------------|-----------------|------------------|-----|------|
-| 1 | Tier 3 LLM | Qwen3-4B, Gemma 3 4B, Llama 3.2 3B, + Spanish wildcard | tokens/s (prefill/decode), RAM, tool-call validity, blind Spanish rating | Thresholds set **before** the run | P-51, Q-61 | Phase 10 |
-| 2 | TTS voice | `es_AR-daniela-high`; fallback `es_MX-ald-medium` | Real-time factor, idle and under the P-48 background workload; queue delay and time to first audio reported separately | ≤ 0.5 idle, < 1.0 under load; no concurrent heavy jobs | P-48, Q-53 | Phase 10 |
-| 3 | STT model size | whisper.cpp `small` vs `base` (`tiny` as control) | WER on our own Spanish recordings, latency | Exploratory measurements may inform targets; agree thresholds before a separate acceptance run | P-42 | Phase 10 |
-| 4 | RAM budget and concurrency | Full stack running together | Peak RAM, swap use, thermal throttling | No OOM, no swap thrash, no throttling | §4.1.1, P-50 | Phase 10 |
-| 5 | OCR engine | Tesseract vs RapidOCR | Accuracy on Spanish and English samples, time, RAM | Set before the run | P-24, Q-29 | Phase 10 |
-| 6 | Semantic retrieval | Embedding implementation to be decided | RAM, time, retrieval quality | Set before the run; use keyword retrieval if too slow | Q-23, Q-26 | Phase 10 |
+The persistent target Linux VM is the full release target under ADR 0012. Freeze guest OS/kernel, CPU architecture, vCPU/RAM/disk allocation, runtime/model versions and relevant host/virtualization conditions before acceptance. Establish thresholds and workloads before running; label exploratory results separately.
 
-**Rules:**
-- Benchmarks are **scripted and reproducible**; results are committed to `docs/benchmarks/` with date, model and quantization, runtime version, OS and thermal conditions, and are repeated when models or hardware change.
-- Label runs as exploratory or acceptance before execution. Exploratory measurements may inform future thresholds but cannot establish acceptance. Pass/fail thresholds and workload definitions are agreed **before** each acceptance run, to avoid rationalizing results afterwards; rerun under those fixed criteria before accepting a choice.
-- The Tier 3 bake-off harness becomes the seed of the agent eval suite (Q-45).
+- Local model: run the fixed Spanish/voseo and schema/tool-call corpus, record prefill/decode throughput, RAM, protected context overhead and blind quality ratings. Select on guest evidence rather than Pi availability.
+- STT: multilingual Spanish recordings measure WER, latency and RAM inside the guest; transcription stays local to the deployment.
+- TTS: keep the accepted preferred/fallback voice and RTF criteria (<=0.5 idle, <1.0 loaded), with LLM resident but not inferring. Define ordinary guest services/display workload and report queue delay and time to first audio separately. No overlapping heavy jobs.
+- Retrieval and OCR: use fixed Spanish/English fixtures, quality/latency/RAM thresholds and safe fallback behavior; rerun isolation/injection checks after selecting packages.
+- Full stack: verify service responsiveness, bounded queues, guest disk pressure and durable data across reboot, backup/restore, update failure and recovery. Missing physical temperature/storage telemetry is unavailable, not an acceptance failure or a fabricated value.
+- Browser/display control: validate the actual guest graphical/session isolation before enabling it; physical HDMI is not required by the headless web deployment.
+
+Commit redacted scripted evidence under `docs/benchmarks/`, with configuration and date; rerun affected cases when the profile changes. VM acceptance does not prove Pi compatibility. T175/T176/T169 separately cover Pi OS/device builds, physical HDMI/Wi-Fi, microSD/power/thermal behavior and independent benchmark thresholds if the future port is pursued.
 
 ---
 
 ## 19. Decision Register
+
+**Q-63 / P-53 (accepted by owner, 2026-11-04):** The persistent Linux VM is the complete release target; Raspberry Pi is an optional later port. This updates the target platform in Q-05/Q-09/Q-29/Q-41/Q-43/Q-44/Q-47/Q-48/Q-53/Q-54/Q-61 and P-24/P-33/P-34/P-36/P-42/P-48/P-50 without relaxing security, local-transcription or benchmark thresholds. Pi references retained in the dated rows below document the former decision, not a current VM blocker. See ADR 0012 and T174-T176.
+
 
 The entries below preserve existing decision IDs. The changelog is historical. For current decisions, use the accepted body and the constitution.
 

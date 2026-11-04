@@ -24,6 +24,6 @@ python manage.py test
 
 The migration check detects missing migrations without creating them. Use the full suite for security, shared contracts, data/models/migrations or broad/uncertain impact. Scoped runs must meet the existing [test selection policy](docs/reference/test-scoping.md); documentation-only changes use relevant static checks. Report the selected scope and results. No global coverage target applies.
 
-Run additional approved lint, formatting, typing, dependency/secret scans and build checks when applicable; do not claim unavailable tools passed. Regenerate translation binaries with `python manage.py compilemessages` when gettext is available. ARM64 emulation establishes portable functionality, never Pi performance, physical isolation, HDMI or thermal acceptance.
+Run additional approved lint, formatting, typing, dependency/secret scans and build checks when applicable; do not claim unavailable tools passed. Regenerate translation binaries with `python manage.py compilemessages` when gettext is available. The target Linux VM establishes full VM functionality, isolation, load and recovery acceptance. Pi performance and physical HDMI/Wi-Fi/thermal claims require the optional future Pi port and never block the VM release.
 
 When changing the constitution, update the source-controlled `SUPERHARRY_CONSTITUTION_SHA256` in `superharry/settings.py` from its exact raw bytes and run context tests. Keep line endings stable. Runtime authorization and administrative confirmations remain separate from repository approval.

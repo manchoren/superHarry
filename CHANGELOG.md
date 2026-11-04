@@ -6,6 +6,9 @@ Notable changes will be recorded here using the Keep a Changelog structure. Entr
 
 ### Changed
 
+- Adopted VM-first product/deployment acceptance (ADR 0012), retargeted T148-T157 and deferred Pi-only validation to T175/T176/T169. Added T174 for durable storage and operational boundaries separate from disposable VM tests; retained existing runtime security and resource policy.
+- Updated the pinned constitution identity for the VM-first target.
+
 - Compacted daily constitution, plan, backlog and contributor guides; moved detailed requirements, test-scoping policy, task records and historical decisions to linked reference/history files. Task statuses now have one maintained record instead of a duplicate index.
 - Preserved task IDs, acceptance/evidence and partial/open decision distinctions; refreshed the raw-byte constitution digest. No release feature or hardware acceptance was removed.
 

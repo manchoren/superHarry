@@ -1,5 +1,7 @@
 # Development and deployment environment proposal (partially superseded)
 
+**2026-11-04 scope update:** The existing disposable development recipe remains unchanged. [docs/adr/0012-vm-first-product.md](docs/adr/0012-vm-first-product.md) defines a separate persistent full-product VM target (T174/T148/T149). Do not deploy durable data with this recipe or inherit disposable-only firmware risk acceptance as production approval. Pi hardware is no longer a prerequisite for VM acceptance.
+
 Status: Historical T003 proposal. Its React/Node application runtime and npm command interface were superseded on 2026-11-01 by the owner-approved [Django monolith](docs/adr/0010-django-monolith.md). The owner later selected QEMU 11.1.3, the bundled firmware and Debian 13.7 for a disposable local ARM64 VM; see [ADR 0011](docs/adr/0011-development-vm-baseline.md). This does not approve production deployment, Pi hardware acceptance or unreviewed host/VM operations.
 
 ## Candidate baseline

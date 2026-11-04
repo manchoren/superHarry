@@ -4,7 +4,7 @@ The [constitution](constitution.md) governs policy and development authorization
 
 ## Product and architecture
 
-A free, public personal assistant for one Raspberry Pi 5 (8 GB): authenticated bilingual web UI, OpenAI premium and local fallback, scoped memory, controlled tools, scheduled work and approved skills. Voice, messaging and HDMI follow the delivery sequence below.
+A free, public personal assistant running entirely in a persistent Linux VM: authenticated bilingual web UI, OpenAI premium and local fallback, scoped memory, controlled tools, scheduled work and approved skills. Voice, messaging and HDMI follow the delivery sequence below.
 
 Use the [Django monolith](docs/adr/0010-django-monolith.md): built-in auth, sessions, CSRF, ORM, admin and server-rendered templates; SQLite and application modules for models, tools, memory and scheduling. Older React/Fastify/separate-core references are superseded, not additional implementation requirements.
 
@@ -15,9 +15,9 @@ Use the [Django monolith](docs/adr/0010-django-monolith.md): built-in auth, sess
 3. Add maintenance, backup/restore and safe updates; then isolated tools, package validation and approved skills.
 4. Extend scheduling, images/OCR and display functionality along their actual prerequisites.
 5. Deliver Telegram, email, voice notes/web push-to-talk, then review WhatsApp. Hands-free voice remains deferred.
-6. Validate the complete release on the real Pi, including recovery, security, storage, updates and reproducible hardware benchmarks.
+6. Validate the complete VM release, including persistence across restart, security/isolation, storage, backup/restore, updates and reproducible guest benchmarks. Raspberry Pi support is a separate optional later port (T175/T176).
 
-These are milestones, not global barriers. A later independent feature can proceed when its actual prerequisites pass. Local host checks provide fast feedback, portable integration acceptance runs in ARM64 emulation, and only the Pi establishes hardware acceptance. No release scope is removed by this summary.
+These are milestones, not global barriers. A later independent feature can proceed when its actual prerequisites pass. Local host checks provide fast feedback; the target VM establishes full application and deployment acceptance. Only physical Pi-specific functionality is deferred to the optional port. [ADR 0012](docs/adr/0012-vm-first-product.md) supersedes older Pi-only release gates.
 
 ## Requirement map
 
@@ -43,4 +43,4 @@ Read the [detailed source](docs/reference/product-requirements.md) for the relev
 
 Package-guard validation, memory encryption/recovery, display isolation, network onboarding, guest origin handling, model limits, service authentication and hardware selections still require implementation or evidence. A partial decision is not approval of its unresolved protected parts. Check current official provider documentation before integration; historical version, pricing and performance claims are not current verification.
 
-Keep hardware-dependent model, OCR, embedding and speech choices provisional until reproducible Pi measurements pass criteria fixed before acceptance. Historical decisions remain in the [decision changelog](docs/history/project-plan-changelog.md); architectural changes use [ADRs](docs/adr/README.md). Development and review procedures have one source: [CONTRIBUTING.md](CONTRIBUTING.md).
+Finalize model, OCR, embedding and speech choices using reproducible target-VM measurements and criteria fixed before acceptance. Record guest resources and host conditions; revalidate choices independently if a Pi port is pursued. T174 defines a durable profile separate from the disposable test VM; T148/T149 prepare and deploy it without waiting for Pi availability. Historical decisions remain in the [decision changelog](docs/history/project-plan-changelog.md); architectural changes use [ADRs](docs/adr/README.md). Development and review procedures have one source: [CONTRIBUTING.md](CONTRIBUTING.md).

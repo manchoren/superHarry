@@ -1,5 +1,7 @@
 # ADR 0011: Development VM baseline decisions
 
+**2026-11-04 scope update:** The existing disposable development recipe remains unchanged. [0012-vm-first-product.md](0012-vm-first-product.md) defines a separate persistent full-product VM target (T174/T148/T149). Do not deploy durable data with this recipe or inherit disposable-only firmware risk acceptance as production approval. Pi hardware is no longer a prerequisite for VM acceptance.
+
 Status: Accepted by the owner on 2026-11-01; updated after host installation on 2026-11-01. This decision covers a disposable local development VM only; it does not approve production deployment, real Raspberry Pi acceptance, or unrelated application dependencies.
 
 ## Context

@@ -1,5 +1,7 @@
 # Delivery reference
 
+**Target override (owner, 2026-11-04):** [ADR 0012](../adr/0012-vm-first-product.md) makes the persistent Linux VM the complete product and release target. Earlier on-Pi/real-device model, speech, OCR, memory and release gates mean actual target-VM validation for this release; Pi physical display/Wi-Fi/microSD/thermal/power checks are optional-port T175/T176/T169 only. Retain stated security, privacy and benchmark criteria. Historical decisions/candidates below do not override this target change. Local STT means inside the guest, not a cloud transcription service.
+
 Consult for affected risks, shared resources and release coverage, not before every task. The [constitution](../../constitution.md) governs authorization; old gate wording does not require a second approval within standing development authorization. Historical parallel waves are planning context, not mandatory agent delegation.
 
 ## Approval and decision register
@@ -18,7 +20,7 @@ These gates implement the constitution's Ask First rules. Approval to write this
 | G-CHANNEL | Each new/changed channel integration, identity verification and permissions. Email initially reads and drafts only; humans send. | T131, T135, T146 |
 | G-SPEECH | Speech dependencies, local audio handling and supported models/voices. Changes to STT/TTS engines/providers or audio leaving the device require approval; STT remains local under current policy. | T139 |
 | G-DISPLAY | OS/session isolation, display/automation privileges, ownership transitions, credential protection and consequential-action confirmation design. | T117 |
-| G-BENCH | Pre-agreed acceptance thresholds and workloads; final hardware-dependent model, embedding, OCR, voice and resource choices after real Pi evidence. | T015, T150 |
+| G-BENCH | Pre-agreed acceptance thresholds and workloads; final model, embedding, OCR, voice and resource choices after target-VM evidence; Pi-only choices belong to the optional port. | T015, T150 |
 | G-SCOPE | Explicit decisions on deferred/optional capabilities or unsupported integrations. No implicit new guest/user capability, autonomous outbound messaging or replacement integration. | T146, T159-T166 |
 
 Approvals must identify scope, decision, reviewer and evidence in the relevant ADR/work record. Runtime operations still require their own authenticated role checks, confirmations and audit records.
@@ -36,7 +38,7 @@ The phases follow project_plan.md section 17. They are delivery milestones, not 
 | E: tools and skills | Public-fetch tools T083, file staging T084, sandbox T082 and guard design T086 after security/file prerequisites; skill design T095 can proceed independently. | T094 sandbox/tool security acceptance before skill execution T099. |
 | F: feature expansion | Scheduler extension T103-T110, image/OCR T111-T116, display T117-T130 and channel contract T131 after their separate dependencies. | Contracts, scoped authorization, resource governor and secure attachment path must already exist. |
 | G: channel delivery | UI/fixture work can overlap; production channel integrations follow Telegram T134, email T138, voice T145, then WhatsApp review/integration T146-T147. | Preserve the accepted channel order. Hands-free remains deferred. |
-| H: hardware and release | Functional security reviews and documentation may overlap hardware readiness. On the single Pi, serialize acceptance workloads and freeze their configurations. | T148-T158, T169: real hardware, full recovery/security checks and release approval; blocked features remain explicitly blocked. |
+| H: VM deployment and release | T174 defines durable storage/lifecycle; T148 prepares the VM and T149 hardens its services. Serialize guest acceptance workloads and freeze the profile. | T150-T158: real guest load, security, persistence/recovery and release approval. T175/T176/T169 are optional future Pi work. |
 
 ### Shared resources and paths that must be serialized
 
@@ -48,7 +50,7 @@ The phases follow project_plan.md section 17. They are delivery milestones, not 
 | Manifests and lockfiles | One writer per dependency ecosystem; stage dependency approvals before generating lockfile changes. |
 | UI shell and catalogs | One shell integrator; domain owners edit separate module namespaces and pass English/Spanish key parity checks. |
 | Display and browser | One coordinator owns transitions; no second actor bypasses its generation checks or confirmation lifecycle. |
-| Pi and benchmark configuration | One operator owns the acceptance run. No competing inference, audio, OCR, heavy sandbox or installation jobs. |
+| Target VM and benchmark configuration | One operator owns the acceptance run. No competing inference, audio, OCR, heavy sandbox or installation jobs. |
 | Release and data recovery | One operator coordinates staging, verified backups, service restarts, migration and rollback. |
 
 Main dependency spines are foundations -> approved contracts -> secure access/files/audit -> routing/governor -> sandbox security -> skills; and scoped persistence -> maintenance scheduler/backup/updates -> scheduled user work. Display and channel branches join the same authorization, file and resource boundaries. The release joins all required branches. These are dependency paths, not duration-based critical-path estimates.
@@ -88,3 +90,7 @@ Apply these criteria to T022, T029, T066 and each domain's metrics integration; 
 - Detailed content logging requires separate admin opt-in, a visible UI notice and automatic expiry after one hour. Secrets, browser credentials and protected fields are always excluded. Test expiry across restart and setting changes under the approved persistence policy.
 - Security audit cannot be disabled by diagnostic settings or altered through agent tools. Authentication failures and privileged-action failures have actionable admin alerts under the approved notification/delivery policy; do not add an outbound channel implicitly.
 - Track available CPU temperature, RAM/storage, queue depth, token/cost usage and sandbox runs; show failed jobs, updates and recovery operations to the authorized actor. Emulator-only unavailable hardware metrics must be labeled rather than fabricated.
+
+## Platform delivery map
+
+T021 -> T174 -> T148 -> T149 -> T150 -> T151-T157 -> T158 is the VM platform path (other application/security prerequisites remain in task records). T175 -> T169/T176 is a separate optional Pi path after T158. T149 no longer waits for T079 updater implementation: base deployment must exist before update/rollback validation. T022 host logging and timer validation can use the VM service identity established by T149.
