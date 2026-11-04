@@ -23,9 +23,9 @@ The following names are existing directions in the cited project requirements, n
 
 | Capability | Existing named candidates or direction | Source and remaining decision |
 |---|---|---|
-| UI runtime and language | React, React DOM, TypeScript, Node.js | [Plan Q-36/P-29](../project_plan.md#11-web-app-react--node) selects the stack; exact versions, React DOM and Node artifacts and compatibility remain to be reviewed. |
+| UI runtime and language | React, React DOM, TypeScript, Node.js | [Plan Q-36/P-29](reference/product-requirements.md#11-web-app-django-templates) selects the stack; exact versions, React DOM and Node artifacts and compatibility remain to be reviewed. |
 | UI build and components | Vite, Tailwind CSS, shadcn/ui | Plan Q-36/P-29; identify which shadcn source components and direct and transitive packages are actually required, and review their licenses and source integrity. |
-| Translation | i18next and react-i18next | [Plan Q-58](../project_plan.md#11-web-app-react--node); exact versions, artifacts and integration tests remain unselected. |
+| Translation | i18next and react-i18next | [Plan Q-58](reference/product-requirements.md#11-web-app-django-templates); exact versions, artifacts and integration tests remain unselected. |
 | Access boundary | Fastify on Node.js | Plan Q-36/P-29 and T016; enumerate and justify any plugins rather than assuming one for each auth, SSE, upload or validation requirement. |
 | Core and database | Python, SQLite, versioned SQL and a Python migration runner | [ADR 0009](adr/0009-migration-owner.md) records ownership and format direction; exact Python/SQLite builds, any runtime packages and independently gated schemas remain open. [ADR 0008](adr/0008-python-lock-direction.md) selects the `uv.lock` format direction, not the resolver executable or version. |
 | Local engineering checks | ESLint, Prettier, TypeScript strict checking, Ruff, Black, mypy or pyright | [Plan section 14](../project_plan.md) and T020 name the checks; choose and approve the type checker, exact tools, runtimes and compatible versions. |

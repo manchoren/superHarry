@@ -31,7 +31,7 @@ T168 creates a small runnable Django scaffold with built-in authentication route
 
 ## References
 
-- [Project plan Q-62/P-52](../../project_plan.md#19-decision-register)
+- [Project plan Q-62/P-52](../reference/product-requirements.md#19-decision-register)
 - [Django official download page](https://www.djangoproject.com/download/)
 - [Superseded architecture proposal](../../architecture_proposal.md)
 - [ADR 0001](0001-repository-layout.md)

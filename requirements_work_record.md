@@ -11,7 +11,7 @@ Task: T001. Recorded 2026-10-30 from repository sources; this is an inventory, n
 
 ## Decision inventory
 
-The detailed authoritative status and scope for each ID are in [plan section 19](project_plan.md#19-decision-register). The groupings below make every register entry traceable without replacing its text. Where a decision is partial, consult both the register and relevant plan body before implementation.
+The detailed authoritative status and scope for each ID are in [plan section 19](docs/reference/product-requirements.md#19-decision-register). The groupings below make every register entry traceable without replacing its text. Where a decision is partial, consult both the register and relevant plan body before implementation.
 
 | Status | Decision IDs | Interpretation |
 |---|---|---|
@@ -38,7 +38,7 @@ Deferred choices and capabilities include local-model and embedding selection, O
 | Display and browser | Per-user OS isolation, privileges, handover, in-flight action handling and credential protection. | T117; G-DISPLAY and real-device validation. |
 | Evaluation and scope | Scheduler defaults, exact evaluation cases and expected outcomes, acceptance thresholds before benchmark runs, logo and optional capabilities. | T015, T150, T159–T166; G-BENCH and G-SCOPE as applicable. |
 
-The approval register and task dependencies in [TASK.md](TASK.md#approval-and-decision-register) govern when implementation may start. Design preparation under a `Gate: none` does not authorize the subsequent gated implementation. No approval, review, installation, test result, hardware acceptance or implementation is asserted by this record.
+The approval register and task dependencies in [TASK.md](docs/reference/delivery-constraints.md#approval-and-decision-register) govern when implementation may start. Design preparation under a `Gate: none` does not authorize the subsequent gated implementation. No approval, review, installation, test result, hardware acceptance or implementation is asserted by this record.
 
 ## Work evidence
 
@@ -46,4 +46,12 @@ T001 inspected the complete constitution, the plan's status rules, outstanding i
 
 ## Owner override: Django monolith (2026-11-01)
 
-The owner selected a Django monolith, replacing the former TypeScript/Fastify access service, React/Vite client and separately hosted Python core where those choices conflict. Django's supported security mechanisms and defaults take precedence over bespoke authentication, password, session and CSRF designs. The owner explicitly chose to trust the current stable Django implementation without auditing Django internals; this does not remove project configuration, app-level authorization, dependency updates or integration tests. At decision time, Django's official download page listed 6.1.2 as its latest official release. See [ADR 0010](docs/adr/0010-django-monolith.md) and [Q-62/P-52](project_plan.md#19-decision-register). The historical inventory above is retained as a record of the former decisions, not as the current stack.
+The owner selected a Django monolith, replacing the former TypeScript/Fastify access service, React/Vite client and separately hosted Python core where those choices conflict. Django's supported security mechanisms and defaults take precedence over bespoke authentication, password, session and CSRF designs. The owner explicitly chose to trust the current stable Django implementation without auditing Django internals; this does not remove project configuration, app-level authorization, dependency updates or integration tests. At decision time, Django's official download page listed 6.1.2 as its latest official release. See [ADR 0010](docs/adr/0010-django-monolith.md) and [Q-62/P-52](docs/reference/product-requirements.md#19-decision-register). The historical inventory above is retained as a record of the former decisions, not as the current stack.
+
+## Documentation compaction - 2026-11-04
+
+Owner requested compact daily documents and a commit. Current constitution SHA-256: `6ae7bbcff6496dfe9994b4178f0fa4ef85ee8a7a4d0d16bc907c15b7d2dbd8c8` (raw CRLF bytes, synchronized with application settings). Baseline hashes above are historical, not current release identities.
+
+Detailed requirements/decision statuses and task IDs/acceptance/evidence were retained in `docs/reference/` and `docs/history/`. All 170 detailed task records are accounted for: 140 active and 30 checked records. The former duplicate tracking table was removed; task records now own status. Root documents link the daily route. Standing development authorization remains in force; no runtime permissions or release acceptance were expanded by compaction.
+
+Validation: Windows/project Python environment; `manage.py check`, `makemigrations --check --dry-run`, full `manage.py test` (109 tests, OK), local Markdown target/heading checks, exact task-ID accounting, raw constitution/settings digest agreement and staged whitespace checks passed. Full suite selected because the release-pinned protected instruction document changed; scoped-only testing is not applicable. No deployment, ARM64 or Pi acceptance claimed.

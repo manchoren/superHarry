@@ -5,9 +5,9 @@ superHarry is a free, public personal AI agent for a single Raspberry Pi 5 (8 GB
 The repository now contains the initial Django monolith scaffold. It uses Django's built-in authentication, sessions, CSRF protection, ORM and admin rather than a separate TypeScript access service. This is a development foundation, not a complete application or production deployment.
 
 - [Constitution](constitution.md): binding project directives and change rules; it prevails over the plan. For Django-provided security behavior, use Django's supported defaults and mechanisms instead of duplicating them.
-- [Project plan](project_plan.md): requirements, decision register and roadmap.
-- [Task backlog](TASK.md): dependencies, approval gates and work evidence.
-- [Requirements work record](requirements_work_record.md): decision inventory and source hashes.
+- [Project plan](project_plan.md): compact scope and roadmap; links to detailed requirements and decisions.
+- [Task backlog](TASK.md): start with the current delivery priority (T171-T173); the full inventory tracks release scope and evidence.
+- [Requirements work record](requirements_work_record.md): historical baseline inventory and source hashes; current task evidence records the current constitution hash.
 - [Contributing](CONTRIBUTING.md): review, security and local validation requirements.
 - [ADR conventions](docs/adr/README.md): decision and approval records.
 - [Django monolith decision](docs/adr/0010-django-monolith.md): owner-approved stack replacement and scope.

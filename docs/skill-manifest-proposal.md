@@ -1,6 +1,6 @@
 ﻿# Skill manifest and approval records: design draft
 
-Status: T095 design proposal; unapproved and not an implemented or approved schema. G-CONTRACT and applicable G-SECURITY decisions remain open. Constitution baseline 2026-10-29, SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`. T004–T006 design work is recorded complete; [ADR 0002](adr/0002-contracts-storage.md) records only limited contract/storage approval. This proposal does not override the constitution or [plan section 6](../project_plan.md#6-skills), and its examples are not approval evidence.
+Status: T095 design proposal; unapproved and not an implemented or approved schema. G-CONTRACT and applicable G-SECURITY decisions remain open. Constitution baseline 2026-10-29, SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`. T004–T006 design work is recorded complete; [ADR 0002](adr/0002-contracts-storage.md) records only limited contract/storage approval. This proposal does not override the constitution or [plan section 6](reference/product-requirements.md#6-skills), and its examples are not approval evidence.
 
 ## `SKILL.md` and package contents
 
