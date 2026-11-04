@@ -123,11 +123,35 @@ the standalone browser-simulation test.
 
 Stop both foreground processes with Ctrl+C. This configuration is a development
 server and must not be exposed to the LAN or public internet; it is not a
-persistent service, backup, or HTTPS deployment recipe. For a clean ARM64 VM,
-use an independently authenticated Debian installer and follow Debian's
-[signed checksum instructions](https://www.debian.org/CD/verify) and the
-[disposable VM runbook](dev-vm-operations.md). That runbook's `Install` creates
-a development base with disposable session overlays and is not the durable
-VM deployment; its exact media and firmware compatibility must be reviewed.
-Persistent VM creation, trusted networking, service credentials, backup,
-restore and target acceptance remain T174 and T148/T149 work.
+persistent service, backup, or HTTPS deployment recipe.
+
+## Clean ARM64 VM installation (durable profile, not yet executed)
+
+Owner decision (2026-11-04): accept the residual risks of the currently installed
+QEMU 11.1.0 build and firmware, and of the Debian installation media and
+resulting guest described in [T174](t174-owner-decision-packet.md). This
+decision does not verify those artifacts and does not authorize any step below
+on the host. Run these steps only after the applicable G-OPS review.
+
+1. Download the official Debian 13.7.0 ARM64 netinst image and its signed checksums
+   from `https://cdimage.debian.org/debian-cd/current/arm64/iso-cd/`
+   (`debian-13.7.0-arm64-netinst.iso`, `SHA256SUMS`, `SHA256SUMS.sign`).
+2. Verify the signature with a Debian CD signing key whose fingerprint is
+   published at [Debian's verification page](https://www.debian.org/CD/verify)
+   (`DA87 E80D 6294 BE9B`, `9880 21A9 64E6 EA7D`). Then check the ISO against the
+   signed list, e.g. `grep netinst SHA256SUMS | sha256sum -c -`. Stop on any
+   mismatch.
+3. Create a new protected base disk and run the installer following
+   [development VM operations](dev-vm-operations.md) section 2, using the exact
+   pinned QEMU and firmware checks in section 1.
+4. Choose a new VM directory outside the repository and outside `.dev-vm`, for
+   example `C:\superHarry-vm`. Do not reuse the disposable session overlay or
+   its cleanup path for durable data.
+5. Keep the guest's network boundary as defined in
+   [T174](t174-durable-vm-profile.md): no LAN listener or port forwarding until
+   trusted networking is approved.
+6. Backups on the same disk protect only against logical mistakes, not disk
+   loss. Record that limitation with any backup you create.
+
+Trusted networking, service credentials, backup schedule, restore testing and
+target acceptance remain T174 and T148/T149 work.

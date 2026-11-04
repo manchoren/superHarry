@@ -8,3 +8,4 @@ db.sqlite3
 !.env.example
 staticfiles/
 caddy_windows_amd64.exe
+.durable-vm-staging/

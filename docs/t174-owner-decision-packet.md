@@ -248,3 +248,11 @@ signature, advisory, ACL, path alias, image, firmware graph, VM boot, backup or
 restore was validated in preparing this packet.
 
 Owner update (2026-11-04): the owner does not have or does not know the location of the original Debian image or the exact QEMU installer. This does not establish provenance or approve artifact reuse.
+
+## Owner decisions (2026-11-04)
+
+1. Host storage: VM root `C:\superHarry-vm`, backup on the same C: volume. Accepted limitation: no protection against disk loss.
+2. Guest media: official Debian 13.7.0 ARM64 netinst, verified by Debian CD signature (`DA87 E80D 6294 BE9B`) and SHA-256 against the signed `SHA256SUMS`. Installation has not been performed.
+3. QEMU and firmware: the installed QEMU 11.1.0 and EDK2 files are accepted as-is, including the unresolved signature, advisory and provenance risks. This is an owner risk acceptance for the durable profile, not a verification.
+
+This decision documents the clean-install procedure in `docs/clean-local-install.md`. It does not authorize VM creation, boot, network exposure or backup execution, which still require G-OPS review.
