@@ -2,7 +2,7 @@ import hashlib
 import hmac
 import re
 import struct
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Protocol
 
@@ -111,7 +111,7 @@ def prepare_context(
     if not isinstance(user_request, str) or not user_request:
         raise ContextPreparationError("invalid_user_request")
     try:
-        request_bytes = user_request.encode("utf-8", errors="strict")
+        user_request.encode("utf-8", errors="strict")
     except UnicodeEncodeError:
         raise ContextPreparationError("user_request_encoding_invalid") from None
 
@@ -136,13 +136,6 @@ def prepare_context(
     ):
         raise ContextPreparationError("context_overflow")
 
-    digest = _bundle_digest(
-        constitution=constitution,
-        request_bytes=request_bytes,
-        serialized_input=serialized_input,
-        profile=profile,
-        token_count=token_count,
-    )
     prepared = PreparedContext(
         manifest_format=_CONTEXT_MANIFEST_FORMAT,
         constitution=constitution,
@@ -158,8 +151,9 @@ def prepare_context(
         context_capacity=profile.context_capacity,
         output_reserve=profile.output_reserve,
         safety_margin=profile.safety_margin,
-        bundle_digest=digest,
+        bundle_digest="",
     )
+    prepared = replace(prepared, bundle_digest=_bundle_digest(prepared))
     ensure_context_is_current(
         prepared,
         source_path=source_path,
@@ -188,6 +182,7 @@ def ensure_context_is_current(
     source_path: str | Path,
     expected_sha256: str,
 ) -> None:
+    ensure_prepared_context_integrity(prepared)
     current = load_verified_constitution(source_path, expected_sha256)
     if (
         current.sha256 != prepared.constitution.sha256
@@ -255,32 +250,64 @@ def _validate_profile(profile: ContextProfile) -> None:
         raise ContextPreparationError("context_profile_invalid")
 
 
-def _bundle_digest(
-    *,
-    constitution: ConstitutionSnapshot,
-    request_bytes: bytes,
-    serialized_input: bytes,
-    profile: ContextProfile,
-    token_count: int,
-) -> str:
+def ensure_prepared_context_integrity(prepared: PreparedContext) -> None:
+    """Detect inconsistent fields, not adversarial modification or provenance."""
+    if not isinstance(prepared, PreparedContext):
+        raise ContextPreparationError("context_bundle_invalid")
+    try:
+        if (
+            prepared.manifest_format != _CONTEXT_MANIFEST_FORMAT
+            or not isinstance(prepared.bundle_digest, str)
+            or not _SHA256_RE.fullmatch(prepared.bundle_digest)
+            or not isinstance(prepared.constitution, ConstitutionSnapshot)
+            or not isinstance(prepared.user_request, str)
+            or not prepared.user_request
+            or not isinstance(prepared.serialized_input, bytes)
+            or not prepared.serialized_input
+            or any(not isinstance(v, str) or not v.strip() for v in (
+                prepared.profile_id, prepared.profile_revision,
+                prepared.tokenizer_id, prepared.tokenizer_revision,
+                prepared.counter_id, prepared.counter_revision,
+            ))
+            or any(type(v) is not int for v in (
+                prepared.input_token_upper_bound, prepared.context_capacity,
+                prepared.output_reserve, prepared.safety_margin,
+            ))
+            or prepared.input_token_upper_bound < 0
+            or prepared.context_capacity <= 0
+            or prepared.output_reserve <= 0
+            or prepared.safety_margin < 0
+            or prepared.input_token_upper_bound + prepared.output_reserve
+                + prepared.safety_margin > prepared.context_capacity
+        ):
+            raise ContextPreparationError("context_bundle_invalid")
+        actual_digest = _bundle_digest(prepared)
+        if not hmac.compare_digest(prepared.bundle_digest, actual_digest):
+            raise ContextPreparationError("context_bundle_invalid")
+    except (TypeError, ValueError, AttributeError, UnicodeError, OverflowError):
+        raise ContextPreparationError("context_bundle_invalid") from None
+
+
+def _bundle_digest(prepared: PreparedContext) -> str:
+    constitution = prepared.constitution
     fields = (
-        ("manifest_format", _CONTEXT_MANIFEST_FORMAT.encode("ascii")),
+        ("manifest_format", prepared.manifest_format.encode("ascii")),
         ("constitution.source_id", constitution.source_id.encode("ascii")),
         ("constitution.sha256", constitution.sha256.encode("ascii")),
         ("constitution.byte_length", str(constitution.byte_length).encode("ascii")),
         ("constitution.text", constitution.text.encode("utf-8")),
-        ("request", request_bytes),
-        ("serialized_input", serialized_input),
-        ("profile.id", profile.profile_id.encode("utf-8")),
-        ("profile.revision", profile.profile_revision.encode("utf-8")),
-        ("tokenizer.id", profile.tokenizer_id.encode("utf-8")),
-        ("tokenizer.revision", profile.tokenizer_revision.encode("utf-8")),
-        ("counter.id", profile.counter_id.encode("utf-8")),
-        ("counter.revision", profile.counter_revision.encode("utf-8")),
-        ("token_count_upper_bound", str(token_count).encode("ascii")),
-        ("context_capacity", str(profile.context_capacity).encode("ascii")),
-        ("output_reserve", str(profile.output_reserve).encode("ascii")),
-        ("safety_margin", str(profile.safety_margin).encode("ascii")),
+        ("request", prepared.user_request.encode("utf-8")),
+        ("serialized_input", prepared.serialized_input),
+        ("profile.id", prepared.profile_id.encode("utf-8")),
+        ("profile.revision", prepared.profile_revision.encode("utf-8")),
+        ("tokenizer.id", prepared.tokenizer_id.encode("utf-8")),
+        ("tokenizer.revision", prepared.tokenizer_revision.encode("utf-8")),
+        ("counter.id", prepared.counter_id.encode("utf-8")),
+        ("counter.revision", prepared.counter_revision.encode("utf-8")),
+        ("token_count_upper_bound", str(prepared.input_token_upper_bound).encode("ascii")),
+        ("context_capacity", str(prepared.context_capacity).encode("ascii")),
+        ("output_reserve", str(prepared.output_reserve).encode("ascii")),
+        ("safety_margin", str(prepared.safety_margin).encode("ascii")),
     )
     digest = hashlib.sha256()
     digest.update(_CONTEXT_MANIFEST_DOMAIN)

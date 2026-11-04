@@ -1,9 +1,10 @@
 import hashlib
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from unittest import TestCase
 from uuid import uuid4
 
-from home.constitution_context import ConstitutionSnapshot, PreparedContext
+from home.constitution_context import ConstitutionSnapshot, PreparedContext, _bundle_digest
 from home.model_interface import (
     CapabilityEntry,
     CapabilityReport,
@@ -46,8 +47,7 @@ class ModelInterfaceTests(TestCase):
     def setUp(self):
         self.request_id = uuid4()
         self.constitution_text = "Complete immutable constitution"
-        self.context = ContextManifest(
-            PreparedContext(
+        prepared = PreparedContext(
                 manifest_format="superharry.context-bundle.v1",
                 constitution=ConstitutionSnapshot(
                     source_id="constitution.md",
@@ -69,9 +69,9 @@ class ModelInterfaceTests(TestCase):
                 context_capacity=10,
                 output_reserve=1,
                 safety_margin=0,
-                bundle_digest="1" * 64,
+                bundle_digest="",
             )
-        )
+        self.context = ContextManifest(replace(prepared, bundle_digest=_bundle_digest(prepared)))
 
     def _request(self):
         return ModelRequest(
@@ -123,6 +123,20 @@ class ModelInterfaceTests(TestCase):
                 ),
             ),
         )
+
+    def test_manifest_rejects_inconsistent_prepared_fields(self):
+        prepared = self.context.prepared_context
+        for field, value in (
+            ("user_request", "altered"),
+            ("serialized_input", b"altered"),
+            ("profile_revision", "altered"),
+            ("input_token_upper_bound", 2),
+            ("context_capacity", 11),
+        ):
+            with self.subTest(field=field):
+                with self.assertRaises(ModelContractError) as raised:
+                    ContextManifest(replace(prepared, **{field: value}))
+                self.assertEqual(raised.exception.code, "context_manifest_invalid")
 
     def test_request_requires_full_protected_constitution_and_user_request(self):
         request = self._request()

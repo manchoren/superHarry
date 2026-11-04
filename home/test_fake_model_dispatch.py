@@ -1,5 +1,6 @@
 ﻿import hashlib
 import tempfile
+from dataclasses import replace
 from pathlib import Path
 from unittest import TestCase
 from unittest.mock import patch
@@ -52,6 +53,33 @@ class FakeDispatchTests(TestCase):
         self.path.write_bytes(self.raw)
         with self.assertRaises(FakeModelDispatchError):
             dispatch_fake_model("x" * 100_000, principal_id="1", adapter=NeverCalled())
+        self.assertEqual(calls, [])
+
+    def test_inconsistent_prepared_context_blocks_adapter(self):
+        from home.constitution_context import prepare_release_context
+        from home.fake_model_dispatch import DeterministicFakeAdapter
+
+        calls = []
+
+        class NeverCalled(DeterministicFakeAdapter):
+            def stream(self, request, context):
+                calls.append(True)
+                return iter(())
+
+        for field, value in (
+            ("user_request", "altered"),
+            ("serialized_input", b"altered"),
+            ("profile_revision", "altered"),
+            ("input_token_upper_bound", 2),
+            ("context_capacity", 12345),
+        ):
+            def prepare_altered(**kwargs):
+                return replace(prepare_release_context(**kwargs), **{field: value})
+
+            with self.subTest(field=field):
+                with patch("home.fake_model_dispatch.prepare_release_context", side_effect=prepare_altered):
+                    with self.assertRaises(FakeModelDispatchError):
+                        dispatch_fake_model("hello", principal_id="1", adapter=NeverCalled())
         self.assertEqual(calls, [])
 
     def test_stale_result_is_discarded(self):

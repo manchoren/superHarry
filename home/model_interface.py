@@ -6,7 +6,10 @@ from enum import Enum
 from typing import Iterable, Iterator, Protocol, TypeAlias
 from uuid import UUID
 
-from home.constitution_context import ConstitutionSnapshot, PreparedContext
+from home.constitution_context import (
+    ConstitutionSnapshot, ContextPreparationError, PreparedContext,
+    ensure_prepared_context_integrity,
+)
 
 
 _SAFE_CODE_RE = re.compile(r"[a-z0-9][a-z0-9._-]{0,63}\Z")
@@ -142,6 +145,10 @@ class ContextManifest:
     prepared_context: PreparedContext
 
     def __post_init__(self):
+        try:
+            ensure_prepared_context_integrity(self.prepared_context)
+        except ContextPreparationError:
+            raise ModelContractError("context_manifest_invalid") from None
         if not isinstance(self.prepared_context, PreparedContext):
             raise ModelContractError("context_manifest_invalid")
         if not isinstance(
