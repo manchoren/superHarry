@@ -12,6 +12,7 @@ The owner authorized `scripts/dev-vm.ps1` to use `C:\superHarry-vm` as its VM ro
 
 - `C:\superHarry-vm` was created with a restricted ACL (inheritance removed; full control only for the current user, SYSTEM and Administrators). `Validate` checks this ACL.
 - Install creates the base disk in this root. Run creates a per-session overlay in the same root and deletes only its uniquely named session files on normal exit. It never removes the directory or the base.
+- Accepted risk (2026-11-04, development only): the base and the Run overlays share `C:\superHarry-vm`. Until the root is split, any cleanup bug could affect the base. Until then, run only development sessions with synthetic data, and do not run user sessions or store user data there.
 - The base in this root is the durable candidate. A disposable overlay or cleanup path that resolves to it would violate the constitution. This is not yet covered by synthetic tests against the durable base; treat that check as an open item before any durable data is written.
 - The owner accepted the residual QEMU 11.1.0 and firmware risks and the same-disk backup limitation (see the [T174 decision packet](t174-owner-decision-packet.md)). This does not verify those artifacts, approve durable data, or authorize LAN exposure.
 
