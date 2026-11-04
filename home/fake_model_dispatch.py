@@ -4,6 +4,7 @@ import json
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
+from home.chat_events import MAX_OUTPUT_CONTENT_BYTES
 from home.constitution_context import (
     ContextProfile,
     ensure_release_context_is_current,
@@ -85,9 +86,16 @@ def dispatch_fake_model(user_request: str, *, principal_id: str, adapter=None) -
         require_capabilities(report, requirements, now=datetime.now(timezone.utc))
         ensure_release_context_is_current(prepared)
         chunks = []
+        output_bytes = 0
         completed = False
         for event in iter_validated_model_events(adapter.stream(request, invocation), capability_report=report):
             if isinstance(event, ModelTextDelta):
+                remaining_bytes = MAX_OUTPUT_CONTENT_BYTES - output_bytes
+                if len(event.text) > remaining_bytes:
+                    raise FakeModelDispatchError("fake_dispatch_failed")
+                output_bytes += len(event.text.encode("utf-8", errors="strict"))
+                if output_bytes > MAX_OUTPUT_CONTENT_BYTES:
+                    raise FakeModelDispatchError("fake_dispatch_failed")
                 chunks.append(event.text)
             elif isinstance(event, ModelCompleted):
                 completed = True

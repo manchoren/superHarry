@@ -175,3 +175,34 @@ msgstr "You"
 
 msgid "Assistant"
 msgstr "Assistant"
+
+
+msgid "Conversations"
+msgstr "Conversations"
+
+msgid "New conversation"
+msgstr "New conversation"
+
+msgid "Conversation"
+msgstr "Conversation"
+
+msgid "Conversation pages"
+msgstr "Conversation pages"
+
+msgid "Previous"
+msgstr "Previous"
+
+msgid "Next"
+msgstr "Next"
+
+msgid "Message history"
+msgstr "Message history"
+
+msgid "Older messages"
+msgstr "Older messages"
+
+msgid "Latest messages"
+msgstr "Latest messages"
+
+msgid "Current turn"
+msgstr "Current turn"

@@ -241,6 +241,12 @@ class ModelRequest:
             raise ModelContractError("capability_requirements_invalid")
         if not isinstance(self.requested_options, RequestedOptions):
             raise ModelContractError("requested_options_invalid")
+        if (
+            self.requested_options.output_token_limit is not None
+            and self.requested_options.output_token_limit
+            > self.context.prepared_context.output_reserve
+        ):
+            raise ModelContractError("output_reserve_exceeded")
 
         constitution = self.context.prepared_context.constitution
         protected_matches = sum(

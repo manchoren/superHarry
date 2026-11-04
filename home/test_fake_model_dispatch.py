@@ -82,6 +82,59 @@ class FakeDispatchTests(TestCase):
                         dispatch_fake_model("hello", principal_id="1", adapter=NeverCalled())
         self.assertEqual(calls, [])
 
+    def test_fake_output_accepts_exact_utf8_byte_limit(self):
+        from home.chat_events import MAX_OUTPUT_CONTENT_BYTES
+        from home.fake_model_dispatch import DeterministicFakeAdapter
+        from home.model_interface import ModelCompleted
+
+        expected = "\u00e9" * (MAX_OUTPUT_CONTENT_BYTES // 2)
+
+        class BoundaryAdapter(DeterministicFakeAdapter):
+            def stream(self, request, context):
+                yield ModelStarted(1, "fake", "1")
+                yield ModelTextDelta(2, expected[:100])
+                yield ModelTextDelta(3, expected[100:])
+                yield ModelCompleted(4)
+
+        self.assertEqual(
+            dispatch_fake_model("hello", principal_id="1", adapter=BoundaryAdapter()),
+            expected,
+        )
+
+    def test_fake_output_rejects_fragmented_utf8_over_limit_without_consuming_more(self):
+        from home.chat_events import MAX_OUTPUT_CONTENT_BYTES
+        from home.fake_model_dispatch import DeterministicFakeAdapter
+        from home.model_interface import ModelCompleted
+
+        consumed_after_limit = []
+
+        class OversizedAdapter(DeterministicFakeAdapter):
+            def stream(self, request, context):
+                yield ModelStarted(1, "fake", "1")
+                yield ModelTextDelta(2, "x" * (MAX_OUTPUT_CONTENT_BYTES - 1))
+                yield ModelTextDelta(3, "\u00e9")
+                consumed_after_limit.append(True)
+                yield ModelCompleted(4)
+
+        with self.assertRaises(FakeModelDispatchError) as raised:
+            dispatch_fake_model("hello", principal_id="1", adapter=OversizedAdapter())
+        self.assertEqual(str(raised.exception), "fake_dispatch_failed")
+        self.assertEqual(consumed_after_limit, [])
+
+    def test_fake_output_rejects_invalid_utf8_without_exposing_output(self):
+        from home.fake_model_dispatch import DeterministicFakeAdapter
+        from home.model_interface import ModelCompleted
+
+        class InvalidUnicodeAdapter(DeterministicFakeAdapter):
+            def stream(self, request, context):
+                yield ModelStarted(1, "fake", "1")
+                yield ModelTextDelta(2, "secret\ud800")
+                yield ModelCompleted(3)
+
+        with self.assertRaises(FakeModelDispatchError) as raised:
+            dispatch_fake_model("hello", principal_id="1", adapter=InvalidUnicodeAdapter())
+        self.assertEqual(str(raised.exception), "fake_dispatch_failed")
+
     def test_stale_result_is_discarded(self):
         from home.fake_model_dispatch import DeterministicFakeAdapter
 

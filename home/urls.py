@@ -1,10 +1,11 @@
 from django.urls import path
 
 from .chat_views import cancel_turn, create_turn, turn_events
-from .views import home, start_conversation
+from .views import conversation_detail, home, start_conversation
 
 urlpatterns = [
     path("conversations/new/", start_conversation, name="conversation-start"),
+    path("conversations/<uuid:conversation_id>/", conversation_detail, name="conversation-detail"),
     path(
         "api/v1/conversations/<uuid:conversation_id>/turns/",
         create_turn,

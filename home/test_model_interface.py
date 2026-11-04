@@ -138,6 +138,22 @@ class ModelInterfaceTests(TestCase):
                     ContextManifest(replace(prepared, **{field: value}))
                 self.assertEqual(raised.exception.code, "context_manifest_invalid")
 
+    def test_explicit_output_limit_must_fit_prepared_reserve(self):
+        prepared = replace(self.context.prepared_context, output_reserve=3)
+        self.context = ContextManifest(
+            replace(prepared, bundle_digest=_bundle_digest(prepared))
+        )
+        request = self._request()
+        for limit in (None, 1, 3):
+            with self.subTest(limit=limit):
+                accepted = replace(
+                    request, requested_options=RequestedOptions(output_token_limit=limit)
+                )
+                self.assertEqual(accepted.requested_options.output_token_limit, limit)
+        with self.assertRaises(ModelContractError) as raised:
+            replace(request, requested_options=RequestedOptions(output_token_limit=4))
+        self.assertEqual(raised.exception.code, "output_reserve_exceeded")
+
     def test_request_requires_full_protected_constitution_and_user_request(self):
         request = self._request()
         self.assertEqual(request.context, self.context)

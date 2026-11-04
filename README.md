@@ -12,18 +12,61 @@ The repository now contains the initial Django monolith scaffold. It uses Django
 - [ADR conventions](docs/adr/README.md): decision and approval records.
 - [Django monolith decision](docs/adr/0010-django-monolith.md): owner-approved stack replacement and scope.
 
-## Local development
+## Run the app locally on Windows
 
-Use Python 3.12, 3.13 or 3.14 with the pinned Django 6.1.2 release:
+The current chat uses a deterministic fake model. It is intended for local
+**development only**, not production or real model inference. For a new machine,
+first follow the [clean local installation guide](docs/clean-local-install.md).
 
-```powershell
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-python manage.py migrate
-python manage.py createsuperuser
-python manage.py runserver
-```
+1. Open PowerShell in the project root. With Python 3.12, 3.13 or 3.14 and the
+   existing environment prepared, apply migrations and create a local account
+   if you do not already have one:
+
+   ```powershell
+   cd C:\superHarry
+   .\.venv\Scripts\python.exe manage.py migrate
+   .\.venv\Scripts\python.exe manage.py createsuperuser
+   ```
+
+   On a new checkout, create the environment and install `requirements.txt`
+   first as shown in the clean installation guide. `migrate` changes the local
+   database; review and back up existing data before applying migrations.
+
+2. In the same terminal, start Django and leave it running:
+
+   ```powershell
+   $env:DJANGO_DEBUG = "1"
+   $env:SUPERHARRY_FAKE_CHAT = "1"
+   .\.venv\Scripts\python.exe manage.py runserver 127.0.0.1:8000 --noreload
+   ```
+
+3. In a second PowerShell terminal, start the local HTTPS proxy:
+
+   ```powershell
+   cd C:\superHarry
+   .\caddy_windows_amd64.exe run --config Caddyfile
+   ```
+
+   This command uses the existing Caddy executable at the project root. On a
+   new machine, install a verified Caddy executable and run
+   `caddy run --config Caddyfile` instead.
+
+4. Configure `superharry.local` to resolve to `127.0.0.1` on your machine.
+   On Windows, open Notepad as administrator and add the following line to
+   `C:\Windows\System32\drivers\etc\hosts`:
+
+   ```text
+   127.0.0.1 superharry.local
+   ```
+
+5. After Caddy starts, verify and trust its local public CA certificate in your
+   user/browser trust store as described in the [HTTPS setup](docs/clean-local-install.md#run-the-local-fake-chat-through-https).
+   This project's Caddyfile disables the admin API, so `caddy trust` is not
+   available with this configuration. Never share the CA private key.
+
+6. Open https://superharry.local/, sign in with the local account, create a
+   conversation and send a message. You can also test cancellation and reopen
+   an existing conversation. Stop both processes with `Ctrl+C` when finished.
 
 To see overall task completion and the current delivery-queue task from the
 console, run:

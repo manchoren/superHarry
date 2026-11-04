@@ -35,6 +35,23 @@
                     {% endif %}
                 </ul>
             </nav>
+            {% if user.is_authenticated %}
+            <section aria-labelledby="conversation-history-heading">
+                <h2 id="conversation-history-heading">{% translate "Conversations" %}</h2>
+                <form action="{% url 'conversation-start' %}" method="post">
+                    {% csrf_token %}<button type="submit">{% translate "New conversation" %}</button>
+                </form>
+                <ul>
+                    {% for item in conversation_page %}
+                    <li><a href="{% url 'conversation-detail' item.pk %}"{% if conversation and item.pk == conversation.pk %} aria-current="page"{% endif %}>{% translate "Conversation" %}: {{ item.created_at|date:"SHORT_DATETIME_FORMAT" }} ({{ item.pk|stringformat:"s"|slice:":8" }})</a></li>
+                    {% endfor %}
+                </ul>
+                <nav aria-label="{% translate 'Conversation pages' %}">
+                    {% if conversation_page.has_previous %}<a href="?page={{ conversation_page.previous_page_number }}">{% translate "Previous" %}</a>{% endif %}
+                    {% if conversation_page.has_next %}<a href="?page={{ conversation_page.next_page_number }}">{% translate "Next" %}</a>{% endif %}
+                </nav>
+            </section>
+            {% endif %}
             <div class="account-panel">
                 {% if user.is_authenticated %}
                     <p class="account-name">
@@ -59,12 +76,20 @@
 
                 {% if user.is_authenticated %}
                     {% if conversation %}
-                    <div class="conversation-area" id="chat-messages" aria-live="polite">
-                        {% for message in conversation.messages.all %}
+                    <div class="conversation-area"{% if not viewing_older %} id="chat-messages" aria-live="polite"{% endif %}>
+                        {% for message in history_messages %}
                             <p><strong>{% if message.role == "user" %}{% translate "You" %}{% else %}{% translate "Assistant" %}{% endif %}:</strong> {{ message.content }}</p>
                         {% endfor %}
                     </div>
-                    <form class="message-composer" id="chat-form" data-url="{% url 'chat-turn-create' conversation.pk %}" data-error="{% translate 'Chat is unavailable. Please try again.' %}" data-cancelled="{% translate 'Cancelled.' %}" data-working="{% translate 'Generating response...' %}">
+                    <nav aria-label="{% translate 'Message history' %}">
+                        {% if older_cursor %}<a href="?before={{ older_cursor }}&amp;page={{ conversation_page.number }}">{% translate "Older messages" %}</a>{% endif %}
+                        {% if viewing_older %}<a href="?page={{ conversation_page.number }}">{% translate "Latest messages" %}</a>{% endif %}
+                    </nav>
+                    {% if viewing_older %}
+                    <h2>{% translate "Current turn" %}</h2>
+                    <div class="conversation-area" id="chat-messages" aria-live="polite"></div>
+                    {% endif %}
+                    <form class="message-composer" id="chat-form" data-url="{% url 'chat-turn-create' conversation.pk %}" data-error="{% translate 'Chat is unavailable. Please try again.' %}" data-cancelled="{% translate 'Cancelled.' %}" data-working="{% translate 'Generating response...' %}"{% if active_turn %} data-active-events-url="{% url 'chat-turn-events' conversation.pk active_turn.pk %}" data-active-state="{{ active_turn.state }}"{% endif %}>
                         {% csrf_token %}
                         <label for="chat-message">{% translate "Message" context "chat.composer.message_label" %}</label>
                         <textarea id="chat-message" name="message" rows="3" required></textarea>
