@@ -306,3 +306,16 @@ textarea {
         transition-duration: 0.01ms !important;
     }
 }
+
+.context-usage {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+}
+
+.context-usage meter {
+    width: 8rem;
+    max-width: 100%;
+}

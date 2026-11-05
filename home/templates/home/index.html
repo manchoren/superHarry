@@ -79,6 +79,8 @@
                     <div class="conversation-area"{% if not viewing_older %} id="chat-messages" aria-live="polite"{% endif %}>
                         {% for message in history_messages %}
                             <p><strong>{% if message.role == "user" %}{% translate "You" %}{% else %}{% translate "Assistant" %}{% endif %}:</strong> {{ message.content }}</p>
+                            {% if message.chat_turn_user.gemini_job.state == 'interrupted' %}<p class="chat-interrupted">{% translate "The request was interrupted. Its result is unknown and it was not sent again." %}</p>{% endif %}
+                            {% if message.context_capacity %}<div class="context-usage"><span>{% translate "Context used" %}: {{ message.context_input_tokens }} / {{ message.context_capacity }} {% translate "tokens" %}</span> <meter min="0" max="{{ message.context_capacity }}" value="{{ message.context_input_tokens }}" aria-label="{% translate 'Context used' %}"></meter></div>{% endif %}
                         {% endfor %}
                     </div>
                     <nav aria-label="{% translate 'Message history' %}">
@@ -89,16 +91,16 @@
                     <h2>{% translate "Current turn" %}</h2>
                     <div class="conversation-area" id="chat-messages" aria-live="polite"></div>
                     {% endif %}
-                    <form class="message-composer" id="chat-form" data-url="{% url 'chat-turn-create' conversation.pk %}" data-error="{% translate 'Chat is unavailable. Please try again.' %}" data-cancelled="{% translate 'Cancelled.' %}" data-working="{% translate 'Generating response...' %}"{% if active_turn %} data-active-events-url="{% url 'chat-turn-events' conversation.pk active_turn.pk %}" data-active-state="{{ active_turn.state }}"{% endif %}>
+                    <form class="message-composer" id="chat-form" data-context-label="{% translate 'Context used' %}" data-context-unit="{% translate 'tokens' %}" data-url="{% url 'chat-turn-create' conversation.pk %}" data-error="{% translate 'Chat is unavailable. Please try again.' %}" data-interrupted="{% translate 'The request was interrupted. Its result is unknown and it was not sent again.' %}" data-cancelled="{% translate 'Cancelled.' %}" data-working="{% translate 'Generating response...' %}"{% if active_turn %} data-active-events-url="{% url 'chat-turn-events' conversation.pk active_turn.pk %}" data-active-state="{{ active_turn.state }}"{% endif %}>
                         {% csrf_token %}
                         <label for="chat-provider">{% translate "Provider and model" %}</label>
-                        <select id="chat-provider" disabled aria-describedby="chat-provider-status">
-                            <option selected>{% translate "Automatic (current mode)" %}</option>
+                        <select id="chat-provider" disabled{% if not gemini_chat_enabled %} aria-describedby="chat-provider-status"{% endif %}>
+                            {% if gemini_chat_enabled %}<option selected>Gemini ? gemini-3.5-flash-lite</option>{% else %}<option selected>{% translate "Automatic (current mode)" %}</option>{% endif %}
                             {% if 'groq' in configured_provider_ids %}<option disabled>Groq — {% translate "not available yet" %}</option>{% endif %}
                             {% if 'openrouter' in configured_provider_ids %}<option disabled>OpenRouter — {% translate "not available yet" %}</option>{% endif %}
-                            {% if 'gemini' in configured_provider_ids %}<option disabled>Gemini — {% translate "not available yet" %}</option>{% endif %}
+                            {% if 'gemini' in configured_provider_ids and not gemini_chat_enabled %}<option disabled>Gemini — {% translate "not available yet" %}</option>{% endif %}
                         </select>
-                        <p id="chat-provider-status">{% translate "A configured key does not mean a provider is ready. Provider and model selection is not available yet." %}</p>
+                        {% if not gemini_chat_enabled %}<p id="chat-provider-status">{% translate "A configured key does not mean a provider is ready. Provider and model selection is not available yet." %}</p>{% endif %}
                         {% if 'gemini' in configured_provider_ids %}<p>{% translate "Gemini's free tier uses submitted content to improve Google's products. Administrator approval is required before enabling it." %}</p>{% endif %}
                         <label for="chat-message">{% translate "Message" context "chat.composer.message_label" %}</label>
                         <textarea id="chat-message" name="message" rows="3" required></textarea>

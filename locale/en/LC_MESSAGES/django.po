@@ -221,3 +221,12 @@ msgstr "A configured key does not mean a provider is ready. Provider and model s
 
 msgid "Gemini's free tier uses submitted content to improve Google's products. Administrator approval is required before enabling it."
 msgstr "Gemini's free tier uses submitted content to improve Google's products. Administrator approval is required before enabling it."
+
+msgid "Context used"
+msgstr "Context used"
+
+msgid "tokens"
+msgstr "tokens"
+
+msgid "The request was interrupted. Its result is unknown and it was not sent again."
+msgstr "The request was interrupted. Its result is unknown and it was not sent again."

@@ -8,6 +8,10 @@ A free, public personal assistant running entirely in a persistent Linux VM: aut
 
 Use the [Django monolith](docs/adr/0010-django-monolith.md): built-in auth, sessions, CSRF, ORM, admin and server-rendered templates; SQLite and application modules for models, tools, memory and scheduling. Older React/Fastify/separate-core references are superseded, not additional implementation requirements.
 
+Authenticated conversations carry authorized completed history into model requests. Each measured assistant response shows a persisted input-context meter against the model capacity; the complete constitution remains mandatory. See the conversation-context requirement in the [detailed requirements](docs/reference/product-requirements.md).
+
+Chat execution persists queued work and recovers safely after development-worker interruption; claimed or possibly dispatched requests are never automatically repeated. See the chat recovery requirement in the [detailed requirements](docs/reference/product-requirements.md).
+
 ## Delivery sequence
 
 1. Finish the [current queue](TASK.md): verify app audit readiness, demonstrate authenticated text chat with a fake model, then validate protected-context dispatch.

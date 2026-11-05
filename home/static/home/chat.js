@@ -74,11 +74,26 @@
                     if (!turn.output.textContent && typeof payload.assistant_message?.content === "string") {
                         turn.output.textContent = payload.assistant_message.content;
                     }
+                    const usage = payload.context_usage;
+                    if (usage && Number.isSafeInteger(usage.input_tokens) && Number.isSafeInteger(usage.capacity)
+                            && usage.capacity > 0 && usage.input_tokens >= 0 && usage.input_tokens <= usage.capacity) {
+                        const container = document.createElement("div");
+                        container.className = "context-usage";
+                        const label = document.createElement("span");
+                        label.textContent = `${form.dataset.contextLabel}: ${usage.input_tokens} / ${usage.capacity} ${form.dataset.contextUnit}`;
+                        const meter = document.createElement("meter");
+                        meter.min = 0;
+                        meter.max = usage.capacity;
+                        meter.value = usage.input_tokens;
+                        meter.setAttribute("aria-label", form.dataset.contextLabel);
+                        container.append(label, meter);
+                        turn.output.after(container);
+                    }
                     finish("");
                     return;
                 }
                 if (event === "turn.cancelled") { finish(form.dataset.cancelled); return; }
-                if (event === "turn.failed") { finish(form.dataset.error); return; }
+                if (event === "turn.failed") { finish(payload.reason === "interrupted_unknown" ? form.dataset.interrupted : form.dataset.error); return; }
             }
         } catch (_) {
             status.textContent = form.dataset.error;

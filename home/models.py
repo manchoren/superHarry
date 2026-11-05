@@ -52,6 +52,8 @@ class Message(models.Model):
     )
     role = models.CharField(max_length=9, choices=Role.choices)
     content = models.TextField()
+    context_input_tokens = models.PositiveIntegerField(null=True, blank=True)
+    context_capacity = models.PositiveIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
 
     class Meta:
@@ -323,3 +325,43 @@ class DiagnosticSettings(models.Model):
 
     def __str__(self):
         return "Diagnostic settings"
+
+class ProviderQuota(models.Model):
+    """Conservative, explicitly configured shared request allowance."""
+
+    group = models.CharField(max_length=128, unique=True)
+    limit = models.PositiveBigIntegerField()
+    reserved = models.PositiveBigIntegerField(default=0)
+    used = models.PositiveBigIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=models.Q(limit__gte=1), name='home_provider_quota_positive'),
+            models.CheckConstraint(condition=models.Q(reserved__lte=models.F('limit') - models.F('used')),
+                                   name='home_provider_quota_bounded'),
+        ]
+
+
+class ProviderReservation(models.Model):
+    quota = models.ForeignKey(ProviderQuota, on_delete=models.PROTECT, related_name='reservations')
+    operation_id = models.CharField(max_length=128, unique=True)
+    amount = models.PositiveBigIntegerField()
+    actual = models.PositiveBigIntegerField(null=True)
+    state = models.CharField(max_length=16, choices=[('reserved', 'Reserved'), ('unknown', 'Unknown'), ('settled', 'Settled')])
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        constraints = [models.CheckConstraint(condition=models.Q(amount__gte=1), name='home_provider_reservation_positive')]
+
+class GeminiChatJob(models.Model):
+    """Durable development work record; a claimed job is never redispatched."""
+    class State(models.TextChoices):
+        QUEUED = 'queued', 'Queued'
+        CLAIMED = 'claimed', 'Claimed'
+        DONE = 'done', 'Done'
+        INTERRUPTED = 'interrupted', 'Interrupted'
+
+    turn = models.OneToOneField(ChatTurn, on_delete=models.CASCADE, related_name='gemini_job')
+    state = models.CharField(max_length=16, choices=State.choices, default=State.QUEUED, db_index=True)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    claimed_at = models.DateTimeField(null=True, blank=True)

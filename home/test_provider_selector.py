@@ -21,7 +21,7 @@ class ProviderSelectorTests(TestCase):
         self.assertContains(response, '<option selected>Automatic (current mode)</option>')
         for provider in ("Groq", "OpenRouter", "Gemini"):
             self.assertContains(response, f'<option disabled>{provider} — not available yet</option>')
-        self.assertNotContains(response, "unknown")
+        self.assertNotContains(response, "<option disabled>unknown")
         self.assertContains(response, "A configured key does not mean a provider is ready.")
         self.assertContains(response, "Gemini's free tier uses submitted content")
 

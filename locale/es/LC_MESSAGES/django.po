@@ -221,3 +221,12 @@ msgstr "Una clave configurada no significa que el proveedor esté listo. La sele
 
 msgid "Gemini's free tier uses submitted content to improve Google's products. Administrator approval is required before enabling it."
 msgstr "El nivel gratuito de Gemini usa el contenido enviado para mejorar los productos de Google. Se requiere la aprobación de un administrador antes de habilitarlo."
+
+msgid "Context used"
+msgstr "Contexto utilizado"
+
+msgid "tokens"
+msgstr "tokens"
+
+msgid "The request was interrupted. Its result is unknown and it was not sent again."
+msgstr "La solicitud se interrumpi?. Su resultado es incierto y no se volvi? a enviar."

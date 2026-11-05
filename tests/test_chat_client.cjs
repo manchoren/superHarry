@@ -241,3 +241,19 @@ test('replayed cancellation request disables cancellation while waiting for term
     assert.equal(ui.elements['chat-cancel'].disabled, true);
     assert.equal(ui.send.disabled, true);
 });
+
+
+test('interrupted request shows uncertain outcome and does not retry', async () => {
+    const calls = [];
+    const ui = setup(async url => {
+        calls.push(url);
+        if (url === '/turns/') return ok({events_url: '/turns/one/events/'});
+        return stream('id: signed-one\nevent: turn.failed\ndata: {"error":{"code":"UNAVAILABLE","retryable":false},"reason":"interrupted_unknown"}\n\n');
+    }, {interrupted: 'interrupted and not resent'});
+    ui.elements['chat-message'].value = 'question';
+    await ui.submit();
+    await flush();
+    assert.equal(ui.elements['composer-status'].textContent, 'interrupted and not resent');
+    assert.equal(calls.filter(url => url === '/turns/').length, 1);
+    assert.equal(ui.timers.length, 0);
+});

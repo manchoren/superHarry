@@ -12,10 +12,46 @@ The repository now contains the initial Django monolith scaffold. It uses Django
 - [ADR conventions](docs/adr/README.md): decision and approval records.
 - [Django monolith decision](docs/adr/0010-django-monolith.md): owner-approved stack replacement and scope.
 
+## Gemini development chat
+
+The administrator has approved Gemini free-tier content use for development.
+Gemini may use submitted content to improve Google products. This development
+route requires the configured free-only Gemini key and an explicit opt-in; do
+not use a key that can incur charges. It supports authenticated text-only turns
+with the full constitution, current message and up to 100 prior completed
+turns from the same conversation. Each measured response shows its preflight
+input-token count against the model context capacity.
+
+After applying the additive local migrations, configure the approved shared
+allowances once (100 generation requests and 100,000 tokens). Existing quota
+records are not reset by this command:
+
+```powershell
+.\.venv\Scripts\python.exe manage.py shell -c "from home.models import ProviderQuota; ProviderQuota.objects.get_or_create(group='gemini-development', defaults={'limit': 100}); ProviderQuota.objects.get_or_create(group='gemini-development:tokens', defaults={'limit': 100000})"
+```
+
+Set `GEMINI_API_KEY` in the ignored development `.env` or environment, then run:
+
+```powershell
+$env:DJANGO_DEBUG = "1"
+$env:SUPERHARRY_GEMINI_CHAT = "1"
+.\.venv\Scripts\python.exe manage.py runserver 127.0.0.1:8000 --noreload
+```
+
+Use the HTTPS proxy and browser setup below. In automatic mode the chat uses
+Gemini. These conservative local allowances do not reset automatically and do
+not account for use of the same Google account outside this application. Failed,
+cancelled or interrupted calls may retain reservations; no automatic retry or
+remote-stop guarantee is made. The development worker persists its queue in the application database. After a
+restart, unclaimed work resumes; a claimed request with an unknown outcome is
+not resent automatically and may be reported interrupted after five minutes.
+Quota reservations for uncertain work remain held. This development worker and
+local accounting do not establish production or VM acceptance.
+
 ## Run the app locally on Windows
 
-The current chat uses a deterministic fake model. It is intended for local
-**development only**, not production or real model inference. For a new machine,
+The default chat uses a deterministic fake model. It is intended for local
+**development only**; see the Gemini section above for the opt-in real model. For a new machine,
 first follow the [clean local installation guide](docs/clean-local-install.md).
 
 1. Open PowerShell in the project root. With Python 3.12, 3.13 or 3.14 and the

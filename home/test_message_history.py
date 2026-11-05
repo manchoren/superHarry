@@ -97,3 +97,29 @@ class MessageHistoryTests(TestCase):
         response = self.client.get(self.url, {'before': self.messages[3].pk}, secure=True)
         self.assertContains(response, reverse('chat-turn-events', args=[self.conversation.pk, turn.pk]))
         self.assertNotContains(response, 'reattached assistant answer')
+
+    def test_assistant_context_meter_is_rendered_only_for_its_own_history(self):
+        message = Message.objects.create(conversation=self.conversation, role=Message.Role.ASSISTANT,
+                                         content='reply', context_input_tokens=250, context_capacity=1000)
+        response = self.client.get(self.url, secure=True, HTTP_ACCEPT_LANGUAGE='en')
+        self.assertContains(response, 'Context used: 250 / 1000 tokens')
+        self.assertContains(response, 'max="1000" value="250"')
+        self.client.force_login(self.other)
+        self.assertEqual(self.client.get(self.url, secure=True).status_code, 404)
+
+    def test_context_meter_is_translated_in_spanish(self):
+        Message.objects.create(conversation=self.conversation, role=Message.Role.ASSISTANT,
+                               content='reply', context_input_tokens=25, context_capacity=1000)
+        response = self.client.get(self.url, secure=True, HTTP_ACCEPT_LANGUAGE='es')
+        self.assertContains(response, 'Contexto utilizado: 25 / 1000 tokens')
+
+    def test_interrupted_turn_notice_survives_reopening(self):
+        from home.models import GeminiChatJob
+        turn = ChatTurn.objects.create(conversation=self.conversation, user_message=self.messages[-1],
+            idempotency_key=uuid.uuid4(), request_digest='a' * 64, model_mode='automatic',
+            state=ChatTurn.State.FAILED, terminal_at=timezone.now())
+        GeminiChatJob.objects.create(turn=turn, state=GeminiChatJob.State.INTERRUPTED, claimed_at=timezone.now())
+        response = self.client.get(self.url, secure=True, HTTP_ACCEPT_LANGUAGE='en')
+        self.assertContains(response, '<p class="chat-interrupted">The request was interrupted. Its result is unknown and it was not sent again.</p>')
+        self.client.force_login(self.other)
+        self.assertEqual(self.client.get(self.url, secure=True).status_code, 404)

@@ -32,8 +32,9 @@ _EVENT_PAYLOAD_KEYS = {
         "assistant_message",
         "model",
         "finish_reason",
+        "context_usage",
     },
-    ChatEvent.EventType.TURN_FAILED: {"error", "model"},
+    ChatEvent.EventType.TURN_FAILED: {"error", "model", "reason"},
     ChatEvent.EventType.TURN_CANCELLED: {"status"},
 }
 _TERMINAL_EVENT_TYPES = {
@@ -56,7 +57,7 @@ def _validate_payload(event_type: str, payload: Any) -> dict[str, Any]:
         raise InvalidChatEvent("Unsupported chat event.")
 
     allowed = _EVENT_PAYLOAD_KEYS[event_type]
-    required = allowed - {"fallback_reason", "model"}
+    required = allowed - {"fallback_reason", "model", "context_usage", "reason"}
     if not required.issubset(payload) or not set(payload).issubset(allowed):
         raise InvalidChatEvent("Invalid chat event payload.")
 
@@ -128,6 +129,7 @@ def _validate_payload(event_type: str, payload: Any) -> dict[str, Any]:
             and _valid_model_details(model)
             and isinstance(payload["finish_reason"], str)
             and payload["finish_reason"] in {"stop", "length"}
+            and ("context_usage" not in payload or _valid_context_usage(payload["context_usage"]))
         )
     elif event_type == ChatEvent.EventType.TURN_FAILED:
         error = payload["error"]
@@ -144,6 +146,8 @@ def _validate_payload(event_type: str, payload: Any) -> dict[str, Any]:
                 "INTERNAL",
             }
             and type(error["retryable"]) is bool
+            and ("reason" not in payload or (payload["reason"] == "interrupted_unknown"
+                 and error["code"] == "UNAVAILABLE" and error["retryable"] is False))
             and (
                 "model" not in payload
                 or _valid_model_details(payload["model"])
@@ -168,6 +172,12 @@ def _validate_payload(event_type: str, payload: Any) -> dict[str, Any]:
     return payload
 
 
+def _valid_context_usage(value: Any) -> bool:
+    return (isinstance(value, dict) and set(value) == {"input_tokens", "capacity"}
+            and type(value["input_tokens"]) is int and type(value["capacity"]) is int
+            and 0 <= value["input_tokens"] <= value["capacity"] and value["capacity"] > 0)
+
+
 def _valid_model_details(value: Any) -> bool:
     return (
         isinstance(value, dict)
@@ -175,7 +185,7 @@ def _valid_model_details(value: Any) -> bool:
         and isinstance(value["mode"], str)
         and value["mode"] in {"automatic", "local"}
         and isinstance(value["provider"], str)
-        and value["provider"] in {"local", "openai"}
+        and value["provider"] in {"local", "openai", "gemini"}
         and isinstance(value["model_id"], str)
         and 0 < len(value["model_id"]) <= 128
         and value["model_id"].isprintable()
@@ -251,6 +261,10 @@ def append_chat_event(
                 != validated_payload["assistant_message"]["content"]
             ):
                 raise InvalidChatEvent("Completed message is not canonical.")
+            usage = validated_payload.get("context_usage")
+            if usage is not None and (assistant_message.context_input_tokens != usage["input_tokens"]
+                    or assistant_message.context_capacity != usage["capacity"]):
+                raise InvalidChatEvent("Context usage does not match the message.")
             delta_events = list(
                 locked_turn.events.filter(
                     event_type=ChatEvent.EventType.MESSAGE_DELTA

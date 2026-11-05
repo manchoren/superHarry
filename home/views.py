@@ -1,3 +1,6 @@
+import os
+
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction
@@ -15,7 +18,7 @@ MESSAGE_PAGE_SIZE = 50
 
 
 def _message_history(conversation, before, active_assistant_id=None):
-    messages = conversation.messages.all()
+    messages = conversation.messages.select_related("chat_turn_user__gemini_job")
     if before is not None:
         if not before.isascii() or not before.isdigit() or len(before) > 19:
             raise Http404
@@ -89,6 +92,7 @@ def _render_history(request, conversation_id=None):
             "older_cursor": older_cursor,
             "viewing_older": before is not None,
             "configured_provider_ids": configured_provider_ids(),
+            "gemini_chat_enabled": settings.DEBUG and os.environ.get("SUPERHARRY_GEMINI_CHAT") == "1",
         })
         if conversation is not None:
             scoped = conversations.filter(pk=conversation.pk)
