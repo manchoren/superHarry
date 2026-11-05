@@ -100,6 +100,8 @@ class ChatTurn(models.Model):
     idempotency_key = models.UUIDField()
     request_digest = models.CharField(max_length=64)
     model_mode = models.CharField(max_length=16, choices=ModelMode.choices)
+    requested_provider = models.CharField(max_length=32, blank=True, default="")
+    requested_model = models.CharField(max_length=128, blank=True, default="")
     state = models.CharField(
         max_length=24,
         choices=State.choices,
@@ -118,6 +120,17 @@ class ChatTurn(models.Model):
             models.CheckConstraint(
                 condition=models.Q(request_digest__regex=r"^[a-f0-9]{64}$"),
                 name="home_chatturn_digest_hex_ck",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(requested_provider="", requested_model="")
+                    | (
+                        ~models.Q(requested_provider="")
+                        & ~models.Q(requested_model="")
+                        & models.Q(model_mode="automatic")
+                    )
+                ),
+                name="home_chatturn_requested_route_ck",
             ),
             models.UniqueConstraint(
                 fields=["conversation"],
@@ -337,13 +350,30 @@ class ProviderQuota(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(condition=models.Q(limit__gte=1), name='home_provider_quota_positive'),
-            models.CheckConstraint(condition=models.Q(reserved__lte=models.F('limit') - models.F('used')),
-                                   name='home_provider_quota_bounded'),
+        ]
+
+
+class ProviderModelQuota(models.Model):
+    """Optional model ceiling in addition to its shared account ceiling."""
+
+    quota = models.ForeignKey(ProviderQuota, on_delete=models.PROTECT, related_name='model_quotas')
+    model_id = models.CharField(max_length=128)
+    limit = models.PositiveBigIntegerField()
+    reserved = models.PositiveBigIntegerField(default=0)
+    used = models.PositiveBigIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=('quota', 'model_id'), name='home_model_quota_unique'),
+            models.CheckConstraint(condition=~models.Q(model_id=''), name='home_model_quota_model_nonempty'),
+            models.CheckConstraint(condition=models.Q(limit__gte=1), name='home_model_quota_positive'),
         ]
 
 
 class ProviderReservation(models.Model):
     quota = models.ForeignKey(ProviderQuota, on_delete=models.PROTECT, related_name='reservations')
+    model_quota = models.ForeignKey(ProviderModelQuota, on_delete=models.PROTECT, null=True, blank=True,
+                                    related_name='reservations')
     operation_id = models.CharField(max_length=128, unique=True)
     amount = models.PositiveBigIntegerField()
     actual = models.PositiveBigIntegerField(null=True)

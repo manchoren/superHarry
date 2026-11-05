@@ -14,9 +14,10 @@ function setup(fetch, initial = {}) {
             addEventListener(name, handler) { this.listeners[name] = handler; },
             appendChild(child) { this.children.push(child); } };
     }
-    for (const name of ['chat-form', 'chat-message', 'chat-messages', 'composer-status', 'chat-cancel']) {
+    for (const name of ['chat-form', 'chat-message', 'chat-messages', 'composer-status', 'chat-cancel', 'chat-provider']) {
         elements[name] = element();
     }
+    elements['chat-provider'].selectedOptions = [{dataset: {}}];
     const send = element();
     const form = elements['chat-form'];
     form.dataset = {url: '/turns/', error: 'error', cancelled: 'cancelled', working: 'working', ...initial};
@@ -56,6 +57,29 @@ test('uncertain creation is retried only on user action with same key and payloa
     assert.equal(calls[0].opts.body, calls[1].opts.body);
     assert.equal(calls[1].opts.headers['X-CSRFToken'], 'csrf-token');
     assert.equal(ui.elements['chat-cancel'].disabled, false);
+});
+
+test('explicit provider selection is captured once and remains immutable across retry', async () => {
+    const calls = [];
+    const ui = setup(async (url, opts) => {
+        calls.push({url, opts});
+        if (calls.length === 1) throw new TypeError('network failed');
+        return ok({events_url: '/turns/one/events/'});
+    });
+    ui.elements['chat-provider'].selectedOptions = [{dataset: {
+        provider: 'groq', modelId: 'openai/gpt-oss-20b',
+    }}];
+    ui.elements['chat-message'].value = 'hello';
+    await ui.submit();
+    ui.elements['chat-provider'].selectedOptions = [{dataset: {
+        provider: 'gemini', modelId: 'gemini-3.5-flash-lite',
+    }}];
+    await ui.submit();
+    assert.deepEqual(JSON.parse(calls[0].opts.body), {
+        message: 'hello', provider: 'groq', model_id: 'openai/gpt-oss-20b',
+    });
+    assert.equal(calls[0].opts.body, calls[1].opts.body);
+    assert.equal(ui.elements['chat-provider'].disabled, true);
 });
 
 test('poll failures preserve cursor, active turn, and cancellation', async () => {

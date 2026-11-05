@@ -83,15 +83,21 @@ def dispatch_gemini_with_quota(*, group: str, operation_id: str, on_context=None
     enforce provider-specific token limits and free-only eligibility. A crash
     after reservation cannot cause a repeated automatic dispatch.
     """
+    from django.conf import settings
     from django.db import transaction
+    from home.models import ProviderModelQuota
     from home.provider_quota import mark_unknown, reserve, settle
 
     token_reservation = None
     observed_usage = None
+    require_models = settings.SUPERHARRY_REQUIRE_MODEL_QUOTAS
+    if type(require_models) is not bool:
+        raise GeminiDispatchError('gemini_dispatch_failed')
+    model_id = MODEL_ID if require_models else None
 
     def reserve_tokens(amount):
         nonlocal token_reservation
-        token_reservation = reserve(group + ':tokens', operation_id + ':tokens', amount)
+        token_reservation = reserve(group + ':tokens', operation_id + ':tokens', amount, model_id=model_id)
         mark_unknown(token_reservation.pk)
         if on_context is not None:
             on_context(amount - 128, 1048576)
@@ -101,7 +107,13 @@ def dispatch_gemini_with_quota(*, group: str, operation_id: str, on_context=None
         observed_usage = amount
 
     try:
-        reservation = reserve(group, operation_id, 1)
+        if model_id is not None and (
+            ProviderModelQuota.objects.filter(
+                quota__group__in=(group, group + ':tokens'), model_id=model_id
+            ).count() != 2
+        ):
+            raise ValueError('model quota unavailable')
+        reservation = reserve(group, operation_id, 1, model_id=model_id)
         mark_unknown(reservation.pk)
         result = dispatch_gemini(**kwargs, on_prepared=reserve_tokens, on_usage=capture_usage)
         if token_reservation is None or observed_usage is None:

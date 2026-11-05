@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 
@@ -6,6 +6,7 @@ from home.chat_provider_routing import build_groq_route
 from home.free_provider_dispatch import dispatch_free_provider
 from home.models import ProviderQuota, ProviderReservation
 from home.provider_outcomes import NotDispatched, OutcomeUnknown, RateLimited
+from home.provider_quota import QuotaError
 from home.groq_transport import GroqRateLimitError
 
 MODEL = 'openai/gpt-oss-20b'
@@ -54,6 +55,16 @@ class FreeProviderDispatchTests(TestCase):
             self._dispatch()
         self.transport.generate.assert_not_called()
 
+    def test_failed_release_is_logged_and_reservations_remain_held(self):
+        authorization = iter((True, False))
+        with patch('home.free_provider_dispatch.settle', side_effect=QuotaError('synthetic')):
+            with self.assertLogs('home.free_provider_dispatch', level='WARNING') as logs:
+                with self.assertRaises(NotDispatched):
+                    self._dispatch(authorize=lambda: next(authorization))
+        self.assertIn('free_provider_reservation_release_failed', '\n'.join(logs.output))
+        self.assertEqual(ProviderReservation.objects.filter(state='reserved').count(), 2)
+        self.transport.generate.assert_not_called()
+
     def test_rate_limit_is_definitive_and_releases_token_reservation(self):
         self.transport.generate.side_effect = GroqRateLimitError('groq_rate_limited')
         with self.assertRaises(RateLimited):
@@ -72,3 +83,13 @@ class FreeProviderDispatchTests(TestCase):
         self.transport.generate.return_value = _ok_response(model='other/model')
         with self.assertRaises(OutcomeUnknown):
             self._dispatch()
+
+    def test_inconsistent_usage_total_is_unknown_and_keeps_reservations(self):
+        response = _ok_response()
+        response['usage']['total_tokens'] = 13
+        self.transport.generate.return_value = response
+
+        with self.assertRaises(OutcomeUnknown):
+            self._dispatch()
+
+        self.assertEqual(ProviderReservation.objects.filter(state='unknown').count(), 2)

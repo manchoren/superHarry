@@ -144,11 +144,13 @@ class ChatTurnAPITests(TestCase):
         self.assertEqual(payload["events_url"], self._events_url(turn))
         self.assertEqual(turn.user_message.content, "synthetic prompt")
         expected_digest = hashlib.sha256(
-            b"superharry.chat.turn.v1\0"
+            b"superharry.chat.turn.v2\0"
             + struct.pack("!I", len(b"synthetic prompt"))
             + b"synthetic prompt"
             + struct.pack("!H", len(b"automatic"))
             + b"automatic"
+            + struct.pack("!H", 0)
+            + struct.pack("!H", 0)
         ).hexdigest()
         self.assertEqual(turn.request_digest, expected_digest)
         self.assertEqual(self.dispatcher.enqueued, [turn.pk])
@@ -176,6 +178,104 @@ class ChatTurnAPITests(TestCase):
         self.assertEqual(Message.objects.count(), 1)
         self.assertEqual(AuditEvent.objects.count(), 1)
         self.assertEqual(len(self.dispatcher.enqueued), 1)
+
+    def test_legacy_digest_retry_is_idempotent_without_route_substitution(self):
+        turn = self._new_turn()
+        message = b"synthetic prompt"
+        mode = b"automatic"
+        turn.request_digest = hashlib.sha256(
+            b"superharry.chat.turn.v1\0"
+            + struct.pack("!I", len(message))
+            + message
+            + struct.pack("!H", len(mode))
+            + mode
+        ).hexdigest()
+        turn.save(update_fields=["request_digest"])
+
+        retry, _ = self._post_turn(message=message.decode(), idempotency_key=turn.idempotency_key)
+        conflict, _ = self._post_turn(
+            message=message.decode(),
+            idempotency_key=turn.idempotency_key,
+            provider="groq",
+            model_id="openai/gpt-oss-20b",
+        )
+
+        self.assertEqual(retry.status_code, 202)
+        self.assertEqual(retry.json()["turn_id"], str(turn.pk))
+        self.assertEqual(conflict.status_code, 409)
+        self.assertEqual(self.dispatcher.enqueued, [])
+
+    def test_malformed_provider_route_is_rejected(self):
+        for provider, model_id in (
+            ("\ud800", "model"),
+            ("groq", "\ud800"),
+            ("x" * 33, "model"),
+            ("groq", "x" * 129),
+        ):
+            with self.subTest(provider=provider, model_id=model_id):
+                response, _ = self._post_turn(provider=provider, model_id=model_id)
+                self.assertEqual(response.status_code, 400)
+        self.assertEqual(ChatTurn.objects.count(), 0)
+
+    @override_settings(
+        SUPERHARRY_ENABLED_FREE_PROVIDERS=("gemini", "groq"),
+        GROQ_MODEL="openai/gpt-oss-20b",
+    )
+    @patch("home.chat_views.load_provider_key", return_value="synthetic-key")
+    def test_explicit_provider_selection_is_persisted_and_bound_to_idempotency(
+        self, load_key
+    ):
+        key = uuid.uuid4()
+        first, _ = self._post_turn(
+            message="selected route",
+            idempotency_key=key,
+            provider="groq",
+            model_id="openai/gpt-oss-20b",
+        )
+        load_key.return_value = None
+        retry, _ = self._post_turn(
+            message="selected route",
+            idempotency_key=key,
+            provider="groq",
+            model_id="openai/gpt-oss-20b",
+        )
+        conflict, _ = self._post_turn(
+            message="selected route",
+            idempotency_key=key,
+            provider="gemini",
+            model_id="gemini-3.5-flash-lite",
+        )
+
+        self.assertEqual(first.status_code, 202)
+        self.assertEqual(retry.status_code, 202)
+        self.assertEqual(conflict.status_code, 409)
+        turn = ChatTurn.objects.get(pk=first.json()["turn_id"])
+        self.assertEqual(turn.requested_provider, "groq")
+        self.assertEqual(turn.requested_model, "openai/gpt-oss-20b")
+        self.assertEqual(len(self.dispatcher.enqueued), 1)
+
+    @override_settings(
+        SUPERHARRY_ENABLED_FREE_PROVIDERS=("gemini", "groq"),
+        GROQ_MODEL="openai/gpt-oss-20b",
+    )
+    @patch("home.chat_views.load_provider_key", return_value="synthetic-key")
+    def test_explicit_provider_selection_rejects_unadmitted_or_mismatched_routes(
+        self, _load_key
+    ):
+        for provider, model_id in (
+            ("openrouter", "liquid/lfm-2.5-2.6b:free"),
+            ("groq", "openai/gpt-oss-120b"),
+            ("groq", "gemini-3.5-flash-lite"),
+        ):
+            response, _ = self._post_turn(provider=provider, model_id=model_id)
+            self.assertEqual(response.status_code, 400)
+        missing_pair, _ = self._post_turn(provider="groq")
+        local_with_provider, _ = self._post_turn(
+            model_mode="local", provider="groq", model_id="openai/gpt-oss-20b"
+        )
+        self.assertEqual(missing_pair.status_code, 400)
+        self.assertEqual(local_with_provider.status_code, 400)
+        self.assertEqual(ChatTurn.objects.count(), 0)
 
     def test_idempotency_conflict_and_active_turn_are_rejected(self):
         key = uuid.uuid4()

@@ -26,8 +26,9 @@ def build_payload(messages, model_id, upstream_id, output_limit):
     return {'model':model_id, 'messages':[{'role':'system','content':messages[0].parts[0].text},
                                          {'role':'user','content':messages[1].parts[0].text}],
             'max_completion_tokens':output_limit, 'stream':False,
+            'plugins':[{'id':'context-compression','enabled':False}],
             'provider':{'only':[upstream_id], 'allow_fallbacks':False, 'require_parameters':True,
-                        'max_price':{'prompt':0,'completion':0}, 'data_collection':'deny','zdr':True}}
+                        'max_price':{'prompt':0,'completion':0,'request':0,'image':0}, 'data_collection':'deny','zdr':True}}
 
 def _decode(raw):
     if not isinstance(raw, bytes) or len(raw) > _MAX_RESPONSE_BYTES:

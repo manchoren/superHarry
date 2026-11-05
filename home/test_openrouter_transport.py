@@ -1,7 +1,7 @@
 import json
 from unittest.mock import MagicMock, patch
 
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, override_settings
 
 from home.provider_http_transport import ProviderTransportError
 from home.openrouter_transport import (
@@ -66,7 +66,7 @@ class OpenRouterRouteBodyTests(SimpleTestCase):
             'only': ['liquid/fp8'],
             'allow_fallbacks': False,
             'require_parameters': True,
-            'max_price': {'prompt': 0, 'completion': 0},
+            'max_price': {'prompt': 0, 'completion': 0, 'request': 0, 'image': 0},
             'data_collection': 'deny',
             'zdr': True,
         })
@@ -84,3 +84,28 @@ class OpenRouterRouteBodyTests(SimpleTestCase):
                           {'upstream_id': 'openai/anything'}, {'upstream_id': '  '}, {'output_limit': 0}):
             with self.assertRaises(OpenRouterRouteError):
                 build_route_body(**_route(**overrides))
+
+    def test_owner_attestation_does_not_admit_other_free_routes_or_upstreams(self):
+        for overrides in ({'model_id': 'other/model:free'},
+                          {'upstream_id': 'other/fp8'},
+                          {'upstream_id': 'liquid/other'},
+                          {'upstream_id': 'Liquid/fp8'}):
+            with self.subTest(overrides=overrides), self.assertRaises(OpenRouterRouteError):
+                build_route_body(**_route(**overrides))
+
+    def test_synthetic_unicode_constitution_is_preserved_in_serialized_messages(self):
+        constitution = 'FIRST 🧭\n' + 'protected text\n' * 100 + 'LAST á'
+        payload = json.loads(build_route_body(**_route(constitution_text=constitution)))
+        self.assertEqual(payload['messages'][0], {'role': 'system', 'content': constitution})
+        self.assertEqual(payload['plugins'], [{'id': 'context-compression', 'enabled': False}])
+
+    @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True)
+    def test_opt_in_does_not_verify_provider_context_delivery(self):
+        from home.openrouter_transport import approximate_quota_enabled, protected_context_delivery_verified
+        self.assertTrue(approximate_quota_enabled())
+        self.assertFalse(protected_context_delivery_verified())
+
+    @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA='true')
+    def test_non_boolean_flag_does_not_enable_approximate_accounting(self):
+        from home.openrouter_transport import approximate_quota_enabled
+        self.assertFalse(approximate_quota_enabled())

@@ -14,7 +14,7 @@ Chat execution persists queued work and recovers safely after development-worker
 
 ## Delivery sequence
 
-1. Continue the [current queue](TASK.md) with T178 reviewed free-provider integrations and T179 end-to-end routing validation. T171-T173 and T177 are completed development foundations; their evidence does not establish real-provider or release acceptance.
+1. Continue the [current queue](TASK.md) with T179 end-to-end routing validation. T178 was administratively closed by owner scope exception, not technical or release acceptance. T171-T173 and T177 are completed development foundations; their evidence does not establish real-provider or release acceptance.
 2. Integrate configured free-tier model providers and safe exhaustion failover, quotas and the single-heavy-job resource governor; establish scoped conversations and memory. OpenAI is disabled for now by owner direction.
 3. Add maintenance, backup/restore and safe updates; then isolated tools, package validation and approved skills.
 4. Extend scheduling, images/OCR and display functionality along their actual prerequisites.

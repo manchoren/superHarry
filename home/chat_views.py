@@ -1,10 +1,12 @@
 import hashlib
 import json
 import logging
+import os
 import struct
 import uuid
 from datetime import timedelta, timezone as datetime_timezone
 
+from django.conf import settings
 from django.core import signing
 from django.core.exceptions import RequestDataTooBig
 from django.db import DatabaseError, IntegrityError, transaction
@@ -21,6 +23,10 @@ from home.chat_events import (
     append_chat_event,
 )
 from home.models import AuditEvent, ChatEvent, ChatTurn, Conversation, Message
+from home.gemini_context import MODEL_ID as GEMINI_MODEL_ID
+from home import openrouter_transport
+from home.openrouter_transport import is_approved_route
+from home.provider_credentials import CredentialConfigError, load_provider_key
 
 logger = logging.getLogger(__name__)
 
@@ -108,17 +114,21 @@ def _parse_start_request(request):
     except (UnicodeDecodeError, json.JSONDecodeError, _DuplicateJsonKey) as exc:
         raise ValueError from exc
     if not isinstance(body, dict) or not set(body).issubset(
-        {"message", "model_mode"}
+        {"message", "model_mode", "provider", "model_id"}
     ):
         raise ValueError
     if "message" not in body:
         raise ValueError
     message = body["message"]
     model_mode = body.get("model_mode", ChatTurn.ModelMode.AUTOMATIC)
-    if not isinstance(message, str) or not isinstance(model_mode, str):
+    provider = body.get("provider", "")
+    model_id = body.get("model_id", "")
+    if not all(isinstance(value, str) for value in (message, model_mode, provider, model_id)):
         raise ValueError
     try:
         message_bytes = message.encode("utf-8")
+        provider.encode("utf-8")
+        model_id.encode("utf-8")
     except UnicodeEncodeError as exc:
         raise ValueError from exc
     if (
@@ -133,7 +143,47 @@ def _parse_start_request(request):
         if len(message_bytes) > MAX_MESSAGE_BYTES:
             raise OverflowError
         raise ValueError
-    return message, message_bytes, model_mode
+    if (
+        len(provider) > 32
+        or len(model_id) > 128
+        or bool(provider) != bool(model_id)
+        or (provider and model_mode != ChatTurn.ModelMode.AUTOMATIC)
+    ):
+        raise ValueError
+    return message, message_bytes, model_mode, provider, model_id
+
+
+def _provider_route_is_available(provider, model_id):
+    enabled = settings.SUPERHARRY_ENABLED_FREE_PROVIDERS
+    if (
+        not isinstance(enabled, tuple)
+        or provider not in enabled
+        or provider not in {"gemini", "groq", "openrouter"}
+    ):
+        return False
+    expected_model = {
+        "gemini": GEMINI_MODEL_ID,
+        "groq": settings.GROQ_MODEL,
+        "openrouter": settings.OPENROUTER_MODEL,
+    }[provider]
+    if model_id != expected_model:
+        return False
+    if provider == "openrouter" and (
+        not is_approved_route(model_id, settings.OPENROUTER_UPSTREAM)
+        or not openrouter_transport.approximate_quota_enabled()
+        or not openrouter_transport.protected_context_delivery_verified()
+    ):
+        return False
+    try:
+        return load_provider_key(
+            provider,
+            os.environ,
+            debug=settings.DEBUG,
+            dotenv_path=settings.BASE_DIR / ".env",
+            allow_dotenv=settings.DEBUG,
+        ) is not None
+    except CredentialConfigError:
+        return False
 
 
 def _parse_idempotency_key(request):
@@ -147,7 +197,24 @@ def _parse_idempotency_key(request):
     return key
 
 
-def _request_digest(message_bytes, model_mode):
+def _request_digest(message_bytes, model_mode, provider="", model_id=""):
+    mode_bytes = model_mode.encode("ascii")
+    provider_bytes = provider.encode("utf-8")
+    model_bytes = model_id.encode("utf-8")
+    return hashlib.sha256(
+        b"superharry.chat.turn.v2\0"
+        + struct.pack("!I", len(message_bytes))
+        + message_bytes
+        + struct.pack("!H", len(mode_bytes))
+        + mode_bytes
+        + struct.pack("!H", len(provider_bytes))
+        + provider_bytes
+        + struct.pack("!H", len(model_bytes))
+        + model_bytes
+    ).hexdigest()
+
+
+def _legacy_request_digest(message_bytes, model_mode):
     mode_bytes = model_mode.encode("ascii")
     return hashlib.sha256(
         b"superharry.chat.turn.v1\0"
@@ -156,6 +223,15 @@ def _request_digest(message_bytes, model_mode):
         + struct.pack("!H", len(mode_bytes))
         + mode_bytes
     ).hexdigest()
+
+
+def _matches_request_digest(turn, digest, legacy_digest):
+    return turn.request_digest == digest or (
+        legacy_digest is not None
+        and not turn.requested_provider
+        and not turn.requested_model
+        and turn.request_digest == legacy_digest
+    )
 
 
 def _turn_response(conversation, turn, status=202):
@@ -184,14 +260,19 @@ def create_turn(request, conversation_id):
     if conversation is None:
         return _error(request, "NOT_FOUND", 404)
     try:
-        message, message_bytes, model_mode = _parse_start_request(request)
+        message, message_bytes, model_mode, provider, model_id = _parse_start_request(request)
         idempotency_key = _parse_idempotency_key(request)
     except OverflowError:
         return _error(request, "INVALID_INPUT", 400)
     except ValueError:
         return _error(request, "INVALID_INPUT", 400)
 
-    digest = _request_digest(message_bytes, model_mode)
+    digest = _request_digest(message_bytes, model_mode, provider, model_id)
+    legacy_digest = (
+        _legacy_request_digest(message_bytes, model_mode)
+        if not provider and not model_id
+        else None
+    )
     request_id = _request_id(request)
     try:
         with transaction.atomic():
@@ -204,7 +285,7 @@ def create_turn(request, conversation_id):
                 idempotency_key=idempotency_key,
             ).first()
             if existing is not None:
-                if existing.request_digest != digest:
+                if not _matches_request_digest(existing, digest, legacy_digest):
                     return _error(request, "IDEMPOTENCY_CONFLICT", 409)
                 return _turn_response(locked_conversation, existing)
 
@@ -217,6 +298,9 @@ def create_turn(request, conversation_id):
                 ),
             ).exists():
                 return _error(request, "TURN_ALREADY_ACTIVE", 409)
+
+            if provider and not _provider_route_is_available(provider, model_id):
+                return _error(request, "INVALID_INPUT", 400)
 
             dispatcher = get_chat_dispatcher()
             if dispatcher is None:
@@ -233,6 +317,8 @@ def create_turn(request, conversation_id):
                 idempotency_key=idempotency_key,
                 request_digest=digest,
                 model_mode=model_mode,
+                requested_provider=provider,
+                requested_model=model_id,
             )
             locked_conversation.last_accessed_at = timezone.now()
             locked_conversation.save(update_fields=["last_accessed_at"])
@@ -259,7 +345,7 @@ def create_turn(request, conversation_id):
             idempotency_key=idempotency_key,
         ).first()
         if existing is not None:
-            if existing.request_digest != digest:
+            if not _matches_request_digest(existing, digest, legacy_digest):
                 return _error(request, "IDEMPOTENCY_CONFLICT", 409)
             return _turn_response(conversation, existing)
         if ChatTurn.objects.filter(

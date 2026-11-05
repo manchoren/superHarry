@@ -186,6 +186,8 @@ Historical acceptance and evidence; checked tasks do not imply later deployment 
 
 ## Superseded split-stack scaffolds
 
+- T178 owner-accepted administrative closure (2026-11-05): local validation passed 408 Django tests, `manage.py check`, migration dry-run, 15 Node client tests, JavaScript syntax and `git diff --check` on Windows with the repository `.venv`; no provider requests or credentials were used. The owner explicitly accepted independent OpenRouter verification and the administrator quota-reconciliation workflow as non-blocking exceptions for closing T178. This is administrative scope closure only: OpenRouter remains runtime-blocked by its protected-context gate, and the unknown Groq reservation remains held (1 request, 9,812 tokens). No quota was reconciled, no reconciliation capability was implemented, and T043/T044/T048, provider policy or target-VM/release acceptance are not thereby complete. Full evidence and constitution hash are recorded in the [active backlog](../reference/backlog.md#t178-closure-validation-2026-11-05).
+
 - **T016 - Superseded.** Status: Superseded by the owner-accepted [ADR 0010](../adr/0010-django-monolith.md), 2026-11-01; not completed implementation. The TypeScript/Fastify components are not part of the Django monolith; do not implement this former scaffold. Its application foundation is covered by T168 and Django URL configuration by T025.
 
 - **T017 - Superseded.** Status: Superseded by the owner-accepted [ADR 0010](../adr/0010-django-monolith.md), 2026-11-01; not completed implementation. A separate Python core is not part of the Django monolith; implement application modules in the Django project instead. T168 establishes that foundation; later domain tasks retain their own acceptance criteria.

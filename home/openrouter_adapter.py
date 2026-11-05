@@ -41,11 +41,12 @@ def build_payload(messages, model_id, upstream_id, output_limit):
         ],
         'max_completion_tokens': output_limit,
         'stream': False,
+        'plugins': [{'id': 'context-compression', 'enabled': False}],
         'provider': {
             'only': [upstream_id],
             'allow_fallbacks': False,
             'require_parameters': True,
-            'max_price': {'prompt': 0, 'completion': 0},
+            'max_price': {'prompt': 0, 'completion': 0, 'request': 0, 'image': 0},
             'data_collection': 'deny',
             'zdr': True,
         },

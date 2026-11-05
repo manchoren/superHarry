@@ -1,0 +1,78 @@
+import json
+from unittest.mock import Mock
+
+from django.conf import settings
+from django.test import SimpleTestCase, override_settings
+
+from home.chat_provider_routing import build_openrouter_route
+from home.constitution_context import ContextPreparationError, ContextProfile, prepare_release_context
+from home.free_provider_dispatch import OUTPUT_LIMIT, _ByteAdmissionCounter, _RouteSerializer, dispatch_free_provider
+from home.provider_outcomes import NotDispatched
+from home.openrouter_transport import build_route_body
+
+
+class OpenRouterEstimateTests(SimpleTestCase):
+    def test_utf8_length_and_context_threshold_are_approximate(self):
+        route = build_openrouter_route('liquid/lfm-2.5-2.6b:free', 'liquid/fp8')
+        serializer = _RouteSerializer(route, (('user', 'previous 🧭'),))
+        request = 'á synthetic 🧭'
+        constitution = (settings.BASE_DIR / 'constitution.md').read_text(encoding='utf-8')
+        body = serializer.serialize(constitution, request)
+        self.assertEqual(_ByteAdmissionCounter().count_upper_bound(body), len(body))
+        self.assertGreater(len(request.encode('utf-8')), len(request))
+        kwargs = dict(
+            profile_id=route.model_id, profile_revision='1', tokenizer_id=route.model_id,
+            tokenizer_revision='undocumented', counter_id='utf8-estimate', counter_revision='1',
+            output_reserve=OUTPUT_LIMIT, safety_margin=10, serializer=serializer,
+            counter=_ByteAdmissionCounter(),
+        )
+        threshold = len(body) + OUTPUT_LIMIT + 10
+        prepared = prepare_release_context(
+            user_request=request, profile=ContextProfile(context_capacity=threshold, **kwargs))
+        self.assertEqual(prepared.serialized_input, body)
+        self.assertEqual(prepared.input_token_upper_bound, len(body))
+        with self.assertRaises(ContextPreparationError) as error:
+            prepare_release_context(user_request=request, profile=ContextProfile(context_capacity=threshold - 1, **kwargs))
+        self.assertEqual(error.exception.code, 'context_overflow')
+
+    def test_counter_rejects_empty_and_non_bytes(self):
+        for value in (b'', 'synthetic', None):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                _ByteAdmissionCounter().count_upper_bound(value)
+
+    @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True)
+    def test_simulated_compressor_cannot_be_reached_while_delivery_is_unverified(self):
+        route = build_openrouter_route('liquid/lfm-2.5-2.6b:free', 'liquid/fp8')
+
+        def simulated_truncation(body):
+            return body[:len(body) // 2]
+
+        transport = Mock()
+        transport.generate.side_effect = simulated_truncation
+        with self.assertRaises(NotDispatched):
+            dispatch_free_provider(route=route, transport=transport, user_request='synthetic',
+                                   authorize=lambda: True, cancelled=lambda: False, operation_id='compression')
+        transport.generate.assert_not_called()
+
+    @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True)
+    def test_simulated_enforced_account_plugin_can_override_request_disable(self):
+        body = build_route_body(
+            model_id='liquid/lfm-2.5-2.6b:free', upstream_id='liquid/fp8',
+            constitution_text='begin protected constitution end', history=(),
+            user_request='synthetic', output_limit=128)
+
+        def simulated_forced_plugin(request_body):
+            payload = json.loads(request_body)
+            self.assertEqual(payload['plugins'], [{'id': 'context-compression', 'enabled': False}])
+            payload['messages'][0]['content'] = payload['messages'][0]['content'][:5]
+            return payload
+
+        self.assertNotEqual(simulated_forced_plugin(body)['messages'][0]['content'],
+                            'begin protected constitution end')
+        transport = Mock()
+        transport.generate.side_effect = simulated_forced_plugin
+        route = build_openrouter_route('liquid/lfm-2.5-2.6b:free', 'liquid/fp8')
+        with self.assertRaises(NotDispatched):
+            dispatch_free_provider(route=route, transport=transport, user_request='synthetic',
+                                   authorize=lambda: True, cancelled=lambda: False, operation_id='forced-plugin')
+        transport.generate.assert_not_called()

@@ -29,7 +29,8 @@ class SyntheticOpenRouterTests(TestCase):
  def test_synthetic_success_delivers_full_context_and_bound_payload(self):
   events=list(self.adapter.stream(self.request,self.context))
   self.assertIsInstance(events[-1],ModelCompleted); self.assertEqual([e.text for e in events if isinstance(e,ModelTextDelta)],['answer'])
-  body=json.loads(self.transport.requests[0]); self.assertEqual(body['messages'][0]['content'],'Synthetic complete constitution'); self.assertEqual(body['provider']['only'],['example-provider']); self.assertFalse(body['provider']['allow_fallbacks']); self.assertEqual(body['provider']['max_price'],{'prompt':0,'completion':0}); self.assertFalse(body['stream'])
+  body=json.loads(self.transport.requests[0]); self.assertEqual(body['messages'][0]['content'],'Synthetic complete constitution'); self.assertEqual(body['provider']['only'],['example-provider']); self.assertFalse(body['provider']['allow_fallbacks']); self.assertEqual(body['provider']['max_price'],{'prompt':0,'completion':0,'request':0,'image':0}); self.assertFalse(body['stream'])
+  self.assertEqual(body['plugins'],[{'id':'context-compression','enabled':False}])
  def test_denies_guest_local_unverified_and_modified_payload_before_send(self):
   for context in (replace(self.context,role=RequesterRole.GUEST,principal_id=None,guest_session_ref=uuid4()),replace(self.context,mode=ModelMode.LOCAL)):
    self.assertIsInstance(list(self.adapter.stream(self.request,context))[-1],ModelFailed)

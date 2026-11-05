@@ -39,9 +39,26 @@ SUPERHARRY_HOSTNAME = "superharry.local"
 # Development free-provider routing. The order is administrator-configured; a
 # provider is attempted only with a configured key and an explicit quota row.
 SUPERHARRY_FREE_PROVIDER_ORDER = os.environ.get("SUPERHARRY_FREE_PROVIDER_ORDER", "gemini,groq,openrouter")
+# Provider admission is separate from credential presence and routing order.
+# Gemini and Groq are explicitly enabled for the current development slice.
+# Groq admission remains conditional on the administrator-confirmed Free account
+# having no payment method or other billing mechanism configured.
+SUPERHARRY_ENABLED_FREE_PROVIDERS = tuple(
+    item.strip()
+    for item in os.environ.get("SUPERHARRY_ENABLED_FREE_PROVIDERS", "gemini,groq").split(",")
+    if item.strip()
+)
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b")
 OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "liquid/lfm-2.5-2.6b:free")
 OPENROUTER_UPSTREAM = os.environ.get("OPENROUTER_UPSTREAM", "liquid/fp8")
+openrouter_approximate_quota = os.environ.get("SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA", "0").strip()
+if openrouter_approximate_quota not in {"0", "1"}:
+    raise ImproperlyConfigured("SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA must be 0 or 1.")
+SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA = openrouter_approximate_quota == "1"
+model_quotas_value = os.environ.get("SUPERHARRY_REQUIRE_MODEL_QUOTAS", "0").strip()
+if model_quotas_value not in {"0", "1"}:
+    raise ImproperlyConfigured("SUPERHARRY_REQUIRE_MODEL_QUOTAS must be 0 or 1.")
+SUPERHARRY_REQUIRE_MODEL_QUOTAS = model_quotas_value == "1"
 # Non-resetting shared allowances for Groq and OpenRouter (defaults proposed; owner confirmation pending).
 SUPERHARRY_PROVIDER_REQUEST_ALLOWANCE = int(os.environ.get("SUPERHARRY_PROVIDER_REQUEST_ALLOWANCE", "100"))
 SUPERHARRY_PROVIDER_TOKEN_ALLOWANCE = int(os.environ.get("SUPERHARRY_PROVIDER_TOKEN_ALLOWANCE", "100000"))

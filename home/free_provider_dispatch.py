@@ -2,24 +2,27 @@
 
 The caller chooses the route and provider order. This function never retries
 and never falls back. Only failures before any request is sent are reported as
-NotDispatched; a definitive HTTP 429 is RateLimited; everything else after the
-send is OutcomeUnknown and keeps its quota reservations held.
+NotDispatched. Groq documents HTTP 429 as a rate-limit rejection; OpenRouter
+does not establish that every platform/upstream 429 precedes generation, so it
+remains OutcomeUnknown. Other failures after send also keep reservations held.
 """
 
 from dataclasses import dataclass
+import logging
 from typing import Callable
 
+from django.conf import settings
 from django.db import transaction
 
 from home.chat_events import MAX_OUTPUT_CONTENT_BYTES
 from home.constitution_context import ContextProfile, ensure_release_context_is_current, prepare_release_context
 from home.groq_transport import GroqRateLimitError
-from home.openrouter_transport import OpenRouterRateLimitError
+from home import openrouter_transport
 from home.provider_outcomes import NotDispatched, OutcomeUnknown, RateLimited
-from home.provider_quota import mark_unknown, reserve, settle
+from home.provider_quota import QuotaError, mark_unknown, reserve, settle
 
 OUTPUT_LIMIT = 128
-_RATE_LIMIT_ERRORS = (GroqRateLimitError, OpenRouterRateLimitError)
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -47,8 +50,8 @@ class _RouteSerializer:
         return self._route.build_body(constitution_text, self._history, user_request, OUTPUT_LIMIT)
 
 
-class _ByteCounter:
-    """Conservative upper bound: each token of a byte-level tokenizer covers at least one byte."""
+class _ByteAdmissionCounter:
+    """Provisional byte surrogate; this is not Groq/OpenRouter tokenization."""
 
     def count_upper_bound(self, serialized_input):
         if not isinstance(serialized_input, bytes) or not serialized_input:
@@ -56,10 +59,22 @@ class _ByteCounter:
         return len(serialized_input)
 
 
-def _validate_response(response, model_id):
+def _validate_usage(response, model_id):
     if (not isinstance(response, dict) or response.get('object') != 'chat.completion'
             or response.get('model') != model_id):
         raise ValueError('identity')
+    usage = response.get('usage')
+    if not isinstance(usage, dict):
+        raise ValueError('usage')
+    input_tokens, output_tokens, total = usage.get('prompt_tokens'), usage.get('completion_tokens'), usage.get('total_tokens')
+    if (any(type(value) is not int or value < 0 for value in (input_tokens, output_tokens, total))
+            or total != input_tokens + output_tokens):
+        raise ValueError('usage')
+    return input_tokens, output_tokens, total
+
+
+def _validate_response(response, model_id):
+    input_tokens, output_tokens, total = _validate_usage(response, model_id)
     choices = response.get('choices')
     if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict):
         raise ValueError('choices')
@@ -72,13 +87,6 @@ def _validate_response(response, model_id):
     text = message.get('content')
     if not isinstance(text, str) or not text or len(text.encode('utf-8', errors='strict')) > MAX_OUTPUT_CONTENT_BYTES:
         raise ValueError('content')
-    usage = response.get('usage')
-    if not isinstance(usage, dict):
-        raise ValueError('usage')
-    input_tokens, output_tokens, total = usage.get('prompt_tokens'), usage.get('completion_tokens'), usage.get('total_tokens')
-    if (any(type(value) is not int or value < 0 for value in (input_tokens, output_tokens, total))
-            or total < input_tokens + output_tokens):
-        raise ValueError('usage')
     return text, input_tokens, output_tokens, total
 
 
@@ -87,8 +95,8 @@ def _release(reservations):
     for reservation in reservations:
         try:
             settle(reservation.pk, 0)
-        except Exception:
-            pass
+        except QuotaError:
+            logger.warning('free_provider_reservation_release_failed')
 
 
 def dispatch_free_provider(*, route, transport, user_request, authorize, cancelled, operation_id, history=()):
@@ -97,21 +105,44 @@ def dispatch_free_provider(*, route, transport, user_request, authorize, cancell
             or not callable(authorize) or not callable(cancelled)
             or not isinstance(operation_id, str) or not operation_id.strip() or len(operation_id) > 100):
         raise NotDispatched('dispatch_invalid')
+    if route.provider == 'openrouter' and (
+        not openrouter_transport.approximate_quota_enabled()
+        or not openrouter_transport.protected_context_delivery_verified()
+        or not openrouter_transport.is_approved_route(route.model_id, settings.OPENROUTER_UPSTREAM)
+        or route.quota_group != 'openrouter-development'
+        or route.context_capacity != openrouter_transport.CONTEXT_WINDOWS[openrouter_transport.APPROVED_MODEL]
+    ):
+        raise NotDispatched('dispatch_not_sent')
     reservations = []
     try:
         if authorize() is not True or cancelled() is not False:
             raise ValueError('admission denied')
         profile = ContextProfile(
             profile_id=route.model_id, profile_revision='1', tokenizer_id=route.model_id,
-            tokenizer_revision='byte-upper-bound', counter_id='utf8-byte-upper-bound', counter_revision='v1',
-            context_capacity=route.context_capacity, output_reserve=OUTPUT_LIMIT, safety_margin=0,
-            serializer=_RouteSerializer(route, history), counter=_ByteCounter(),
+            tokenizer_revision='provider-undocumented', counter_id='utf8-byte-admission-surrogate', counter_revision='v2',
+            context_capacity=route.context_capacity, output_reserve=OUTPUT_LIMIT,
+            safety_margin=min(32768, route.context_capacity // 4),
+            serializer=_RouteSerializer(route, history), counter=_ByteAdmissionCounter(),
         )
         prepared = prepare_release_context(user_request=user_request, profile=profile)
         ensure_release_context_is_current(prepared)
+        if route.provider == 'openrouter' and prepared.serialized_input != openrouter_transport.build_route_body(
+            model_id=route.model_id, upstream_id=settings.OPENROUTER_UPSTREAM,
+            constitution_text=prepared.constitution.text, history=history,
+            user_request=user_request, output_limit=OUTPUT_LIMIT,
+        ):
+            raise ValueError('route body mismatch')
         amount = prepared.input_token_upper_bound + prepared.output_reserve
-        reservations.append(reserve(route.quota_group, operation_id + ':request', 1))
-        reservations.append(reserve(route.quota_group + ':tokens', operation_id + ':tokens', amount))
+        require_models = settings.SUPERHARRY_REQUIRE_MODEL_QUOTAS
+        if type(require_models) is not bool:
+            raise ValueError('model quota configuration invalid')
+        model_id = route.model_id if require_models else None
+        request_cap = 100 if route.provider == 'openrouter' else None
+        token_cap = 100000 if route.provider == 'openrouter' else None
+        reservations.append(reserve(route.quota_group, operation_id + ':request', 1, model_id=model_id,
+                                    max_limit=request_cap))
+        reservations.append(reserve(route.quota_group + ':tokens', operation_id + ':tokens', amount,
+                                    model_id=model_id, max_limit=token_cap))
         if authorize() is not True or cancelled() is not False:
             raise ValueError('admission revoked')
         for reservation in reservations:
@@ -123,7 +154,9 @@ def dispatch_free_provider(*, route, transport, user_request, authorize, cancell
     request_reservation, token_reservation = reservations
     try:
         response = transport.generate(prepared.serialized_input)
-    except _RATE_LIMIT_ERRORS:
+    except GroqRateLimitError:
+        if route.provider != 'groq':
+            raise OutcomeUnknown('dispatch_outcome_unknown') from None
         try:
             with transaction.atomic():
                 settle(request_reservation.pk, 1)
@@ -135,13 +168,19 @@ def dispatch_free_provider(*, route, transport, user_request, authorize, cancell
         raise OutcomeUnknown('dispatch_outcome_unknown') from None
 
     try:
+        if route.provider == 'openrouter':
+            _, _, reported_total = _validate_usage(response, route.model_id)
+            with transaction.atomic():
+                settle(token_reservation.pk, reported_total, allow_overage=True)
+                settle(request_reservation.pk, 1)
         ensure_release_context_is_current(prepared)
         if cancelled() is not False or authorize() is not True:
             raise ValueError('admission revoked')
         text, input_tokens, output_tokens, total = _validate_response(response, route.model_id)
-        with transaction.atomic():
-            settle(token_reservation.pk, total)
-            settle(request_reservation.pk, 1)
+        if route.provider != 'openrouter':
+            with transaction.atomic():
+                settle(token_reservation.pk, total)
+                settle(request_reservation.pk, 1)
     except Exception:
         raise OutcomeUnknown('dispatch_response_unusable') from None
     return text, (input_tokens, output_tokens)

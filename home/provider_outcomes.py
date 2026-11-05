@@ -6,7 +6,7 @@ class NotDispatched(RuntimeError):
 
 
 class RateLimited(RuntimeError):
-    """The provider rejected the request with a definitive HTTP 429; failover is safe."""
+    """The provider definitively rejected the request before generation; failover is safe."""
 
 
 class OutcomeUnknown(RuntimeError):

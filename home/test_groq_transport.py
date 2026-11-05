@@ -85,6 +85,7 @@ class GroqBodyTests(SimpleTestCase):
         self.assertEqual(payload['max_completion_tokens'], 128)
         self.assertIs(payload['stream'], False)
         self.assertEqual(payload['reasoning_effort'], 'low')
+        self.assertIs(payload['include_reasoning'], False)
 
     def test_unknown_model_bad_history_or_limit_is_refused(self):
         for overrides in ({'model_id': 'unlisted/model'}, {'history': (('system', 'x'),)},

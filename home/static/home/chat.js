@@ -4,6 +4,8 @@
     const messages = document.getElementById("chat-messages");
     const status = document.getElementById("composer-status");
     const cancel = document.getElementById("chat-cancel");
+    const provider = document.getElementById("chat-provider");
+    const providerAvailable = !provider.disabled;
     const send = form.querySelector('button[type="submit"]');
     const csrf = form.querySelector('[name="csrfmiddlewaretoken"]').value;
     let active = null;
@@ -22,6 +24,7 @@
         pending = null;
         send.disabled = false;
         input.readOnly = false;
+        provider.disabled = !providerAvailable;
         cancel.disabled = true;
     }
     function schedulePoll(turn, delay) {
@@ -107,8 +110,15 @@
         event.preventDefault();
         if (active || submitting || (!pending && !input.value.trim())) return;
         if (!pending) {
-            pending = {message: input.value, key: crypto.randomUUID(), uncertain: false};
+            const selected = provider.selectedOptions[0];
+            const payload = {message: input.value};
+            if (selected.dataset.provider && selected.dataset.modelId) {
+                payload.provider = selected.dataset.provider;
+                payload.model_id = selected.dataset.modelId;
+            }
+            pending = {payload, key: crypto.randomUUID(), uncertain: false};
             input.readOnly = true;
+            provider.disabled = true;
         }
         submitting = true;
         send.disabled = true;
@@ -117,7 +127,7 @@
             const response = await fetch(form.dataset.url, {
                 method: "POST",
                 headers: {"Content-Type": "application/json", "X-CSRFToken": csrf, "Idempotency-Key": pending.key},
-                body: JSON.stringify({message: pending.message}),
+                body: JSON.stringify(pending.payload),
             });
             if (!response.ok) {
                 if (!pending.uncertain && !transientStatus(response.status)) {
@@ -133,7 +143,7 @@
             active = turn;
             turn.cursor = "";
             turn.retryDelay = 500;
-            addMessage(pending.message);
+            addMessage(pending.payload.message);
             turn.output = addMessage("");
             pending = null;
             input.value = "";
@@ -156,6 +166,7 @@
             output: addMessage(""),
         };
         send.disabled = true;
+        provider.disabled = true;
         cancel.disabled = form.dataset.activeState === "cancel_requested";
         status.textContent = form.dataset.working;
         poll(active);

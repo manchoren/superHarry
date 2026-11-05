@@ -11,10 +11,40 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from home.authorization import owned_conversations
+from home.gemini_context import MODEL_ID as GEMINI_MODEL_ID
 from home.models import ChatTurn, Conversation
+from home import openrouter_transport
+from home.openrouter_transport import is_approved_route
 from home.provider_availability import configured_provider_ids
 
 MESSAGE_PAGE_SIZE = 50
+
+
+def _selectable_provider_routes(configured):
+    enabled = settings.SUPERHARRY_ENABLED_FREE_PROVIDERS
+    known = ("gemini", "groq", "openrouter")
+    if (
+        not isinstance(enabled, tuple)
+        or any(provider not in known for provider in enabled)
+        or len(set(enabled)) != len(enabled)
+    ):
+        return ()
+    models = {
+        "gemini": GEMINI_MODEL_ID,
+        "groq": settings.GROQ_MODEL,
+        "openrouter": settings.OPENROUTER_MODEL,
+    }
+    configured_set = set(configured)
+    return tuple(
+        {"provider": provider, "model_id": models[provider]}
+        for provider in known
+        if provider in enabled and provider in configured_set
+        and (provider != "openrouter" or (
+            is_approved_route(settings.OPENROUTER_MODEL, settings.OPENROUTER_UPSTREAM)
+            and openrouter_transport.approximate_quota_enabled()
+            and openrouter_transport.protected_context_delivery_verified()
+        ))
+    )
 
 
 def _message_history(conversation, before, active_assistant_id=None):
@@ -84,6 +114,8 @@ def _render_history(request, conversation_id=None):
         page = Paginator(
             conversations.order_by("-last_accessed_at", "-pk"), 20
         ).get_page(request.GET.get("page"))
+        providers = configured_provider_ids()
+        chat_enabled = settings.DEBUG and os.environ.get("SUPERHARRY_GEMINI_CHAT") == "1"
         response = render(request, "home/index.html", {
             "conversation": conversation,
             "conversation_page": page,
@@ -91,8 +123,9 @@ def _render_history(request, conversation_id=None):
             "history_messages": history_messages,
             "older_cursor": older_cursor,
             "viewing_older": before is not None,
-            "configured_provider_ids": configured_provider_ids(),
-            "gemini_chat_enabled": settings.DEBUG and os.environ.get("SUPERHARRY_GEMINI_CHAT") == "1",
+            "configured_provider_ids": providers,
+            "selectable_provider_routes": _selectable_provider_routes(providers) if chat_enabled else (),
+            "gemini_chat_enabled": chat_enabled,
         })
         if conversation is not None:
             scoped = conversations.filter(pk=conversation.pk)

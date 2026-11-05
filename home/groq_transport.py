@@ -40,6 +40,7 @@ def build_chat_body(*, model_id, constitution_text, history, user_request, outpu
     payload = {'model': model_id, 'messages': messages, 'max_completion_tokens': output_limit, 'stream': False}
     if model_id.startswith('openai/gpt-oss-'):
         payload['reasoning_effort'] = 'low'
+        payload['include_reasoning'] = False
     return json.dumps(payload, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8')
 
 
