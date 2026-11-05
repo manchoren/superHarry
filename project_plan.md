@@ -14,7 +14,7 @@ Chat execution persists queued work and recovers safely after development-worker
 
 ## Delivery sequence
 
-1. Finish the [current queue](TASK.md): verify app audit readiness, demonstrate authenticated text chat with a fake model, then validate protected-context dispatch.
+1. Continue the [current queue](TASK.md) with T178 reviewed free-provider integrations and T179 end-to-end routing validation. T171-T173 and T177 are completed development foundations; their evidence does not establish real-provider or release acceptance.
 2. Integrate configured free-tier model providers and safe exhaustion failover, quotas and the single-heavy-job resource governor; establish scoped conversations and memory. OpenAI is disabled for now by owner direction.
 3. Add maintenance, backup/restore and safe updates; then isolated tools, package validation and approved skills.
 4. Extend scheduling, images/OCR and display functionality along their actual prerequisites.
@@ -47,4 +47,4 @@ Read the [detailed source](docs/reference/product-requirements.md) for the relev
 
 Package-guard validation, memory encryption/recovery, display isolation, network onboarding, guest origin handling, model limits, service authentication and hardware selections still require implementation or evidence. A partial decision is not approval of its unresolved protected parts. Check current official provider documentation before integration; historical version, pricing and performance claims are not current verification.
 
-Finalize model, OCR, embedding and speech choices using reproducible target-VM measurements and criteria fixed before acceptance. Record guest resources and host conditions; revalidate choices independently if a Pi port is pursued. T174 defines a durable profile separate from the disposable test VM; T148/T149 prepare and deploy it without waiting for Pi availability. Historical decisions remain in the [decision changelog](docs/history/project-plan-changelog.md); architectural changes use [ADRs](docs/adr/README.md). Development and review procedures have one source: [CONTRIBUTING.md](CONTRIBUTING.md).
+Finalize model, OCR, embedding and speech choices using reproducible target-VM measurements and criteria fixed before acceptance. Record guest resources and host conditions; revalidate choices independently if a Pi port is pursued. T174 records the durable-profile design separately from the disposable test VM; its administrative closure transfers unmet criteria to T148/T149 without establishing technical acceptance. T148/T149 prepare and deploy the target VM along their prerequisites and applicable approvals, without waiting for Pi availability. Historical decisions remain in the [decision changelog](docs/history/project-plan-changelog.md); architectural changes use [ADRs](docs/adr/README.md). Development and review procedures have one source: [CONTRIBUTING.md](CONTRIBUTING.md).

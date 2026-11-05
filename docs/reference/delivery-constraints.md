@@ -40,7 +40,7 @@ The phases follow project_plan.md section 17. They are delivery milestones, not 
 | E: tools and skills | Public-fetch tools T083, file staging T084, sandbox T082 and guard design T086 after security/file prerequisites; skill design T095 can proceed independently. | T094 sandbox/tool security acceptance before skill execution T099. |
 | F: feature expansion | Scheduler extension T103-T110, image/OCR T111-T116, display T117-T130 and channel contract T131 after their separate dependencies. | Contracts, scoped authorization, resource governor and secure attachment path must already exist. |
 | G: channel delivery | UI/fixture work can overlap; production channel integrations follow Telegram T134, email T138, voice T145, then WhatsApp review/integration T146-T147. | Preserve the accepted channel order. Hands-free remains deferred. |
-| H: VM deployment and release | T174 defines durable storage/lifecycle; T148 prepares the VM and T149 hardens its services. Serialize guest acceptance workloads and freeze the profile. | T150-T158: real guest load, security, persistence/recovery and release approval. T175/T176/T169 are optional future Pi work. |
+| H: VM deployment and release | T174 is administratively closed without technical acceptance; T148/T149 carry its unmet durable-profile/storage/lifecycle criteria. T148 prepares the VM and T149 hardens its services. Serialize guest acceptance workloads and freeze the profile. | T150-T158: real guest load, security, persistence/recovery and release approval. T175/T176/T169 are optional future Pi work. |
 
 ### Shared resources and paths that must be serialized
 
@@ -59,12 +59,12 @@ Main dependency spines are foundations -> approved contracts -> secure access/fi
 
 ## Requirements coverage index
 
-Use the current plan body to interpret these references; a partial decision maps to design/approval work as well as implementation. Rejected alternatives are recorded as exclusions, not implementation tasks.
+Use the current plan body to interpret these references; a partial decision maps to design/approval work as well as implementation. Rejected alternatives are recorded as exclusions, not implementation tasks. T016/T017 are [historical superseded scaffold records](../history/completed-tasks.md#superseded-split-stack-scaffolds) under ADR 0010, not pending work or completed implementations; T168 supplies the Django foundation.
 
 | Source decisions or requirements | Delivery tasks |
 |---|---|
 | Complete constitution delivery, protected directives and precedence | T001, T004, T043, T055, T063 |
-| Q-01-Q-03; P-01/P-02 rejected; P-29/P-31 | T002, T005, T016, T017, T024, T025, T038, T131-T147 |
+| Q-01-Q-03; P-01/P-02 rejected; P-29/P-31 | T002, T005, T168, T025, T038, T131-T147; T016/T017/T024 are superseded historical references |
 | Q-04-Q-08, Q-60/Q-61; P-03-P-08, P-49-P-51 | T009, T010, T043-T057, T150, T151, T165, T177-T179; configured free-tier rotation supersedes the earlier no-economy exclusion; no mandatory micro tier |
 | Q-05, Q-41/Q-43/Q-44; P-33/P-34 | T003, T018, T021, T148, T149, T157, T164, T165 |
 | Q-09-Q-15; P-09-P-13 | T070, T071, T081-T094, T156 |
@@ -73,7 +73,7 @@ Use the current plan body to interpret these references; a partial decision maps
 | Q-23-Q-28; P-22/P-23 | T058, T060-T068, T072, T074-T077, T154 |
 | Q-29/Q-30; P-24/P-25 | T111-T116, T155, T162 |
 | Q-31-Q-35; P-26-P-28 | T007, T008, T011, T012, T026-T035, T051, T161, T167 |
-| Q-36-Q-39; P-29-P-31 | T016, T025, T036-T042, T059, T160, T167 |
+| Q-36-Q-39; P-29-P-31 | T168, T025, T036-T042, T059, T160, T167; T016 is superseded history |
 | Q-40, Q-45-Q-48; P-32/P-36 | T004, T013-T015, T020, T056, T167, every milestone validation and T148-T158 |
 | Q-42; P-35; memory encryption implementation baseline | T067, T068, T074-T077, T102, T157 |
 | Q-49-Q-51, Q-55/Q-56; P-37-P-41 | T131-T138, T146, T147, T166 |
@@ -95,4 +95,4 @@ Apply these criteria to T022, T029, T066 and each domain's metrics integration; 
 
 ## Platform delivery map
 
-T021 -> T174 -> T148 -> T149 -> T150 -> T151-T157 -> T158 is the VM platform path (other application/security prerequisites remain in task records). T175 -> T169/T176 is a separate optional Pi path after T158. T149 no longer waits for T079 updater implementation: base deployment must exist before update/rollback validation. T022 host logging and timer validation can use the VM service identity established by T149.
+T021 -> T148 -> T149 -> T150 -> T151-T157 -> T158 is the VM platform path (other application/security prerequisites remain in task records). T148/T149 consume T174's administrative handoff and must complete its explicitly transferred criteria; T174 closure does not establish technical acceptance or satisfy operational gates. T175 -> T169/T176 is a separate optional Pi path after T158. T149 no longer waits for T079 updater implementation: base deployment must exist before update/rollback validation. T022 host logging and timer validation can use the VM service identity established by T149.

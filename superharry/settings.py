@@ -35,6 +35,16 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 SUPERHARRY_HOSTNAME = "superharry.local"
+
+# Development free-provider routing. The order is administrator-configured; a
+# provider is attempted only with a configured key and an explicit quota row.
+SUPERHARRY_FREE_PROVIDER_ORDER = os.environ.get("SUPERHARRY_FREE_PROVIDER_ORDER", "gemini,groq,openrouter")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b")
+OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "liquid/lfm-2.5-2.6b:free")
+OPENROUTER_UPSTREAM = os.environ.get("OPENROUTER_UPSTREAM", "liquid/fp8")
+# Non-resetting shared allowances for Groq and OpenRouter (defaults proposed; owner confirmation pending).
+SUPERHARRY_PROVIDER_REQUEST_ALLOWANCE = int(os.environ.get("SUPERHARRY_PROVIDER_REQUEST_ALLOWANCE", "100"))
+SUPERHARRY_PROVIDER_TOKEN_ALLOWANCE = int(os.environ.get("SUPERHARRY_PROVIDER_TOKEN_ALLOWANCE", "100000"))
 if not ALLOWED_HOSTS:
     if not DEBUG:
         raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must be set when DJANGO_DEBUG is disabled.")

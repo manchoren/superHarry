@@ -146,7 +146,7 @@ def _validate_payload(event_type: str, payload: Any) -> dict[str, Any]:
                 "INTERNAL",
             }
             and type(error["retryable"]) is bool
-            and ("reason" not in payload or (payload["reason"] == "interrupted_unknown"
+            and ("reason" not in payload or (payload["reason"] in ("interrupted_unknown", "no_free_provider")
                  and error["code"] == "UNAVAILABLE" and error["retryable"] is False))
             and (
                 "model" not in payload
@@ -185,7 +185,7 @@ def _valid_model_details(value: Any) -> bool:
         and isinstance(value["mode"], str)
         and value["mode"] in {"automatic", "local"}
         and isinstance(value["provider"], str)
-        and value["provider"] in {"local", "openai", "gemini"}
+        and value["provider"] in {"local", "openai", "gemini", "groq", "openrouter"}
         and isinstance(value["model_id"], str)
         and 0 < len(value["model_id"]) <= 128
         and value["model_id"].isprintable()

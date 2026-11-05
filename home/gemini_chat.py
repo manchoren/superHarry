@@ -1,4 +1,4 @@
-"""Opt-in development-only Gemini chat worker."""
+"""Opt-in development-only automatic chat worker with ordered free-provider routing."""
 import logging
 import os
 import uuid
@@ -9,14 +9,119 @@ from django.db.models import Q
 
 from home.chat_dispatch import ChatDispatchError, ChatTurnCancellation
 from home.chat_events import append_chat_event
+from home.chat_provider_routing import build_groq_route, build_openrouter_route, parse_provider_order
 from home.fake_chat import _emit
+from home.free_provider_dispatch import dispatch_free_provider
 from home.gemini_context import MODEL_ID
 from home.gemini_dispatch import dispatch_gemini_with_quota
 from home.gemini_transport import GeminiTransport
+from home.groq_transport import GroqTransport
 from home.models import ChatEvent, ChatTurn, GeminiChatJob, Message
-from home.provider_credentials import load_provider_key
+from home.openrouter_transport import OpenRouterTransport
+from home.provider_credentials import CredentialConfigError, load_provider_key
+from home.provider_outcomes import NotDispatched, OutcomeUnknown, RateLimited
 
 logger = logging.getLogger(__name__)
+
+
+class TurnCancelled(RuntimeError):
+    """The persisted turn was cancelled; no further provider is attempted."""
+
+
+class RoutingExhausted(RuntimeError):
+    """No configured provider could serve the turn without an unsafe failover."""
+
+
+def _load_history(turn):
+    prior = list(ChatTurn.objects.filter(
+        conversation_id=turn.conversation_id, conversation__owner_id=turn.conversation.owner_id,
+        state=ChatTurn.State.COMPLETED, assistant_message__isnull=False,
+    ).filter(Q(created_at__lt=turn.created_at) | Q(created_at=turn.created_at, pk__lt=turn.pk))
+        .select_related('user_message', 'assistant_message').order_by('-created_at', '-pk')[:100])
+    history = []
+    for previous in reversed(prior):
+        if (previous.user_message.conversation_id != turn.conversation_id
+                or previous.assistant_message.conversation_id != turn.conversation_id
+                or previous.user_message.role != Message.Role.USER
+                or previous.assistant_message.role != Message.Role.ASSISTANT):
+            raise ValueError('history unavailable')
+        history.extend((('user', previous.user_message.content), ('model', previous.assistant_message.content)))
+    return history
+
+
+def _attempt_gemini(*, turn, key, authorized, cancelled, history):
+    state = {'sent': False}
+    context_usage = {}
+
+    def record_context(input_tokens, capacity):
+        context_usage.update(input_tokens=input_tokens, capacity=capacity)
+
+    try:
+        transport = GeminiTransport(key, timeout=30)
+
+        class _TrackedTransport:
+            def count(self, body):
+                return transport.count(body)
+
+            def generate(self, body):
+                state['sent'] = True
+                return transport.generate(body)
+
+        answer, _usage = dispatch_gemini_with_quota(
+            group='gemini-development', operation_id=str(turn.pk), user_request=turn.user_message.content,
+            principal_id=str(turn.conversation.owner_id), transport=_TrackedTransport(),
+            authorize=authorized, cancelled=cancelled, history=tuple(history), on_context=record_context)
+    except Exception:
+        if cancelled():
+            raise TurnCancelled() from None
+        if state['sent']:
+            raise OutcomeUnknown() from None
+        raise NotDispatched() from None
+    return answer, {'mode': 'automatic', 'provider': 'gemini', 'model_id': MODEL_ID}, context_usage
+
+
+def _attempt_free_route(*, provider, key, turn, authorized, cancelled, history):
+    try:
+        if provider == 'groq':
+            route = build_groq_route(settings.GROQ_MODEL)
+            transport = GroqTransport(key, timeout=30)
+        else:
+            route = build_openrouter_route(settings.OPENROUTER_MODEL, settings.OPENROUTER_UPSTREAM)
+            transport = OpenRouterTransport(key, timeout=30)
+    except Exception:
+        raise NotDispatched() from None
+    answer, (input_tokens, _output_tokens) = dispatch_free_provider(
+        route=route, transport=transport, user_request=turn.user_message.content,
+        authorize=authorized, cancelled=cancelled, operation_id=f'{provider}:{turn.pk}', history=tuple(history))
+    model = {'mode': 'automatic', 'provider': provider, 'model_id': route.model_id}
+    return answer, model, {'input_tokens': input_tokens, 'capacity': route.context_capacity}
+
+
+def _run_routing(*, turn, history, authorized, cancelled):
+    """Try providers in administrator order; fail over only before any request is sent."""
+    order = parse_provider_order(settings.SUPERHARRY_FREE_PROVIDER_ORDER)
+    for provider in order:
+        if cancelled():
+            raise TurnCancelled()
+        try:
+            key = load_provider_key(provider, os.environ, debug=settings.DEBUG,
+                                    dotenv_path=settings.BASE_DIR / '.env', allow_dotenv=True)
+        except CredentialConfigError:
+            key = None
+        if not key:
+            continue
+        try:
+            if provider == 'gemini':
+                return _attempt_gemini(turn=turn, key=key, authorized=authorized,
+                                       cancelled=cancelled, history=history)
+            return _attempt_free_route(provider=provider, key=key, turn=turn, authorized=authorized,
+                                       cancelled=cancelled, history=history)
+        except (NotDispatched, RateLimited):
+            if cancelled():
+                raise TurnCancelled() from None
+            logger.info('gemini_chat_provider_skipped', extra={'provider': provider})
+            continue
+    raise RoutingExhausted()
 
 
 def run_gemini_turn(turn_id):
@@ -27,36 +132,16 @@ def run_gemini_turn(turn_id):
         turn = ChatTurn.objects.select_related('user_message', 'conversation__owner').get(pk=turn_id)
         if turn.model_mode != ChatTurn.ModelMode.AUTOMATIC or not turn.conversation.owner.is_active:
             raise ValueError('request unavailable')
-        key = load_provider_key('gemini', os.environ, debug=settings.DEBUG,
-                                dotenv_path=settings.BASE_DIR / '.env', allow_dotenv=True)
-        if not key:
-            raise ValueError('provider unavailable')
+
         def authorized():
             return ChatTurn.objects.filter(pk=turn_id, conversation__owner_id=turn.conversation.owner_id,
                 conversation__owner__is_active=True, model_mode=ChatTurn.ModelMode.AUTOMATIC,
                 state=ChatTurn.State.RUNNING).exists()
-        prior = list(ChatTurn.objects.filter(
-            conversation_id=turn.conversation_id, conversation__owner_id=turn.conversation.owner_id,
-            state=ChatTurn.State.COMPLETED, assistant_message__isnull=False,
-        ).filter(Q(created_at__lt=turn.created_at) | Q(created_at=turn.created_at, pk__lt=turn.pk))
-            .select_related('user_message', 'assistant_message').order_by('-created_at', '-pk')[:100])
-        history = []
-        for previous in reversed(prior):
-            if (previous.user_message.conversation_id != turn.conversation_id
-                    or previous.assistant_message.conversation_id != turn.conversation_id
-                    or previous.user_message.role != Message.Role.USER
-                    or previous.assistant_message.role != Message.Role.ASSISTANT):
-                raise ValueError('history unavailable')
-            history.extend((('user', previous.user_message.content), ('model', previous.assistant_message.content)))
-        context_usage = {}
-        def record_context(input_tokens, capacity):
-            context_usage.update(input_tokens=input_tokens, capacity=capacity)
-        answer, _usage = dispatch_gemini_with_quota(
-            group='gemini-development', operation_id=str(turn_id), user_request=turn.user_message.content,
-            principal_id=str(turn.conversation.owner_id), transport=GeminiTransport(key, timeout=30),
-            authorize=authorized, cancelled=ChatTurnCancellation(turn_id), history=tuple(history),
-            on_context=record_context)
-        model = {'mode': 'automatic', 'provider': 'gemini', 'model_id': MODEL_ID}
+
+        cancelled = ChatTurnCancellation(turn_id)
+        history = _load_history(turn)
+        answer, model, context_usage = _run_routing(turn=turn, history=history,
+                                                    authorized=authorized, cancelled=cancelled)
         if not _emit(turn_id, ChatEvent.EventType.MODEL_SELECTED, model):
             return
         message_id = str(uuid.uuid4())
@@ -81,6 +166,18 @@ def run_gemini_turn(turn_id):
             if context_usage:
                 payload['context_usage'] = context_usage
             append_chat_event(turn=turn, event_type=ChatEvent.EventType.TURN_COMPLETED, payload=payload)
+    except TurnCancelled:
+        try:
+            _emit(turn_id, ChatEvent.EventType.TURN_FAILED, {'error': {'code': 'UNAVAILABLE', 'retryable': False}})
+        except Exception:
+            logger.warning('gemini_chat_failure_event_unavailable')
+    except RoutingExhausted:
+        logger.warning('gemini_chat_routing_exhausted')
+        try:
+            _emit(turn_id, ChatEvent.EventType.TURN_FAILED,
+                  {'error': {'code': 'UNAVAILABLE', 'retryable': False}, 'reason': 'no_free_provider'})
+        except Exception:
+            logger.warning('gemini_chat_failure_event_unavailable')
     except Exception:
         logger.warning('gemini_chat_worker_failed')
         try:
