@@ -1,5 +1,7 @@
 ﻿# uv toolchain candidate and controlled resolution proposal
 
+**Audit scope override (owner, 2026-11-06):** The current [constitution](../constitution.md) requires an audit of the directly requested library or tool only. Earlier requirements below to audit transitive or bundled components individually or review every graph branch are superseded. Missing individual audits of those components do not block the requested package. Dependency resolution, version/hash locking and compatibility checks still apply. This clarification does not assert that any candidate has passed its own audit or authorize installation.
+
 Status: draft for T003/T014, 2026-10-30. The owner approved uv.lock as a design direction only; no uv executable, version, package graph, installation, resolver command, OS isolation or deployment is approved. Constitution baseline 2026-10-29, SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`. See [research](uv-lock-research.md) and [resolution security](uv-resolution-security.md).
 
 ## Exact candidate and provenance
