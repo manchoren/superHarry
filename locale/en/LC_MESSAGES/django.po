@@ -230,3 +230,24 @@ msgstr "tokens"
 
 msgid "The request was interrupted. Its result is unknown and it was not sent again."
 msgstr "The request was interrupted. Its result is unknown and it was not sent again."
+
+msgid "Reset password"
+msgstr "Reset password"
+
+msgid "Your password has been reset. Sign in with your new password."
+msgstr "Your password has been reset. Sign in with your new password."
+
+msgid "The reset request could not be completed. Check the token and password requirements."
+msgstr "The reset request could not be completed. Check the token and password requirements."
+
+msgid "One-time reset token"
+msgstr "One-time reset token"
+
+msgid "New password"
+msgstr "New password"
+
+msgid "Confirm new password"
+msgstr "Confirm new password"
+
+msgid "Authenticator or recovery code"
+msgstr "Authenticator or recovery code"

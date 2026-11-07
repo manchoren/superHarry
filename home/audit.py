@@ -1,6 +1,8 @@
+from datetime import timedelta, timezone as datetime_timezone
 from uuid import UUID
 
-from django.db import DatabaseError
+from django.db import DatabaseError, transaction
+from django.utils import timezone
 
 from home.models import AuditEvent
 
@@ -11,20 +13,24 @@ class AuditUnavailable(Exception):
 
 _EVENT_OUTCOMES = {
     AuditEvent.EventType.PASSWORD_VERIFICATION_FAILED: AuditEvent.Outcome.FAILURE,
-    AuditEvent.EventType.SESSION_RESOLUTION_FAILURE_SIGNAL: AuditEvent.Outcome.SIGNAL,
+    AuditEvent.EventType.TOTP_VERIFICATION_FAILED: AuditEvent.Outcome.FAILURE,
+    AuditEvent.EventType.TOTP_KEY_UNAVAILABLE: AuditEvent.Outcome.FAILURE,
 }
 
 _SERVICE_EVENTS = {
     AuditEvent.EventType.PASSWORD_VERIFICATION_FAILED,
-    AuditEvent.EventType.SESSION_RESOLUTION_FAILURE_SIGNAL,
+    AuditEvent.EventType.TOTP_VERIFICATION_FAILED,
     AuditEvent.EventType.PASSWORD_RECOVERY_ISSUED,
     AuditEvent.EventType.PASSWORD_RESET_COMPLETED,
     AuditEvent.EventType.RECOVERY_CREDENTIAL_ISSUED,
     AuditEvent.EventType.RECOVERY_COMPLETED,
+    AuditEvent.EventType.TOTP_ENROLLMENT_EXPIRED,
+    AuditEvent.EventType.TOTP_KEY_UNAVAILABLE,
+    AuditEvent.EventType.AUDIT_RETENTION_PRUNED,
 }
 
 _EVENTS_REQUIRING_TARGET = {
-    AuditEvent.EventType.SESSION_RESOLUTION_FAILURE_SIGNAL,
+    AuditEvent.EventType.TOTP_VERIFICATION_FAILED,
     AuditEvent.EventType.LOGIN_SUCCEEDED,
     AuditEvent.EventType.SESSION_CREATED,
     AuditEvent.EventType.LOGOUT_SUCCEEDED,
@@ -38,6 +44,8 @@ _EVENTS_REQUIRING_TARGET = {
     AuditEvent.EventType.ROLE_CHANGED,
     AuditEvent.EventType.TOTP_ENROLLMENT_STARTED,
     AuditEvent.EventType.TOTP_ENROLLMENT_CONFIRMED,
+    AuditEvent.EventType.TOTP_ENROLLMENT_EXPIRED,
+    AuditEvent.EventType.TOTP_KEY_UNAVAILABLE,
     AuditEvent.EventType.TOTP_DEACTIVATED,
     AuditEvent.EventType.TOTP_RECOVERY_USED,
     AuditEvent.EventType.CHAT_TURN_CREATED,
@@ -81,11 +89,8 @@ def record_event(
         raise ValueError("Audit actor identity does not match its actor kind.")
     if event_type in _EVENTS_REQUIRING_TARGET and target_user_id is None:
         raise ValueError("This audit event requires a target user.")
-    if event_type == AuditEvent.EventType.SESSION_RESOLUTION_FAILURE_SIGNAL:
-        if aggregate_count is None or aggregate_count < 1:
-            raise ValueError("Session resolution signals require a positive count.")
-    elif aggregate_count is not None:
-        raise ValueError("Aggregate counts are allowed only for signal events.")
+    if aggregate_count is not None:
+        raise ValueError("Aggregate counts are not accepted for current audit events.")
     if (
         actor_kind == AuditEvent.ActorKind.USER
         and event_type
@@ -110,5 +115,41 @@ def record_event(
             aggregate_count=aggregate_count,
             request_id=request_id,
         )
+    except DatabaseError as exc:
+        raise AuditUnavailable from exc
+
+
+AUDIT_RETENTION_DAYS = 90
+
+
+def audit_retention_cutoff(*, now=None):
+    current_time = now if now is not None else timezone.now()
+    if not timezone.is_aware(current_time):
+        raise ValueError("Audit retention time must be timezone-aware.")
+    return current_time.astimezone(datetime_timezone.utc) - timedelta(
+        days=AUDIT_RETENTION_DAYS
+    )
+
+
+def count_expired_audit_events(*, cutoff):
+    if not timezone.is_aware(cutoff):
+        raise ValueError("Audit retention cutoff must be timezone-aware.")
+    return AuditEvent.objects.filter(occurred_at__lt=cutoff).count()
+
+
+def prune_expired_audit_events(*, cutoff):
+    if not timezone.is_aware(cutoff):
+        raise ValueError("Audit retention cutoff must be timezone-aware.")
+
+    try:
+        with transaction.atomic():
+            deleted_count = AuditEvent.objects.purge_expired_before(cutoff)
+            if deleted_count:
+                record_event(
+                    event_type=AuditEvent.EventType.AUDIT_RETENTION_PRUNED,
+                    outcome=AuditEvent.Outcome.SUCCESS,
+                    actor_kind=AuditEvent.ActorKind.SERVICE,
+                )
+            return deleted_count
     except DatabaseError as exc:
         raise AuditUnavailable from exc

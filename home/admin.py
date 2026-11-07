@@ -9,6 +9,7 @@ from django.http import HttpResponse
 
 from home.audit import AuditUnavailable, record_event
 from home.models import AuditEvent, DiagnosticSettings
+from home.password_reset import revoke_user_sessions
 
 
 class AuditedUserAdmin(UserAdmin):
@@ -41,6 +42,16 @@ class AuditedUserAdmin(UserAdmin):
 
         super().save_model(request, obj, form, change)
 
+        if change and previous is not None and previous_active and not obj.is_active:
+            if revoke_user_sessions(obj.pk):
+                record_event(
+                    event_type=AuditEvent.EventType.SESSION_REVOKED,
+                    outcome=AuditEvent.Outcome.SUCCESS,
+                    actor_kind=AuditEvent.ActorKind.USER,
+                    actor_user_id=request.user.pk,
+                    target_user_id=obj.pk,
+                )
+
         if not change:
             record_event(
                 event_type=AuditEvent.EventType.USER_CREATED,
@@ -67,6 +78,15 @@ class AuditedUserAdmin(UserAdmin):
 
         if change and previous_role_state is not None:
             if self._role_state(obj) != previous_role_state:
+                if obj.is_active:
+                    if revoke_user_sessions(obj.pk):
+                        record_event(
+                            event_type=AuditEvent.EventType.SESSION_REVOKED,
+                            outcome=AuditEvent.Outcome.SUCCESS,
+                            actor_kind=AuditEvent.ActorKind.USER,
+                            actor_user_id=request.user.pk,
+                            target_user_id=obj.pk,
+                        )
                 record_event(
                     event_type=AuditEvent.EventType.ROLE_CHANGED,
                     outcome=AuditEvent.Outcome.SUCCESS,

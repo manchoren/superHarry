@@ -16,6 +16,17 @@ class AuditEventQuerySet(models.QuerySet):
     def delete(self):
         raise AuditEventMutationError("Audit events are append-only.")
 
+    def bulk_create(self, *args, **kwargs):
+        raise AuditEventMutationError("Audit events must use the approved writer.")
+
+    def purge_expired_before(self, cutoff):
+        if not timezone.is_aware(cutoff):
+            raise ValueError("Audit retention cutoff must be timezone-aware.")
+        # The retention command uses this scoped exception inside one transaction.
+        expired = self.filter(occurred_at__lt=cutoff)
+        deleted, _details = models.QuerySet.delete(expired)
+        return deleted
+
 
 class AuditEventManager(models.Manager.from_queryset(AuditEventQuerySet)):
     pass
@@ -198,9 +209,9 @@ class AuditEvent(models.Model):
             "auth.password_verification_failed",
             "Password verification failed",
         )
-        SESSION_RESOLUTION_FAILURE_SIGNAL = (
-            "auth.session_resolution_failure_signal",
-            "Session resolution failure signal",
+        TOTP_VERIFICATION_FAILED = (
+            "auth.totp_verification_failed",
+            "TOTP verification failed",
         )
         LOGIN_SUCCEEDED = "auth.login_succeeded", "Login succeeded"
         SESSION_CREATED = "auth.session_created", "Session created"
@@ -230,10 +241,22 @@ class AuditEvent(models.Model):
             "auth.totp_enrollment_confirmed",
             "TOTP enrollment confirmed",
         )
+        TOTP_ENROLLMENT_EXPIRED = (
+            "auth.totp_enrollment_expired",
+            "TOTP enrollment expired",
+        )
+        TOTP_KEY_UNAVAILABLE = (
+            "auth.totp_key_unavailable",
+            "TOTP credential unavailable",
+        )
         TOTP_DEACTIVATED = "auth.totp_deactivated", "TOTP deactivated"
         TOTP_RECOVERY_USED = "auth.totp_recovery_used", "TOTP recovery used"
         ADMIN_AUDIT_READ = "admin.audit_read", "Audit log read"
         ADMIN_AUDIT_EXPORTED = "admin.audit_exported", "Audit log exported"
+        AUDIT_RETENTION_PRUNED = (
+            "maintenance.audit_retention_pruned",
+            "Expired audit events pruned",
+        )
         ADMIN_DIAGNOSTICS_ENABLED = (
             "admin.diagnostics_enabled",
             "Diagnostic logging enabled",
@@ -281,6 +304,8 @@ class AuditEvent(models.Model):
         raise AuditEventMutationError("Audit events are append-only.")
 
     class Meta:
+        base_manager_name = "objects"
+        default_manager_name = "objects"
         constraints = [
             models.CheckConstraint(
                 condition=(
@@ -297,16 +322,11 @@ class AuditEvent(models.Model):
             ),
             models.CheckConstraint(
                 condition=(
-                    models.Q(
+                    models.Q(aggregate_count__isnull=True)
+                    | models.Q(
                         event_type="auth.session_resolution_failure_signal",
                         outcome="signal",
                         aggregate_count__gt=0,
-                    )
-                    | (
-                        ~models.Q(
-                            event_type="auth.session_resolution_failure_signal",
-                        )
-                        & models.Q(aggregate_count__isnull=True)
                     )
                 ),
                 name="home_audit_aggregate_ck",
@@ -322,6 +342,63 @@ class AuditEvent(models.Model):
                 name="home_audit_target_time_idx",
             ),
         ]
+
+
+class TOTPDevice(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="totp_device",
+    )
+    secret_ciphertext = models.BinaryField()
+    nonce = models.BinaryField()
+    key_version = models.PositiveSmallIntegerField(default=1)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    last_accepted_step = models.BigIntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("key_version", "nonce"),
+                name="totp_key_version_nonce_unique",
+            ),
+        ]
+
+
+class TOTPRecoveryCode(models.Model):
+    device = models.ForeignKey(
+        TOTPDevice,
+        on_delete=models.CASCADE,
+        related_name="recovery_codes",
+    )
+    verifier = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    consumed_at = models.DateTimeField(null=True, blank=True)
+
+
+class PasswordResetGrant(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="password_reset_grant",
+    )
+    token_digest = models.CharField(max_length=64, unique=True)
+    issued_at = models.DateTimeField(default=timezone.now, editable=False)
+    expires_at = models.DateTimeField()
+    consumed_at = models.DateTimeField(null=True, blank=True)
+
+
+class LoginAttemptCounter(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="login_attempt_counter",
+    )
+    window_started_at = models.DateTimeField()
+    failure_count = models.PositiveSmallIntegerField(default=0)
+    locked_until = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(default=timezone.now)
 
 
 class DiagnosticSettings(models.Model):

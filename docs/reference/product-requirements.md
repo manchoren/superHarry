@@ -33,6 +33,7 @@ These are unresolved implementation decisions, not new policies:
 - **Resource limits and concurrency:** define reproducible background workloads for the preferred voice benchmark under P-48 without overlapping heavy jobs, and validate GPU/desktop, memory and sandbox limits on real hardware in phase 10.
 - **Guest rate limits:** decide how to identify origins behind trusted proxies and protect against repeated session creation; preserve the accepted configurable limits.
 - **Memory lifecycle:** define safe access tracking, confirmation timestamps, consolidation and storage cleanup without deleting system data or current recovery backups.
+- **Tool confirmation policy:** owner-selected direction allows operator-configured grants only for reviewed read-only or narrowly reversible bounded tools. No admin/user/guest/model account can create or change grants. Maximum lifetime is 7 days and maximum use count is 50. Consequential browser actions remain individually confirmed. Exact eligible tools and implementation contract remain open in [T180](backlog.md#t180---implement-operator-configured-standing-grants-for-approved-low-risk-tools) and [the proposal](../tool-confirmation-policy-proposal.md).
 - **Open choices:** scheduler defaults, evaluation cases, exact API contracts, backup mechanics, provider onboarding and project logo.
 
 ## 3. System Architecture (high level)

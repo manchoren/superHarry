@@ -66,6 +66,7 @@ Use the current plan body to interpret these references; a partial decision maps
 | Complete constitution delivery, protected directives and precedence | T001, T004, T043, T055, T063 |
 | Q-01-Q-03; P-01/P-02 rejected; P-29/P-31 | T002, T005, T168, T025, T038, T131-T147; T016/T017/T024 are superseded historical references |
 | Q-04-Q-08, Q-60/Q-61; P-03-P-08, P-49-P-51 | T009, T010, T043-T057, T150, T151, T165, T177-T179; configured free-tier rotation supersedes the earlier no-economy exclusion; no mandatory micro tier |
+| Tool authorization and standing confirmations | T004, T028, T029, T045, T052, T126, T180; operator-configured grants are narrow, audited, and do not override consequential-action confirmation |
 | Q-05, Q-41/Q-43/Q-44; P-33/P-34 | T003, T018, T021, T148, T149, T157, T164, T165 |
 | Q-09-Q-15; P-09-P-13 | T070, T071, T081-T094, T156 |
 | Q-16-Q-18; P-14-P-18 | T095-T102 |

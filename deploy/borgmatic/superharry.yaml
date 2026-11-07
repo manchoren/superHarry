@@ -1,0 +1,26 @@
+# Explicit allow-list for the test VM backup. Add future data paths here only
+# after reviewing their contents, consistency requirements, and secret scope.
+source_directories:
+  - /var/lib/superharry/db.sqlite3
+
+# Defense in depth. These paths are outside the allow-list above and must stay
+# excluded if the source list is extended later.
+exclude_patterns:
+  - /etc/credstore.encrypted
+  - /var/lib/systemd/credential.secret
+  - /run/credentials
+  - /var/lib/superharry/db.sqlite3-wal
+  - /var/lib/superharry/db.sqlite3-shm
+
+local_path: /opt/superharry-backup/bin/borg
+
+repositories:
+  - path: /var/backups/superharry/repository
+    label: superharry-local-test
+    encryption: repokey
+
+# Resolved from the host-bound encrypted systemd credential; never store the
+# repository passphrase in this file.
+encryption_passphrase: "{credential systemd borgmatic.pw}"
+
+archive_name_format: 'superharry-{now}'

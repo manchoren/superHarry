@@ -1,0 +1,35 @@
+[Unit]
+Description=SuperHarry test VM database migration
+After=local-fs.target
+ConditionFileIsExecutable=/opt/superharry/venv/bin/python
+
+[Service]
+Type=oneshot
+User=superharry
+Group=superharry
+UMask=0077
+WorkingDirectory=/opt/superharry/app
+Environment=DJANGO_SECRET_KEY_FILE=%d/django-secret
+Environment=DJANGO_DEBUG=0
+Environment=DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost,superharry.local
+Environment=SUPERHARRY_TOTP_KEY_VERSION=1
+Environment=SUPERHARRY_DATABASE_PATH=/var/lib/superharry/db.sqlite3
+LoadCredentialEncrypted=django-secret:/etc/credstore.encrypted/superharry-django-secret
+StateDirectory=superharry
+StateDirectoryMode=0750
+ReadWritePaths=/var/lib/superharry
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ExecStart=/opt/superharry/venv/bin/python manage.py migrate --noinput
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target

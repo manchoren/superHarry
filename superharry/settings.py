@@ -6,7 +6,7 @@ from django.core.management.utils import get_random_secret_key
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SUPERHARRY_CONSTITUTION_SHA256 = (
-    "0657f37d4fe07aadf3cfa76dd7ff18dd864d29de89b4c69fc49bf17d92eb6c64"
+    "0c947f3b50c337601c919d7592468c4d7fe9413ef409f6d058115077d3faffc9"
 )
 
 debug_value = os.environ.get("DJANGO_DEBUG", "1").strip().lower()
@@ -23,7 +23,18 @@ if SUPERHARRY_DIAGNOSTIC_LOG_PATH:
 
     purge_expired_diagnostic_logs(SUPERHARRY_DIAGNOSTIC_LOG_PATH)
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+secret_key_file = os.environ.get("DJANGO_SECRET_KEY_FILE", "").strip()
+secret_key_env = os.environ.get("DJANGO_SECRET_KEY", "")
+if secret_key_file and secret_key_env:
+    raise ImproperlyConfigured(
+        "Set either DJANGO_SECRET_KEY_FILE or DJANGO_SECRET_KEY, not both."
+    )
+if secret_key_file:
+    from superharry.runtime_config import read_service_secret
+
+    SECRET_KEY = read_service_secret(secret_key_file)
+else:
+    SECRET_KEY = secret_key_env
 if not SECRET_KEY:
     if not DEBUG:
         raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set when DJANGO_DEBUG is disabled.")
@@ -162,27 +173,47 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "superharry.wsgi.application"
 
+database_path_value = os.environ.get("SUPERHARRY_DATABASE_PATH", "").strip()
+if database_path_value and not Path(database_path_value).is_absolute():
+    raise ImproperlyConfigured("SUPERHARRY_DATABASE_PATH must be absolute.")
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "NAME": database_path_value or BASE_DIR / "db.sqlite3",
     }
 }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "NAME": "home.password_validation.NFCUserAttributeSimilarityValidator",
     },
     {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "NAME": "home.password_validation.NFCMinimumLengthValidator",
+        "OPTIONS": {"min_length": 15},
     },
     {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+        "NAME": "home.password_validation.NFCCommonPasswordValidator",
     },
     {
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+
+AUTHENTICATION_BACKENDS = [
+    "home.backends.UsernameAuthenticationBackend",
+]
+PASSWORD_HASHERS = [
+    "home.hashers.SuperHarryArgon2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
+    "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
+    "django.contrib.auth.hashers.ScryptPasswordHasher",
+]
+try:
+    SUPERHARRY_TOTP_KEY_VERSION = int(os.environ.get("SUPERHARRY_TOTP_KEY_VERSION", "1"))
+except ValueError as exc:
+    raise ImproperlyConfigured("SUPERHARRY_TOTP_KEY_VERSION must be an integer.") from exc
 
 LANGUAGE_CODE = "en"
 LANGUAGES = [("en", "English"), ("es", "Spanish")]

@@ -40,6 +40,12 @@ and VM acceptance work; the included chat demo uses a deterministic fake.
   launcher/profile. The existing NoCloud guest base has no verified provenance
   and is not a clean-install artifact.
 
+**VM selection (owner, 2026-11-06):** For VM-based project tests, use only the
+existing artifacts under `C:\superHarry-vm`. Do not start `.dev-vm` or its
+Cloud/NoCloud guest, and do not create or reinstall another VM. The historical
+VM runbook and launcher are retired; see [ADR 0012](adr/0012-vm-first-product.md)
+and T148 for the selected target's remaining inspection/acceptance work.
+
 ## Windows checkout and application environment
 
 In a normal PowerShell terminal, choose a new directory and clone the repository:

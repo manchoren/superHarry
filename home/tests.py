@@ -4,21 +4,31 @@ import os
 import re
 import tempfile
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone as datetime_timezone
+from io import StringIO
 from pathlib import Path
+from threading import Barrier
 from types import SimpleNamespace
 from unittest.mock import patch
 from uuid import UUID
 
+from asgiref.sync import async_to_sync
 from django.contrib import admin as django_admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser, Group, Permission
 from django.contrib.sessions.models import Session
 from django.core.management import call_command
-from django.db import OperationalError, transaction
+from django.db import OperationalError, close_old_connections, transaction
 from django.http import Http404, HttpResponse
 from django.middleware.csrf import CSRF_SESSION_KEY
-from django.test import Client, RequestFactory, TestCase, override_settings
+from django.test import (
+    Client,
+    RequestFactory,
+    TestCase,
+    TransactionTestCase,
+    override_settings,
+)
 from django.urls import resolve, reverse
 from django.utils import timezone
 
@@ -28,7 +38,13 @@ from home.authorization import (
     owned_conversations,
     owned_messages,
 )
-from home.audit import AuditUnavailable, record_event
+from home.audit import (
+    AuditUnavailable,
+    audit_retention_cutoff,
+    count_expired_audit_events,
+    prune_expired_audit_events,
+    record_event,
+)
 from home.admin import AuditedUserAdmin
 from home.middleware import SessionLifetimeMiddleware
 from home.models import (
@@ -245,31 +261,68 @@ class AuditEventTests(TestCase):
         self.assertIsNone(event.actor_user_id)
         self.assertIsNone(event.target_user_id)
 
-    def test_aggregate_signal_requires_a_positive_count_and_target(self):
+    def test_totp_enrollment_expiry_is_a_targeted_service_event(self):
         event = record_event(
-            event_type=AuditEvent.EventType.SESSION_RESOLUTION_FAILURE_SIGNAL,
-            outcome=AuditEvent.Outcome.SIGNAL,
+            event_type=AuditEvent.EventType.TOTP_ENROLLMENT_EXPIRED,
+            outcome=AuditEvent.Outcome.SUCCESS,
             actor_kind=AuditEvent.ActorKind.SERVICE,
             target_user_id=self.user.pk,
-            aggregate_count=5,
         )
 
-        self.assertEqual(event.aggregate_count, 5)
+        self.assertEqual(event.event_type, "auth.totp_enrollment_expired")
+        self.assertEqual(event.actor_kind, AuditEvent.ActorKind.SERVICE)
+        self.assertIsNone(event.actor_user_id)
+        self.assertEqual(event.target_user_id, self.user.pk)
+        self.assertEqual(event.outcome, AuditEvent.Outcome.SUCCESS)
+
+    def test_totp_enrollment_expiry_rejects_user_actor_or_missing_target(self):
         with self.assertRaises(ValueError):
             record_event(
-                event_type=AuditEvent.EventType.SESSION_RESOLUTION_FAILURE_SIGNAL,
+                event_type=AuditEvent.EventType.TOTP_ENROLLMENT_EXPIRED,
+                outcome=AuditEvent.Outcome.SUCCESS,
+                actor_kind=AuditEvent.ActorKind.USER,
+                actor_user_id=self.user.pk,
+                target_user_id=self.user.pk,
+            )
+        with self.assertRaises(ValueError):
+            record_event(
+                event_type=AuditEvent.EventType.TOTP_ENROLLMENT_EXPIRED,
+                outcome=AuditEvent.Outcome.SUCCESS,
+                actor_kind=AuditEvent.ActorKind.SERVICE,
+            )
+
+    def test_retired_session_resolution_signal_is_rejected(self):
+        with self.assertRaises(ValueError):
+            record_event(
+                event_type="auth.session_resolution_failure_signal",
                 outcome=AuditEvent.Outcome.SIGNAL,
                 actor_kind=AuditEvent.ActorKind.SERVICE,
                 target_user_id=self.user.pk,
-                aggregate_count=0,
             )
+
+    def test_current_events_reject_aggregate_counts(self):
         with self.assertRaises(ValueError):
             record_event(
-                event_type=AuditEvent.EventType.SESSION_RESOLUTION_FAILURE_SIGNAL,
-                outcome=AuditEvent.Outcome.SIGNAL,
-                actor_kind=AuditEvent.ActorKind.SERVICE,
+                event_type=AuditEvent.EventType.LOGIN_SUCCEEDED,
+                outcome=AuditEvent.Outcome.SUCCESS,
+                actor_kind=AuditEvent.ActorKind.USER,
+                actor_user_id=self.user.pk,
+                target_user_id=self.user.pk,
                 aggregate_count=1,
             )
+
+    def test_legacy_aggregate_signal_rows_remain_readable(self):
+        legacy_event = AuditEvent.objects.create(
+            event_type="auth.session_resolution_failure_signal",
+            outcome=AuditEvent.Outcome.SIGNAL,
+            actor_kind=AuditEvent.ActorKind.SERVICE,
+            target_user_id=self.user.pk,
+            aggregate_count=3,
+        )
+
+        stored = AuditEvent.objects.get(event_id=legacy_event.event_id)
+        self.assertEqual(stored.event_type, "auth.session_resolution_failure_signal")
+        self.assertEqual(stored.aggregate_count, 3)
 
     def test_writer_rejects_mismatched_event_outcome_and_actor(self):
         with self.assertRaises(ValueError):
@@ -369,6 +422,152 @@ class AuditEventTests(TestCase):
 
         event.refresh_from_db()
         self.assertEqual(event.outcome, AuditEvent.Outcome.SUCCESS)
+
+    def test_bulk_insert_and_update_apis_are_blocked(self):
+        invalid_event = AuditEvent(
+            event_type=AuditEvent.EventType.LOGIN_SUCCEEDED,
+            outcome=AuditEvent.Outcome.SUCCESS,
+            actor_kind=AuditEvent.ActorKind.USER,
+            actor_user_id=self.user.pk,
+            target_user_id=self.user.pk,
+        )
+        with self.assertRaises(AuditEventMutationError):
+            AuditEvent.objects.bulk_create([invalid_event])
+        with self.assertRaises(AuditEventMutationError):
+            AuditEvent._base_manager.bulk_create([invalid_event])
+        with self.assertRaises(AuditEventMutationError):
+            async_to_sync(AuditEvent.objects.abulk_create)([invalid_event])
+
+        event = record_event(
+            event_type=AuditEvent.EventType.LOGIN_SUCCEEDED,
+            outcome=AuditEvent.Outcome.SUCCESS,
+            actor_kind=AuditEvent.ActorKind.USER,
+            actor_user_id=self.user.pk,
+            target_user_id=self.user.pk,
+        )
+        event.outcome = AuditEvent.Outcome.FAILURE
+        with self.assertRaises(AuditEventMutationError):
+            AuditEvent.objects.bulk_update([event], ["outcome"])
+
+
+class AuditEventConcurrencyTests(TransactionTestCase):
+    def test_concurrent_audit_appends_preserve_both_events(self):
+        user = get_user_model().objects.create_user(username="audit-concurrent")
+        barrier = Barrier(2)
+
+        def append_event(request_id):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=5)
+                return record_event(
+                    event_type=AuditEvent.EventType.LOGIN_SUCCEEDED,
+                    outcome=AuditEvent.Outcome.SUCCESS,
+                    actor_kind=AuditEvent.ActorKind.USER,
+                    actor_user_id=user.pk,
+                    target_user_id=user.pk,
+                    request_id=UUID(int=request_id),
+                ).event_id
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            event_ids = set(executor.map(append_event, (1, 2)))
+
+        self.assertEqual(len(event_ids), 2)
+        self.assertEqual(
+            AuditEvent.objects.filter(
+                event_id__in=event_ids,
+                event_type=AuditEvent.EventType.LOGIN_SUCCEEDED,
+            ).count(),
+            2,
+        )
+
+
+class AuditEventRetentionTests(TestCase):
+    def _create_event(self, *, event_type, occurred_at):
+        return AuditEvent.objects.create(
+            occurred_at=occurred_at,
+            event_type=event_type,
+            outcome=AuditEvent.Outcome.SUCCESS,
+            actor_kind=AuditEvent.ActorKind.SERVICE,
+        )
+
+    def test_retention_uses_strict_90_day_utc_cutoff_for_every_event_type(self):
+        now = timezone.now()
+        cutoff = audit_retention_cutoff(now=now)
+        expired = self._create_event(
+            event_type=AuditEvent.EventType.LOGIN_SUCCEEDED,
+            occurred_at=cutoff - timedelta(microseconds=1),
+        )
+        boundary = self._create_event(
+            event_type=AuditEvent.EventType.CHAT_TURN_CREATED,
+            occurred_at=cutoff,
+        )
+        recent = self._create_event(
+            event_type=AuditEvent.EventType.TOTP_VERIFICATION_FAILED,
+            occurred_at=cutoff + timedelta(microseconds=1),
+        )
+
+        self.assertEqual(count_expired_audit_events(cutoff=cutoff), 1)
+        self.assertEqual(prune_expired_audit_events(cutoff=cutoff), 1)
+
+        self.assertFalse(AuditEvent.objects.filter(pk=expired.pk).exists())
+        self.assertTrue(AuditEvent.objects.filter(pk=boundary.pk).exists())
+        self.assertTrue(AuditEvent.objects.filter(pk=recent.pk).exists())
+        purge_event = AuditEvent.objects.get(
+            event_type=AuditEvent.EventType.AUDIT_RETENTION_PRUNED,
+        )
+        self.assertEqual(purge_event.actor_kind, AuditEvent.ActorKind.SERVICE)
+        self.assertIsNone(purge_event.actor_user_id)
+        self.assertIsNone(purge_event.target_user_id)
+        self.assertIsNone(purge_event.aggregate_count)
+
+    def test_empty_prune_does_not_append_a_maintenance_event(self):
+        cutoff = audit_retention_cutoff()
+
+        self.assertEqual(prune_expired_audit_events(cutoff=cutoff), 0)
+        self.assertFalse(
+            AuditEvent.objects.filter(
+                event_type=AuditEvent.EventType.AUDIT_RETENTION_PRUNED,
+            ).exists()
+        )
+
+    def test_audit_failure_rolls_back_expired_event_deletion(self):
+        cutoff = audit_retention_cutoff()
+        expired = self._create_event(
+            event_type=AuditEvent.EventType.LOGIN_SUCCEEDED,
+            occurred_at=cutoff - timedelta(seconds=1),
+        )
+
+        with patch("home.audit.record_event", side_effect=AuditUnavailable):
+            with self.assertRaises(AuditUnavailable):
+                prune_expired_audit_events(cutoff=cutoff)
+
+        self.assertTrue(AuditEvent.objects.filter(pk=expired.pk).exists())
+        self.assertFalse(
+            AuditEvent.objects.filter(
+                event_type=AuditEvent.EventType.AUDIT_RETENTION_PRUNED,
+            ).exists()
+        )
+
+    def test_management_command_previews_by_default_and_applies_only_explicitly(self):
+        now = timezone.now()
+        cutoff = audit_retention_cutoff(now=now)
+        expired = self._create_event(
+            event_type=AuditEvent.EventType.LOGIN_SUCCEEDED,
+            occurred_at=cutoff - timedelta(seconds=1),
+        )
+        preview = StringIO()
+        with patch("home.audit.timezone.now", return_value=now):
+            call_command("prune_audit_events", stdout=preview)
+        self.assertIn("Dry run: 1 audit event(s)", preview.getvalue())
+        self.assertTrue(AuditEvent.objects.filter(pk=expired.pk).exists())
+
+        applied = StringIO()
+        with patch("home.audit.timezone.now", return_value=now):
+            call_command("prune_audit_events", "--apply", stdout=applied)
+        self.assertIn("Pruned 1 audit event(s)", applied.getvalue())
+        self.assertFalse(AuditEvent.objects.filter(pk=expired.pk).exists())
 
 
 @override_settings(SUPERHARRY_HOSTNAME="testserver")
@@ -594,13 +793,15 @@ class AuditedAuditAccessTests(TestCase):
         return self.client.get(url, data, secure=True, **extra)
 
     def _create_export_event(self, *, occurred_at=None):
-        return AuditEvent.objects.create(
-            event_type=AuditEvent.EventType.ADMIN_AUDIT_EXPORTED,
-            outcome=AuditEvent.Outcome.SUCCESS,
-            actor_kind=AuditEvent.ActorKind.USER,
-            actor_user_id=self.admin_user.pk,
-            occurred_at=occurred_at or timezone.now() - timedelta(minutes=5),
-        )
+        timestamp = occurred_at or timezone.now() - timedelta(minutes=5)
+        occurred_at_field = AuditEvent._meta.get_field("occurred_at")
+        with patch.object(occurred_at_field, "_get_default", lambda: timestamp):
+            return record_event(
+                event_type=AuditEvent.EventType.ADMIN_AUDIT_EXPORTED,
+                outcome=AuditEvent.Outcome.SUCCESS,
+                actor_kind=AuditEvent.ActorKind.USER,
+                actor_user_id=self.admin_user.pk,
+            )
 
     def _grant_audit_permission(self, user):
         permission = Permission.objects.get(
@@ -766,17 +967,13 @@ class AuditedAuditAccessTests(TestCase):
         )
 
     def test_csv_rejects_more_than_1000_rows_without_logging_export(self):
-        AuditEvent.objects.bulk_create(
-            [
-                AuditEvent(
-                    event_type=AuditEvent.EventType.ADMIN_AUDIT_EXPORTED,
-                    outcome=AuditEvent.Outcome.SUCCESS,
-                    actor_kind=AuditEvent.ActorKind.USER,
-                    actor_user_id=self.admin_user.pk + 100000,
-                )
-                for _ in range(1001)
-            ]
-        )
+        for _ in range(1001):
+            record_event(
+                event_type=AuditEvent.EventType.ADMIN_AUDIT_EXPORTED,
+                outcome=AuditEvent.Outcome.SUCCESS,
+                actor_kind=AuditEvent.ActorKind.USER,
+                actor_user_id=self.admin_user.pk + 100000,
+            )
 
         response = self._get(reverse("admin-audit-export"))
 

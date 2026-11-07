@@ -1,6 +1,6 @@
 # ADR 0011: Development VM baseline decisions
 
-**2026-11-04 scope update:** The existing disposable development recipe remains unchanged. [0012-vm-first-product.md](0012-vm-first-product.md) defines a separate persistent full-product VM target (T174/T148/T149). Do not deploy durable data with this recipe or inherit disposable-only firmware risk acceptance as production approval. Pi hardware is no longer a prerequisite for VM acceptance.
+**2026-11-06 superseding owner amendment:** This NoCloud/disposable VM and `.dev-vm` are retired for future project execution. Do not boot them; their results remain historical development evidence. The owner selected the existing `C:\superHarry-vm` artifacts as the sole VM target. This historical ADR records the former setup and its prior validation only; it is not an instruction to use `.dev-vm` or its launcher. See [ADR 0012](0012-vm-first-product.md) for the current decision. `.dev-vm` is marked for eventual deletion after Caddy CA private keys/configuration and local SQLite backups are preserved/migrated and needed backups verified.
 
 Status: Accepted by the owner on 2026-11-01; updated after host installation on 2026-11-01. This decision covers a disposable local development VM only; it does not approve production deployment, real Raspberry Pi acceptance, or unrelated application dependencies.
 
