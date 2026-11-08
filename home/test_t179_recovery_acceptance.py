@@ -47,9 +47,6 @@ class SimulatedInterruption(BaseException):
 )
 class RecoveryAcceptanceTests(TestCase):
     def setUp(self):
-        verified = patch("home.openrouter_transport.protected_context_delivery_verified", return_value=True)
-        verified.start()
-        self.addCleanup(verified.stop)
         user = get_user_model().objects.create_user(username="recovery-synthetic")
         self.conversation = Conversation.objects.create(owner=user)
         self.client.force_login(user)
@@ -91,20 +88,20 @@ class RecoveryAcceptanceTests(TestCase):
         quota = ProviderQuota.objects.get(group=group)
         self.assertEqual((quota.used, quota.reserved), (used, reserved))
 
-    def test_definitive_rejection_fails_over_and_accounts_both_attempts(self):
+    def test_groq_rate_limit_does_not_automatically_dispatch_openrouter(self):
         self.groq.side_effect = GroqRateLimitError("synthetic rejection")
         turn = self.create_turn()
         self.assertTrue(run_one())
         turn.refresh_from_db()
-        self.assertEqual(turn.state, ChatTurn.State.COMPLETED)
-        self.assertEqual(turn.events.get(event_type="model.selected").payload["provider"], "openrouter")
+        self.assertEqual(turn.state, ChatTurn.State.FAILED)
+        self.assertEqual(turn.events.get(event_type="turn.failed").payload["reason"], "no_free_provider")
         self.groq.assert_called_once()
-        self.router.assert_called_once()
+        self.router.assert_not_called()
         self.assert_quota("groq-development", 1, 0)
         self.assert_quota("groq-development:tokens", 0, 0)
-        self.assert_quota("openrouter-development", 1, 0)
-        self.assert_quota("openrouter-development:tokens", 12, 0)
-        self.assertEqual(ProviderReservation.objects.filter(state="settled").count(), 4)
+        self.assert_quota("openrouter-development", 0, 0)
+        self.assert_quota("openrouter-development:tokens", 0, 0)
+        self.assertEqual(ProviderReservation.objects.filter(state="settled").count(), 2)
 
     def test_unknown_response_is_not_replayed_by_duplicate_http_submission(self):
         self.groq.side_effect = TimeoutError("synthetic private detail")

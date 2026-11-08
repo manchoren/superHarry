@@ -100,6 +100,8 @@
                         </select>
                         {% if not gemini_chat_enabled %}<p id="chat-provider-status">{% translate "A configured key does not mean a provider is ready. Provider and model selection is not available yet." %}</p>{% endif %}
                         {% if 'gemini' in configured_provider_ids %}<p>{% translate "Gemini's free tier uses submitted content to improve Google's products. Administrator approval is required before enabling it." %}</p>{% endif %}
+                        {% if openrouter_risk_disclosure %}<p class="provider-risk-warning" role="alert">{% translate "OpenRouter sends your message outside superHarry. The selected provider and upstream may retain, review, or use it to improve models, and may transform or truncate the instructions sent with it. Do not enter sensitive, confidential, or personal information in your prompt. Quota accounting is approximate and actual use may exceed the limit." %}</p>{% endif %}
+                        {% if openrouter_risk_disclosure %}<label class="provider-risk-acceptance"><input type="checkbox" id="openrouter-risk-accepted"> {% translate "I understand these OpenRouter risks and want to send this message through this provider." %}</label>{% endif %}
                         <label for="chat-message">{% translate "Message" context "chat.composer.message_label" %}</label>
                         <textarea id="chat-message" name="message" rows="3" required></textarea>
                         <button type="submit">{% translate "Send" context "chat.composer.send" %}</button>

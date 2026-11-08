@@ -251,3 +251,9 @@ msgstr "Confirma la nueva contraseÃ±a"
 
 msgid "Authenticator or recovery code"
 msgstr "CÃ³digo de autenticaciÃ³n o recuperaciÃ³n"
+
+msgid "OpenRouter sends your message outside superHarry. The selected provider and upstream may retain, review, or use it to improve models, and may transform or truncate the instructions sent with it. Do not enter sensitive, confidential, or personal information in your prompt. Quota accounting is approximate and actual use may exceed the limit."
+msgstr "OpenRouter envía tu mensaje fuera de superHarry. El proveedor y la plataforma ascendente podrían conservarlo, revisarlo o usarlo para mejorar modelos, y también podrían transformar o truncar las instrucciones enviadas. No escribas información sensible, confidencial o personal en tu mensaje. El cálculo de cuota es aproximado y el uso real podría superar el límite."
+
+msgid "I understand these OpenRouter risks and want to send this message through this provider."
+msgstr "Entiendo estos riesgos de OpenRouter y quiero enviar este mensaje mediante este proveedor."

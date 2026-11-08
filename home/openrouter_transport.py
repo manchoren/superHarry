@@ -19,7 +19,7 @@ def is_approved_route(model_id, upstream_id):
 
 
 def protected_context_delivery_verified():
-    """Remain closed while complete protected-context delivery is unverified."""
+    """Report upstream preservation verification; owner acceptance is separate."""
     return False
 
 

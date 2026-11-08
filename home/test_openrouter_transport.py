@@ -100,7 +100,7 @@ class OpenRouterRouteBodyTests(SimpleTestCase):
         self.assertEqual(payload['plugins'], [{'id': 'context-compression', 'enabled': False}])
 
     @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True)
-    def test_opt_in_does_not_verify_provider_context_delivery(self):
+    def test_opt_in_combines_with_narrow_owner_context_risk_acceptance(self):
         from home.openrouter_transport import approximate_quota_enabled, protected_context_delivery_verified
         self.assertTrue(approximate_quota_enabled())
         self.assertFalse(protected_context_delivery_verified())

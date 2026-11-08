@@ -5,7 +5,9 @@ from pathlib import Path
 from django.core.exceptions import ImproperlyConfigured
 
 
-_SYSTEMD_CREDENTIAL_NAMES = frozenset({"django-secret", "totp-aes256-key"})
+_SYSTEMD_CREDENTIAL_NAMES = frozenset(
+    {"django-secret", "totp-aes256-key", "openrouter-api-key"}
+)
 
 
 def _open_private_file(

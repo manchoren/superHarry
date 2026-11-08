@@ -10,7 +10,7 @@ from django.urls import reverse
 from home.chat_dispatch import configure_chat_dispatcher
 from home.gemini_chat import run_gemini_turn
 from home.groq_transport import GroqRateLimitError
-from home.models import ChatTurn, Conversation, ProviderQuota
+from home.models import ChatTurn, Conversation, Message, ProviderQuota
 from home.openrouter_transport import OpenRouterRateLimitError
 
 
@@ -42,9 +42,6 @@ def completion(model, text):
 )
 class SyntheticRoutingIntegrationTests(TestCase):
     def setUp(self):
-        verified = patch("home.openrouter_transport.protected_context_delivery_verified", return_value=True)
-        verified.start()
-        self.addCleanup(verified.stop)
         users = get_user_model()
         self.owner = users.objects.create_user(username="synthetic-owner")
         self.other = users.objects.create_user(username="synthetic-other")
@@ -77,6 +74,8 @@ class SyntheticRoutingIntegrationTests(TestCase):
         self.openrouter.return_value = completion(OPENROUTER_MODEL, "synthetic router reply")
 
     def post_turn(self, conversation=None, client=None, **body):
+        if body.get("provider") == "openrouter":
+            body["openrouter_risk_accepted"] = True
         return (client or self.client).post(
             reverse("chat-turn-create", kwargs={
                 "conversation_id": (conversation or self.conversation).pk,
@@ -133,6 +132,47 @@ class SyntheticRoutingIntegrationTests(TestCase):
         self.groq.assert_not_called()
         self.openrouter.assert_called_once()
 
+    def test_explicit_openrouter_receives_full_context_and_only_owner_history(self):
+        def add_completed_turn(conversation, request_text, reply_text):
+            user_message = Message.objects.create(
+                conversation=conversation, role=Message.Role.USER, content=request_text,
+            )
+            assistant_message = Message.objects.create(
+                conversation=conversation, role=Message.Role.ASSISTANT, content=reply_text,
+            )
+            return ChatTurn.objects.create(
+                conversation=conversation,
+                user_message=user_message,
+                assistant_message=assistant_message,
+                idempotency_key=uuid.uuid4(),
+                request_digest="0" * 64,
+                model_mode=ChatTurn.ModelMode.AUTOMATIC,
+                state=ChatTurn.State.COMPLETED,
+            )
+
+        add_completed_turn(self.conversation, "owner prior request", "owner prior reply")
+        add_completed_turn(
+            self.other_conversation,
+            "other-user private text",
+            "other-user private reply",
+        )
+
+        turn = self.start_and_run(provider="openrouter", model_id=OPENROUTER_MODEL)
+
+        self.assertEqual(turn.state, ChatTurn.State.COMPLETED)
+        self.groq.assert_not_called()
+        self.openrouter.assert_called_once()
+        messages = json.loads(self.openrouter.call_args.args[0])["messages"]
+        expected_constitution = Path("constitution.md").read_bytes().decode("utf-8")
+        self.assertEqual(messages, [
+            {"role": "system", "content": expected_constitution},
+            {"role": "user", "content": "owner prior request"},
+            {"role": "assistant", "content": "owner prior reply"},
+            {"role": "user", "content": "synthetic request"},
+        ])
+        self.assertNotIn("other-user private text", json.dumps(messages))
+        self.assertNotIn("other-user private reply", json.dumps(messages))
+
     def test_explicit_route_revoked_after_admission_is_not_dispatched(self):
         response = self.post_turn(provider="openrouter", model_id=OPENROUTER_MODEL)
         self.assertEqual(response.status_code, 202)
@@ -145,7 +185,7 @@ class SyntheticRoutingIntegrationTests(TestCase):
         self.groq.assert_not_called()
         self.openrouter.assert_not_called()
 
-    def test_safe_rate_limit_failover_preserves_context_and_isolates_history(self):
+    def test_groq_rate_limit_does_not_automatically_fail_over_to_openrouter(self):
         first = self.start_and_run()
         self.assertEqual(first.state, ChatTurn.State.COMPLETED)
         other_client = Client()
@@ -164,24 +204,26 @@ class SyntheticRoutingIntegrationTests(TestCase):
         self.groq.side_effect = GroqRateLimitError("synthetic rate limit")
 
         turn = self.start_and_run()
-        self.assertEqual(turn.state, ChatTurn.State.COMPLETED)
-        self.assertEqual(turn.events.get(event_type="model.selected").payload["provider"], "openrouter")
+        self.assertEqual(turn.state, ChatTurn.State.FAILED)
+        self.assertEqual(turn.events.get(event_type="turn.failed").payload["reason"], "no_free_provider")
         self.groq.assert_called_once()
-        self.openrouter.assert_called_once()
+        self.openrouter.assert_not_called()
         expected_constitution = Path("constitution.md").read_bytes().decode("utf-8")
-        for call in (self.groq.call_args, self.openrouter.call_args):
-            messages = json.loads(call.args[0])["messages"]
-            self.assertEqual(messages[0], {"role": "system", "content": expected_constitution})
-            self.assertEqual(messages[1:], [
-                {"role": "user", "content": "synthetic request"},
-                {"role": "assistant", "content": "synthetic groq reply"},
-                {"role": "user", "content": "synthetic request"},
-            ])
+        messages = json.loads(self.groq.call_args.args[0])["messages"]
+        self.assertEqual(messages[0], {"role": "system", "content": expected_constitution})
+        self.assertEqual(messages[1:], [
+            {"role": "user", "content": "synthetic request"},
+            {"role": "assistant", "content": "synthetic groq reply"},
+            {"role": "user", "content": "synthetic request"},
+        ])
+        encoded_messages = json.dumps(messages)
+        self.assertNotIn("synthetic other-user private text", encoded_messages)
+        self.assertNotIn("synthetic other-user reply", encoded_messages)
 
     @override_settings(SUPERHARRY_FREE_PROVIDER_ORDER="openrouter,groq")
     def test_ambiguous_rate_limit_does_not_retry_other_provider(self):
         self.openrouter.side_effect = OpenRouterRateLimitError("synthetic ambiguous rate limit")
-        turn = self.start_and_run()
+        turn = self.start_and_run(provider="openrouter", model_id=OPENROUTER_MODEL)
         self.assertEqual(turn.state, ChatTurn.State.FAILED)
         self.assertEqual(turn.events.get(event_type="turn.failed").payload["error"], {
             "code": "UNAVAILABLE", "retryable": False,

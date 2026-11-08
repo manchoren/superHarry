@@ -253,8 +253,7 @@ class ModelQuotaDispatchTests(TestCase):
         self.assertEqual(ProviderModelQuota.objects.get(quota=tokens).used, 12)
 
     @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True)
-    @patch('home.openrouter_transport.protected_context_delivery_verified', return_value=True)
-    def test_openrouter_uses_its_own_shared_and_model_quotas(self, _verified):
+    def test_openrouter_uses_its_own_shared_and_model_quotas(self):
         model = 'liquid/lfm-2.5-2.6b:free'
         route = build_openrouter_route(model, 'liquid/fp8')
         request_quota = ProviderQuota.objects.create(group='openrouter-development', limit=5)
@@ -272,8 +271,7 @@ class ModelQuotaDispatchTests(TestCase):
         self.assertEqual(self.request_quota.used, 0)
 
     @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True)
-    @patch('home.openrouter_transport.protected_context_delivery_verified', return_value=True)
-    def test_openrouter_overage_persists_with_an_existing_model_hold(self, _verified):
+    def test_openrouter_overage_persists_with_an_existing_model_hold(self):
         model = 'liquid/lfm-2.5-2.6b:free'
         route = build_openrouter_route(model, 'liquid/fp8')
         request_quota = ProviderQuota.objects.create(group='openrouter-development', limit=5)
@@ -298,8 +296,7 @@ class ModelQuotaDispatchTests(TestCase):
             reserve('openrouter-development:tokens', 'later', 1, model_id=model)
 
     @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True)
-    @patch('home.openrouter_transport.protected_context_delivery_verified', return_value=True)
-    def test_openrouter_records_valid_usage_even_when_answer_is_unusable(self, _verified):
+    def test_openrouter_records_valid_usage_even_when_answer_is_unusable(self):
         model = 'liquid/lfm-2.5-2.6b:free'
         route = build_openrouter_route(model, 'liquid/fp8')
         request_quota = ProviderQuota.objects.create(group='openrouter-development', limit=5)
@@ -318,8 +315,7 @@ class ModelQuotaDispatchTests(TestCase):
         self.assertEqual(ProviderModelQuota.objects.get(quota=token_quota).used, 100001)
 
     @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=False)
-    @patch('home.openrouter_transport.protected_context_delivery_verified', return_value=True)
-    def test_openrouter_flag_is_required_at_dispatch(self, _verified):
+    def test_openrouter_flag_is_required_at_dispatch(self):
         route = build_openrouter_route('liquid/lfm-2.5-2.6b:free', 'liquid/fp8')
         with self.assertRaises(NotDispatched):
             dispatch_free_provider(route=route, transport=self.transport, user_request='synthetic',
@@ -328,8 +324,7 @@ class ModelQuotaDispatchTests(TestCase):
         self.assertFalse(ProviderReservation.objects.exists())
 
     @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True)
-    @patch('home.openrouter_transport.protected_context_delivery_verified', return_value=True)
-    def test_openrouter_impossible_usage_preserves_both_unknown_holds(self, _verified):
+    def test_openrouter_impossible_usage_preserves_both_unknown_holds(self):
         model = 'liquid/lfm-2.5-2.6b:free'
         route = build_openrouter_route(model, 'liquid/fp8')
         request_quota = ProviderQuota.objects.create(group='openrouter-development', limit=5)
@@ -348,8 +343,7 @@ class ModelQuotaDispatchTests(TestCase):
         self.assertGreater(token_quota.reserved, 0)
 
     @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True)
-    @patch('home.openrouter_transport.protected_context_delivery_verified', return_value=True)
-    def test_synthetic_context_rejection_retains_unknown_quota_holds(self, _verified):
+    def test_synthetic_context_rejection_retains_unknown_quota_holds(self):
         model = 'liquid/lfm-2.5-2.6b:free'
         route = build_openrouter_route(model, 'liquid/fp8')
         for group, limit in (('openrouter-development', 5), ('openrouter-development:tokens', 100000)):
@@ -362,8 +356,7 @@ class ModelQuotaDispatchTests(TestCase):
         self.assertEqual(ProviderReservation.objects.filter(state='unknown').count(), 2)
 
     @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True)
-    @patch('home.openrouter_transport.protected_context_delivery_verified', return_value=True)
-    def test_openrouter_forged_route_body_is_denied_before_reservations(self, _verified):
+    def test_openrouter_forged_route_body_is_denied_before_reservations(self):
         route = build_openrouter_route('liquid/lfm-2.5-2.6b:free', 'liquid/fp8')
         forged = FreeProviderRoute(provider=route.provider, model_id=route.model_id, quota_group=route.quota_group,
                                    context_capacity=route.context_capacity,
@@ -375,8 +368,7 @@ class ModelQuotaDispatchTests(TestCase):
         self.assertFalse(ProviderReservation.objects.exists())
 
     @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True)
-    @patch('home.openrouter_transport.protected_context_delivery_verified', return_value=True)
-    def test_openrouter_enabled_compression_is_denied_before_reservation(self, _verified):
+    def test_openrouter_enabled_compression_is_denied_before_reservation(self):
         route = build_openrouter_route('liquid/lfm-2.5-2.6b:free', 'liquid/fp8')
 
         def altered(*args):

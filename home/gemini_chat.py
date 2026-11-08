@@ -117,14 +117,13 @@ def _run_routing(*, turn, history, authorized, cancelled):
             raise RoutingExhausted()
         order = (turn.requested_provider,)
     else:
-        order = configured_order
+        order = tuple(provider for provider in configured_order if provider != 'openrouter')
     for provider in order:
         if provider not in enabled:
             continue
         if provider == 'openrouter' and (
             not is_approved_route(settings.OPENROUTER_MODEL, settings.OPENROUTER_UPSTREAM)
             or not openrouter_transport.approximate_quota_enabled()
-            or not openrouter_transport.protected_context_delivery_verified()
         ):
             continue
         if cancelled():

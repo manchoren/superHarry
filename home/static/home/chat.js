@@ -5,6 +5,7 @@
     const status = document.getElementById("composer-status");
     const cancel = document.getElementById("chat-cancel");
     const provider = document.getElementById("chat-provider");
+    const riskAcceptance = document.getElementById("openrouter-risk-accepted");
     const providerAvailable = !provider.disabled;
     const send = form.querySelector('button[type="submit"]');
     const csrf = form.querySelector('[name="csrfmiddlewaretoken"]').value;
@@ -22,6 +23,7 @@
         status.textContent = message;
         active = null;
         pending = null;
+        if (riskAcceptance) riskAcceptance.checked = false;
         send.disabled = false;
         input.readOnly = false;
         provider.disabled = !providerAvailable;
@@ -109,12 +111,20 @@
     form.addEventListener("submit", async event => {
         event.preventDefault();
         if (active || submitting || (!pending && !input.value.trim())) return;
+        if (!pending && provider.value === "openrouter"
+                && (!riskAcceptance || !riskAcceptance.checked)) {
+            status.textContent = form.dataset.error;
+            return;
+        }
         if (!pending) {
             const selected = provider.selectedOptions[0];
             const payload = {message: input.value};
             if (selected.dataset.provider && selected.dataset.modelId) {
                 payload.provider = selected.dataset.provider;
                 payload.model_id = selected.dataset.modelId;
+                if (selected.dataset.provider === "openrouter") {
+                    payload.openrouter_risk_accepted = true;
+                }
             }
             pending = {payload, key: crypto.randomUUID(), uncertain: false};
             input.readOnly = true;
@@ -146,6 +156,7 @@
             addMessage(pending.payload.message);
             turn.output = addMessage("");
             pending = null;
+            if (riskAcceptance) riskAcceptance.checked = false;
             input.value = "";
             input.readOnly = false;
             cancel.disabled = false;
@@ -158,6 +169,9 @@
             submitting = false;
         }
     });
+    if (riskAcceptance) {
+        input.addEventListener("input", () => { riskAcceptance.checked = false; });
+    }
     if (form.dataset.activeEventsUrl) {
         active = {
             events_url: form.dataset.activeEventsUrl,

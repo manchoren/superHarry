@@ -89,6 +89,16 @@ class SystemdCredentialTests(SimpleTestCase):
         ):
             self.assertEqual(open_systemd_credential("django-secret"), 41)
 
+    def test_opens_openrouter_systemd_credential_from_canonical_directory(self):
+        file_metadata = self._metadata(stat.S_IFREG | 0o440)
+        directory_metadata = self._metadata(stat.S_IFDIR | 0o550)
+        with patch.dict(os.environ, {"CREDENTIALS_DIRECTORY": self._directory}), patch(
+            "superharry.runtime_config.os.open", return_value=41
+        ), patch("superharry.runtime_config.os.fstat", return_value=file_metadata), patch(
+            "superharry.runtime_config.os.stat", return_value=directory_metadata
+        ):
+            self.assertEqual(open_systemd_credential("openrouter-api-key"), 41)
+
     def test_rejects_writable_systemd_credential(self):
         with patch.dict(os.environ, {"CREDENTIALS_DIRECTORY": self._directory}), patch(
             "superharry.runtime_config.os.open", return_value=41

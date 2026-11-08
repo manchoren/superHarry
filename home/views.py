@@ -42,7 +42,6 @@ def _selectable_provider_routes(configured):
         and (provider != "openrouter" or (
             is_approved_route(settings.OPENROUTER_MODEL, settings.OPENROUTER_UPSTREAM)
             and openrouter_transport.approximate_quota_enabled()
-            and openrouter_transport.protected_context_delivery_verified()
         ))
     )
 
@@ -115,7 +114,13 @@ def _render_history(request, conversation_id=None):
             conversations.order_by("-last_accessed_at", "-pk"), 20
         ).get_page(request.GET.get("page"))
         providers = configured_provider_ids()
-        chat_enabled = settings.DEBUG and os.environ.get("SUPERHARRY_GEMINI_CHAT") == "1"
+        chat_enabled = os.environ.get("SUPERHARRY_GEMINI_CHAT") == "1"
+        selectable_routes = _selectable_provider_routes(providers) if chat_enabled else ()
+        openrouter_risk_disclosure = (
+            chat_enabled and "openrouter" in settings.SUPERHARRY_ENABLED_FREE_PROVIDERS
+            and settings.OPENROUTER_MODEL == "liquid/lfm-2.5-2.6b:free"
+            and settings.OPENROUTER_UPSTREAM == "liquid/fp8"
+        )
         response = render(request, "home/index.html", {
             "conversation": conversation,
             "conversation_page": page,
@@ -124,8 +129,9 @@ def _render_history(request, conversation_id=None):
             "older_cursor": older_cursor,
             "viewing_older": before is not None,
             "configured_provider_ids": providers,
-            "selectable_provider_routes": _selectable_provider_routes(providers) if chat_enabled else (),
+            "selectable_provider_routes": selectable_routes,
             "gemini_chat_enabled": chat_enabled,
+            "openrouter_risk_disclosure": openrouter_risk_disclosure,
         })
         if conversation is not None:
             scoped = conversations.filter(pk=conversation.pk)

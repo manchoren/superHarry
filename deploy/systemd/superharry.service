@@ -16,6 +16,10 @@ Environment=DJANGO_DEBUG=0
 Environment=DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost,superharry.local
 Environment=SUPERHARRY_TOTP_KEY_VERSION=1
 Environment=SUPERHARRY_DATABASE_PATH=/var/lib/superharry/db.sqlite3
+Environment=SUPERHARRY_GEMINI_CHAT=0
+Environment=SUPERHARRY_ENABLED_FREE_PROVIDERS=gemini,groq
+Environment=SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=0
+Environment=SUPERHARRY_FREE_PROVIDER_ORDER=gemini,groq
 LoadCredentialEncrypted=django-secret:/etc/credstore.encrypted/superharry-django-secret
 LoadCredentialEncrypted=totp-aes256-key:/etc/credstore.encrypted/superharry-totp-aes256-key
 StateDirectory=superharry

@@ -1,16 +1,22 @@
+import os
+import signal
+import threading
 import uuid
 from datetime import timedelta
 from unittest.mock import patch
 
+from django.apps import apps
 from django.contrib.auth import get_user_model
+from django.core.management.base import CommandError
 from django.db import transaction
-from django.test import TestCase, TransactionTestCase
+from django.test import SimpleTestCase, TestCase, TransactionTestCase, override_settings
 from django.utils import timezone
 
-from home.chat_dispatch import ChatDispatchError
+from home.chat_dispatch import ChatDispatchError, configure_chat_dispatcher, get_chat_dispatcher
 from home.gemini_chat import GeminiChatDispatcher
-from home.gemini_queue import claim_next, reconcile_stale, run_one
-from home.models import ChatTurn, Conversation, Message, GeminiChatJob, ProviderQuota, ProviderReservation
+from home.gemini_queue import _WAKE, claim_next, reconcile_stale, run_chat_worker, run_one, wake_worker
+from home.management.commands.run_chat_worker import Command as RunChatWorkerCommand
+from home.models import ChatTurn, Conversation, GeminiChatJob, Message, ProviderQuota, ProviderReservation
 from home.provider_quota import reserve, mark_unknown
 
 
@@ -147,16 +153,23 @@ class GeminiQueueAPITests(TestCase):
         self.assertEqual(GeminiChatJob.objects.get(turn=turn).state, 'done')
         transport.generate.assert_called_once()
         self.assertFalse(run_one())
-from unittest.mock import patch
-from django.apps import apps
-from django.test import SimpleTestCase, override_settings
-
-
-@override_settings(DEBUG=True)
 class GeminiWorkerStartupTests(SimpleTestCase):
     @patch.dict('os.environ', {'SUPERHARRY_GEMINI_CHAT': '1'}, clear=True)
     @patch('home.gemini_queue.start_development_worker')
-    def test_worker_starts_only_in_serving_process(self, start):
+    @override_settings(DEBUG=False)
+    def test_production_web_process_configures_dispatcher_without_starting_worker(self, start):
+        self.addCleanup(configure_chat_dispatcher, None)
+        config = apps.get_app_config('home')
+        with patch('sys.argv', ['gunicorn', 'superharry.wsgi:application']):
+            config.ready()
+
+        self.assertIsInstance(get_chat_dispatcher(), GeminiChatDispatcher)
+        start.assert_not_called()
+
+    @patch.dict('os.environ', {'SUPERHARRY_GEMINI_CHAT': '1'}, clear=True)
+    @patch('home.gemini_queue.start_development_worker')
+    @override_settings(DEBUG=True)
+    def test_worker_starts_only_in_development_runserver_main_process(self, start):
         self.addCleanup(configure_chat_dispatcher, None)
         config = apps.get_app_config('home')
         with patch('sys.argv', ['manage.py', 'test']):
@@ -169,3 +182,95 @@ class GeminiWorkerStartupTests(SimpleTestCase):
             with patch('sys.argv', ['manage.py', 'runserver']):
                 config.ready()
         start.assert_called_once()
+
+
+class ForegroundChatWorkerTests(SimpleTestCase):
+    def test_worker_exits_after_stop_event_is_set(self):
+        stop_event = threading.Event()
+
+        def finish_after_one_poll():
+            stop_event.set()
+            return False
+
+        with patch('home.gemini_queue.reconcile_stale'), patch(
+                'home.gemini_queue.run_one', side_effect=finish_after_one_poll):
+            run_chat_worker(stop_event)
+
+        self.assertTrue(stop_event.is_set())
+
+    def test_worker_wakes_for_queue_notification_and_stops(self):
+        _WAKE.clear()
+        stop_event = threading.Event()
+        first_poll = threading.Event()
+        attempts = 0
+
+        def run_one_with_two_polls():
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                first_poll.set()
+                return False
+            stop_event.set()
+            return True
+
+        with patch('home.gemini_queue.reconcile_stale'), patch(
+                'home.gemini_queue.run_one', side_effect=run_one_with_two_polls):
+            worker = threading.Thread(target=run_chat_worker, args=(stop_event,))
+            worker.start()
+            self.assertTrue(first_poll.wait(timeout=2))
+            wake_worker()
+            worker.join(timeout=2)
+
+        self.assertFalse(worker.is_alive())
+        self.assertTrue(stop_event.is_set())
+        self.assertEqual(attempts, 2)
+
+    def test_worker_requires_a_threading_event(self):
+        with self.assertRaises(TypeError):
+            run_chat_worker(None)
+
+    @patch.dict(os.environ, {}, clear=True)
+    @patch('home.management.commands.run_chat_worker.run_chat_worker')
+    def test_command_is_disabled_without_explicit_chat_flag(self, run_worker):
+        with self.assertRaises(CommandError):
+            RunChatWorkerCommand().handle()
+        run_worker.assert_not_called()
+
+    @patch.dict(os.environ, {'SUPERHARRY_GEMINI_CHAT': '1'}, clear=True)
+    def test_sigterm_requests_shutdown_and_restores_signal_handlers(self):
+        original_handlers = {
+            signal.SIGTERM: lambda *_args: None,
+            signal.SIGINT: lambda *_args: None,
+        }
+        handlers = {}
+
+        def register_handler(signum, handler):
+            previous = handlers.get(signum, original_handlers[signum])
+            handlers[signum] = handler
+            return previous
+
+        def stop_from_sigterm(stop_event):
+            handlers[signal.SIGTERM](signal.SIGTERM, None)
+            self.assertTrue(stop_event.is_set())
+
+        with patch('home.management.commands.run_chat_worker.signal.getsignal', side_effect=original_handlers.__getitem__), \
+                patch('home.management.commands.run_chat_worker.signal.signal', side_effect=register_handler), \
+                patch('home.management.commands.run_chat_worker.run_chat_worker', side_effect=stop_from_sigterm) as run_worker, \
+                patch('home.management.commands.run_chat_worker.wake_worker') as wake:
+            RunChatWorkerCommand().handle()
+
+        wake.assert_called_once()
+        self.assertEqual(run_worker.call_count, 1)
+        self.assertEqual(len(handlers), 2)
+        for signum, handler in original_handlers.items():
+            self.assertIs(handlers[signum], handler)
+
+    @patch.dict(os.environ, {'SUPERHARRY_GEMINI_CHAT': '1'}, clear=True)
+    def test_keyboard_interrupt_requests_shutdown(self):
+        with patch('home.management.commands.run_chat_worker.signal.signal', return_value=signal.default_int_handler), \
+                patch('home.management.commands.run_chat_worker.run_chat_worker', side_effect=KeyboardInterrupt) as run_worker, \
+                patch('home.management.commands.run_chat_worker.wake_worker') as wake:
+            RunChatWorkerCommand().handle()
+
+        self.assertTrue(run_worker.call_args.args[0].is_set())
+        wake.assert_called_once()

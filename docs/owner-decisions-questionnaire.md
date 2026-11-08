@@ -1,5 +1,9 @@
 # Owner decision questionnaire
 
+## T179 OpenRouter owner risk decision (2026-11-07)
+
+The owner accepts that the exact `liquid/lfm-2.5-2.6b:free` route via `liquid/fp8` may handle transmitted conversation content insecurely, including retention, human review, model improvement, or upstream transformation/truncation. Before a user explicitly selects this route, the application must clearly warn that their messages are sent externally, that the provider/upstream may retain, review or use them for improvement, and may transform/truncate instructions; it must warn users not to enter sensitive, confidential, or personal information in their prompt, and state quota can be exceeded. Require an explicit per-request checkbox acceptance, include it in the request/idempotency contract, and exclude OpenRouter from automatic provider selection. This does not claim provider settings or protected-context delivery are verified; local context integrity, freshness, capacity, authorization, and safe failure handling remain enforced. The owner also accepts UTF-8 byte quota estimation despite possible undercount/overage, retaining non-resetting ceilings of 100 requests and 100,000 estimated tokens. Settle provider-reported usage/overage when returned and preserve zero `max_price` fields. These narrow exceptions expire on T179 closure or owner revocation; they do not authorize guests, other routes, or production/release acceptance.
+
 Status: **Owner responses recorded; D2 custody direction selected, installation controls/review remain open.** This file collects unresolved owner choices found in the active backlog and linked decision records as of 2026-11-06. The owner's recorded answers in this document are evidence of authorization to make the specific changes or accept the specific risks stated in those answers. Authorization is limited to the named task, option, scope, conditions and risks; it does not extend to unstated changes or risks. An answer does not by itself satisfy mandatory G-SECURITY, G-OPS, G-ARCH, G-CONTRACT, legal review, technical verification or release acceptance.
 
 ## How to answer
@@ -72,13 +76,13 @@ The chosen VM profile accepts same-disk loss exposure. Backup/restore evidence r
 
 ### D5 — T179 free-provider admission when account policy cannot be verified
 
-Current records require fail-closed behavior when cost/privacy/identity eligibility cannot be verified. This asks whether to change that policy; no live provider call is implied.
+Current records require fail-closed behavior when cost/privacy/identity eligibility cannot be verified. The owner has since authorized narrow cost, privacy-risk and approximate-quota exceptions recorded in this file; exact-route, authentication, disclosure and operational limits remain applicable.
 
 - **A.** Keep the current fail-closed rule; use simulated API responses for application tests and verify account policy separately.
 - **B.** Narrowly allow a named provider/model using explicit owner attestation when independent verification is unavailable (specify provider, model, cost/privacy limits and expiry).
 - **C.** Disable all external free-provider routes and defer T179.
 
-**Answer: A**
+**Answer: B - owner direction on 2026-11-06: accept possible nonzero or otherwise unverified total charges for only OpenRouter model liquid/lfm-2.5-2.6b:free routed to upstream liquid/fp8, retaining available zero max_price fields. No monetary cap is established. The 2026-11-07 owner amendment additionally accepts insecure/uncertain data handling with a clear user warning, and accepts approximate UTF-8 quota estimation at the existing ceilings; details are recorded above. These narrow exceptions expire on T179 closure or owner revocation. They do not authorize other routes/guests or establish VM/release acceptance.**
 
 ### D6 — T180 standing-grant eligible tools
 

@@ -74,8 +74,8 @@ def reconcile_stale(*, now=None):
     return reconciled
 
 
-def _worker_loop():
-    while True:
+def _worker_loop(stop_event=None):
+    while stop_event is None or not stop_event.is_set():
         try:
             close_old_connections()
             reconcile_stale()
@@ -87,8 +87,19 @@ def _worker_loop():
             logger.warning('gemini_queue_worker_failed')
         finally:
             close_old_connections()
+        if stop_event is not None and stop_event.is_set():
+            return
+        # Queue notifications and the command's shutdown handler both set _WAKE.
+        # Keep the timeout so stale claims are still reconciled periodically.
         _WAKE.wait(timeout=1)
         _WAKE.clear()
+
+
+def run_chat_worker(stop_event):
+    """Run the durable queue in the foreground until shutdown is requested."""
+    if not isinstance(stop_event, threading.Event):
+        raise TypeError('stop_event must be a threading.Event')
+    _worker_loop(stop_event)
 
 
 def start_development_worker():

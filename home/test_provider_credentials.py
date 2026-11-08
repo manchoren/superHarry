@@ -1,6 +1,8 @@
 ﻿from pathlib import Path
+import os
 from tempfile import TemporaryDirectory
 from unittest import TestCase
+from unittest.mock import patch
 
 from home.provider_credentials import CredentialConfigError, load_provider_key
 
@@ -43,3 +45,33 @@ class ProviderCredentialsTests(TestCase):
             self.path.write_bytes(raw)
             with self.assertRaises(CredentialConfigError):
                 self.load('groq')
+
+    def test_openrouter_systemd_credential_is_used_without_environment_fallback(self):
+        self.path.write_bytes(b'synthetic-systemd-key')
+
+        def open_credential(name):
+            self.assertEqual(name, 'openrouter-api-key')
+            return os.open(self.path, os.O_RDONLY)
+
+        environ = {
+            'CREDENTIALS_DIRECTORY': '/run/credentials/superharry.service',
+            'OPENROUTER_API_KEY': 'synthetic-environment-key',
+        }
+        with patch('home.provider_credentials.open_systemd_credential', side_effect=open_credential):
+            self.assertEqual(self.load('openrouter', environ), 'synthetic-systemd-key')
+
+    def test_openrouter_systemd_credential_missing_does_not_fall_back_to_environment(self):
+        environ = {
+            'CREDENTIALS_DIRECTORY': '/run/credentials/superharry.service',
+            'OPENROUTER_API_KEY': 'synthetic-environment-key',
+        }
+        with patch('home.provider_credentials.open_systemd_credential', side_effect=FileNotFoundError):
+            self.assertIsNone(self.load('openrouter', environ))
+
+    def test_openrouter_systemd_credential_invalid_fails_closed(self):
+        self.path.write_bytes(b'synthetic invalid key')
+        descriptor = os.open(self.path, os.O_RDONLY)
+        environ = {'CREDENTIALS_DIRECTORY': '/run/credentials/superharry.service'}
+        with patch('home.provider_credentials.open_systemd_credential', return_value=descriptor):
+            with self.assertRaises(CredentialConfigError):
+                self.load('openrouter', environ)

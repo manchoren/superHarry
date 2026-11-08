@@ -114,7 +114,7 @@ def _parse_start_request(request):
     except (UnicodeDecodeError, json.JSONDecodeError, _DuplicateJsonKey) as exc:
         raise ValueError from exc
     if not isinstance(body, dict) or not set(body).issubset(
-        {"message", "model_mode", "provider", "model_id"}
+        {"message", "model_mode", "provider", "model_id", "openrouter_risk_accepted"}
     ):
         raise ValueError
     if "message" not in body:
@@ -123,7 +123,9 @@ def _parse_start_request(request):
     model_mode = body.get("model_mode", ChatTurn.ModelMode.AUTOMATIC)
     provider = body.get("provider", "")
     model_id = body.get("model_id", "")
-    if not all(isinstance(value, str) for value in (message, model_mode, provider, model_id)):
+    risk_accepted = body.get("openrouter_risk_accepted", False)
+    if (not all(isinstance(value, str) for value in (message, model_mode, provider, model_id))
+            or type(risk_accepted) is not bool):
         raise ValueError
     try:
         message_bytes = message.encode("utf-8")
@@ -150,7 +152,11 @@ def _parse_start_request(request):
         or (provider and model_mode != ChatTurn.ModelMode.AUTOMATIC)
     ):
         raise ValueError
-    return message, message_bytes, model_mode, provider, model_id
+    if provider == "openrouter" and not model_id:
+        raise ValueError
+    if provider != "openrouter" and risk_accepted:
+        raise ValueError
+    return message, message_bytes, model_mode, provider, model_id, risk_accepted
 
 
 def _provider_route_is_available(provider, model_id):
@@ -171,7 +177,6 @@ def _provider_route_is_available(provider, model_id):
     if provider == "openrouter" and (
         not is_approved_route(model_id, settings.OPENROUTER_UPSTREAM)
         or not openrouter_transport.approximate_quota_enabled()
-        or not openrouter_transport.protected_context_delivery_verified()
     ):
         return False
     try:
@@ -260,7 +265,7 @@ def create_turn(request, conversation_id):
     if conversation is None:
         return _error(request, "NOT_FOUND", 404)
     try:
-        message, message_bytes, model_mode, provider, model_id = _parse_start_request(request)
+        message, message_bytes, model_mode, provider, model_id, risk_accepted = _parse_start_request(request)
         idempotency_key = _parse_idempotency_key(request)
     except OverflowError:
         return _error(request, "INVALID_INPUT", 400)
@@ -268,6 +273,11 @@ def create_turn(request, conversation_id):
         return _error(request, "INVALID_INPUT", 400)
 
     digest = _request_digest(message_bytes, model_mode, provider, model_id)
+    if provider == "openrouter":
+        digest = hashlib.sha256(
+            digest.encode("ascii") + b"\0openrouter-risk-accepted-v1\0"
+            + (b"1" if risk_accepted else b"0")
+        ).hexdigest()
     legacy_digest = (
         _legacy_request_digest(message_bytes, model_mode)
         if not provider and not model_id
@@ -298,6 +308,9 @@ def create_turn(request, conversation_id):
                 ),
             ).exists():
                 return _error(request, "TURN_ALREADY_ACTIVE", 409)
+
+            if provider == "openrouter" and risk_accepted is not True:
+                return _error(request, "INVALID_INPUT", 400)
 
             if provider and not _provider_route_is_available(provider, model_id):
                 return _error(request, "INVALID_INPUT", 400)

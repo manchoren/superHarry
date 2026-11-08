@@ -101,7 +101,7 @@ class OpenRouterAdapterTests(TestCase):
         self.assertFalse(event.error.retryable)
 
     def test_policy_changes_during_response_block_output(self):
-        for name in ('verify_free', 'verify_privacy', 'verify_credential', 'verify_context'):
+        for name in ('verify_free', 'verify_context', 'verify_privacy', 'verify_credential'):
             with self.subTest(name=name):
                 state = {'allowed': True}
                 adapter = OpenRouterAdapter(**{**self.options, name: lambda *a: state['allowed']})

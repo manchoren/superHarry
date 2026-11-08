@@ -14,9 +14,10 @@ function setup(fetch, initial = {}) {
             addEventListener(name, handler) { this.listeners[name] = handler; },
             appendChild(child) { this.children.push(child); } };
     }
-    for (const name of ['chat-form', 'chat-message', 'chat-messages', 'composer-status', 'chat-cancel', 'chat-provider']) {
+    for (const name of ['chat-form', 'chat-message', 'chat-messages', 'composer-status', 'chat-cancel', 'chat-provider', 'openrouter-risk-accepted']) {
         elements[name] = element();
     }
+    elements['openrouter-risk-accepted'].checked = false;
     elements['chat-provider'].selectedOptions = [{dataset: {}}];
     const send = element();
     const form = elements['chat-form'];
@@ -80,6 +81,35 @@ test('explicit provider selection is captured once and remains immutable across 
     });
     assert.equal(calls[0].opts.body, calls[1].opts.body);
     assert.equal(ui.elements['chat-provider'].disabled, true);
+});
+
+test('OpenRouter risk acceptance is consumed for one request and must be renewed', async () => {
+    const calls = [];
+    let turnNumber = 0;
+    const ui = setup(async (url, options) => {
+        calls.push({url, options});
+        if (url === '/turns/') {
+            turnNumber += 1;
+            return ok({events_url: `/turns/${turnNumber}/events/`});
+        }
+        return stream(`id: signed-${turnNumber}\nevent: turn.completed\ndata: {}\n\n`);
+    });
+    ui.elements['chat-provider'].value = 'openrouter';
+    ui.elements['chat-provider'].selectedOptions = [{dataset: {
+        provider: 'openrouter', modelId: 'liquid/lfm-2.5-2.6b:free',
+    }}];
+    ui.elements['chat-message'].value = 'first prompt';
+    ui.elements['openrouter-risk-accepted'].checked = true;
+
+    await ui.submit();
+    await flush();
+    assert.equal(JSON.parse(calls[0].options.body).openrouter_risk_accepted, true);
+    assert.equal(ui.elements['openrouter-risk-accepted'].checked, false);
+
+    ui.elements['chat-message'].value = 'second prompt';
+    await ui.submit();
+    assert.equal(calls.filter(call => call.url === '/turns/').length, 1);
+    assert.equal(ui.elements['composer-status'].textContent, 'error');
 });
 
 test('poll failures preserve cursor, active turn, and cancellation', async () => {

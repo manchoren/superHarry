@@ -1,4 +1,4 @@
-"""Disabled-by-default OpenRouter adapter; caller must supply trusted evidence.
+"""Narrow-route OpenRouter adapter; caller supplies current trusted evidence.
 
 Evidence callbacks must verify current policy and never be user-controlled.
 This module does not configure, enable, or register any provider.

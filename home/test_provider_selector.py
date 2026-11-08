@@ -62,7 +62,25 @@ class ProviderSelectorTests(TestCase):
         self.assertNotContains(response, "OpenRouter")
         self.assertNotContains(response, "Gemini")
 
+    @override_settings(DEBUG=False, SUPERHARRY_ENABLED_FREE_PROVIDERS=("gemini",))
+    @patch.dict("os.environ", {"SUPERHARRY_GEMINI_CHAT": "1"})
+    @patch("home.views.configured_provider_ids", return_value=("gemini",))
+    def test_production_chat_routes_require_explicit_enable_flag(self, _providers):
+        response = self.client.get(reverse("home"), secure=True)
+        self.assertContains(response, '<select id="chat-provider">')
+        self.assertContains(
+            response,
+            'data-provider="gemini" data-model-id="gemini-3.5-flash-lite"',
+        )
+
+        with patch.dict("os.environ", {"SUPERHARRY_GEMINI_CHAT": "0"}):
+            response = self.client.get(reverse("home"), secure=True)
+
+        self.assertNotContains(response, '<select id="chat-provider">')
+        self.assertNotContains(response, 'data-provider="gemini"')
+
     @override_settings(SUPERHARRY_ENABLED_FREE_PROVIDERS=("openrouter",),
+                       SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True,
                        OPENROUTER_MODEL="liquid/lfm-2.5-2.6b:free",
                        OPENROUTER_UPSTREAM="other/fp8")
     @patch("home.views.configured_provider_ids", return_value=("openrouter",))
@@ -71,27 +89,46 @@ class ProviderSelectorTests(TestCase):
         self.assertNotContains(response, 'data-provider="openrouter"')
 
     @override_settings(SUPERHARRY_ENABLED_FREE_PROVIDERS=("openrouter",),
+                       SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True,
                        OPENROUTER_MODEL="liquid/lfm-2.5-2.6b:free",
                        OPENROUTER_UPSTREAM="liquid/fp8")
+    @patch.dict("os.environ", {"SUPERHARRY_GEMINI_CHAT": "1"})
     @patch("home.views.configured_provider_ids", return_value=("openrouter",))
-    def test_unverified_context_hides_even_the_approved_route(self, _providers):
+    def test_accepted_context_risk_shows_route_with_user_warning(self, _providers):
         response = self.client.get(reverse("home"), secure=True)
-        self.assertNotContains(response, 'data-provider="openrouter"')
+        self.assertContains(response, 'data-provider="openrouter"')
+        self.assertContains(response, 'class="provider-risk-warning" role="alert"')
+        self.assertContains(response, "Do not enter sensitive, confidential, or personal information in your prompt.")
+        self.assertContains(response, 'id="openrouter-risk-accepted"')
+        self.assertContains(response, "I understand these OpenRouter risks")
 
     @override_settings(SUPERHARRY_ENABLED_FREE_PROVIDERS=("openrouter",),
+                       SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True,
                        OPENROUTER_MODEL="liquid/lfm-2.5-2.6b:free",
                        OPENROUTER_UPSTREAM="liquid/fp8")
     @patch("home.chat_views.load_provider_key")
-    def test_explicit_route_is_rejected_before_credentials_when_context_unverified(self, load):
-        self.assertFalse(_provider_route_is_available("openrouter", "liquid/lfm-2.5-2.6b:free"))
-        load.assert_not_called()
+    def test_explicit_route_is_available_with_owner_accepted_context_risk(self, load):
+        load.return_value = "synthetic-key"
+        self.assertTrue(_provider_route_is_available("openrouter", "liquid/lfm-2.5-2.6b:free"))
+        load.assert_called_once()
 
     @override_settings(SUPERHARRY_ENABLED_FREE_PROVIDERS=("openrouter",),
                        SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=False)
-    @patch("home.openrouter_transport.protected_context_delivery_verified", return_value=True)
     @patch("home.chat_views.load_provider_key")
-    def test_disabled_flag_blocks_selector_and_admission_before_credentials(self, load, _verified):
+    def test_disabled_flag_blocks_selector_and_admission_before_credentials(self, load):
         from home.views import _selectable_provider_routes
         self.assertEqual(_selectable_provider_routes(("openrouter",)), ())
         self.assertFalse(_provider_route_is_available("openrouter", "liquid/lfm-2.5-2.6b:free"))
         load.assert_not_called()
+
+    @override_settings(SUPERHARRY_ENABLED_FREE_PROVIDERS=("openrouter",),
+                       SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True)
+    @patch.dict("os.environ", {"SUPERHARRY_GEMINI_CHAT": "1", "OPENROUTER_API_KEY": "synthetic-key"})
+    @patch("home.views.configured_provider_ids", return_value=("openrouter",))
+    def test_openrouter_disclosure_is_rendered_before_provider_selection(self, _providers):
+        response = self.client.get(reverse("home"), secure=True)
+        self.assertContains(response, 'data-provider="openrouter"')
+        self.assertContains(response, 'class="provider-risk-warning" role="alert"')
+        self.assertContains(response, 'id="openrouter-risk-accepted"')
+        self.assertContains(response, "OpenRouter sends your message outside superHarry.")
+        self.assertContains(response, "Quota accounting is approximate and actual use may exceed the limit.")

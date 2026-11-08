@@ -107,7 +107,6 @@ def dispatch_free_provider(*, route, transport, user_request, authorize, cancell
         raise NotDispatched('dispatch_invalid')
     if route.provider == 'openrouter' and (
         not openrouter_transport.approximate_quota_enabled()
-        or not openrouter_transport.protected_context_delivery_verified()
         or not openrouter_transport.is_approved_route(route.model_id, settings.OPENROUTER_UPSTREAM)
         or route.quota_group != 'openrouter-development'
         or route.context_capacity != openrouter_transport.CONTEXT_WINDOWS[openrouter_transport.APPROVED_MODEL]

@@ -277,6 +277,44 @@ class ChatTurnAPITests(TestCase):
         self.assertEqual(local_with_provider.status_code, 400)
         self.assertEqual(ChatTurn.objects.count(), 0)
 
+    def test_openrouter_risk_acceptance_is_required_and_bound_to_idempotency(self):
+        with override_settings(
+            SUPERHARRY_ENABLED_FREE_PROVIDERS=("openrouter",),
+            SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True,
+        ), patch("home.chat_views.load_provider_key", return_value="synthetic-key"):
+            rejected, _ = self._post_turn(
+                provider="openrouter", model_id="liquid/lfm-2.5-2.6b:free"
+            )
+            self.assertEqual(rejected.status_code, 400)
+            self.assertEqual(ChatTurn.objects.count(), 0)
+
+            key = uuid.uuid4()
+            accepted, _ = self._post_turn(
+                idempotency_key=key,
+                provider="openrouter",
+                model_id="liquid/lfm-2.5-2.6b:free",
+                openrouter_risk_accepted=True,
+            )
+            retry, _ = self._post_turn(
+                idempotency_key=key,
+                provider="openrouter",
+                model_id="liquid/lfm-2.5-2.6b:free",
+                openrouter_risk_accepted=True,
+            )
+            changed_acceptance, _ = self._post_turn(
+                idempotency_key=key,
+                provider="openrouter",
+                model_id="liquid/lfm-2.5-2.6b:free",
+                openrouter_risk_accepted=False,
+            )
+
+        self.assertEqual(accepted.status_code, 202)
+        self.assertEqual(retry.status_code, 202)
+        self.assertEqual(accepted.json()["turn_id"], retry.json()["turn_id"])
+        self.assertEqual(changed_acceptance.status_code, 409)
+        turn = ChatTurn.objects.get(pk=accepted.json()["turn_id"])
+        self.assertEqual(len(self.dispatcher.enqueued), 1)
+
     def test_idempotency_conflict_and_active_turn_are_rejected(self):
         key = uuid.uuid4()
         first, _key = self._post_turn(
