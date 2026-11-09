@@ -18,7 +18,7 @@ from home.gemini_transport import GeminiTransport
 from home.groq_transport import GroqTransport
 from home.models import ChatEvent, ChatTurn, GeminiChatJob, Message
 from home import openrouter_transport
-from home.openrouter_transport import OpenRouterTransport, is_approved_route
+from home.openrouter_transport import OpenRouterTransport
 from home.provider_credentials import CredentialConfigError, load_provider_key
 from home.provider_outcomes import NotDispatched, OutcomeUnknown, RateLimited
 
@@ -87,7 +87,9 @@ def _attempt_free_route(*, provider, key, turn, authorized, cancelled, history):
             route = build_groq_route(settings.GROQ_MODEL)
             transport = GroqTransport(key, timeout=30)
         else:
-            route = build_openrouter_route(settings.OPENROUTER_MODEL, settings.OPENROUTER_UPSTREAM)
+            models = openrouter_transport.catalog_models(wait=True)
+            model_id = turn.requested_model or (models[0].model_id if models else '')
+            route = build_openrouter_route(model_id)
             transport = OpenRouterTransport(key, timeout=30)
     except Exception:
         raise NotDispatched() from None
@@ -110,19 +112,20 @@ def _run_routing(*, turn, history, authorized, cancelled):
         expected_model = {
             'gemini': MODEL_ID,
             'groq': settings.GROQ_MODEL,
-            'openrouter': settings.OPENROUTER_MODEL,
+            'openrouter': turn.requested_model,
         }.get(turn.requested_provider)
         if (turn.requested_provider not in enabled
                 or turn.requested_model != expected_model):
             raise RoutingExhausted()
         order = (turn.requested_provider,)
     else:
-        order = tuple(provider for provider in configured_order if provider != 'openrouter')
+        order = tuple(provider for provider in configured_order
+                      if provider != 'openrouter' or turn.openrouter_risk_accepted)
     for provider in order:
         if provider not in enabled:
             continue
         if provider == 'openrouter' and (
-            not is_approved_route(settings.OPENROUTER_MODEL, settings.OPENROUTER_UPSTREAM)
+            not turn.openrouter_risk_accepted
             or not openrouter_transport.approximate_quota_enabled()
         ):
             continue
@@ -164,6 +167,7 @@ def run_gemini_turn(turn_id):
             return ChatTurn.objects.filter(pk=turn_id, conversation__owner_id=turn.conversation.owner_id,
                 conversation__owner__is_active=True, model_mode=ChatTurn.ModelMode.AUTOMATIC,
                 requested_provider=turn.requested_provider, requested_model=turn.requested_model,
+                openrouter_risk_accepted=turn.openrouter_risk_accepted,
                 state=ChatTurn.State.RUNNING).exists()
 
         cancelled = ChatTurnCancellation(turn_id)

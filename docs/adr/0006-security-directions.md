@@ -4,7 +4,7 @@ Status: Accepted in part, 2026-10-30; host-bound TOTP key-custody direction addi
 
 ## Context and decision
 
-The project owner reviewed [security direction options](../security-decision-options.md) and on 2026-10-30 chose three limited directions:
+The project owner reviewed [security direction options](../security/security-decision-options.md) and on 2026-10-30 chose three limited directions:
 
 1. Use a session-bound synchronizer token and origin verification as the direction for browser CSRF protection.
 2. On 2026-10-30, investigate a host-bound systemd credential for custody of MFA encryption keys. On 2026-11-02, the owner approved the host-bound systemd-credential direction for the TOTP key under G-SECURITY, accepting that it does not protect against privileged host compromise and that loss of the host credential may make existing seeds unrecoverable.
@@ -16,6 +16,6 @@ The CSRF choice supports server-managed sessions and requires reviewed handling 
 
 The owner approved the CSRF direction, not the token-issuance endpoint or schemas, exact origins, pre-authentication lifecycle, recovery flow, implementation library or multi-tab behavior. Applicable G-CONTRACT and other review remain necessary.
 
-The host-bound systemd-credential direction and its stated residual risks are approved for TOTP key custody. This does not approve the target OS/systemd version, credential file or service configuration, key generation/provisioning, AEAD implementation, dependencies, schema, access controls, rotation, backups, recovery or implementation. These details remain subject to G-OPS, G-ARCH and G-CONTRACT review and any remaining G-SECURITY controls. The Caddy choice remains a design direction only; it does not approve listener addresses, headers, proxy authentication, firewall or deployment. The alternatives and remaining risks are in [security direction options](../security-decision-options.md) and [remaining security decisions](../security-open-decisions.md).
+The host-bound systemd-credential direction and its stated residual risks are approved for TOTP key custody. This does not approve the target OS/systemd version, credential file or service configuration, key generation/provisioning, AEAD implementation, dependencies, schema, access controls, rotation, backups, recovery or implementation. These details remain subject to G-OPS, G-ARCH and G-CONTRACT review and any remaining G-SECURITY controls. The Caddy choice remains a design direction only; it does not approve listener addresses, headers, proxy authentication, firewall or deployment. The alternatives and remaining risks are in [security direction options](../security/security-decision-options.md) and [remaining security decisions](../security/security-open-decisions.md).
 
 The project owner is the reviewer for these limited choices. No implementation, installation, tests, independent review or hardware acceptance is asserted.

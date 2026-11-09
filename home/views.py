@@ -14,7 +14,6 @@ from home.authorization import owned_conversations
 from home.gemini_context import MODEL_ID as GEMINI_MODEL_ID
 from home.models import ChatTurn, Conversation
 from home import openrouter_transport
-from home.openrouter_transport import is_approved_route
 from home.provider_availability import configured_provider_ids
 
 MESSAGE_PAGE_SIZE = 50
@@ -35,15 +34,16 @@ def _selectable_provider_routes(configured):
         "openrouter": settings.OPENROUTER_MODEL,
     }
     configured_set = set(configured)
-    return tuple(
+    routes = tuple(
         {"provider": provider, "model_id": models[provider]}
         for provider in known
-        if provider in enabled and provider in configured_set
-        and (provider != "openrouter" or (
-            is_approved_route(settings.OPENROUTER_MODEL, settings.OPENROUTER_UPSTREAM)
-            and openrouter_transport.approximate_quota_enabled()
-        ))
+        if provider != "openrouter" and provider in enabled and provider in configured_set
     )
+    if ("openrouter" in enabled and "openrouter" in configured_set
+            and openrouter_transport.approximate_quota_enabled()):
+        routes += tuple({"provider": "openrouter", "model_id": model.model_id}
+                        for model in openrouter_transport.catalog_models(wait=True))
+    return routes
 
 
 def _message_history(conversation, before, active_assistant_id=None):
@@ -81,6 +81,12 @@ def conversation_detail(request, conversation_id):
 
 
 def _render_history(request, conversation_id=None):
+    providers = configured_provider_ids()
+    chat_enabled = os.environ.get("SUPERHARRY_GEMINI_CHAT") == "1"
+    selectable_routes = _selectable_provider_routes(providers) if chat_enabled else ()
+    openrouter_risk_disclosure = (chat_enabled and "openrouter" in providers
+        and "openrouter" in settings.SUPERHARRY_ENABLED_FREE_PROVIDERS
+        and openrouter_transport.approximate_quota_enabled())
     with transaction.atomic():
         conversations = owned_conversations(request.user)
         locked = conversations.select_for_update()
@@ -113,14 +119,6 @@ def _render_history(request, conversation_id=None):
         page = Paginator(
             conversations.order_by("-last_accessed_at", "-pk"), 20
         ).get_page(request.GET.get("page"))
-        providers = configured_provider_ids()
-        chat_enabled = os.environ.get("SUPERHARRY_GEMINI_CHAT") == "1"
-        selectable_routes = _selectable_provider_routes(providers) if chat_enabled else ()
-        openrouter_risk_disclosure = (
-            chat_enabled and "openrouter" in settings.SUPERHARRY_ENABLED_FREE_PROVIDERS
-            and settings.OPENROUTER_MODEL == "liquid/lfm-2.5-2.6b:free"
-            and settings.OPENROUTER_UPSTREAM == "liquid/fp8"
-        )
         response = render(request, "home/index.html", {
             "conversation": conversation,
             "conversation_page": page,

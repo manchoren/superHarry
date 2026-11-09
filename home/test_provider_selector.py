@@ -11,6 +11,11 @@ from home.chat_views import _provider_route_is_available
 @override_settings(ALLOWED_HOSTS=["testserver"])
 class ProviderSelectorTests(TestCase):
     def setUp(self):
+        from home.openrouter_catalog import CatalogModel
+        catalog = patch('home.openrouter_transport.catalog_models', return_value=(
+            CatalogModel('liquid/lfm-2.5-2.6b:free', 65536),))
+        catalog.start()
+        self.addCleanup(catalog.stop)
         self.user = get_user_model().objects.create_user(username="selector-user")
         Conversation.objects.create(owner=self.user)
         self.client.force_login(self.user)
@@ -84,9 +89,10 @@ class ProviderSelectorTests(TestCase):
                        OPENROUTER_MODEL="liquid/lfm-2.5-2.6b:free",
                        OPENROUTER_UPSTREAM="other/fp8")
     @patch("home.views.configured_provider_ids", return_value=("openrouter",))
-    def test_unapproved_upstream_is_not_selectable(self, _providers):
-        response = self.client.get(reverse("home"), secure=True)
-        self.assertNotContains(response, 'data-provider="openrouter"')
+    def test_catalog_model_is_selectable_without_fixed_upstream(self, _providers):
+        with patch.dict('os.environ', {'SUPERHARRY_GEMINI_CHAT': '1'}):
+            response = self.client.get(reverse("home"), secure=True)
+        self.assertContains(response, 'data-provider="openrouter"')
 
     @override_settings(SUPERHARRY_ENABLED_FREE_PROVIDERS=("openrouter",),
                        SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True,
@@ -132,3 +138,8 @@ class ProviderSelectorTests(TestCase):
         self.assertContains(response, 'id="openrouter-risk-accepted"')
         self.assertContains(response, "OpenRouter sends your message outside superHarry.")
         self.assertContains(response, "Quota accounting is approximate and actual use may exceed the limit.")
+        self.assertContains(response, "Your current message and prior messages and responses")
+        self.assertContains(response, "account, BYOK, or auxiliary service charges")
+        spanish = self.client.get(reverse("home"), secure=True, HTTP_ACCEPT_LANGUAGE="es")
+        self.assertContains(spanish, "mensajes y respuestas anteriores")
+        self.assertContains(spanish, "selección automática")

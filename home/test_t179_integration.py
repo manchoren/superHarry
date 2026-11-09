@@ -12,6 +12,7 @@ from home.gemini_chat import run_gemini_turn
 from home.groq_transport import GroqRateLimitError
 from home.models import ChatTurn, Conversation, Message, ProviderQuota
 from home.openrouter_transport import OpenRouterRateLimitError
+from home.openrouter_catalog import CatalogModel
 
 
 GROQ_MODEL = "openai/gpt-oss-20b"
@@ -60,6 +61,10 @@ class SyntheticRoutingIntegrationTests(TestCase):
         self.network = patch("socket.socket.connect", side_effect=AssertionError("network forbidden"))
         self.network.start()
         self.addCleanup(self.network.stop)
+        for target in ("home.openrouter_transport.catalog_models", "home.chat_provider_routing.catalog_models"):
+            catalog_patch = patch(target, return_value=(CatalogModel(OPENROUTER_MODEL, 65536),))
+            catalog_patch.start()
+            self.addCleanup(catalog_patch.stop)
         for target in ("home.chat_views.load_provider_key", "home.gemini_chat.load_provider_key"):
             key_patch = patch(target, return_value="synthetic-only")
             key_patch.start()
@@ -131,6 +136,51 @@ class SyntheticRoutingIntegrationTests(TestCase):
         })
         self.groq.assert_not_called()
         self.openrouter.assert_called_once()
+
+    @override_settings(SUPERHARRY_FREE_PROVIDER_ORDER="openrouter,groq")
+    def test_automatic_openrouter_requires_and_persists_per_turn_acceptance(self):
+        turn = self.start_and_run(openrouter_risk_accepted=True)
+        self.assertTrue(turn.openrouter_risk_accepted)
+        self.assertEqual(turn.state, ChatTurn.State.COMPLETED)
+        self.openrouter.assert_called_once()
+        self.groq.assert_not_called()
+        payload = json.loads(self.openrouter.call_args.args[0])
+        self.assertEqual(payload["model"], OPENROUTER_MODEL)
+        self.assertEqual(payload["provider"]["max_price"],
+                         {"prompt": 0, "completion": 0, "request": 0, "image": 0})
+        self.assertFalse(payload["provider"]["allow_fallbacks"])
+        self.assertNotIn("only", payload["provider"])
+        self.assertNotIn("data_collection", payload["provider"])
+        self.assertNotIn("zdr", payload["provider"])
+
+    @override_settings(SUPERHARRY_FREE_PROVIDER_ORDER="openrouter,groq")
+    def test_automatic_openrouter_without_acceptance_uses_other_provider(self):
+        turn = self.start_and_run()
+        self.assertFalse(turn.openrouter_risk_accepted)
+        self.assertEqual(turn.state, ChatTurn.State.COMPLETED)
+        self.openrouter.assert_not_called()
+        self.groq.assert_called_once()
+
+    def test_catalog_model_can_be_selected_and_is_rechecked_at_dispatch(self):
+        other = 'example/model:free'
+        models = (CatalogModel(other, 65536),)
+        self.openrouter.return_value = completion(other, 'synthetic dynamic reply')
+        with patch('home.openrouter_transport.catalog_models', return_value=models), \
+             patch('home.chat_provider_routing.catalog_models', return_value=models):
+            turn = self.start_and_run(provider='openrouter', model_id=other)
+        self.assertEqual(turn.state, ChatTurn.State.COMPLETED)
+        self.assertEqual(json.loads(self.openrouter.call_args.args[0])['model'], other)
+
+    def test_catalog_removal_prevents_dispatch_after_enqueue(self):
+        response = self.post_turn(provider='openrouter', model_id=OPENROUTER_MODEL)
+        self.assertEqual(response.status_code, 202)
+        turn = ChatTurn.objects.get(pk=response.json()['turn_id'])
+        with patch('home.openrouter_transport.catalog_models', return_value=()), \
+             patch('home.chat_provider_routing.catalog_models', return_value=()):
+            run_gemini_turn(turn.pk)
+        turn.refresh_from_db()
+        self.assertEqual(turn.state, ChatTurn.State.FAILED)
+        self.openrouter.assert_not_called()
 
     def test_explicit_openrouter_receives_full_context_and_only_owner_history(self):
         def add_completed_turn(conversation, request_text, reply_text):

@@ -105,13 +105,13 @@ def dispatch_free_provider(*, route, transport, user_request, authorize, cancell
             or not callable(authorize) or not callable(cancelled)
             or not isinstance(operation_id, str) or not operation_id.strip() or len(operation_id) > 100):
         raise NotDispatched('dispatch_invalid')
-    if route.provider == 'openrouter' and (
-        not openrouter_transport.approximate_quota_enabled()
-        or not openrouter_transport.is_approved_route(route.model_id, settings.OPENROUTER_UPSTREAM)
-        or route.quota_group != 'openrouter-development'
-        or route.context_capacity != openrouter_transport.CONTEXT_WINDOWS[openrouter_transport.APPROVED_MODEL]
-    ):
-        raise NotDispatched('dispatch_not_sent')
+    if route.provider == 'openrouter':
+        catalog = {model.model_id: model for model in openrouter_transport.catalog_models()}
+        current = catalog.get(route.model_id)
+        if (not openrouter_transport.approximate_quota_enabled()
+                or current is None or route.context_capacity != current.context_length
+                or route.quota_group != 'openrouter-development'):
+            raise NotDispatched('dispatch_not_sent')
     reservations = []
     try:
         if authorize() is not True or cancelled() is not False:
@@ -126,7 +126,7 @@ def dispatch_free_provider(*, route, transport, user_request, authorize, cancell
         prepared = prepare_release_context(user_request=user_request, profile=profile)
         ensure_release_context_is_current(prepared)
         if route.provider == 'openrouter' and prepared.serialized_input != openrouter_transport.build_route_body(
-            model_id=route.model_id, upstream_id=settings.OPENROUTER_UPSTREAM,
+            model_id=route.model_id, upstream_id=None,
             constitution_text=prepared.constitution.text, history=history,
             user_request=user_request, output_limit=OUTPUT_LIMIT,
         ):

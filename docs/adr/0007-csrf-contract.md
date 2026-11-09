@@ -4,7 +4,7 @@ Status: Amended in part, 2026-11-02. Original approval: 2026-10-30; account-sess
 
 ## Context and decision
 
-The owner approved the concrete scope described in [the CSRF contract proposal](../csrf-contract-proposal.md) on 2026-10-30, including the ten-minute absolute pre-authentication session and the specified token and multi-tab behavior. This extends the CSRF direction in [ADR 0006](0006-security-directions.md). The reviewed proposal specifies token issuance, validation and transition behavior, structured errors and negative test obligations. The complete constitution, baseline 2026-10-29, SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`, prevails.
+The owner approved the concrete scope described in [the CSRF contract proposal](../security/csrf-contract-proposal.md) on 2026-10-30, including the ten-minute absolute pre-authentication session and the specified token and multi-tab behavior. This extends the CSRF direction in [ADR 0006](0006-security-directions.md). The reviewed proposal specifies token issuance, validation and transition behavior, structured errors and negative test obligations. The complete constitution, baseline 2026-10-29, SHA-256 `426923873e828b7a0e8fd63b88a5a9b5e01b35f9c2e3bb965c322931d1d9835a`, prevails.
 
 On 2026-10-31, the owner separately selected a 60-minute idle timeout and 24-hour absolute timeout for authenticated admin/user sessions. This records those policy values only; it does not approve session storage, schema, rate limits, deployment or implementation. The ten-minute pre-authentication session lifetime remains unchanged.
 

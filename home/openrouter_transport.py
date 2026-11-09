@@ -7,6 +7,7 @@ from django.conf import settings
 
 from home.openrouter_adapter import _decode, build_payload
 from home.provider_http_transport import ProviderTransport
+from home.openrouter_catalog import APPROVED_MODELS, cached_catalog
 
 # Context windows from the OpenRouter models metadata endpoint, checked 2026-11-04.
 CONTEXT_WINDOWS = {'liquid/lfm-2.5-2.6b:free': 65536}
@@ -27,6 +28,14 @@ def approximate_quota_enabled():
     return settings.SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA is True
 
 
+def catalog_models(*, wait=False):
+    return tuple(model for model in cached_catalog(wait=wait) if model.model_id in APPROVED_MODELS)
+
+
+def catalog_has_model(model_id, *, wait=False):
+    return any(model.model_id == model_id for model in catalog_models(wait=wait))
+
+
 class OpenRouterRouteError(RuntimeError):
     """The route or response could not be used without exposing private details."""
 
@@ -36,7 +45,8 @@ class OpenRouterRateLimitError(OpenRouterRouteError):
 
 
 def build_route_body(*, model_id, upstream_id, constitution_text, history, user_request, output_limit):
-    if (not is_approved_route(model_id, upstream_id)
+    if (not isinstance(model_id, str) or not model_id.endswith(':free')
+            or (upstream_id is not None and not is_approved_route(model_id, upstream_id))
             or not isinstance(constitution_text, str) or not constitution_text
             or not isinstance(user_request, str) or not user_request
             or type(output_limit) is not int or not 0 < output_limit <= 4096
@@ -50,6 +60,10 @@ def build_route_body(*, model_id, upstream_id, constitution_text, history, user_
          SimpleNamespace(parts=[SimpleNamespace(text=user_request)])],
         model_id, upstream_id, output_limit,
     )
+    if upstream_id is None:
+        del payload['provider']['only']
+        del payload['provider']['data_collection']
+        del payload['provider']['zdr']
     payload['messages'] = (
         [{'role': 'system', 'content': constitution_text}]
         + [{'role': 'assistant' if role == 'model' else 'user', 'content': text} for role, text in history]

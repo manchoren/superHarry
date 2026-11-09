@@ -27,7 +27,7 @@ Historical only; use [CONTRIBUTING.md](../../CONTRIBUTING.md) and the [constitut
 - ✅ **Q-46 (resolved 2026-10-29):** Do not impose a global coverage percentage initially. Require meaningful tests of critical behavior, including authentication, authorization, sandbox isolation, memory and updates; add regression tests for bug fixes.
 
 ### 14.3 Documentation
-- `README.md`, `CONTRIBUTING.md`, `docs/adr/` (Architecture Decision Records), `CHANGELOG.md` (Keep a Changelog), OpenAPI for the HTTP API, and a `docs/threat-model.md`.
+- `README.md`, `CONTRIBUTING.md`, `docs/adr/` (Architecture Decision Records), `CHANGELOG.md` (Keep a Changelog), OpenAPI for the HTTP API, and a `docs/security/threat-model.md`.
 
 ---
 

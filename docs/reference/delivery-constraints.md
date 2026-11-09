@@ -1,14 +1,16 @@
 # Delivery reference
 
-**Target override (owner, 2026-11-04):** [ADR 0012](../adr/0012-vm-first-product.md) makes the persistent Linux VM the complete product and release target. Earlier on-Pi/real-device model, speech, OCR, memory and release gates mean actual target-VM validation for this release; Pi physical display/Wi-Fi/microSD/thermal/power checks are optional-port T175/T176/T169 only. Retain stated security, privacy and benchmark criteria. Historical decisions/candidates below do not override this target change. Local STT means inside the guest, not a cloud transcription service.
+Use the [documentation index](../README.md) to find related requirements, decisions, proposals and evidence by domain. Document location does not change status or authorization; verify the current backlog and constitution before relying on a historical record.
+
+**Release target:** The persistent Linux VM is the release target under [ADR 0012](../adr/0012-vm-first-product.md). Raspberry Pi physical checks belong to the optional later port; local STT runs inside the VM.
 
 Consult for affected risks, shared resources and release coverage, not before every task. The [constitution](../../constitution.md) governs authorization; old gate wording does not require a second approval within standing development authorization. Historical parallel waves are planning context, not mandatory agent delegation.
 
-**Provider override (owner, 2026-11-04):** OpenAI is disabled for now; explicitly configured free-tier providers may be tried in administrator-configurable order on exhaustion only when the earlier outcome is known safe. Block paid/unverified-zero-cost routes; providers using conversation data for improvement require disclosure and explicit administrator enablement. If all are exhausted or unavailable, use local inference if available, otherwise inform the user. Preserve guest-local isolation, protected context, quotas and authorization; see T177-T179. Earlier premium-only text is historical where inconsistent.
+**Provider policy:** See the [constitution](../../constitution.md#data-and-operations) and [T179](backlog.md) for current rules, exceptions and acceptance status.
 
 ## Approval and decision register
 
-These gates implement the constitution's Ask First rules. Approval to write this backlog is not approval to implement the designs it describes. Owner approval for repository changes is distinct from runtime admin confirmation of an action.
+These gates identify decisions and risks governed by the constitution. Check whether the decision is already accepted and the work falls within standing development authorization; implementing accepted policy within that scope does not require another blanket approval. Ask first for changes outside that authorization as specified in the constitution. Approval to write this backlog alone does not approve an unaccepted design. Repository authorization is distinct from runtime admin confirmation and operational acceptance.
 
 | Gate | Required decision or authorization | Tasks preparing the decision |
 |---|---|---|

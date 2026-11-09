@@ -22,8 +22,9 @@ class ProviderAvailabilityTests(SimpleTestCase):
         with patch.dict(os.environ, {"GROQ_API_KEY": "synthetic-secret", "GEMINI_API_KEY": "other-secret"}, clear=True):
             self.assertEqual(configured_provider_ids(), ("groq", "gemini"))
 
-    def test_dotenv_is_read_only_in_debug(self):
+    def test_insecure_dotenv_is_read_only_in_debug(self):
         (self.base / ".env").write_text("OPENROUTER_API_KEY=synthetic-secret\n", encoding="utf-8")
+        (self.base / ".env").chmod(0o644)
         with patch.dict(os.environ, {}, clear=True):
             self.assertEqual(configured_provider_ids(), ("openrouter",))
             with override_settings(DEBUG=False):

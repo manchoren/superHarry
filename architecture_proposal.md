@@ -28,7 +28,7 @@ contracts/                Reviewed public and internal interface specifications
 deploy/                   Reviewed native-service and deployment materials
 tests/                    Cross-boundary and security integration fixtures
 docs/adr/                 Architectural decisions and approval records
-docs/threat-model.md      Threat model and abuse-case inventory
+docs/security/threat-model.md      Threat model and abuse-case inventory
 ```
 
 Domain-local tests can reside with their owner; cross-process tests belong under `tests/`. `contracts/` is documentation until G-CONTRACT approval: no consumer can treat draft schemas as accepted. UI and server registries are separate, with one designated owner each; registration must fail closed without server-side policy. A single migration owner coordinates database changes; one maintainer owns each dependency lockfile and translation namespace. Runtime user files, databases, caches, secrets, and generated artifacts are outside the repository and webroot.

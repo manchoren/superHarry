@@ -9,6 +9,7 @@ The repository now contains the initial Django monolith scaffold. It uses Django
 - [Task backlog](TASK.md): start with the current delivery priority (including T177-T179); the full inventory tracks release scope and evidence.
 - [Requirements work record](requirements_work_record.md): historical baseline inventory and source hashes; current task evidence records the current constitution hash.
 - [Contributing](CONTRIBUTING.md): review, security and local validation requirements.
+- [Documentation index](docs/README.md): domain tree and links to related specifications, decisions and evidence.
 - [ADR conventions](docs/adr/README.md): decision and approval records.
 - [Django monolith decision](docs/adr/0010-django-monolith.md): owner-approved stack replacement and scope.
 
@@ -52,7 +53,7 @@ local accounting do not establish production or VM acceptance.
 
 The default chat uses a deterministic fake model. It is intended for local
 **development only**; see the Gemini section above for the opt-in real model. For a new machine,
-first follow the [clean local installation guide](docs/clean-local-install.md).
+first follow the [clean local installation guide](docs/project/clean-local-install.md).
 
 1. Open PowerShell in the project root. With Python 3.12, 3.13 or 3.14 and the
    existing environment prepared, apply migrations and create a local account
@@ -96,7 +97,7 @@ first follow the [clean local installation guide](docs/clean-local-install.md).
    ```
 
 5. After Caddy starts, verify and trust its local public CA certificate in your
-   user/browser trust store as described in the [HTTPS setup](docs/clean-local-install.md#run-the-local-fake-chat-through-https).
+   user/browser trust store as described in the [HTTPS setup](docs/project/clean-local-install.md#run-the-local-fake-chat-through-https).
    This project's Caddyfile disables the admin API, so `caddy trust` is not
    available with this configuration. Never share the CA private key.
 

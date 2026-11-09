@@ -113,6 +113,7 @@ class ChatTurn(models.Model):
     model_mode = models.CharField(max_length=16, choices=ModelMode.choices)
     requested_provider = models.CharField(max_length=32, blank=True, default="")
     requested_model = models.CharField(max_length=128, blank=True, default="")
+    openrouter_risk_accepted = models.BooleanField(default=False)
     state = models.CharField(
         max_length=24,
         choices=State.choices,

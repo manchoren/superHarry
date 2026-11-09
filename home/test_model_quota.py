@@ -176,6 +176,11 @@ class ModelQuotaConcurrencyTests(TransactionTestCase):
 @override_settings(SUPERHARRY_REQUIRE_MODEL_QUOTAS=True)
 class ModelQuotaDispatchTests(TestCase):
     def setUp(self):
+        from home.openrouter_catalog import CatalogModel
+        for target in ('home.openrouter_transport.catalog_models', 'home.chat_provider_routing.catalog_models'):
+            catalog = patch(target, return_value=(CatalogModel('liquid/lfm-2.5-2.6b:free', 65536),))
+            catalog.start()
+            self.addCleanup(catalog.stop)
         self.model = 'openai/gpt-oss-20b'
         self.route = build_groq_route(self.model)
         self.request_quota = ProviderQuota.objects.create(group='groq-development', limit=5)

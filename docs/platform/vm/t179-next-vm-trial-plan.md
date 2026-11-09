@@ -1,0 +1,31 @@
+﻿# T179 next VM test rollout: preparation
+
+Status: preparation only, 2026-11-09. This plan is not deployment acceptance or authority to change the live service. It supersedes no existing security, recovery, or backup requirements.
+
+## Scope and source boundary
+
+The prior 2026-11-08 test rollout used commit `396f9c488ecdc424ea38ee047dbee272d614a250`, migrations 0016/0017, and the single Liquid route. The proposed next trial adds migration `home.0018_chatturn_openrouter_risk_accepted`, owner-approved OpenRouter model discovery, selection and consent changes, and a modified credential loader. `git archive HEAD` alone excludes the current uncommitted and untracked changes; it must not be used as the new release. Freeze and independently review the exact final source tree and build a deterministic, manifest-verified archive from that tree, excluding `.env`, `.git`, `.venv`, databases, credentials, cache files and unrelated artifacts. Confirm `home/openrouter_catalog.py`, the management command and migration 0018 are present. Record and compare archive and constitution hashes before any deployment. Test selection follows the current complete-worktree fresh-context audit and full-suite requirements; concurrent work requires a new final inventory and audit.
+
+## Preflight and review
+
+- Recheck SSH host key, target identity and architecture, free space, code path, DB migration graph, active units and drop-ins, installed credential names (never values), health endpoints, web and worker process state, job queue, quotas and reservations, and existing listeners. Stop on unexplained differences; no additional port forwards.
+- The previous task-specific acceptance of possible loss of the disposable VM and same-volume backup was bounded to that run. For this new rollout, use the currently authorized recovery scope; do not treat the old same-volume snapshot as an independent backup or as current. Make a transactionally consistent SQLite snapshot and verify a disposable restore before any DB or code change, with authorized destination and without inspecting credential values. Do not use a cold-copy procedure that stops only web: the chat worker also writes to SQLite.
+- Reconcile service credential semantics with the exact current code: the historical T174 plan says systemd credential presence prevents fallback to environment or `.env`, whereas the new loader falls through if a systemd credential is absent. Review the effective configured environment and approved credential source, and test missing/invalid credentials under actual service conditions without logging secrets. Validate systemd sandbox and `TasksMax` against catalog discovery's subprocess and its time limits. Independently review whether cached catalog cold-start blocking can affect web responsiveness and worker cancellation.
+- Validate the new build in an isolated ARM64 directory and isolated test database, never the live DB. Include synthetic tests for provider routing, 12 approved IDs, consent, new/unavailable IDs, no automatic retry on uncertain outcomes, cross-user isolation, migration 0018, and POSIX `.env` permissions, symlinks and non-regular files. Record skipped tests and never contact providers with prompts during project-script tests.
+
+## Trial sequence after approval
+
+1. Stage the reviewed archive in a new root-owned versioned release directory. Verify its manifest, permissions and hash; do not overwrite the running tree.
+2. Stop chat admission and the worker under the reviewed procedure, record the empty/in-flight queue, and preserve all unknown quota reservations. Record a transactionally consistent current DB snapshot and restore-test evidence.
+3. Verify effective unit configuration, then switch the application pointer and apply only the reviewed additive migration plan including 0018 under the existing migration service. Stop on unexpected state. Keep the old release and backup intact.
+4. Start the web and worker under least privilege with reviewed settings; verify health, listener boundary, migration version, service identities, redacted startup logs, authenticated UI disclosure and model list using synthetic evidence. Run targeted ARM64 tests against isolated data. Do not send a provider request as part of this rollout.
+5. If any precondition or smoke check fails, disable admission and worker first. Before migration restore the previous pointer. After migration use only a reviewed schema-compatible recovery build or an approved verified DB restore; never assume the previous release is safe against the newer schema. Do not release uncertain reservations.
+
+## Limits
+
+The owner-approved 12-model list is not proof of provider account eligibility, privacy, upstream context integrity, real provider response or production acceptance. A target-VM test rollout does not close T149/G-OPS, independent recovery, fallback inference, or the T179 release gates. The authenticated UI exercise requires suitable non-secret access and explicit per-request acceptance if any separately authorized provider request is made.
+
+## Read-only preflight (2026-11-09)
+
+The previously selected VM was not running and host port 2222 was free. The reviewed QEMU binary and firmware matched the documented SHA-256 pins; the existing persistent VM was started with the documented TCG/NAT profile and a loopback-only SSH forward. The guest needed several minutes to boot and then identified itself over host-key-verified SSH as `superharry-dev`, `aarch64`. Web and worker reported active/running as `superharry:superharry`, with zero restarts; their existing OpenRouter drop-ins were present. Guest listeners observed were SSH on port 22 and HTTPS on `127.0.0.1:8443`. The root filesystem had 26 GiB available. A read-only SQLite query reported home migration `0017_alter_auditevent_event_type` and zero rows in provider quota, model quota, reservation, and durable job tables. No secret values, chat content, or database rows were modified or displayed. This is a point-in-time preflight, not a deployment or a fresh backup.
+The guest loopback HTTPS liveness, readiness and login endpoints returned HTTP 200 when probed with certificate verification disabled; this establishes endpoint availability only, not TLS trust or authenticated-session behavior.

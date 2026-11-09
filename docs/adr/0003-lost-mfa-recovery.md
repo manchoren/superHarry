@@ -8,7 +8,7 @@ An application administrator may lose access to an enrolled MFA factor after fir
 
 ## Decision and evidence
 
-On 2026-10-30, the project owner explicitly chose to permit recovery of a lost MFA factor by an authorized operating-system administrator, with confirmation, auditing and mandatory fresh MFA enrollment. This permits a recovery path when the existing factor is unavailable; it preserves an auditable action and requires a new factor. The [bootstrap and recovery proposal](../bootstrap-recovery-proposal.md) describes the surrounding recovery boundary and its remaining questions.
+On 2026-10-30, the project owner explicitly chose to permit recovery of a lost MFA factor by an authorized operating-system administrator, with confirmation, auditing and mandatory fresh MFA enrollment. This permits a recovery path when the existing factor is unavailable; it preserves an auditable action and requires a new factor. The [bootstrap and recovery proposal](../security/bootstrap-recovery-proposal.md) describes the surrounding recovery boundary and its remaining questions.
 
 ## Limits and consequences
 

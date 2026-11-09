@@ -2,6 +2,7 @@
 
 from collections.abc import Mapping
 import os
+import stat
 from pathlib import Path
 
 from superharry.runtime_config import open_systemd_credential
@@ -53,6 +54,27 @@ def _load_openrouter_systemd_credential():
     return _validate(value)
 
 
+def _read_deployment_dotenv(path):
+    """Read only a private regular file owned by root or the service account."""
+    if not hasattr(os, 'O_NOFOLLOW') or not hasattr(os, 'geteuid'):
+        raise CredentialConfigError('provider_credential_invalid')
+    descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    try:
+        info = os.fstat(descriptor)
+        if (not stat.S_ISREG(info.st_mode) or info.st_uid not in (0, os.geteuid())
+                or info.st_mode & 0o077):
+            raise CredentialConfigError('provider_credential_invalid')
+        data = bytearray()
+        while len(data) <= _MAX_FILE_BYTES:
+            chunk = os.read(descriptor, _MAX_FILE_BYTES + 1 - len(data))
+            if not chunk:
+                break
+            data.extend(chunk)
+        return bytes(data)
+    finally:
+        os.close(descriptor)
+
+
 def load_provider_key(provider, environ, *, debug, dotenv_path, allow_dotenv=False):
     """Prefer environment; read a literal development file only when opted in."""
     if (not isinstance(provider, str) or provider not in _KEY_NAMES
@@ -64,14 +86,19 @@ def load_provider_key(provider, environ, *, debug, dotenv_path, allow_dotenv=Fal
         directory = environ['CREDENTIALS_DIRECTORY']
         if not isinstance(directory, str) or not os.path.isabs(directory):
             raise CredentialConfigError('provider_credential_invalid')
-        return _load_openrouter_systemd_credential()
+        systemd_key = _load_openrouter_systemd_credential()
+        if systemd_key is not None:
+            return systemd_key
     if name in environ:
         return _validate(environ[name])
-    if not debug or not allow_dotenv:
+    if not allow_dotenv or (not debug and provider != 'openrouter'):
         return None
     try:
-        with Path(dotenv_path).open('rb') as source:
-            raw = source.read(_MAX_FILE_BYTES + 1)
+        if debug:
+            with Path(dotenv_path).open('rb') as source:
+                raw = source.read(_MAX_FILE_BYTES + 1)
+        else:
+            raw = _read_deployment_dotenv(dotenv_path)
         if len(raw) > _MAX_FILE_BYTES:
             raise CredentialConfigError('provider_credential_invalid')
         contents = raw.decode('utf-8-sig', errors='strict')

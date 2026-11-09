@@ -1,5 +1,5 @@
 import json
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from django.conf import settings
 from django.test import SimpleTestCase, override_settings
@@ -12,6 +12,13 @@ from home.openrouter_transport import build_route_body
 
 
 class OpenRouterEstimateTests(SimpleTestCase):
+    def setUp(self):
+        from home.openrouter_catalog import CatalogModel
+        for target in ('home.openrouter_transport.catalog_models', 'home.chat_provider_routing.catalog_models'):
+            catalog = patch(target, return_value=(CatalogModel('liquid/lfm-2.5-2.6b:free', 65536),))
+            catalog.start()
+            self.addCleanup(catalog.stop)
+
     def test_utf8_length_and_context_threshold_are_approximate(self):
         route = build_openrouter_route('liquid/lfm-2.5-2.6b:free', 'liquid/fp8')
         serializer = _RouteSerializer(route, (('user', 'previous 🧭'),))

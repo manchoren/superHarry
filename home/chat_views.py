@@ -25,7 +25,6 @@ from home.chat_events import (
 from home.models import AuditEvent, ChatEvent, ChatTurn, Conversation, Message
 from home.gemini_context import MODEL_ID as GEMINI_MODEL_ID
 from home import openrouter_transport
-from home.openrouter_transport import is_approved_route
 from home.provider_credentials import CredentialConfigError, load_provider_key
 
 logger = logging.getLogger(__name__)
@@ -154,7 +153,9 @@ def _parse_start_request(request):
         raise ValueError
     if provider == "openrouter" and not model_id:
         raise ValueError
-    if provider != "openrouter" and risk_accepted:
+    if provider not in ("", "openrouter") and risk_accepted:
+        raise ValueError
+    if risk_accepted and model_mode != ChatTurn.ModelMode.AUTOMATIC:
         raise ValueError
     return message, message_bytes, model_mode, provider, model_id, risk_accepted
 
@@ -172,11 +173,11 @@ def _provider_route_is_available(provider, model_id):
         "groq": settings.GROQ_MODEL,
         "openrouter": settings.OPENROUTER_MODEL,
     }[provider]
-    if model_id != expected_model:
+    if provider != "openrouter" and model_id != expected_model:
         return False
     if provider == "openrouter" and (
-        not is_approved_route(model_id, settings.OPENROUTER_UPSTREAM)
-        or not openrouter_transport.approximate_quota_enabled()
+        not openrouter_transport.approximate_quota_enabled()
+        or not openrouter_transport.catalog_has_model(model_id, wait=True)
     ):
         return False
     try:
@@ -185,7 +186,7 @@ def _provider_route_is_available(provider, model_id):
             os.environ,
             debug=settings.DEBUG,
             dotenv_path=settings.BASE_DIR / ".env",
-            allow_dotenv=settings.DEBUG,
+            allow_dotenv=settings.DEBUG or provider == "openrouter",
         ) is not None
     except CredentialConfigError:
         return False
@@ -272,15 +273,20 @@ def create_turn(request, conversation_id):
     except ValueError:
         return _error(request, "INVALID_INPUT", 400)
 
+    route_available = (
+        _provider_route_is_available(provider, model_id)
+        if provider and (provider != "openrouter" or risk_accepted) else not provider
+    )
+
     digest = _request_digest(message_bytes, model_mode, provider, model_id)
-    if provider == "openrouter":
+    if provider == "openrouter" or risk_accepted:
         digest = hashlib.sha256(
             digest.encode("ascii") + b"\0openrouter-risk-accepted-v1\0"
             + (b"1" if risk_accepted else b"0")
         ).hexdigest()
     legacy_digest = (
         _legacy_request_digest(message_bytes, model_mode)
-        if not provider and not model_id
+        if not provider and not model_id and not risk_accepted
         else None
     )
     request_id = _request_id(request)
@@ -312,7 +318,7 @@ def create_turn(request, conversation_id):
             if provider == "openrouter" and risk_accepted is not True:
                 return _error(request, "INVALID_INPUT", 400)
 
-            if provider and not _provider_route_is_available(provider, model_id):
+            if not route_available:
                 return _error(request, "INVALID_INPUT", 400)
 
             dispatcher = get_chat_dispatcher()
@@ -332,6 +338,7 @@ def create_turn(request, conversation_id):
                 model_mode=model_mode,
                 requested_provider=provider,
                 requested_model=model_id,
+                openrouter_risk_accepted=risk_accepted,
             )
             locked_conversation.last_accessed_at = timezone.now()
             locked_conversation.save(update_fields=["last_accessed_at"])

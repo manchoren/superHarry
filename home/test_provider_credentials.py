@@ -1,7 +1,7 @@
 ﻿from pathlib import Path
 import os
 from tempfile import TemporaryDirectory
-from unittest import TestCase
+from unittest import TestCase, skipUnless
 from unittest.mock import patch
 
 from home.provider_credentials import CredentialConfigError, load_provider_key
@@ -39,6 +39,42 @@ class ProviderCredentialsTests(TestCase):
         with self.assertRaises(CredentialConfigError):
             self.load('openai')
 
+    def test_deployment_dotenv_is_restricted_to_openrouter_and_opt_in(self):
+        with patch('home.provider_credentials._read_deployment_dotenv',
+                   return_value=b'OPENROUTER_API_KEY=synthetic-router\n') as read:
+            self.assertEqual(self.load('openrouter', debug=False), 'synthetic-router')
+            self.assertIsNone(self.load('groq', debug=False))
+            self.assertIsNone(self.load('openrouter', debug=False, allow_dotenv=False))
+            read.assert_called_once_with(self.path)
+
+    @skipUnless(os.name == 'posix' and hasattr(os, 'O_NOFOLLOW'), 'POSIX file controls required')
+    def test_deployment_dotenv_real_permissions_symlink_fifo_and_size(self):
+        self.path.write_bytes(b'OPENROUTER_API_KEY=synthetic-key\n')
+        self.path.chmod(0o600)
+        real_close = os.close
+        with patch('home.provider_credentials.os.close', wraps=real_close) as close:
+            self.assertEqual(self.load('openrouter', debug=False), 'synthetic-key')
+            self.assertEqual(close.call_count, 1)
+        self.path.chmod(0o640)
+        with self.assertRaises(CredentialConfigError):
+            self.load('openrouter', debug=False)
+        self.path.unlink()
+        target = self.path.with_name('target')
+        target.write_bytes(b'OPENROUTER_API_KEY=synthetic-key\n')
+        target.chmod(0o600)
+        self.path.symlink_to(target)
+        with self.assertRaises(CredentialConfigError):
+            self.load('openrouter', debug=False)
+        self.path.unlink()
+        os.mkfifo(self.path, 0o600)
+        with self.assertRaises(CredentialConfigError):
+            self.load('openrouter', debug=False)
+        self.path.unlink()
+        self.path.write_bytes(b'x' * 65537)
+        self.path.chmod(0o600)
+        with self.assertRaises(CredentialConfigError):
+            self.load('openrouter', debug=False)
+
     def test_invalid_utf8_oversize_and_missing_file(self):
         self.assertIsNone(self.load('groq'))
         for raw in (b'x' * 65537, b'GROQ_API_KEY=\xff'):
@@ -60,13 +96,13 @@ class ProviderCredentialsTests(TestCase):
         with patch('home.provider_credentials.open_systemd_credential', side_effect=open_credential):
             self.assertEqual(self.load('openrouter', environ), 'synthetic-systemd-key')
 
-    def test_openrouter_systemd_credential_missing_does_not_fall_back_to_environment(self):
+    def test_openrouter_missing_systemd_credential_uses_environment(self):
         environ = {
             'CREDENTIALS_DIRECTORY': '/run/credentials/superharry.service',
             'OPENROUTER_API_KEY': 'synthetic-environment-key',
         }
         with patch('home.provider_credentials.open_systemd_credential', side_effect=FileNotFoundError):
-            self.assertIsNone(self.load('openrouter', environ))
+            self.assertEqual(self.load('openrouter', environ), 'synthetic-environment-key')
 
     def test_openrouter_systemd_credential_invalid_fails_closed(self):
         self.path.write_bytes(b'synthetic invalid key')

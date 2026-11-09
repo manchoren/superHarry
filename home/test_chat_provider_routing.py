@@ -54,6 +54,11 @@ class ProviderOrderTests(TestCase):
 )
 class RoutedTurnTests(TestCase):
     def setUp(self):
+        from home.openrouter_catalog import CatalogModel
+        for target in ('home.openrouter_transport.catalog_models', 'home.chat_provider_routing.catalog_models'):
+            catalog = patch(target, return_value=(CatalogModel(OR_MODEL, 65536),))
+            catalog.start()
+            self.addCleanup(catalog.stop)
         self.user = get_user_model().objects.create_user(username='routing-owner')
         self.conversation = Conversation.objects.create(owner=self.user)
         message = Message.objects.create(conversation=self.conversation, role='user', content='hello')
@@ -91,11 +96,17 @@ class RoutedTurnTests(TestCase):
         self.assertEqual(self.turn.state, 'failed')
         self.assertEqual(self.turn.events.get(event_type='turn.failed').payload['reason'], 'no_free_provider')
 
-    @override_settings(OPENROUTER_UPSTREAM='other/fp8', SUPERHARRY_FREE_PROVIDER_ORDER='openrouter')
-    def test_wrong_upstream_does_not_even_load_credentials(self):
-        with patch('home.gemini_chat.load_provider_key') as load:
+    @override_settings(SUPERHARRY_FREE_PROVIDER_ORDER='openrouter')
+    def test_empty_catalog_blocks_consented_automatic_dispatch(self):
+        self.turn.openrouter_risk_accepted = True
+        self.turn.save(update_fields=['openrouter_risk_accepted'])
+        with patch('home.gemini_chat.load_provider_key', return_value='synthetic'), \
+             patch('home.openrouter_transport.catalog_models', return_value=()), \
+             patch('home.chat_provider_routing.catalog_models', return_value=()), \
+             patch('home.gemini_chat.OpenRouterTransport') as transport:
             run_gemini_turn(self.turn.pk)
-        load.assert_not_called()
+        transport.assert_not_called()
+        self.assertFalse(ProviderReservation.objects.exists())
         self.turn.refresh_from_db()
         self.assertEqual(self.turn.state, 'failed')
 
@@ -150,7 +161,8 @@ class RoutedTurnTests(TestCase):
     def test_ambiguous_openrouter_rate_limit_never_fails_over(self):
         self.turn.requested_provider = 'openrouter'
         self.turn.requested_model = OR_MODEL
-        self.turn.save(update_fields=['requested_provider', 'requested_model'])
+        self.turn.openrouter_risk_accepted = True
+        self.turn.save(update_fields=['requested_provider', 'requested_model', 'openrouter_risk_accepted'])
         def limited(body):
             raise OpenRouterRateLimitError('openrouter_rate_limited')
         groq_call, or_call = self._run(keys={'groq': 'k1', 'openrouter': 'k2'}, openrouter=limited)
@@ -171,7 +183,8 @@ class RoutedTurnTests(TestCase):
     def test_unknown_outcome_never_fails_over(self):
         self.turn.requested_provider = 'openrouter'
         self.turn.requested_model = OR_MODEL
-        self.turn.save(update_fields=['requested_provider', 'requested_model'])
+        self.turn.openrouter_risk_accepted = True
+        self.turn.save(update_fields=['requested_provider', 'requested_model', 'openrouter_risk_accepted'])
         def broken(body):
             raise RuntimeError('connection reset')
         groq_call, or_call = self._run(keys={'groq': 'k1', 'openrouter': 'k2'}, openrouter=broken)
@@ -213,7 +226,8 @@ class RoutedTurnTests(TestCase):
     def test_explicit_selection_is_revalidated_before_dispatch(self):
         self.turn.requested_provider = 'openrouter'
         self.turn.requested_model = OR_MODEL
-        self.turn.save(update_fields=['requested_provider', 'requested_model'])
+        self.turn.openrouter_risk_accepted = True
+        self.turn.save(update_fields=['requested_provider', 'requested_model', 'openrouter_risk_accepted'])
         with override_settings(SUPERHARRY_ENABLED_FREE_PROVIDERS=('groq',)):
             groq_call, or_call = self._run(keys={'groq': 'k1', 'openrouter': 'k2'})
         groq_call.assert_not_called()

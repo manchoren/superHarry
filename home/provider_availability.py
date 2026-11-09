@@ -21,7 +21,7 @@ def configured_provider_ids():
                 os.environ,
                 debug=settings.DEBUG,
                 dotenv_path=settings.BASE_DIR / ".env",
-                allow_dotenv=settings.DEBUG,
+                allow_dotenv=settings.DEBUG or provider == 'openrouter',
             )
         except CredentialConfigError:
             logger.warning("provider_credential_configuration_invalid provider=%s", provider)

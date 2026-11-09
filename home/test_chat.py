@@ -52,6 +52,11 @@ class FakeChatDispatcher:
 @override_settings(DEBUG=True, ALLOWED_HOSTS=["testserver"])
 class ChatTurnAPITests(TestCase):
     def setUp(self):
+        from home.openrouter_catalog import CatalogModel
+        catalog = patch('home.openrouter_transport.catalog_models', return_value=(
+            CatalogModel('liquid/lfm-2.5-2.6b:free', 65536),))
+        catalog.start()
+        self.addCleanup(catalog.stop)
         user_model = get_user_model()
         self.owner = user_model.objects.create_user(
             username="chat-owner",
@@ -314,6 +319,16 @@ class ChatTurnAPITests(TestCase):
         self.assertEqual(changed_acceptance.status_code, 409)
         turn = ChatTurn.objects.get(pk=accepted.json()["turn_id"])
         self.assertEqual(len(self.dispatcher.enqueued), 1)
+
+    def test_automatic_openrouter_consent_is_bound_to_idempotency(self):
+        key = uuid.uuid4()
+        accepted, _ = self._post_turn(idempotency_key=key, openrouter_risk_accepted=True)
+        retry, _ = self._post_turn(idempotency_key=key, openrouter_risk_accepted=True)
+        changed, _ = self._post_turn(idempotency_key=key, openrouter_risk_accepted=False)
+        self.assertEqual(accepted.status_code, 202)
+        self.assertEqual(retry.status_code, 202)
+        self.assertEqual(changed.status_code, 409)
+        self.assertTrue(ChatTurn.objects.get(pk=accepted.json()['turn_id']).openrouter_risk_accepted)
 
     def test_idempotency_conflict_and_active_turn_are_rejected(self):
         key = uuid.uuid4()

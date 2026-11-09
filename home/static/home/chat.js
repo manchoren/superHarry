@@ -122,10 +122,9 @@
             if (selected.dataset.provider && selected.dataset.modelId) {
                 payload.provider = selected.dataset.provider;
                 payload.model_id = selected.dataset.modelId;
-                if (selected.dataset.provider === "openrouter") {
-                    payload.openrouter_risk_accepted = true;
-                }
             }
+            if ((!selected.dataset.provider || selected.dataset.provider === "openrouter")
+                    && riskAcceptance && riskAcceptance.checked) payload.openrouter_risk_accepted = true;
             pending = {payload, key: crypto.randomUUID(), uncertain: false};
             input.readOnly = true;
             provider.disabled = true;

@@ -6,7 +6,7 @@ from django.core.management.utils import get_random_secret_key
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SUPERHARRY_CONSTITUTION_SHA256 = (
-    "7626d097e0db529bfcc2eb7a8f940b539254171cc41a752081703531c84aeef9"
+    "f1b1aed306f9e7ea9d5c26d78c00b74febedc43ee776d039a4734b7b0354c20c"
 )
 
 debug_value = os.environ.get("DJANGO_DEBUG", "1").strip().lower()
