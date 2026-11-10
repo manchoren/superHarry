@@ -1,0 +1,32 @@
+﻿{
+    "children": [
+        {
+            "name": "file",
+            "info": {
+                "children": [
+                ],
+                "virtual-size": 2581331968,
+                "filename": "C:\\superHarry-vm\\debian-13.7-arm64-base.qcow2",
+                "format": "file",
+                "actual-size": 2581331968
+            }
+        }
+    ],
+    "virtual-size": 34359738368,
+    "filename": "C:\\superHarry-vm\\debian-13.7-arm64-base.qcow2",
+    "cluster-size": 65536,
+    "format": "qcow2",
+    "actual-size": 2581331968,
+    "format-specific": {
+        "type": "qcow2",
+        "data": {
+            "compat": "1.1",
+            "compression-type": "zlib",
+            "lazy-refcounts": false,
+            "refcount-bits": 16,
+            "corrupt": false,
+            "extended-l2": false
+        }
+    },
+    "dirty-flag": false
+}

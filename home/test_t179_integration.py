@@ -190,7 +190,7 @@ class SyntheticRoutingIntegrationTests(TestCase):
             assistant_message = Message.objects.create(
                 conversation=conversation, role=Message.Role.ASSISTANT, content=reply_text,
             )
-            return ChatTurn.objects.create(
+            return ChatTurn.objects.create(     openrouter_risk_accepted=False,
                 conversation=conversation,
                 user_message=user_message,
                 assistant_message=assistant_message,

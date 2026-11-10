@@ -17,7 +17,7 @@ class ChatReattachmentTests(TestCase):
         self.other = users.objects.create_superuser('reattach-other', password='synthetic-password')
         self.conversation = Conversation.objects.create(owner=self.owner)
         self.message = Message.objects.create(conversation=self.conversation, role=Message.Role.USER, content='synthetic prompt')
-        self.turn = ChatTurn.objects.create(conversation=self.conversation, user_message=self.message, idempotency_key=uuid.uuid4(), request_digest='a' * 64, model_mode=ChatTurn.ModelMode.LOCAL)
+        self.turn = ChatTurn.objects.create(     openrouter_risk_accepted=False,conversation=self.conversation, user_message=self.message, idempotency_key=uuid.uuid4(), request_digest='a' * 64, model_mode=ChatTurn.ModelMode.LOCAL)
         self.client.force_login(self.owner)
         self.detail = reverse('conversation-detail', args=[self.conversation.pk])
         self.events = reverse('chat-turn-events', args=[self.conversation.pk, self.turn.pk])

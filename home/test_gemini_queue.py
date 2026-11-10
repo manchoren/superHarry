@@ -25,7 +25,7 @@ class GeminiQueueTests(TestCase):
         user = get_user_model().objects.create_user(username='queue-owner')
         conversation = Conversation.objects.create(owner=user)
         message = Message.objects.create(conversation=conversation, role='user', content='synthetic')
-        self.turn = ChatTurn.objects.create(conversation=conversation, user_message=message,
+        self.turn = ChatTurn.objects.create(     openrouter_risk_accepted=False,conversation=conversation, user_message=message,
             idempotency_key=uuid.uuid4(), request_digest='0' * 64, model_mode='automatic')
         self.dispatcher = GeminiChatDispatcher()
 
@@ -93,7 +93,7 @@ class GeminiQueueConcurrencyTests(TransactionTestCase):
         user = get_user_model().objects.create_user(username='concurrent-owner')
         conversation = Conversation.objects.create(owner=user)
         message = Message.objects.create(conversation=conversation, role='user', content='synthetic')
-        turn = ChatTurn.objects.create(conversation=conversation, user_message=message,
+        turn = ChatTurn.objects.create(     openrouter_risk_accepted=False,conversation=conversation, user_message=message,
             idempotency_key=uuid.uuid4(), request_digest='0' * 64, model_mode='automatic')
         GeminiChatJob.objects.create(turn=turn)
         barrier = Barrier(2)

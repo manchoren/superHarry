@@ -68,7 +68,7 @@ class MessageHistoryTests(TestCase):
 
     def test_active_turn_reattaches_on_older_page_without_losing_cancellation(self):
         message = Message.objects.create(conversation=self.conversation, role=Message.Role.USER, content='latest prompt')
-        turn = ChatTurn.objects.create(conversation=self.conversation, user_message=message,
+        turn = ChatTurn.objects.create(     openrouter_risk_accepted=False,conversation=self.conversation, user_message=message,
                                        idempotency_key=uuid.uuid4(), request_digest='a' * 64,
                                        model_mode=ChatTurn.ModelMode.LOCAL)
         response = self.client.get(self.url, {'before': self.messages[3].pk}, secure=True)
@@ -89,7 +89,7 @@ class MessageHistoryTests(TestCase):
             content='reattached assistant answer',
             created_at=self.timestamp - timedelta(seconds=1),
         )
-        turn = ChatTurn.objects.create(
+        turn = ChatTurn.objects.create(     openrouter_risk_accepted=False,
             conversation=self.conversation, user_message=pending_user,
             assistant_message=atypical_assistant, idempotency_key=uuid.uuid4(),
             request_digest='a' * 64, model_mode=ChatTurn.ModelMode.LOCAL,
@@ -115,7 +115,7 @@ class MessageHistoryTests(TestCase):
 
     def test_interrupted_turn_notice_survives_reopening(self):
         from home.models import GeminiChatJob
-        turn = ChatTurn.objects.create(conversation=self.conversation, user_message=self.messages[-1],
+        turn = ChatTurn.objects.create(     openrouter_risk_accepted=False,conversation=self.conversation, user_message=self.messages[-1],
             idempotency_key=uuid.uuid4(), request_digest='a' * 64, model_mode='automatic',
             state=ChatTurn.State.FAILED, terminal_at=timezone.now())
         GeminiChatJob.objects.create(turn=turn, state=GeminiChatJob.State.INTERRUPTED, claimed_at=timezone.now())

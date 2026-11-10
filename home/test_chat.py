@@ -116,7 +116,7 @@ class ChatTurnAPITests(TestCase):
             role=Message.Role.USER,
             content="synthetic prompt",
         )
-        return ChatTurn.objects.create(
+        return ChatTurn.objects.create(     openrouter_risk_accepted=False,
             conversation=self.conversation,
             user_message=message,
             idempotency_key=uuid.uuid4(),
@@ -617,7 +617,7 @@ class ChatEventValidationTests(TestCase):
             role=Message.Role.USER,
             content="synthetic prompt",
         )
-        self.turn = ChatTurn.objects.create(
+        self.turn = ChatTurn.objects.create(     openrouter_risk_accepted=False,
             conversation=self.conversation,
             user_message=message,
             idempotency_key=uuid.uuid4(),
@@ -633,7 +633,7 @@ class ChatEventValidationTests(TestCase):
         )
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
-                ChatTurn.objects.create(
+                ChatTurn.objects.create(     openrouter_risk_accepted=False,
                     conversation=self.conversation,
                     user_message=queued_message,
                     idempotency_key=uuid.uuid4(),
@@ -650,7 +650,7 @@ class ChatEventValidationTests(TestCase):
             role=Message.Role.USER,
             content="after completion",
         )
-        next_turn = ChatTurn.objects.create(
+        next_turn = ChatTurn.objects.create(     openrouter_risk_accepted=False,
             conversation=self.conversation,
             user_message=completed_message,
             idempotency_key=uuid.uuid4(),
@@ -667,7 +667,7 @@ class ChatEventValidationTests(TestCase):
         )
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
-                ChatTurn.objects.create(
+                ChatTurn.objects.create(     openrouter_risk_accepted=False,
                     conversation=self.conversation,
                     user_message=message,
                     idempotency_key=uuid.uuid4(),

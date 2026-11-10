@@ -1,14 +1,17 @@
 """Opt-in development-only automatic chat worker with ordered free-provider routing."""
 import logging
 import os
+import json
 import uuid
+
+from datetime import datetime, timedelta, timezone
 
 from django.conf import settings
 from django.db import close_old_connections, transaction
 from django.db.models import Q
 
 from home.chat_dispatch import ChatDispatchError, ChatTurnCancellation
-from home.chat_events import append_chat_event
+from home.chat_events import append_chat_event, MAX_OUTPUT_CONTENT_BYTES
 from home.chat_provider_routing import build_groq_route, build_openrouter_route, parse_provider_order
 from home.fake_chat import _emit
 from home.free_provider_dispatch import dispatch_free_provider
@@ -16,11 +19,42 @@ from home.gemini_context import MODEL_ID
 from home.gemini_dispatch import dispatch_gemini_with_quota
 from home.gemini_transport import GeminiTransport
 from home.groq_transport import GroqTransport
+from home.local_model_adapter import LlamaCppModelAdapter, LocalInferenceError
 from home.models import ChatEvent, ChatTurn, GeminiChatJob, Message
+from home.constitution_context import ContextPreparationError, prepare_release_context
+from home.model_interface import (
+    ModelCancelled,
+    ModelCompleted,
+    ModelError,
+    ModelErrorCategory,
+    ModelEvent,
+    ModelFailed,
+    ModelMessage,
+    ModelMode,
+    ModelRequest,
+    ModelStarted,
+    ModelTextDelta,
+    ModelUsageUpdate,
+    OutcomeCertainty,
+    RequesterRole,
+    RequestChannel,
+    ContentPart,
+    ContentTrust,
+    ContextManifest,
+    ContextProfile,
+    CapabilityRequirements,
+    ModelCapability,
+    CapabilityStatus,
+    InvocationContext,
+    iter_validated_model_events,
+    require_capabilities,
+    validate_invocation,
+)
 from home import openrouter_transport
 from home.openrouter_transport import OpenRouterTransport
 from home.provider_credentials import CredentialConfigError, load_provider_key
 from home.provider_outcomes import NotDispatched, OutcomeUnknown, RateLimited
+from home.heavy_job_governor import HeavyJobGovernor
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +134,116 @@ def _attempt_free_route(*, provider, key, turn, authorized, cancelled, history):
     return answer, model, {'input_tokens': input_tokens, 'capacity': route.context_capacity}
 
 
-def _run_routing(*, turn, history, authorized, cancelled):
+def _build_local_profile():
+    """Build the deterministic context profile used for local inference."""
+    from home.model_interface import RequesterRole, RequestChannel, ModelMode
+
+    class _Serializer:
+        def serialize(self, constitution_text, user_request):
+            return json.dumps(
+                [{"role": "developer", "content": constitution_text},
+                 {"role": "user", "content": user_request}],
+                ensure_ascii=False, separators=(",", ":"),
+            ).encode("utf-8")
+
+    class _ByteCounter:
+        def count_upper_bound(self, serialized_input):
+            return len(serialized_input)
+
+    return ContextProfile(
+        profile_id=settings.LLAMA_CPP_MODEL_ID,
+        profile_revision="1",
+        tokenizer_id=settings.LLAMA_CPP_MODEL_ID,
+        tokenizer_revision="provider",
+        counter_id="llama-cpp-byte-counter",
+        counter_revision="v1",
+        context_capacity=65536,
+        output_reserve=128,
+        safety_margin=0,
+        serializer=_Serializer(),
+        counter=_ByteCounter(),
+    )
+
+
+def _build_local_request(prepared, turn):
+    """Build the ModelRequest for a local-inference turn."""
+    from home.model_interface import ContentPart, ContextManifest, CapabilityRequirements, ModelRequest, ModelMessage
+
+    requirement = CapabilityRequirements(frozenset({ModelCapability.TEXT_GENERATION}))
+    request_id = uuid.uuid4()
+    messages = (
+        ModelMessage(
+            MessageRole.DEVELOPER,
+            (ContentPart(prepared.constitution.text, ContentTrust.PROTECTED, "constitution.md"),),
+        ),
+        ModelMessage(
+            MessageRole.USER,
+            (ContentPart(turn.user_message.content, ContentTrust.USER, "web-request"),),
+        ),
+    )
+    return ModelRequest(
+        request_id=request_id,
+        messages=messages,
+        context=ContextManifest(prepared),
+        capability_requirements=requirement,
+    )
+
+
+def _build_local_invocation(request, turn):
+    """Build the InvocationContext for a local-inference turn."""
+    from home.model_interface import InvocationContext, CancellationSignal
+
+    return InvocationContext(
+        request_id=request.request_id,
+        operation_id=uuid.uuid4(),
+        role=RequesterRole.USER,
+        channel=RequestChannel.WEB,
+        mode=ModelMode.LOCAL,
+        policy_revision="local-fallback-1",
+        locale="en",
+        principal_id=str(turn.conversation.owner_id),
+        guest_session_ref=None,
+        cancellation=None,
+    )
+
+
+def _run_local_fallback(*, turn, history, authorized, cancelled, adapter):
+    """Attempt local inference after free-provider exhaustion (T047)."""
+    try:
+        prepared = prepare_release_context(user_request=turn.user_message.content, profile=_build_local_profile())
+    except ContextPreparationError:
+        raise LocalInferenceError("local_context_preparation_failed") from None
+    request = _build_local_request(prepared, turn)
+    invocation = _build_local_invocation(request, turn)
+    report = adapter.capability_report
+    try:
+        require_capabilities(report, invocation.capability_requirements if False else request.capability_requirements, now=datetime.now(timezone.utc))
+    except Exception:
+        raise LocalInferenceError("local_capability_unavailable") from None
+    chunks = []
+    output_bytes = 0
+    completed = False
+    for event in iter_validated_model_events(adapter.stream(request, invocation), capability_report=report):
+        if isinstance(event, ModelTextDelta):
+            remaining = MAX_OUTPUT_CONTENT_BYTES - output_bytes
+            if len(event.text.encode("utf-8", errors="strict")) > remaining:
+                raise LocalInferenceError("local_inference_output_exceeded")
+            output_bytes += len(event.text.encode("utf-8", errors="strict"))
+            chunks.append(event.text)
+        elif isinstance(event, ModelCompleted):
+            completed = True
+        elif isinstance(event, ModelFailed):
+            raise LocalInferenceError(event.error.public_code)
+        elif isinstance(event, ModelCancelled):
+            raise LocalInferenceError("local_inference_cancelled")
+        elif not isinstance(event, (ModelStarted, ModelUsageUpdate)):
+            raise LocalInferenceError("local_inference_event_invalid")
+    if not completed or not chunks:
+        raise LocalInferenceError("local_inference_no_output")
+    return "".join(chunks), {"mode": "local", "provider": "local", "model_id": settings.LLAMA_CPP_MODEL_ID}, {"input_tokens": 0, "capacity": 65536}
+
+
+def _run_routing(*, turn, history, authorized, cancelled, governor=None, adapter=None):
     """Try providers in administrator order; fail over only before any request is sent."""
     configured_order = parse_provider_order(settings.SUPERHARRY_FREE_PROVIDER_ORDER)
     enabled = settings.SUPERHARRY_ENABLED_FREE_PROVIDERS
@@ -151,6 +294,23 @@ def _run_routing(*, turn, history, authorized, cancelled):
             if explicit:
                 raise RoutingExhausted() from None
             continue
+
+    # Fallback: T047 local inference after free-provider exhaustion. The
+    # governor's heavy-job seat is held for the duration of the adapter's
+    # stream; any failure fails closed and releases the seat.
+    if settings.SUPERHARRY_LOCAL_INFERENCE_ENABLED:
+        governor = governor or HeavyJobGovernor(
+            queue_capacity=settings.LLAMA_CPP_QUEUE_CAPACITY,
+            wait_timeout=settings.LLAMA_CPP_ACQUIRE_TIMEOUT,
+        )
+        adapter = adapter or LlamaCppModelAdapter(governor=governor)
+        try:
+            return _run_local_fallback(
+                turn=turn, history=history, authorized=authorized,
+                cancelled=cancelled, adapter=adapter,
+            )
+        except LocalInferenceError:
+            logger.info('gemini_chat_local_inference_failed')
     raise RoutingExhausted()
 
 
@@ -160,20 +320,30 @@ def run_gemini_turn(turn_id):
         if not _emit(turn_id, ChatEvent.EventType.TURN_STARTED, {'status': 'running'}):
             return
         turn = ChatTurn.objects.select_related('user_message', 'conversation__owner').get(pk=turn_id)
-        if turn.model_mode != ChatTurn.ModelMode.AUTOMATIC or not turn.conversation.owner.is_active:
+        if turn.model_mode not in (ChatTurn.ModelMode.AUTOMATIC, ChatTurn.ModelMode.LOCAL) or not turn.conversation.owner.is_active:
             raise ValueError('request unavailable')
 
         def authorized():
             return ChatTurn.objects.filter(pk=turn_id, conversation__owner_id=turn.conversation.owner_id,
-                conversation__owner__is_active=True, model_mode=ChatTurn.ModelMode.AUTOMATIC,
+                conversation__owner__is_active=True,
                 requested_provider=turn.requested_provider, requested_model=turn.requested_model,
                 openrouter_risk_accepted=turn.openrouter_risk_accepted,
                 state=ChatTurn.State.RUNNING).exists()
 
         cancelled = ChatTurnCancellation(turn_id)
         history = _load_history(turn)
-        answer, model, context_usage = _run_routing(turn=turn, history=history,
-                                                    authorized=authorized, cancelled=cancelled)
+
+        # T047/T050 shared heavy-job governor + local adapter, created once per
+        # worker process and reused for every turn that falls to local inference.
+        governor = HeavyJobGovernor(
+            queue_capacity=settings.LLAMA_CPP_QUEUE_CAPACITY,
+            wait_timeout=settings.LLAMA_CPP_ACQUIRE_TIMEOUT,
+        )
+        adapter = LlamaCppModelAdapter(governor=governor)
+        answer, model, context_usage = _run_routing(
+            turn=turn, history=history, authorized=authorized, cancelled=cancelled,
+            governor=governor, adapter=adapter,
+        )
         if not _emit(turn_id, ChatEvent.EventType.MODEL_SELECTED, model):
             return
         message_id = str(uuid.uuid4())

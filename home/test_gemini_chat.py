@@ -11,7 +11,7 @@ class GeminiChatTests(TestCase):
         self.user = get_user_model().objects.create_user(username='gemini-owner')
         self.conversation = Conversation.objects.create(owner=self.user)
         message = Message.objects.create(conversation=self.conversation, role='user', content='hello')
-        self.turn = ChatTurn.objects.create(conversation=self.conversation, user_message=message,
+        self.turn = ChatTurn.objects.create(     openrouter_risk_accepted=False,conversation=self.conversation, user_message=message,
             idempotency_key=uuid.uuid4(), request_digest='0' * 64, model_mode='automatic')
         ProviderQuota.objects.create(group='gemini-development', limit=2)
         ProviderQuota.objects.create(group='gemini-development:tokens', limit=1000)
@@ -80,18 +80,18 @@ class GeminiChatTests(TestCase):
         from django.utils import timezone
         prior_user = Message.objects.create(conversation=self.conversation, role='user', content='first question')
         prior_reply = Message.objects.create(conversation=self.conversation, role='assistant', content='first answer')
-        ChatTurn.objects.create(conversation=self.conversation, user_message=prior_user, assistant_message=prior_reply,
+        ChatTurn.objects.create(     openrouter_risk_accepted=False,conversation=self.conversation, user_message=prior_user, assistant_message=prior_reply,
             idempotency_key=uuid.uuid4(), request_digest='1'*64, model_mode='automatic', state='completed',
             created_at=self.turn.created_at - timedelta(seconds=1), terminal_at=timezone.now())
         other = get_user_model().objects.create_user(username='other-person')
         other_conversation = Conversation.objects.create(owner=other)
         foreign_prompt = Message.objects.create(conversation=other_conversation, role='user', content='private other user')
         foreign_reply = Message.objects.create(conversation=other_conversation, role='assistant', content='private foreign answer')
-        ChatTurn.objects.create(conversation=other_conversation, user_message=foreign_prompt, assistant_message=foreign_reply,
+        ChatTurn.objects.create(     openrouter_risk_accepted=False,conversation=other_conversation, user_message=foreign_prompt, assistant_message=foreign_reply,
             idempotency_key=uuid.uuid4(), request_digest='2'*64, model_mode='automatic', state='completed',
             created_at=self.turn.created_at - timedelta(seconds=1), terminal_at=timezone.now())
         failed_prompt = Message.objects.create(conversation=self.conversation, role='user', content='failed earlier request')
-        ChatTurn.objects.create(conversation=self.conversation, user_message=failed_prompt,
+        ChatTurn.objects.create(     openrouter_risk_accepted=False,conversation=self.conversation, user_message=failed_prompt,
             idempotency_key=uuid.uuid4(), request_digest='3'*64, model_mode='automatic', state='failed',
             created_at=self.turn.created_at - timedelta(seconds=1), terminal_at=timezone.now())
         transport = factory.return_value

@@ -37,7 +37,7 @@ class CancelledGeminiQuotaTests(DjangoTestCase):
         user = get_user_model().objects.create_user(username='synthetic-user')
         conversation = Conversation.objects.create(owner=user)
         message = Message.objects.create(conversation=conversation, role='user', content='hello')
-        turn = ChatTurn.objects.create(conversation=conversation, user_message=message,
+        turn = ChatTurn.objects.create(     openrouter_risk_accepted=False,conversation=conversation, user_message=message,
                                        idempotency_key=uuid4(), request_digest='0' * 64,
                                        model_mode='automatic', state='running')
         ProviderQuota.objects.create(group='synthetic', limit=1)

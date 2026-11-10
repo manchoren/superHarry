@@ -70,6 +70,25 @@ model_quotas_value = os.environ.get("SUPERHARRY_REQUIRE_MODEL_QUOTAS", "0").stri
 if model_quotas_value not in {"0", "1"}:
     raise ImproperlyConfigured("SUPERHARRY_REQUIRE_MODEL_QUOTAS must be 0 or 1.")
 SUPERHARRY_REQUIRE_MODEL_QUOTAS = model_quotas_value == "1"
+
+# ---- T047 local inference ---------------------------------------------------
+# The loopback URL of an on-demand local llama.cpp server managed by the
+# shared heavy-job governor (T050). When unset, local inference is disabled.
+LLAMA_CPP_BASE_URL = os.environ.get("LLAMA_CPP_BASE_URL", "").strip()
+LLAMA_CPP_MODEL_ID = os.environ.get("LLAMA_CPP_MODEL_ID", "").strip()
+local_inference_enabled = os.environ.get("SUPERHARRY_LOCAL_INFERENCE_ENABLED", "0").strip()
+if local_inference_enabled not in {"0", "1", "false", "true"}:
+    raise ImproperlyConfigured("SUPERHARRY_LOCAL_INFERENCE_ENABLED must be 0, 1, false, or true.")
+SUPERHARRY_LOCAL_INFERENCE_ENABLED = local_inference_enabled in {"1", "true"}
+
+# T050 heavy-job governor defaults for local inference (shared resource).
+# These must be finite positive numbers when local inference is enabled.
+LLAMA_CPP_QUEUE_CAPACITY = int(os.environ.get("LLAMA_CPP_QUEUE_CAPACITY", "1"))
+LLAMA_CPP_ACQUIRE_TIMEOUT = float(os.environ.get("LLAMA_CPP_ACQUIRE_TIMEOUT", "30.0"))
+if LLAMA_CPP_QUEUE_CAPACITY < 0:
+    raise ImproperlyConfigured("LLAMA_CPP_QUEUE_CAPACITY must be a non-negative integer.")
+if not (isinstance(LLAMA_CPP_ACQUIRE_TIMEOUT, float) and LLAMA_CPP_ACQUIRE_TIMEOUT > 0):
+    raise ImproperlyConfigured("LLAMA_CPP_ACQUIRE_TIMEOUT must be a positive number.")
 # Non-resetting shared allowances for Groq and OpenRouter (defaults proposed; owner confirmation pending).
 SUPERHARRY_PROVIDER_REQUEST_ALLOWANCE = int(os.environ.get("SUPERHARRY_PROVIDER_REQUEST_ALLOWANCE", "100"))
 SUPERHARRY_PROVIDER_TOKEN_ALLOWANCE = int(os.environ.get("SUPERHARRY_PROVIDER_TOKEN_ALLOWANCE", "100000"))

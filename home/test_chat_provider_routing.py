@@ -62,7 +62,7 @@ class RoutedTurnTests(TestCase):
         self.user = get_user_model().objects.create_user(username='routing-owner')
         self.conversation = Conversation.objects.create(owner=self.user)
         message = Message.objects.create(conversation=self.conversation, role='user', content='hello')
-        self.turn = ChatTurn.objects.create(conversation=self.conversation, user_message=message,
+        self.turn = ChatTurn.objects.create(     openrouter_risk_accepted=False,conversation=self.conversation, user_message=message,
             idempotency_key=uuid.uuid4(), request_digest='0' * 64, model_mode='automatic')
         for group in ('groq-development', 'openrouter-development'):
             ProviderQuota.objects.create(group=group, limit=5)

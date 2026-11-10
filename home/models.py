@@ -9,6 +9,53 @@ class AuditEventMutationError(RuntimeError):
     pass
 
 
+class HeavyJob(models.Model):
+    """Durable heavy-job seat used by the shared resource governor (T050)."""
+
+    class Kind(models.TextChoices):
+        LOCAL_INFERENCE = "local_inference", "Local inference"
+        SPEECH_TO_TEXT = "speech_to_text", "Speech to speech"
+        TEXT_TO_SPEECH = "text_to_speech", "Text to speech"
+        OCR = "ocr", "Optical character recognition"
+        SANDBOX = "sandbox", "Heavy sandbox execution"
+
+    class State(models.TextChoices):
+        QUEUED = "queued", "Queued"
+        RUNNING = "running", "Running"
+        RELEASED = "released", "Released"
+
+    token = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    kind = models.CharField(max_length=32, choices=Kind.choices)
+    operation_id = models.CharField(max_length=128)
+    owner_id = models.CharField(max_length=128, blank=True)
+    state = models.CharField(max_length=16, choices=State.choices, default=State.QUEUED)
+    generation_id = models.UUIDField(null=True, blank=True)
+    worker_pid = models.PositiveIntegerField(null=True, blank=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    confirmed_stop_at = models.DateTimeField(null=True, blank=True)
+    released_at = models.DateTimeField(null=True, blank=True)
+    error_code = models.CharField(max_length=32, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(state__in=("queued", "running", "released")),
+                name="home_heavyjob_state_choice",
+            ),
+            models.UniqueConstraint(
+                fields=["state"],
+                condition=models.Q(state="running"),
+                name="home_heavyjob_single_running",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["kind", "state"]),
+            models.Index(fields=["-created_at"]),
+        ]
+
+
 class AuditEventQuerySet(models.QuerySet):
     def update(self, **kwargs):
         raise AuditEventMutationError("Audit events are append-only.")
