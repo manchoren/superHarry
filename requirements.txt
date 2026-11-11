@@ -1,4 +1,0 @@
-Django==6.1.2
-openai==3.45.0
-argon2-cffi==25.1.0
-cryptography==50.0.2

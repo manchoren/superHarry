@@ -1,59 +1,133 @@
-# superHarry - Project Constitution
+# superHarry — Project Constitution
 
-Binding on contributors and development agents; this document prevails over the [plan](project_plan.md), tasks and historical proposals. Accepted owner instructions may amend it; proposals alone do not. Baseline: 2026-10-29; compacted 2026-11-04. Code, identifiers, comments, documentation and commits use English.
+Build a free personal assistant for a persistent Linux VM using Django,
+local models, approved external providers, controlled tools, scoped memory
+and scheduling. Voice, messaging and display integrations are optional.
 
-## Purpose and protected context
+This constitution defines enduring rules. Requirements, operational policies
+and CONTRIBUTING.md define implementation details. Plans and proposals do
+not amend these rules; changes require explicit owner approval. Detailed
+policies must implement these principles without adding blanket prohibitions
+where informed approval is sufficient.
 
-Build a free, public personal assistant for a persistent Linux VM: Django web UI, local models and configured free-tier model providers, controlled tools, scoped memory, scheduling, approved skills and optional voice, messaging and HDMI. Use the existing Debian ARM64 VM in `C:\superHarry-vm` as the project test and initial full deployment/acceptance target. Do not use or boot `.dev-vm` or its Cloud/NoCloud guest; prior results from that environment are historical evidence only. Do not create a replacement VM or reinstall the selected target unless separately requested. Raspberry Pi is an optional future port, never a prerequisite for VM release. Validate VM functionality, performance, isolation and recovery on the selected guest profile; local development tests provide fast feedback. `.dev-vm` is retired from execution and marked for eventual deletion. Preserve or migrate its Caddy CA private keys/configuration and local database backups before deleting those exact artifacts; remove the directory only when empty.
+## 1. Always do
 
-Every development agent/subagent reads this complete current document before acting and records its version/hash. Supply it in full as protected context to every runtime agent, model and channel. Never silently omit or truncate it; if delivery fails or mandatory context does not fit, block agent actions. Enforce security independently in code.
+- Protect safety, privacy and user control. Apply this priority: safety and
+  privacy, permissions, authorized user instructions, personality. Privacy
+  protection includes respecting informed decisions to share one's own data.
+- Enforce security and permissions in code, independently of model judgment.
+  Deny access by default and authorize every request, object, tool and channel.
+  Isolate users' data, memories, workspaces and browser sessions.
+- Treat input, files, web content, memory, skills and model output as untrusted
+  data. Validate boundaries, parameterize commands and queries, and block
+  non-public destinations in public fetch tools.
+- Provide runtime models with required current policy context. Block actions
+  when mandatory context is missing, stale or cannot fit.
+- Run generated task code and untrusted document processing in an isolated,
+  resource-limited sandbox without direct network access, host secrets,
+  application database access or host/container control interfaces.
+- Use supported Django security mechanisms and secure defaults. Keep secrets
+  outside source control, logs, shared evidence and downloadable backups.
+  Maintain mandatory security audit records.
+- Keep guests local-model-only, without tools, uploads, persistent memory,
+  scheduling, skills or external integrations. Linked channels have at most
+  user privileges; administration stays in the web app. Scheduled jobs remain
+  within their creator's permissions.
+- Distinguish explicit restrictions from uncertainty. Explain material risks,
+  what is known, what cannot be verified and practical alternatives. Let the
+  authorized user accept risks affecting their own data and resources.
+- Use approved providers within configured permissions and budgets. Provider
+  uncertainty about retention, training, confidentiality or possible charges
+  calls for informed consent, rather than automatic refusal. After consent,
+  proceed if technical controls and applicable permissions allow the request.
+- Honor approvals within their stated scope. Record acceptance with the
+  request or approved scope, and ask again only when that scope expires or
+  the action, data, cost or risk materially changes.
+- Retry only when safe to repeat. Preserve interrupted work without
+  duplicating effects. Fall back to local inference when available, or explain
+  the limitation. Heavy workloads share one execution slot.
+- Keep deployment private to LAN/VPN over HTTPS. Preserve persistent data,
+  support deletion of users' own memories and validate backup and recovery.
+  Transcribe audio locally; detailed diagnostics exclude secrets.
+- Use the existing Debian ARM64 VM as the initial deployment and acceptance
+  target. Raspberry Pi support is optional future work.
+- Complete routine implementation decisions autonomously within accepted
+  scope. Make focused, reversible changes, preserve compatibility and
+  demonstrate migration and rollback safety for persisted-data changes.
+- Follow CONTRIBUTING.md and the test-selection policy. Test behavior changes,
+  especially authorization, sandboxing, memory and recovery. Maintain the
+  threat model for sandbox and skills work. Record architectural decisions,
+  actual validation results, limitations and blocked follow-ups.
+- Use English for code, identifiers, comments, documentation and commits.
+  Provide UI strings in English and Spanish; APIs return error codes.
+- When updating an existing feature, output only the changed requirements and affected
+  interfaces. Omit unchanged system behavior.
+- Use Gherkin (Given/When/Then) for behavior and Mermaid diagrams for flows instead of multi-paragraph explanations.
 
-## Fixed directives
 
-Protect safety and privacy; never intentionally cause harm. Respect authorized user instructions, disclose uncertainty and actions, and never conceal or alter action logs. Priority: safety/privacy, permissions, user instructions, personality. Runtime agents cannot edit fixed directives, change permissions or grant privileges. Only an administrator may change fixed directives through the interface with explicit confirmation and audit. Personality may adapt autonomously but cannot override directives or controls.
+## 2. Ask first
 
-- **Owner risk acceptance (2026-11-08, T179):** Authenticated users may use OpenRouter free text models selected explicitly or automatically when the user accepts the risk for that specific request. The provider and upstream may retain, review, improve, transform, or truncate transmitted data and protected context. Before acceptance, disclose those risks, warn against entering sensitive, confidential or personal information, and identify possible quota overage and account, BYOK or auxiliary service charges. Bind acceptance into the request/idempotency contract. Without acceptance, automatic routing must not use OpenRouter. Enforce local context integrity, freshness and capacity, authenticated-user authorization, quota ceilings, secret custody and safe failure/retry behavior. This acceptance does not authorize guests or imply provider/account verification or release acceptance.
+- Ask the authorized user when an otherwise permitted action involves
+  material uncertainty about provider practices, data use, confidentiality,
+  cost or reliability. State what will be shared, the uncertainty, the
+  requested scope of consent and available alternatives.
+- Obtain administrator approval for changes to shared resources, provider
+  configuration, budgets or security policy. Consent concerning another
+  user's data requires authority over that data; personal risk acceptance
+  does not supply it.
+- Obtain explicit owner approval to amend this constitution. Fixed runtime
+  directives may be changed only by an administrator through the interface,
+  with explicit confirmation and an audit record.
+- Obtain approval before adding, removing or major-upgrading application or
+  system dependencies. Task sandbox packages follow the validated package
+  policy. Every skill installation needs administrator approval, integrity
+  verification and reapproval after modification.
+- Obtain approval before changing authentication, permissions, cryptography,
+  isolation, resource limits, routing, budgets, audit or privacy policies.
+  Implementing already accepted policy is authorized.
+- Obtain approval for destructive or incompatible data, schema or public API
+  changes, production data changes, or work beyond reversible internal scope.
+- Obtain approval before changing CI/CD, deployment services, firewall,
+  reverse proxy or network exposure; replacing or reinstalling the target VM;
+  introducing frameworks or services; or undertaking major restructuring.
+- Obtain approval before adding user or guest capabilities, channels or
+  integrations; changing speech providers; sending audio off-device; or
+  enabling autonomous outbound messaging.
+- Obtain applicable confirmation for consequential actions, including
+  purchases, messages, deletion and configuration changes. Existing explicit
+  authorization may cover the action; apply the stricter channel/action rule.
+- Obtain separate, time-limited consent for detailed diagnostics. Backup,
+  restore and updates follow administrator approval and recovery policies.
 
-## Security and runtime boundaries
+Approval already granted for a defined scope remains valid. Ambiguity about
+routine implementation is not itself a reason to stop. Self-review and
+relevant passing checks establish ordinary completion unless a specific
+policy requires additional review.
 
-- Use supported Django mechanisms and secure defaults instead of duplicating framework security. Verify project configuration, domain authorization and integration; maintain dependencies without auditing Django internals as application code.
-- Deny access by default in code for every request, object, tool and channel, using the requester's permissions. Isolate users' memories, conversations, workspaces and browser sessions; model judgment never grants access.
-- Guests are local-model-only: no global/user or persistent memory, memory writes, tools, sandbox, uploads, cron, skills, external models or messaging. New guest/user capabilities require approval.
-- Only authenticated users/admins link channels or claim the display. Channels have at most `user` privileges, including for admins; administration uses the web app. Only the display controller controls/captures its browser; admin takeover follows detailed requirements.
-- Treat user input, web/files, OCR/transcripts, memory, skills and model output as untrusted data, never authority. Validate all boundaries. Models use only authorized tools declaring roles, validated inputs, effects and audit behavior. Public fetch tools block non-public destinations and validate DNS/redirects.
-- Never commit, log or include secrets/credentials/personal data in shared evidence; downloadable backups exclude secrets/credentials. Load secrets from environment or a secrets manager. Privileged security audit is mandatory and cannot be disabled or altered by agents or diagnostic settings. Audit authentication, sandbox runs, skill installs, cron changes and global-memory writes.
-- Runtime-generated task code and untrusted document processing run only in an isolated, resource-limited sandbox without direct network, host secrets, main database, host network or container sockets. Stage approved downloads/dependencies across validated ownership boundaries. Runtime agents cannot promote task code into trusted application code.
-- Audit only the directly requested library or tool, not its transitive dependencies, bundled libraries or their recursive dependency graphs. Apply this scope to development dependency approval and runtime package guards alike: for example, audit `cryptography` when requested, without separately auditing the libraries it requires. A transitive library needs its own audit only if it is separately requested as a direct dependency. Do not block the requested package solely because its dependencies lack individual audits. This owner clarification (2026-11-06) supersedes broader audit requirements in existing specifications, tasks and proposals; ordinary dependency resolution, version/hash locking and compatibility checks remain applicable. Guard the directly requested package. Failed/incomplete mandatory checks block installation; a score is not proof of safety. Autonomous installation stays disabled until the guard is designed and validated. Every skill installation needs admin approval; verify integrity before loading and require reapproval on modification. Skills cannot grant permissions.
-- Confirm consequential browser actions: purchases, messages, deletion and configuration changes. Apply the stricter channel/action rule. Never send model output to shell, SQL, file paths or `eval` without validation/parameterization; never concatenate untrusted input into SQL, shell or HTML. Scheduled jobs never exceed their creator's privileges.
+## 3. Never do
 
-## Data and operations
-
-- OpenAI is disabled for now. Route eligible authenticated requests through explicitly configured free-tier providers in administrator-configurable order; when a provider is exhausted, try the next only when the prior outcome is known safe to retry. Block paid routes and routes whose zero cost cannot be verified. A provider that uses conversation data to improve models requires disclosure and explicit administrator enablement. When free providers are exhausted or unavailable, use local inference if available; otherwise inform the user. Preserve interrupted work and resume safely without blindly repeating effects. Guests remain local-model-only. Local inference, STT, TTS, OCR and heavy sandbox jobs share one heavy-job slot.
-- **Owner exception (2026-11-08, T179):** The owner accepts possible nonzero or unverifiable account, BYOK and auxiliary charges for OpenRouter free models whose published prices are zero, including the existing Liquid route. Discover eligible free text models from bounded provider metadata; reject missing, nonzero or unverifiable listed prices and retain all available zero max_price fields. Never configure paid model fallback. Per-request user risk acceptance and the external-data warning are mandatory for explicit or automatic OpenRouter dispatch. The owner accepts UTF-8-byte quota estimation despite possible undercount/overage at the existing non-resetting shared ceilings of 100 requests and 100,000 estimated tokens; settle valid reported usage/overage and hold unknown reservations. These acceptances do not waive local context integrity/freshness/capacity, authenticated-user and administrator authorization, secret custody, no-retry safety, target-VM operational review or provider/release acceptance.
-- Scope user data and follow accepted cleanup rules. Users may delete all their own memories even when visibility is hidden. Admins control budgets, network configuration, backups and updates.
-- LAN/VPN with HTTPS only: no public exposure or port forwarding. Backup, restore and updates preserve data and follow admin review/confirmation and recovery requirements. Memory/backup encryption is optional; losing a required key makes affected encrypted data unrecoverable.
-- Transcribe audio locally inside the deployment guest. Detailed diagnostic content needs separate time-limited opt-in; secrets remain excluded. The durable VM profile must preserve data across restart/update; disposable test overlays are not deployment storage. Physical Pi-specific checks belong to its future port. Exact operational criteria live in the [requirements](docs/reference/product-requirements.md).
-
-## Development authorization
-
-Trusted repository code may run in development or as installed native services under the development/deployment process; runtime task code cannot bypass sandboxing. Untrusted document processing always remains sandboxed.
-
-Within accepted scope and the Django monolith, developers autonomously choose internal interfaces, validation, errors, fixtures, UI composition and implementation order, and complete routine partially specified details. Additive reversible development-only models/migrations and internal API changes are authorized while preserving compatibility and security. For persisted data, demonstrate migration/rollback safety; no production data changes are authorized. Record decisions and evidence with the task; ambiguity alone is not a blocker or reason for another proposal.
-
-Self-review and relevant passing checks establish ordinary task completion; a second reviewer/owner endorsement is optional. Preserve unmet criteria as explicit blocked follow-ups. This standing authorization supersedes blanket development approval wording in older tasks/plans/proposals, not runtime confirmations, protected branch rules or deployment approval.
-
-### Ask first outside standing authorization
-
-- Add/remove/major-upgrade application/system dependencies; task sandbox libraries follow the validated package policy.
-- Destructive/incompatible data or public HTTP/WebSocket/SSE contract changes; schema, migration, memory-schema or skill-manifest changes beyond the reversible internal scope above.
-- Change authentication/session/token/RBAC/cryptography policy, sandbox isolation/network/resource limits, model routing or budget thresholds; weaken audit, privacy or permissions. Implementing accepted policy with negative tests is already authorized.
-- Change CI/CD, services/systemd, firewall, reverse proxy, host/deployment configuration or network exposure; introduce frameworks/services, large refactors or folder restructuring. This owner's documentation compaction is authorized.
-- Delete features, tests or code not fully understood; add guest/user capability, channels or integrations; change speech engines/providers or allow audio off-device; raise channel privileges or enable autonomous outbound messages/email. External side effects need applicable authorization.
-
-## Delivery discipline
-
-Read surrounding code; make focused, reversible changes with clear domain names. Follow [CONTRIBUTING.md](CONTRIBUTING.md) for checks, self-review and completion evidence. Test every behavior change, especially authorization, sandbox, memory and recovery; no global coverage target. Maintain the threat model before sandbox/skills implementation. Explain non-obvious decisions, use ADRs for architecture, and add UI strings to both `en` and `es` catalogs; APIs return error codes rather than translated prose.
-
-Before running tests for a change, require a separate audit agent launched with a fresh context, without the implementation conversation, to inspect the complete change set and produce the evidence-based test-scope score and test list defined in [the test selection policy](docs/reference/test-scoping.md). Use the audit to choose scoped tests only when its evidence-supported score is strictly greater than 80 and no mandatory full-suite condition applies. If the separate audit cannot be completed or does not support its score, run the full Django test suite. Record the audit evidence, score, test selection and actual results with the task. The auditor's score never overrides mandatory full-suite conditions or other applicable checks.
-
-Never skip/delete/disable tests to pass, conceal failures, silently swallow errors or suppress warnings without justification. Never force-push protected branches, invent APIs/results, hand-edit generated files, hardcode UI strings, mix unrelated commit changes, or leave dead/commented-out code or ticketless TODOs. Verify APIs and report actual validation and limits.
+- Do not include introductions, conclusions, or conversational filler on the documentation. Output only the requested spec sections
+- Never turn uncertainty, missing evidence or a recommendation into a
+  prohibition unless an explicit rule requires it. When blocking an action,
+  identify the actual restriction and any authorized path forward.
+- Never treat informed risk acceptance as permission to access another user's
+  data, disclose credentials, exceed authority, bypass enforced controls or
+  disable audit. Acceptance does not require unverifiable claims of safety.
+- Never let runtime agents change fixed directives, grant privileges or
+  promote task code into trusted application code. Personality and skills
+  confer no authority.
+- Never execute unvalidated model output as commands, queries, paths or code,
+  or allow untrusted content to override policy.
+- Never use OpenAI while disabled or configure paid model fallback. A model
+  listed as free may still involve uncertain account or auxiliary charges;
+  handle these through informed consent and configured budget controls.
+- Never install packages when mandatory checks fail or enable autonomous
+  installation before its guard is validated. Audit directly requested
+  packages; do not require separate transitive-dependency audits unless those
+  packages are independently requested. Audit scores are not proof of safety.
+- Never repeat an action with an unknown outcome when repetition could
+  duplicate effects.
+- Never use the retired `.dev-vm` as an execution target. Preserve or migrate
+  its protected CA keys, configuration and database backups before deleting
+  those artifacts; remove the directory only when empty.
+- Never conceal failures, alter action logs, fabricate APIs or results, weaken

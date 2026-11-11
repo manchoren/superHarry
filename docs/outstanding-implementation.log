@@ -1,0 +1,59 @@
+2026-11-11 12:04:28,410 | INFO | 
+
+
+2026-11-11 12:04:28,442 | INFO | Started at: 2026-11-11T12:04:28.442027
+2026-11-11 12:04:28,442 | INFO | Evidence directory: C:\superHarry\docs\outstanding-evidence
+2026-11-11 12:04:28,442 | INFO | ======================================================================
+2026-11-11 12:04:28,443 | INFO | ITEM 1: Sandbox Dependency Guard
+2026-11-11 12:04:28,443 | INFO | ======================================================================
+2026-11-11 12:04:28,443 | INFO | 
+[TEST 1] Known safe package (requests) scores >= 80
+2026-11-11 12:04:28,455 | INFO | Package evaluated: requests==2.31.0 | score=90 | integrity=40 | reputation=30 | static=20 | provenance=0
+2026-11-11 12:04:28,455 | INFO |   Result: requests==2.31.0 | score=90 | integrity=40 | reputation=30 | static=20 | provenance=0
+2026-11-11 12:04:28,455 | INFO |   Total score: 90
+2026-11-11 12:04:28,457 | INFO | 
+[TEST 2] Blocked package (malicious-pkg) scores 0
+2026-11-11 12:04:28,457 | INFO |   Result: malicious-pkg==1.0.0 | score=0 | integrity=0 | reputation=0 | static=0 | provenance=0 | BLOCKED: Known malicious package
+2026-11-11 12:04:28,457 | INFO |   Total score: 0.0
+2026-11-11 12:04:28,457 | INFO |   Blocked: True
+2026-11-11 12:04:28,458 | INFO | 
+[TEST 3] Package with CVE (vulnerable-lib) scores < 80
+2026-11-11 12:04:28,458 | INFO | Package evaluated: vulnerable-lib==1.0.0 | score=35 | integrity=0 | reputation=15 | static=20 | provenance=0
+2026-11-11 12:04:28,459 | INFO |   Result: vulnerable-lib==1.0.0 | score=35 | integrity=0 | reputation=15 | static=20 | provenance=0
+2026-11-11 12:04:28,459 | INFO |   Total score: 35
+2026-11-11 12:04:28,459 | INFO |   Reputation: 15
+2026-11-11 12:04:28,460 | INFO | 
+[TEST 4] Threshold is configurable
+2026-11-11 12:04:28,460 | INFO |   Strict guard threshold: 90
+2026-11-11 12:04:28,460 | INFO | 
+[TEST 5] Score components in valid ranges
+2026-11-11 12:04:28,460 | INFO |     - Integrity: 40/40
+2026-11-11 12:04:28,460 | INFO |     - Reputation: 30/30
+2026-11-11 12:04:28,460 | INFO |     - Static Analysis: 20/20
+2026-11-11 12:04:28,460 | INFO |     - Provenance: 0/10
+2026-11-11 12:04:28,460 | INFO | 
+[ITEM 1 SUMMARY] Passed: 5/5 | Failed: 0/5
+2026-11-11 12:04:28,460 | INFO | 
+======================================================================
+2026-11-11 12:04:28,460 | INFO | ITEM 2: Memory Encryption & Recovery
+2026-11-11 12:04:28,460 | INFO | ======================================================================
+2026-11-11 12:04:28,460 | INFO | 
+[TEST 1] Key generation produces secure random
+2026-11-11 12:04:28,464 | INFO | 
+[TEST 2] Encryption configuration documented
+2026-11-11 12:04:28,466 | INFO | 
+[ITEM 2 SUMMARY] Passed: 0/2 | Status: PARTIALLY IMPLEMENTED
+2026-11-11 12:04:28,466 | INFO | 
+======================================================================
+2026-11-11 12:04:28,466 | INFO | ITEM 3: Browser Control & Display Isolation
+2026-11-11 12:04:28,467 | INFO | ======================================================================
+2026-11-11 12:04:28,469 | INFO | 
+[ITEM 3 SUMMARY] Passed: 0/3 | Status: PARTIALLY IMPLEMENTED
+2026-11-11 12:04:28,469 | INFO | 
+
+======================================================================
+2026-11-11 12:04:28,469 | INFO | IMPLEMENTATION SUMMARY
+2026-11-11 12:04:28,469 | INFO | ======================================================================
+2026-11-11 12:04:28,493 | INFO | 
+Total: 5 passed, 0 failed
+2026-11-11 12:04:28,494 | INFO | Ended at: 2026-11-11T12:04:28.494539
