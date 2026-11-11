@@ -10,6 +10,7 @@ from django.conf import settings
 from django.db import close_old_connections, transaction
 from django.db.models import Q
 
+from home.cancel_contract import CancellationContract
 from home.chat_dispatch import ChatDispatchError, ChatTurnCancellation
 from home.chat_events import append_chat_event, MAX_OUTPUT_CONTENT_BYTES
 from home.chat_provider_routing import build_groq_route, build_openrouter_route, parse_provider_order
@@ -21,9 +22,14 @@ from home.gemini_transport import GeminiTransport
 from home.groq_transport import GroqTransport
 from home.local_model_adapter import LlamaCppModelAdapter, LocalInferenceError
 from home.models import ChatEvent, ChatTurn, GeminiChatJob, Message
-from home.constitution_context import ContextPreparationError, prepare_release_context
+from home.constitution_context import (
+    ContextPreparationError,
+    ContextProfile,
+    PreparedContext,
+    ensure_prepared_context_integrity,
+    prepare_release_context,
+)
 from home.model_interface import (
-    ModelCancelled,
     ModelCompleted,
     ModelError,
     ModelErrorCategory,
@@ -41,7 +47,6 @@ from home.model_interface import (
     ContentPart,
     ContentTrust,
     ContextManifest,
-    ContextProfile,
     CapabilityRequirements,
     ModelCapability,
     CapabilityStatus,
@@ -129,7 +134,9 @@ def _attempt_free_route(*, provider, key, turn, authorized, cancelled, history):
         raise NotDispatched() from None
     answer, (input_tokens, _output_tokens) = dispatch_free_provider(
         route=route, transport=transport, user_request=turn.user_message.content,
-        authorize=authorized, cancelled=cancelled, operation_id=f'{provider}:{turn.pk}', history=tuple(history))
+        authorize=authorized, cancelled=cancelled, operation_id=f'{provider}:{turn.pk}',
+        history=tuple(history),
+        risk_accepted=(turn.openrouter_risk_accepted if provider == 'openrouter' else True))
     model = {'mode': 'automatic', 'provider': provider, 'model_id': route.model_id}
     return answer, model, {'input_tokens': input_tokens, 'capacity': route.context_capacity}
 
@@ -243,7 +250,7 @@ def _run_local_fallback(*, turn, history, authorized, cancelled, adapter):
     return "".join(chunks), {"mode": "local", "provider": "local", "model_id": settings.LLAMA_CPP_MODEL_ID}, {"input_tokens": 0, "capacity": 65536}
 
 
-def _run_routing(*, turn, history, authorized, cancelled, governor=None, adapter=None):
+def _run_routing(*, turn, history, authorized, cancelled, governor=None, adapter=None, contract=None):
     """Try providers in administrator order; fail over only before any request is sent."""
     configured_order = parse_provider_order(settings.SUPERHARRY_FREE_PROVIDER_ORDER)
     enabled = settings.SUPERHARRY_ENABLED_FREE_PROVIDERS
@@ -281,10 +288,13 @@ def _run_routing(*, turn, history, authorized, cancelled, governor=None, adapter
             key = None
         if not key:
             continue
+        if contract is not None:
+            contract.before_dispatch(provider)
         try:
             if provider == 'gemini':
                 return _attempt_gemini(turn=turn, key=key, authorized=authorized,
-                                       cancelled=cancelled, history=history)
+                                       cancelled=cancelled, history=history,
+                                       contract=contract)
             return _attempt_free_route(provider=provider, key=key, turn=turn, authorized=authorized,
                                        cancelled=cancelled, history=history)
         except (NotDispatched, RateLimited):
@@ -342,7 +352,7 @@ def run_gemini_turn(turn_id):
         adapter = LlamaCppModelAdapter(governor=governor)
         answer, model, context_usage = _run_routing(
             turn=turn, history=history, authorized=authorized, cancelled=cancelled,
-            governor=governor, adapter=adapter,
+            governor=governor, adapter=adapter, contract=CancellationContract(turn_id),
         )
         if not _emit(turn_id, ChatEvent.EventType.MODEL_SELECTED, model):
             return

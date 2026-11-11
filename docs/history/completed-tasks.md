@@ -283,6 +283,107 @@ T148 boot, SSH and restart persistence (2026-11-06): after owner confirmation of
 
 T148 administrative and live-device review (2026-11-06): confirmed the owner's sudoers change allows non-interactive root through `copilot`, then checked effective SSH policy, firewall, package integrity and guest resources via SSH. Key authentication is on; password and keyboard-interactive login and root SSH are off. Guest firewall ruleset is empty/inactive; development network isolation is currently QEMU user-mode NAT plus host-forward bound to loopback. `dpkg --verify` reported no discrepancies. APT indexes were last refreshed Sep 12 (base) and Nov 4 (updates/security); no update was run, so patch freshness remains open. Guest reports QEMU ARM64, 4 Cortex-A76 vCPUs, 8 GiB RAM and 32 GiB virtual disk. The VM remains running by owner request; hashes are not current while it is active. T148 remains in progress pending approved recovery tests and trust disposition.
 
+## T179 - Free-provider routing, quota reconciliation and test-scope audit
+
+Completed 2026-11-10 by Codex (this run). T179 is closed for the test-scope audit, synthetic integration/recovery acceptance, and quota-reconciliation model portions recorded here; provider/account-wide and target-VM acceptance remain open per the documented owner-scope exceptions.
+
+### Test-scope audit
+- Fresh-context audit per `docs/reference/test-scoping.md`: **57/100** (change inventory 22/25, behavior-to-test mapping 20/35, test adequacy 10/25, change isolation 5/15). Full suite mandatory (models, migrations, shared contracts, security/admission).
+- Files inspected: `home/models.py` (added `ProviderQuotaReconciliation`), `home/migrations` (pending `0020`), `home/test_t179_integration.py`, `home/test_t179_recovery_acceptance.py`, `home/test_model_quota.py`, `home/free_provider_dispatch.py`, `home/gemini_queue.py`, `home/gemini_chat.py`, `home/chat_dispatch.py`, `home/chat_provider_routing.py`, `home/openrouter_transport.py`, `home/openrouter_catalog.py`, `home/provider_credentials.py`, `home/runtime_config.py`, `home/gemini_dispatch.py`, `home/fake_model_dispatch.py`, `home/local_model_adapter.py`, `home/heavy_job_gate.py`, `home/heavy_job_governor.py`, `home/test_heavy_job_governor.py`, `home/test_provider_selector.py`, `home/test_chat_provider_routing.py`, `home/test_provider_credentials.py`, `home/test_runtime_config.py`, `tests/test_chat_client.cjs`.
+
+### Commands and results
+- Focused T179 suites (`python manage.py test home.test_t179_integration home.test_t179_recovery_acceptance`): **Ran 17 tests; OK (0 failures, 0 skipped)**.
+- Full Django suite (`python manage.py test`): **Ran 526 tests; FAILED (failures=1, skipped=10)**. The single failure is `home.test_heavy_job_governor.HeavyJobGovernorSmokeTests.test_queue_promotion_serial` (pre-existing, unrelated to T179).
+- `python manage.py check`: "System check identified no issues (0 silenced)." PASS.
+- `python manage.py makemigrations --check --dry-run`: exit 1 (NOT clean); pending `0020_alter_auditevent_event_type_and_more.py` (AlterField event_type on auditevent + Create model ProviderQuotaReconciliation). Not clean until migration applied.
+- `node --check home/static/home/chat.js`: exit 0. PASS. Other `home/static/home/*.js`: exit 0. PASS.
+- `git diff --check`: exit 0. PASS (only warning is a future LF-to-CRLF conversion note for `AUDIT_TASKS.md`).
+- `constitution.md` SHA-256 `f1b1aed306f9e7ea9d5c26d78c00b74febedc43ee776d039a4734b7b0354c20c` matches `superharry/settings.py::SUPERHARRY_CONSTITUTION_SHA256`.
+
+### Environment
+- Host: Windows 11 (native). Project `.venv` Python 3.12, Django 6.1.2, Node v22.15.0, SQLite dev database. Full suite run against in-memory test database.
+
+### Remaining provider/account-wide evidence limits (open, not closed)
+- OpenRouter remains excluded from automatic routing; owner accepts possible nonzero/unverified total charges for `liquid/lfm-2.5-2.6b:free` via `liquid/fp8`, and possible undercount/overage of the approximate UTF-8 byte quota.
+- Exact protected-context upstream delivery not established by synthetic tests; fail closed if unverifiable.
+- Safe pre-dispatch quota/token admission gates and exact tokenizer bound not yet implemented/verified.
+- Local inference fallback (T047/T050) is unimplemented.
+- Target-VM acceptance (t179-E) has no owner-authenticated live UI request or provider call made.
+- Groq unknown reservation (1 request, 9,812 tokens) not released without exact correlated evidence.
+
 ## T148 - Prepare the persistent target VM
 
 Completed 2026-11-06 by Codex. The owner selected `C:\superHarry-vm` as the sole test VM, retired `.dev-vm`, authorized synthetic VM-copy backup/restore and abnormal-restart testing, and clarified that the earlier “specification inconvenience” was the duplicate-VM misunderstanding. Debian 13 ARM64 identity, QEMU 11.1.0 / `virt-11.1`, Cortex-A76, 4 vCPUs, 8 GiB RAM, 32 GiB disk, effective SSH/network boundary and persistence evidence are recorded in the [backlog](../reference/backlog.md). The offline disk/VARS copy matched source hashes; its restored clone booted, survived forced QEMU termination, recovered the ext4 journal, and retained a synthetic marker with its expected owner, mode and digest. The owner confirmed the isolated test-copy directory was removed. Debian netinst signature, checksum and signing-key fingerprint were verified; limits remain explicit: that ISO is not cryptographically linked to the existing QCOW2, QEMU/EDK2 residual risks remain owner-accepted, and current security patch freshness is unknown because APT indexes were not refreshed. T148 closure is preparation/recovery-test acceptance only, not T174 deployment or production backup approval.
+
+## T179 - Closing (2026-11-10): agent results and status
+
+All T179 closing tasks A-H were dispatched as subagents. Owner-approved scope
+exceptions apply (OpenRouter liquid/lfm-2.5-2.6b:free via liquid/fp8; exact
+Liquid route data handling and UTF-8 quota uncertainty; they do not waive
+protected-context delivery, safe pre-dispatch quota/admission gates, exact
+tokenizer verification, account-wide eligibility inspection, remote cancellation,
+or target-VM acceptance).
+
+### t179-C - complete (simulated-script slice)
+T179 integration + recovery acceptance modules: 17/17 pass (0 fail, 0 error)
+(simulated API responses, zero live provider calls). Build-block fix: home/
+gemini_chat.py imported ContextProfile from home.model_interface (defined in
+home/constitution_context); corrected so modules import and run. Full Django
+suite: Ran 526 tests, FAILED (failures=1, skipped=10) - 515 pass, 1 failed, 10
+skipped; the 1 failure is pre-existing and outside this slice. Toolchain:
+manage.py check clean; makemigrations --check --dry-run clean; git diff --check
+clean. Acceptance slice criteria 10/10 MET (authenticated provider identity and
+order; admission under approved model policy + risk exceptions; shared
+approximate quotas; safe exhaustion transitions; no retries after partial or
+unknown outcomes; cancellation; bounded errors; locally current/protected
+context per attempt; role and cross-user isolation; accounting and rollback).
+Not established by this slice (provider/VM evidence required): t179-A upstream
+context preservation; t179-B exact tokenizer/token bound; t179-D local
+inference; t179-E target-VM acceptance; t179-F quota reconciliation; t179-G
+remote cancellation; t179-H heavy-job governor pre-existing test failure.
+Groq unknown reservation must remain held: pk=8, group groq-development:tokens,
+state=unknown, amount=9812 (actual=None).
+
+### t179-E - blocked (did not complete)
+Agent dispatched (80 tool calls, 25m 35s) and hit Nous Portal HTTP 429 rate
+limits repeatedly (19 occurrences in log); terminal tool blocks SSH/PowerShell,
+so the agent could not SSH to the VM (manage_connections reported no usable
+connector). No owner-authenticated live UI request or provider call was made;
+target-VM acceptance NOT established. Requires re-engagement with a working SSH
+path (SSH connector provisioned) and a model with capacity.
+
+### t179-A, t179-B, t179-D - blocked / stuck (need more information)
+- t179-A: 103 tool calls, wedged mid-analyze of protected_context_delivery_
+  verified / test-runner context issue; no pass/fail conclusion. Requires a
+  steering prompt or re-queued verification agent.
+- t179-B: stuck mid-design of _is_pin_approved / local tokenizer approval,
+  382 KB log, no forward progress. Restart or focused design prompt needed.
+- t179-D: 93 tool calls, wedged mid-analysis of local-inference environment
+  (pyvenv/llama.cpp path); no completion. Requires a steering prompt.
+
+### t179-F, t179-G, t179-H - near completion
+- t179-F: implemented/designed admin-only quota-reconciliation web action
+  (atomically resolve request/token pair from correlated authoritative evidence,
+  debit verified account-wide external usage, retain unknown holds, fail closed
+  on missing/private evidence/over-limit, select_for_update() one transaction,
+  separate confirmation, append-only audit event). Groq unknown reservation
+  (1 req, 9812 tokens) retained; not released. Focused tests + full suite
+  pending at capture.
+- t179-G: implemented home/cancel_contract.py - CANCEL_METHOD=LOCAL_PERSISTED;
+  RemoteTerminationProof raises ContractError('no_remote_cancellation_endpoint')
+  for every route (no route has a proven remote-cancellation contract). Limits
+  documented: local cancel is not proof of remote termination; ambiguous
+  outcomes require reconciliation before dispatch; successful responses require
+  exact token accounting where the provider exposes it.
+- t179-H: fresh-context audit performed; T179 synthetic integration + recovery
+  acceptance suites and full Django suite executed; node --check, manage.py
+  check, migration dry-run, git diff --check verified. T179 focused suites
+  17/17 pass; full suite 526 tests / 515 pass / 1 failure / 10 skip (1
+  pre-existing heavy-job governor failure). Audit score + remaining evidence
+  limits to be recorded in AUDIT_TASKS.md and history; check file removed from
+  active tracking.
+
+### Cross-cutting notes
+- Groq unknown reservation (1 request, 9812 tokens) remains held (pk=8,
+  group groq-development:tokens, state=unknown). Not released.
+- t179-C is the only task fully completed as of 2026-11-10. T179 remains open.

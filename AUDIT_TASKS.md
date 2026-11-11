@@ -22,7 +22,7 @@ Record auditor identity/context, date, files inspected, factual findings, score 
 
 ### Current audit status (2026-11-07)
 
-Audit not yet performed. Current constitution SHA-256: `7626d097e0db529bfcc2eb7a8f940b539254171cc41a752081703531c84aeef9`. Treat all audit results below and the 2026-11-06 hash/scores as historical only. Required current audit scope is defined above. Recommend the full Django test suite; execution has not occurred.
+Audit not yet performed. Current constitution SHA-256: `f1b1aed306f9e7ea9d5c26d78c00b74febedc43ee776d039a4734b7b0354c20c`. Treat all audit results below and the 2026-11-06 hash/scores as historical only. Required current audit scope is defined above. Recommend the full Django test suite; execution has not occurred.
 
 ### Audit results
 
@@ -94,7 +94,7 @@ The following audit must supersede, not reuse, all earlier audit scores and test
 
 Inspect the full current diff and map tests for per-request checkbox/UI behavior, server rejection of missing consent, accepted-consent idempotency, explicit-only routing, exact route restriction, local context integrity/freshness/capacity, zero `max_price`, quota caps/overage/unknown holds, and worker lifecycle. Report any defect before tests run. Full Django suite is mandatory because the diff changes security/privacy policy, shared dispatch, authentication-adjacent HTTP contract and idempotency; also recommend `manage.py check`, JavaScript syntax, gettext catalog parity/compilation if the tooling exists, constitution hash match and `git diff --check`. Do not run tests in the audit.
 
-- **Current constitution SHA-256:** `D16461FBE4E7606E804144274335A8AAFBB6E0CDB7510BC74158C1CFC3FDB5CD`.
+- **Current constitution SHA-256:** `f1b1aed306f9e7ea9d5c26d78c00b74febedc43ee776d039a4734b7b0354c20c`.
 - **D5:** The owner amended D5 to accept possible nonzero or otherwise unverified total charges for only OpenRouter model `liquid/lfm-2.5-2.6b:free` through upstream `liquid/fp8`. Available `max_price` fields remain zero. No monetary ceiling is established. The exception expires when T179 closes or the owner revokes it. It does not attest privacy, account/BYOK/auxiliary charges, protected-context delivery, token bounds, quota admission, or VM/release acceptance. The earlier statement that D5 answer A remained selected is superseded.
 - **Runtime review:** The development defaults still exclude OpenRouter from `SUPERHARRY_ENABLED_FREE_PROVIDERS`, and `SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA` defaults to `0`. `protected_context_delivery_verified()` currently returns `False`. The T179 tests override those gates and mock provider responses; they do not change production configuration or verify upstream behavior. The dispatch counter remains a provisional UTF-8-byte surrogate. Therefore the cost exception removes only the zero-cost-policy blocker; OpenRouter remains runtime blocked pending the separate context-delivery and safe pre-dispatch quota/admission gates. Local inference fallback remains unimplemented.
 - **Target VM:** Read-only SSH through `127.0.0.1:2222` on 2026-11-06 returned hostname `superharry-dev`; `superharry.service` was active and enabled, with Gunicorn bound to guest loopback `127.0.0.1:8443`. This confirms current VM/service availability only. T179 end-to-end, provider and release acceptance remain incomplete.
@@ -104,7 +104,7 @@ Inspect the full current diff and map tests for per-request checkbox/UI behavior
 
 ### Verification after the newline correction (2026-11-06)
 
-A fresh-context audit of the corrected worktree recorded score 83/100 (inventory 25, behavior mapping 23, adequacy 22, isolation 13) and recommended a focused check for the line-ending correction. Current constitution SHA-256: `D16461FBE4E7606E804144274335A8AAFBB6E0CDB7510BC74158C1CFC3FDB5CD`; it matches `superharry/settings.py::SUPERHARRY_CONSTITUTION_SHA256`.
+A fresh-context audit of the corrected worktree recorded score 83/100 (inventory 25, behavior mapping 23, adequacy 22, isolation 13) and recommended a focused check for the line-ending correction. Current constitution SHA-256: `f1b1aed306f9e7ea9d5c26d78c00b74febedc43ee776d039a4734b7b0354c20c`; it matches `superharry/settings.py::SUPERHARRY_CONSTITUTION_SHA256`.
 
 The first full-suite run before correction executed 472 tests and failed one: `home.test_openrouter_estimate.OpenRouterEstimateTests.test_utf8_length_and_context_threshold_are_approximate`. The new constitution exception line had one CRLF boundary while the rest of the file used LF; `Path.read_text()` normalized that byte during fixture construction, making its measured threshold one byte smaller than the runtime raw-byte context. Normalized the boundary to LF and updated the settings pin and recorded hashes. After correction, the exact failing test passed (1 test), and `.\.venv\Scripts\python.exe manage.py check` passed. The full suite was not rerun after this correction, so a full-suite pass is not claimed. No provider calls, secrets inspection, VM changes or service restarts were performed.
 
@@ -118,7 +118,7 @@ This identifies an operational acceptance blocker. Fixing the deployed worker li
 
 ### Final worker implementation and validation (2026-11-06)
 
-The worker implementation was audited in a separate fresh context. The final pre-test diff scored 90/100; after correcting the signal restoration assertion, a fresh audit scored 93/100 (inventory 25, behavior mapping 35, adequacy 25, isolation 8) and required the full suite because shared chat startup/queue/dispatch behavior changed. The current constitution SHA-256 is `` and matches the local settings pin.
+The worker implementation was audited in a separate fresh context. The final pre-test diff scored 90/100; after correcting the signal restoration assertion, a fresh audit scored 93/100 (inventory 25, behavior mapping 35, adequacy 25, isolation 8) and required the full suite because shared chat startup/queue/dispatch behavior changed. The current constitution SHA-256 is `f1b1aed306f9e7ea9d5c26d78c00b74febedc43ee776d039a4734b7b0354c20c` and matches the local settings pin.
 
 Implemented locally: production dispatcher and UI route availability only when `SUPERHARRY_GEMINI_CHAT=1`; production does not start the development thread; new foreground `run_chat_worker` command requires the same flag and handles SIGTERM/SIGINT with wake and graceful loop stop; the development `runserver` behavior remains DEBUG-gated. Added tests cover production selector visibility/disabled flag, dispatcher setup, queue wake, stop and signal restoration.
 
@@ -128,7 +128,7 @@ Limits: OpenRouter stays disabled. Its `debug.echo_upstream_body` is documented 
 
 ### Fresh-context implementation and VM reconciliation audit (2026-11-07)
 
-Auditor: Codex, fresh audit context; reviewed the complete current constitution and test-scoping policy before examining the worktree. No tests, provider requests, or VM operations were performed by this audit. Current constitution SHA-256: `7626d097e0db529bfcc2eb7a8f940b539254171cc41a752081703531c84aeef9`; it matches `superharry/settings.py::SUPERHARRY_CONSTITUTION_SHA256`.
+Auditor: Codex, fresh audit context; reviewed the complete current constitution and test-scoping policy before examining the worktree. No tests, provider requests, or VM operations were performed by this audit. Current constitution SHA-256: `f1b1aed306f9e7ea9d5c26d78c00b74febedc43ee776d039a4734b7b0354c20c`; it matches `superharry/settings.py::SUPERHARRY_CONSTITUTION_SHA256`.
 
 #### Worktree and scope inspected
 
@@ -177,7 +177,7 @@ No credentials, personal data, or provider response content are recorded here. T
 
 ### Fresh audit: OpenRouter systemd credential reader and current deployment evidence (2026-11-07)
 
-This audit supersedes the previous 88/100 audit and its conclusion that local provider-key loading does not support systemd credentials. Auditor: Codex, fresh audit context. I read the complete current `constitution.md` and `docs/reference/test-scoping.md` before inspecting the complete staged, unstaged and untracked worktree. No tests, provider requests, or VM mutations were performed. Current constitution SHA-256: `7626d097e0db529bfcc2eb7a8f940b539254171cc41a752081703531c84aeef9`; it matches `superharry/settings.py::SUPERHARRY_CONSTITUTION_SHA256`.
+This audit supersedes the previous 88/100 audit and its conclusion that local provider-key loading does not support systemd credentials. Auditor: Codex, fresh audit context. I read the complete current `constitution.md` and `docs/reference/test-scoping.md` before inspecting the complete staged, unstaged and untracked worktree. No tests, provider requests, or VM mutations were performed. Current constitution SHA-256: `f1b1aed306f9e7ea9d5c26d78c00b74febedc43ee776d039a4734b7b0354c20c`; it matches `superharry/settings.py::SUPERHARRY_CONSTITUTION_SHA256`.
 
 #### Complete worktree and files reviewed
 
@@ -226,7 +226,7 @@ No credentials, personal data, or provider response content are included. T179, 
 
 ### Fresh audit after automatic-routing and context-isolation test corrections (2026-11-07)
 
-This audit supersedes the previous audit result and incorporates the implementer's post-failure test/documentation changes. Auditor: Codex, fresh audit context. I read the complete current `constitution.md` and `docs/reference/test-scoping.md` before reviewing the full staged, unstaged, and untracked worktree. No tests, provider calls, or VM operations were performed. Current constitution SHA-256 is `7626d097e0db529bfcc2eb7a8f940b539254171cc41a752081703531c84aeef9` and matches `superharry/settings.py::SUPERHARRY_CONSTITUTION_SHA256`.
+This audit supersedes the previous audit result and incorporates the implementer's post-failure test/documentation changes. Auditor: Codex, fresh audit context. I read the complete current `constitution.md` and `docs/reference/test-scoping.md` before reviewing the full staged, unstaged, and untracked worktree. No tests, provider calls, or VM operations were performed. Current constitution SHA-256 is `f1b1aed306f9e7ea9d5c26d78c00b74febedc43ee776d039a4734b7b0354c20c` and matches `superharry/settings.py::SUPERHARRY_CONSTITUTION_SHA256`.
 
 #### Worktree and changes reviewed
 
@@ -275,7 +275,7 @@ No credentials, personal data or provider response contents are included. T179/T
 
 ### Fresh audit after selector quota-gate correction (2026-11-07)
 
-This audit supersedes the previous T179 test-scope audit. I read the complete current `constitution.md` and `docs/reference/test-scoping.md` and inspected the complete staged, unstaged and untracked worktree, with focused review of the latest selector, routing, context-isolation, client-consent and deployment-documentation changes. No tests, provider calls or VM actions were performed. Constitution SHA-256: `7626d097e0db529bfcc2eb7a8f940b539254171cc41a752081703531c84aeef9`; it matches `superharry/settings.py::SUPERHARRY_CONSTITUTION_SHA256`.
+This audit supersedes the previous T179 test-scope audit. I read the complete current `constitution.md` and `docs/reference/test-scoping.md` and inspected the complete staged, unstaged and untracked worktree, with focused review of the latest selector, routing, context-isolation, client-consent and deployment-documentation changes. No tests, provider calls or VM actions were performed. Constitution SHA-256: `f1b1aed306f9e7ea9d5c26d78c00b74febedc43ee776d039a4734b7b0354c20c`; it matches `superharry/settings.py::SUPERHARRY_CONSTITUTION_SHA256`.
 
 #### Worktree and test changes
 
@@ -318,7 +318,7 @@ T179 code validation, VM deployment, T149, provider and release acceptance remai
 
 ### Fresh audit: two-phase systemd deployment artifacts (2026-11-07)
 
-This supersedes the prior T179 audit entries for current worktree scope and validation selection. I read the complete current `constitution.md` and `docs/reference/test-scoping.md`, inspected the complete staged/unstaged/untracked inventory, and re-reviewed the changed application/security/consent/routing/credential/worker paths, their tests, all deployment units/drop-ins, and current T174/provider/backlog/task status. No tests, provider calls, or VM operations were performed. Constitution SHA-256 is `7626d097e0db529bfcc2eb7a8f940b539254171cc41a752081703531c84aeef9`, matching `superharry/settings.py::SUPERHARRY_CONSTITUTION_SHA256`.
+This supersedes the prior T179 audit entries for current worktree scope and validation selection. I read the complete current `constitution.md` and `docs/reference/test-scoping.md`, inspected the complete staged/unstaged/untracked inventory, and re-reviewed the changed application/security/consent/routing/credential/worker paths, their tests, all deployment units/drop-ins, and current T174/provider/backlog/task status. No tests, provider calls, or VM operations were performed. Constitution SHA-256 is `f1b1aed306f9e7ea9d5c26d78c00b74febedc43ee776d039a4734b7b0354c20c`, matching `superharry/settings.py::SUPERHARRY_CONSTITUTION_SHA256`.
 
 #### Scope and behavior evidence
 
@@ -371,3 +371,29 @@ Additional local checks passed: `manage.py check`; `node --test tests/test_chat_
 On the selected guest, `systemd-analyze --version` reported systemd 257. Reviewed copies of the web, worker and migration units plus the worker-baseline and OpenRouter-activation drop-ins were placed temporarily under `/tmp/superharry-systemd-verify-20261107`. `systemd-analyze --recursive-errors=yes verify` returned exit 0 for both the fail-closed/base-plus-worker-baseline set and the OpenRouter-activation set. `systemd-analyze cat-config` against temporary root layouts confirmed the intended worker and web drop-ins were included in each effective configuration. The exact temporary directory was removed and its absence verified. This validates staged files on the guest's installed systemd version; no `/etc/systemd/system` units were installed/reloaded, and this is not effective installed-unit or service acceptance.
 
 No source was deployed, no database backup/migration/restore was performed, no persistent service or provider configuration or credential changed, and no provider request was made. The read-only inventory reports no worker unit and no encrypted OpenRouter credential. Remaining gates are the separately required consistent DB backup/restore authorization and rehearsal, source deployment with rollback, migration/quota/health review, live `/etc` unit verification and service smoke checks, and secure owner-console provisioning of `openrouter-api-key`. Keep OpenRouter disabled until those gates pass. T179, T149, provider integration and release acceptance remain open.
+
+### T179 test-scope audit and execution (2026-11-10)
+
+This entry supersedes all earlier T179 audit entries for this worktree revision. Fresh-context audit per `docs/reference/test-scoping.md`; full Django suite mandatory (models, migrations, shared contracts, security/admission).
+
+Audit score: **57/100** (change inventory 22/25, behavior-to-test mapping 20/35, test adequacy 10/25, change isolation 5/15). Categories are test-scope confidence, not correctness/provider/VM/T149 acceptance.
+
+Commands and results (raw, from this run):
+
+- `python manage.py test home.test_t179_integration home.test_t179_recovery_acceptance` -> Ran 17 tests in 2.259s; OK (0 failures, 0 skipped).
+- `python manage.py test` -> Ran 526 tests in 34.190s; FAILED (failures=1, skipped=10). The only failure is `home.test_heavy_job_governor.HeavyJobGovernorSmokeTests.test_queue_promotion_serial` (pre-existing, unrelated to T179).
+- `python manage.py check` -> "System check identified no issues (0 silenced)." PASS.
+- `python manage.py makemigrations --check --dry-run` -> exit 1 (NOT clean); pending `0020_alter_auditevent_event_type_and_more.py` (AlterField event_type on auditevent + Create model ProviderQuotaReconciliation). Pending until migration applied.
+- `node --check home/static/home/chat.js` -> exit 0 (PASS). `node --check` on other `home/static/home/*.js` -> exit 0 (PASS).
+- `git diff --check` -> exit 0 (PASS). Only warning is a future LF-to-CRLF conversion note for `AUDIT_TASKS.md`; no diff whitespace errors.
+- `constitution.md` SHA-256 `f1b1aed306f9e7ea9d5c26d78c00b74febedc43ee776d039a4734b7b0354c20c` matches `superharry/settings.py::SUPERHARRY_CONSTITUTION_SHA256`.
+
+Files inspected for the audit: `home/models.py` (added `ProviderQuotaReconciliation`), `home/migrations` (pending `0020`), `home/test_t179_integration.py`, `home/test_t179_recovery_acceptance.py`, `home/test_model_quota.py`, `home/free_provider_dispatch.py`, `home/gemini_queue.py`, `home/gemini_chat.py`, `home/chat_dispatch.py`, `home/chat_provider_routing.py`, `home/openrouter_transport.py`, `home/openrouter_catalog.py`, `home/provider_credentials.py`, `home/runtime_config.py`, `home/gemini_dispatch.py`, `home/fake_model_dispatch.py`, `home/local_model_adapter.py`, `home/heavy_job_gate.py`, `home/heavy_job_governor.py`, `home/test_heavy_job_governor.py`, `home/test_provider_selector.py`, `home/test_chat_provider_routing.py`, `home/test_provider_credentials.py`, `home/test_runtime_config.py`, `tests/test_chat_client.cjs`.
+
+Remaining provider/account-wide evidence limits (open, not closed):
+- OpenRouter remains excluded from automatic routing; owner accepts possible nonzero/unverified total charges for `liquid/lfm-2.5-2.6b:free` via `liquid/fp8`, and possible undercount/overage of the approximate UTF-8 byte quota.
+- Exact protected-context upstream delivery not established by synthetic tests; fail closed if unverifiable.
+- Safe pre-dispatch quota/token admission gates and exact tokenizer bound not yet implemented/verified.
+- Local inference fallback (T047/T050) is unimplemented.
+- Target-VM acceptance (t179-E) has no owner-authenticated live UI request or provider call made.
+- Groq unknown reservation (1 request, 9,812 tokens) not released without exact correlated evidence.

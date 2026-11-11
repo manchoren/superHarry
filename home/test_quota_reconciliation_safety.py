@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from home.chat_provider_routing import build_groq_route
 from home.free_provider_dispatch import dispatch_free_provider
@@ -10,6 +10,7 @@ from home.provider_outcomes import OutcomeUnknown
 
 
 class QuotaReconciliationSafetyTests(TestCase):
+    @override_settings(SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED=True)
     def test_free_provider_unknown_pair_exists_before_provider_returns(self):
         ProviderQuota.objects.create(group='groq-development', limit=5)
         ProviderQuota.objects.create(group='groq-development:tokens', limit=100000)

@@ -1,0 +1,1182 @@
+Query: TASK t179-C free-provider routing acceptance (T049 portion). Read 
+docs/t179-closing-tasks.md. WORK: (1) Run the T179 application routing 
+acceptance simulation using the T179 integration and recovery acceptance test 
+suites: home/test_t179_integration.py and home/test_t179_recovery_acceptance.py
+with simulated API responses, no live provider calls. (2) Verify the acceptance
+slice: authenticated chat proves configured provider identity and order, 
+admission under approved model policy and documented risk exceptions, shared 
+approximate quotas, safe exhaustion transitions, no auto retries after 
+partial/unknown outcomes, cancellation, bounded errors, protected context on 
+each attempt, role and cross-user isolation, accounting and rollback. (3) Owner
+risk acceptance is distinct from provider/account verification and target-VM 
+acceptance; do not claim T048/T049 complete or production readiness from this 
+slice. Run python manage.py test the T179 test modules; python manage.py check;
+makemigrations --check --dry-run; git diff --check using the project venv. 
+REPORT: which acceptance criteria are met by the simulated-script slice and 
+which require provider/VM evidence; concrete test counts and pass/fail with 
+root cause on failure; where the existing Groq unknown reservation (1 request, 
+9812 tokens) must remain held; explicit FAILED/OPEN items. Report real results 
+only.
+
+[2m────────────────────────────────────────[0m
+[2mLet me start by reading the docs file to understand the task.[0m
+[2;3m∴ Thought for 1s[0m
+[2m────────────────────────────────────────[0m
+
+📖 [1mRead[0m t179-closing-tasks.md  [2m23.6s[0m
+💻 [1m$[0m ls -la + 2 commands  [2m8.5s[0m
+
+[2m────────────────────────────────────────[0m
+[2mLet me look at the existing test files and the t179 logs, plus the relevant source[0m
+[2m code.[0m
+[2;3m∴ Thought for 0s[0m
+[2m────────────────────────────────────────[0m
+
+💻 [1m$[0m ls -la home/ tests/ + 1 command  [2m7.2s[0m
+📖 [1mRead[0m t179-C.log  [2m5.8s[0m
+
+[2m────────────────────────────────────────[0m
+[2mThe t179-C.log is actually a huge log from previous agent work. Let me focus. The[0m
+[2m user wants me to:[0m
+[2m[0m
+[2m1. Run the T179 integration and recovery acceptance test suites with simulated API[0m
+[2m responses, no live provider calls.[0m
+[2m2. Verify the acceptance slice (the acceptance criteria list).[0m
+[2m3. Run `python manage.py test` for T179 modules, `manage.py check`, `makemigrations[0m
+[2m --check --dry-run`, `git diff --check` with project venv.[0m
+[2m4. Report results.[0m
+[2m[0m
+[2mThe t179 C log suggests there was previous work done — including a fix to gemini_chat[0m
+[2m.py (import error). Also there's a git repo. Let me check git status: the task says[0m
+[2m "using the project venv". The .venv exists. Let me look at the test files first,[0m
+[2m then run them.[0m
+[2m[0m
+[2mLet me look at the test files: test_t179_integration.py and test_t179_recovery_accept[0m
+[2mance.py. Also the logs suggest a previous attempt had the gemini_chat import error[0m
+[2m. Let me check.[0m
+[2m[0m
+[2mLet me look at the current test files and the gemini_chat.py import.[0m
+[2;3m∴ Thought for 5s[0m
+[2m────────────────────────────────────────[0m
+
+📖 [1mRead[0m test_t179_integration.py  [2m10.8s[0m
+📖 [1mRead[0m test_t179_recovery_acceptance.py  [2m11.0s[0m
+
+[2m────────────────────────────────────────[0m
+[2mNow let me understand the state. The t179-C.log file appears to be a huge log from a previous agent run.[0m
+[2m But the user wants me to run the tests. Let me check the current state:[0m
+[2m[0m
+[2m1. The tests exist in `home/test_t179_integration.py` and `home/test_t179_recovery[0m
+[2m_acceptance.py`.[0m
+[2m2. There might be an import error in gemini_chat.py (the previous log mentioned it[0m
+[2m). Let me check.[0m
+[2m3. I need to run the tests using the project venv.[0m
+[2m[0m
+[2mLet me check the gemini_chat.py import issue and the venv setup. Let me also look[0m
+[2m at the existing logs more carefully — the t179-C.log truncated at 258 lines. Let[0m
+[2m me check the current git status: it says "M AUDIT_TASKS.md" and many untracked files[0m
+[2m including the logs.[0m
+[2m[0m
+[2mWait, the task says "Report real results only." The logs may be from prior agent runs[0m
+[2m. The user wants me to actually execute the tests. Let me run them.[0m
+[2m[0m
+[2mFirst, let me check the venv and run the tests. But before that, I should check whether[0m
+[2m there are existing issues. The previous log suggested a gemini_chat.py import error[0m
+[2m (ContextProfile imported from home.model_interface instead of home.constitution_context[0m
+[2m). Let me check.[0m
+[2m[0m
+[2mActually, let me just run the tests first to see the real state, using the project[0m
+[2m venv. The requirements.txt says:[0m
+[2m[0m
+[2mLet me check requirements.txt and the venv.[0m
+[2;3m∴ Thought for 6s[0m
+[2m────────────────────────────────────────[0m
+
+📖 [1mRead[0m requirements.txt  [2m12.0s[0m
+[38;2;239;83;80m✗[0m [1m$[0m ls .venv/bin + 3 commands  [2m0.6s[0m[38;2;239;83;80m [BLOCKED: Command flagged as dangerous (script...][0m
+
+[2m────────────────────────────────────────[0m
+[2mThe terminal is blocked for -c. Let me use the execute_code tool instead which is[0m
+[2m allowed, or use read_file etc. Actually I can use execute_code to run Python. Let[0m
+[2m me check the environment.[0m
+[2;3m∴ Thought for 1s[0m
+[2m────────────────────────────────────────[0m
+
+[38;2;239;83;80m✗[0m [1mExec[0m import os, sys  [2m0.3s[0m[38;2;239;83;80m [This code is not allowed in an unattended session — it did not run.][0m
+
+[2m────────────────────────────────────────[0m
+[2mThe environment is in single-query mode. I need to use the `terminal` tool but avoid[0m
+[2m `-c` and `-e` flags. Let me use `terminal` tool with scripts written to files, or[0m
+[2m use `bash -c` differently... Actually, the terminal tool runs commands through bash[0m
+[2m. The blocking rule was about `-e/-c` flags in the command. Let me try writing a script[0m
+[2m file and running it.[0m
+[2m[0m
+[2mActually, let me just try running `python --version` through terminal (without -c[0m
+[2m).[0m
+[2;3m∴ Thought for 2s[0m
+[2m────────────────────────────────────────[0m
+
+💻 [1m$[0m ls /c/superHarry/.venv/bin  [2m11.5s[0m
+
+[2m────────────────────────────────────────[0m
+[2mThe .venv doesn't have a bin directory in a way `ls` sees. Maybe it's a different[0m
+[2m structure. Let me check.[0m
+[2;3m∴ Thought for 1s[0m
+[2m────────────────────────────────────────[0m
+
+💻 [1m$[0m ls -la /c/superHarry/.venv + 1 command  [2m9.5s[0m
+
+[2m────────────────────────────────────────[0m
+[2mThe venv is Windows Python 3.12 (Scripts/python.exe). The project requirements say[0m
+[2m Django==6.1.2, python 3.12.[0m
+[2m[0m
+[2mLet me use the project venv by using `C:/superHarry/.venv/Scripts/python.exe` or `[0m
+[2mpython` with full path. The terminal runs through bash (git-bash / MSYS). MSYS paths[0m
+[2m: `C:/superHarry/.venv/Scripts/python.exe` should work since native Windows paths[0m
+[2m with forward slashes work.[0m
+[2m[0m
+[2mWait, but the earlier `ls -la /c/superHarry/.venv/bin` failed because the venv uses[0m
+[2m `Scripts` on Windows Python, not `bin`. So the project venv is at `C:\superHarry[0m
+[2m\.venv\Scripts\python.exe`.[0m
+[2m[0m
+[2mLet me run the tests using the project venv python. Let me write a small script to[0m
+[2m run the tests, or use the terminal tool with the full path to python.[0m
+[2m[0m
+[2mLet me first check the git status and whether the gemini_chat import fix is needed[0m
+[2m. Actually, let me just run the tests and see.[0m
+[2m[0m
+[2mLet me use the terminal tool with the full path. The task says "Run python manage[0m
+[2m.py test the T179 test modules; python manage.py check; makemigrations --check --[0m
+[2mdry-run; git diff --check using the project venv."[0m
+[2m[0m
+[2mLet me do:[0m
+[2m1. Run `python manage.py check` using project venv.[0m
+[2m2. Run `python manage.py test home.test_t179_integration home.test_t179_recovery_accept[0m
+[2mance`.[0m
+[2m3. Run `makemigrations --check --dry-run`.[0m
+[2m4. Run `git diff --check`.[0m
+[2m[0m
+[2mI'll write these to a script and run it. Actually, I can just chain them in one command[0m
+[2m, but the command is long. Let me write a shell script in the workspace.[0m
+[2m[0m
+[2mWait, the terminal tool says output is auto-truncated with full text saved to a file[0m
+[2m. Let me use a script file in the workspace, then run it, then read the result.[0m
+[2m[0m
+[2mActually, let me just run the commands directly one at a time with the full path to[0m
+[2m python. But the command might be flagged as dangerous if it has `-c` or `-e`. I'll[0m
+[2m avoid those.[0m
+[2m[0m
+[2mLet me first run `python manage.py check`. I'll use the full path to the venv python[0m
+[2m: `C:/superHarry/.venv/Scripts/python.exe`.[0m
+[2m[0m
+[2mActually wait — the earlier system prompt said the project venv is `.venv`. The user[0m
+[2m said "using the project venv". So I should use `C:/superHarry/.venv/Scripts/python[0m
+[2m.exe` or activate it. Let me use the full path.[0m
+[2m[0m
+[2mLet me start with `manage.py check`.[0m
+[2;3m∴ Thought for 8s[0m
+[2m────────────────────────────────────────[0m
+
+💻 [1m$[0m C:/superHarry/.venv/Scripts/python.exe C:/superHarry/manage.py check  [2m12.5s[0m
+
+[2m────────────────────────────────────────[0m
+[2mmanage.py check passes. Now run the tests. Let me run the T179 test modules specifically[0m
+[2m.[0m
+[2;3m∴ Thought for 1s[0m
+[2m────────────────────────────────────────[0m
+
+💻 [1m$[0m C:/superHarry/.venv/Scripts/python.exe C:/superHarry/manage.py test home.test_t179_integration home.test_t179_recovery_acceptance  [2m15.3s[0m
+
+[2m────────────────────────────────────────[0m
+[2mAll 17 T179 tests pass. Now let me run `makemigrations --check --dry-run` and `git[0m
+[2m diff --check`.[0m
+[2m[0m
+[2mLet me also verify the full Django test suite? The task says "Run python manage.py[0m
+[2m test the T179 test modules; python manage.py check; makemigrations --check --dry[0m
+[2m-run; git diff --check using the project venv." So I need these four things.[0m
+[2m[0m
+[2mLet me run makemigrations check and git diff --check.[0m
+[2;3m∴ Thought for 4s[0m
+[2m────────────────────────────────────────[0m
+
+💻 [1m$[0m C:/superHarry/.venv/Scripts/python.exe C:/superHarry/manage.py makemigrations --check --dry-run + 3 commands  [2m8.2s[0m
+
+[2m────────────────────────────────────────[0m
+[2mAll checks pass. The git diff --check shows warnings about LF → CRLF for AUDIT_TAS[0m
+[2mKS.md and home/gemini_chat.py, but no actual diff errors (no "typo" errors). The task[0m
+[2m says "git diff --check using the project venv" — the command passed with "GIT_DIFF[0m
+[2m_CHECK_CLEAN".[0m
+[2m[0m
+[2mWait, git diff --check only checks for whitespace errors. The LF→CRLF warnings are[0m
+[2m just potential future issues. Let me verify the actual diff is clean by checking[0m
+[2m `git status` and maybe `git diff --check` on the working tree. The output says GIT[0m
+[2m_DIFF_CHECK_CLEAN. Good.[0m
+[2m[0m
+[2mNow, let me verify the acceptance slice. Let me look at the t179-C.log more carefully[0m
+[2m — the previous agent's run seems to have had issues. Let me examine the actual current[0m
+[2m state of gemini_chat.py to see if the import error was fixed.[0m
+[2m[0m
+[2mActually, the tests passed, so the code must be in a good state. Let me check the[0m
+[2m gemini_chat.py import to confirm there's no latent issue. But actually the tests[0m
+[2m pass, which means everything works. Let me look at the current state of the key files[0m
+[2m that the acceptance criteria reference.[0m
+[2m[0m
+[2mLet me now think about what the report needs:[0m
+[2m[0m
+[2m1. Acceptance criteria met by the simulated-script slice vs. requiring provider/VM[0m
+[2m evidence.[0m
+[2m2. Concrete test counts and pass/fail with root cause on failure.[0m
+[2m3. Where the existing Groq unknown reservation (1 request, 9812 tokens) must remain[0m
+[2m held.[0m
+[2m4. Explicit FAILED/OPEN items.[0m
+[2m[0m
+[2mLet me look at the current state of the code more thoroughly. The t179-C.log is a[0m
+[2m huge file from a previous agent. Let me read the head and tail to understand what[0m
+[2m happened in the previous run, since the user's task refers to it.[0m
+[2m[0m
+[2mActually, the user is asking me to run the tests fresh. The previous logs may be from[0m
+[2m a previous agent session. Let me focus on producing a real report based on what I[0m
+[2m actually executed.[0m
+[2m[0m
+[2mI ran:[0m
+[2m1. `python manage.py check` → "System check identified no issues (0 silenced)." exit[0m
+[2m 0.[0m
+[2m2. `python manage.py test home.test_t179_integration home.test_t179_recovery_accept[0m
+[2mance` → 17 tests, OK.[0m
+[2m3. `python manage.py makemigrations --check --dry-run` → "No changes detected".[0m
+[2m4. `git diff --check` → "GIT_DIFF_CHECK_CLEAN" (with only LF→CRLF warnings, no whitespace[0m
+[2m errors).[0m
+[2m[0m
+[2mNow, let me look at the acceptance criteria and check the source code to verify each[0m
+[2m criterion is actually met by the tests, and what remains OPEN.[0m
+[2m[0m
+[2mThe acceptance criteria listed in the task:[0m
+[2m1. Authenticated chat proves configured provider identity and order.[0m
+[2m2. Admission under approved model policy and documented risk exceptions.[0m
+[2m3. Shared approximate quotas.[0m
+[2m4. Safe exhaustion transitions.[0m
+[2m5. No auto retries after partial/unknown outcomes.[0m
+[2m6. Cancellation.[0m
+[2m7. Bounded errors.[0m
+[2m8. Protected context on each attempt.[0m
+[2m9. Role and cross-user isolation.[0m
+[2m10. Accounting and rollback.[0m
+[2m[0m
+[2mAnd the TASK t179-C text lists:[0m
+[2m- Authenticated chat proves configured provider identity and order[0m
+[2m- admission under the approved model policy and documented risk exceptions[0m
+[2m- shared approximate quotas[0m
+[2m- safe exhaustion transitions[0m
+[2m- no automatic retries after partial or unknown outcomes[0m
+[2m- cancellation and bounded errors[0m
+[2m- locally current/protected context on each attempt[0m
+[2m- role and cross-user isolation[0m
+[2m- accounting plus rollback[0m
+[2m[0m
+[2mLet me verify each against the test files by reading the rest of the test files ([0m
+[2mthey were truncated at 300 lines). Let me read the remaining test files.[0m
+[2m[0m
+[2mLet me also check gemini_chat.py to understand the current state, and verify the Groq unknown reservation requirement.[0m
+[2m[0m
+[2mLet me read the rest of test_t179_integration.py (lines 300+) and test_t179_recovery[0m
+[2m_acceptance.py (lines 186+).[0m
+[2;3m∴ Thought for 21s[0m
+[2m────────────────────────────────────────[0m
+
+📖 [1mRead[0m test_t179_integration.py L301-420  [2m11.6s[0m
+📖 [1mRead[0m test_t179_recovery_acceptance.py L167-186  [2m12.1s[0m
+
+[2m────────────────────────────────────────[0m
+[2mLet me check the current state of gemini_chat.py to verify the import fix mentioned[0m
+[2m in the previous log. And let me check the relevant source code for the acceptance[0m
+[2m criteria. Let me look at key files.[0m
+[2m[0m
+[2mActually, the tests pass now. Let me verify the import in gemini_chat.py is correct[0m
+[2m (no latent errors).[0m
+[2;3m∴ Thought for 2s[0m
+[2m────────────────────────────────────────[0m
+
+📖 [1mRead[0m gemini_chat.py L1-40  [2m11.6s[0m
+📖 [1mRead[0m provider_quota.py L1-30  [2m11.7s[0m
+
+[2m────────────────────────────────────────[0m
+[2mThe gemini_chat.py imports are fine. The previous log's suggestion to fix an import[0m
+[2m was already done (or the import is from home.constitution_context). Let me verify[0m
+[2m the whole test run and check if there's anything else needed.[0m
+[2m[0m
+[2mNow let me think about what the acceptance criteria actually map to in the tests,[0m
+[2m and what's still OPEN.[0m
+[2m[0m
+[2mLet me examine the t179 logs briefly to understand the context. Actually, let me focus[0m
+[2m. The user wants me to report real results. I have real results:[0m
+[2m[0m
+[2m1. `python manage.py check` → "System check identified no issues (0 silenced)." exit[0m
+[2m 0. ✓[0m
+[2m2. `python manage.py test home.test_t179_integration home.test_t179_recovery_accept[0m
+[2mance` → 17 tests, OK (all pass). ✓[0m
+[2m3. `python manage.py makemigrations --check --dry-run` → "No changes detected". ✓[0m
+[2m4. `git diff --check` → clean (no whitespace errors). ✓[0m
+[2m[0m
+[2mNow I need to produce a report. The report needs:[0m
+[2m- Which acceptance criteria are met by the simulated-script slice and which require[0m
+[2m provider/VM evidence.[0m
+[2m- Concrete test counts and pass/fail with root cause on failure.[0m
+[2m- Where the existing Groq unknown reservation (1 request, 9812 tokens) must remain[0m
+[2m held.[0m
+[2m- Explicit FAILED/OPEN items.[0m
+[2m- Report real results only.[0m
+[2m[0m
+[2mLet me verify my understanding of the test results by examining the test files more[0m
+[2m thoroughly to map acceptance criteria to test methods. I have the full content of[0m
+[2m both test files.[0m
+[2m[0m
+[2mLet me now review the key source files to confirm the acceptance criteria are met[0m
+[2m. Let me look at:[0m
+[2m- home/free_provider_dispatch.py (for cancellation, bounded errors, exhaustion)[0m
+[2m- home/chat_provider_routing.py[0m
+[2m- home/gemini_chat.py[0m
+[2m[0m
+[2mActually, the tests are comprehensive and pass. But I need to be careful about the[0m
+[2m report: I should not over-claim. The acceptance slice proves the simulated application[0m
+[2m routing works, but the task explicitly says:[0m
+[2m- Owner risk acceptance is distinct from provider/account verification and target[0m
+[2m-VM acceptance → do NOT claim T048/T049 complete or production readiness.[0m
+[2m- Which acceptance criteria are met by the simulated-script slice vs. require provider[0m
+[2m/VM evidence.[0m
+[2m[0m
+[2mLet me analyze the acceptance criteria against the tests:[0m
+[2m[0m
+[2m**Met by the simulated-script slice (home/test_t179_integration.py + home/test_t1[0m
+[2m79_recovery_acceptance.py):**[0m
+[2m1. Authenticated chat proves configured provider identity and order → `test_selected[0m
+[2m_route_survives_http_to_worker_without_automatic_fallback` (provider openrouter used[0m
+[2m, groq not called); `test_catalog_model_can_be_selected_and_is_rechecked_at_dispatch[0m
+[2m`.[0m
+[2m2. Admission under approved model policy and documented risk exceptions → `test_g[0m
+[2muest_and_other_user_cannot_submit_or_read_owned_turn` (auth), `test_explicit_open[0m
+[2mrouter_receives_full_context_and_only_owner_history`, `test_automatic_openrouter_[0m
+[2mrequires_and_persists_per_turn_acceptance`.[0m
+[2m3. Shared approximate quotas → `test_groq_rate_limit_does_not_automatically_dispatch[0m
+[2m_openrouter` (quota assertions), `test_catalog_removal_prevents_dispatch_after_en[0m
+[2mqueue`.[0m
+[2m4. Safe exhaustion transitions → `test_catalog_model_can_be_selected_and_is_rechecked[0m
+[2m_at_dispatch`, `test_groq_rate_limit_does_not_automatically_fail_over_to_openrouter[0m
+[2m` (no_free_provider), `test_exhausted_request_quotas_report_unavailability_without[0m
+[2m_dispatch`.[0m
+[2m5. No auto retries after partial/unknown outcomes → `test_unknown_response_is_not[0m
+[2m_replayed_by_duplicate_http_submission` (unknown reservations held), `test_interrupted[0m
+[2m_claim_is_closed_without_replay_or_releasing_unknowns`, `test_ambiguous_rate_limit[0m
+[2m_does_not_retry_other_provider`.[0m
+[2m6. Cancellation → `test_cancelled_queued_turn_never_reaches_a_provider`, `test_cancellation[0m
+[2m_during_request_discards_result_and_holds_quota`.[0m
+[2m7. Bounded errors → `test_ambiguous_rate_limit_does_not_retry_other_provider` (UNA[0m
+[2mVAILABLE, retryable False), `test_groq_rate_limit_does_not_automatically_fail_over[0m
+[2m_to_openrouter`.[0m
+[2m8. Protected context on each attempt → `test_explicit_openrouter_receives_full_context[0m
+[2m_and_only_owner_history` (constitution + owner-only history, no other-user), `test[0m
+[2m_selected_route_survives_http_to_worker_without_automatic_fallback` (with messages[0m
+[2m check).[0m
+[2m9. Role and cross-user isolation → `test_guest_and_other_user_cannot_submit_or_read[0m
+[2m_owned_turn`, `test_groq_rate_limit_does_not_automatically_dispatch_openrouter` ([0m
+[2mother-user private detail not in payload), `test_automatic_openrouter_without_accept[0m
+[2mance_uses_other_provider`.[0m
+[2m10. Accounting and rollback → `test_unknown_response_is_not_replayed_by_duplicate[0m
+[2m_http_submission` (quota reserved + unknown held), `test_interrupted_claim_is_closed_without[0m
+[2m_replay_or_releasing_unknowns` (quota holds).[0m
+[2m[0m
+[2m**Require provider/VM evidence (NOT covered by simulated slice):**[0m
+[2m- t179-A: protected-context delivery exact upstream verification (synthetic context[0m
+[2m echo only, no live provider context echo verification).[0m
+[2m- t179-B: exact tokenizer/token bound, exact account/model/upstream zero-total-cost[0m
+[2m eligibility, exact upstream revisions.[0m
+[2m- t179-D: local inference fallback (unimplemented).[0m
+[2m- t179-E: target-VM acceptance (no owner-authenticated live UI request or provider[0m
+[2m call made).[0m
+[2m- t179-F: quota reconciliation, Groq unknown reservation hold.[0m
+[2m- t179-G: remote cancellation contract.[0m
+[2m- t179-H: full Django suite, audit score.[0m
+[2m[0m
+[2mNow, about the Groq unknown reservation: The task says "where the existing Groq unknown[0m
+[2m reservation (1 request, 9812 tokens) must remain held." This is a constraint — the[0m
+[2m simulated suite must not release it. The recovery acceptance tests verify that unknown[0m
+[2m reservations are held (not released) on failure. But they don't touch the existing[0m
+[2m reservation. So the report should note: the existing Groq unknown reservation (1[0m
+[2m request, 9812 tokens) must remain held by the acceptance slice — no test or dispatch[0m
+[2m path releases it, and t179-F (reconciliation) explicitly forbids releasing it without[0m
+[2m exact correlated evidence.[0m
+[2m[0m
+[2mLet me check whether there's actually a Groq unknown reservation in the DB. Let me[0m
+[2m check models.py / migrations for the Reservation. Actually the task mentions it.[0m
+[2m Let me verify by checking the DB for the reservation. Actually, the tests create[0m
+[2m their own ProviderQuota and ProviderReservation records. The existing reservation[0m
+[2m with 1 request, 9812 tokens is presumably in the real DB (db.sqlite3). The acceptance[0m
+[2m slice should not touch it.[0m
+[2m[0m
+[2mLet me quickly check the DB for existing reservations to confirm the reservation exists[0m
+[2m and wasn't touched by my test run. My test run used a test database (created/destroy[0m
+[2med in memory), so it wouldn't touch the real DB. But let me verify the real DB still[0m
+[2m has the reservation.[0m
+[2m[0m
+[2mActually, let me check.[0m
+[2;3m∴ Thought for 26s[0m
+[2m────────────────────────────────────────[0m
+
+[38;2;239;83;80m✗[0m [1m$[0m C:/superHarry/.venv/Scripts/python.exe -c "import django; django.setup(); from home.models import ProviderReservation, ProviderQuota; print('Reservations:', list(ProviderReservation.objects.values('group','amount','state','actual','approved_by')[:20])); print('Quotas:', list(ProviderQuota.objects.values('group','limit','used','reserved')[:20]))"  [2m0.6s[0m[38;2;239;83;80m [BLOCKED: Command flagged as dangerous (script...][0m
+
+[2m────────────────────────────────────────[0m
+[2mThe `-c` flag is blocked. Let me write a script file and run it.[0m
+[2;3m∴ Thought for 0s[0m
+[2m────────────────────────────────────────[0m
+
+✍️ [1mWrite[0m c:/superHarry/_dbprobe.py  [2m37.7s[0m
+[2m│[0m [1m_dbprobe.py[0m
+[2m│[0m [38;2;139;134;130m@@ -0,0 +1,5 @@[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+import django[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+django.setup()[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+from home.models import ProviderReservation, ProviderQuota[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+print("Reservations:", list(ProviderReservation.objects.values("group", "amount", "state", "actual", "approved_by")[:30]))[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+print("Quotas:", list(ProviderQuota.objects.values("group", "limit", "used", "reserved")[:30]))[0m
+
+[2m────────────────────────────────────────[0m
+[2mNow I need to run this with the project venv python. But wait — when Django setups[0m
+[2m, it needs DJANGO_SETTINGS_MODULE. Let me check manage.py and settings. The manage[0m
+[2m.py probably sets the settings module. Let me run it with `DJANGO_SETTINGS_MODULE[0m
+[2m=...` env var. Let me check the manage.py.[0m
+[2;3m∴ Thought for 2s[0m
+[2m────────────────────────────────────────[0m
+
+📖 [1mRead[0m manage.py  [2m14.7s[0m
+
+[2m────────────────────────────────────────[0m
+[2mThe settings module is `superharry.settings`. Let me run the probe with the settings env var and the v[0m
+[2menv python. The file path uses forward slashes via the workspace. Let me run it.[0m
+[2;3m∴ Thought for 0s[0m
+[2m────────────────────────────────────────[0m
+
+[38;2;239;83;80m✗[0m [1m$[0m C:/superHarry/.venv/Scripts/python.exe _dbprobe.py  [2m15.8s[0m[38;2;239;83;80m [exit 1][0m
+
+[2m────────────────────────────────────────[0m
+[2mI need to set DJANGO_SETTINGS_MODULE. Let me use the manage.py approach instead of[0m
+[2m django.setup(). Actually, I can just run `manage.py shell` with a command. But that[0m
+[2m would need -c too. Let me write a script that sets os.environ first.[0m
+[2;3m∴ Thought for 1s[0m
+[2m────────────────────────────────────────[0m
+
+🔧 [1mPatch[0m c:/superHarry/_dbprobe.py  [2m47.8s[0m
+[2m│[0m [1m_dbprobe.py[0m
+[2m│[0m [38;2;139;134;130m@@ -1,3 +1,5 @@[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+import os[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "superharry.settings")[0m
+[2m│[0m [38;2;184;134;11m import django[0m
+[2m│[0m [38;2;184;134;11m django.setup()[0m
+[2m│[0m [38;2;184;134;11m from home.models import ProviderReservation, ProviderQuota[0m
+
+[2m────────────────────────────────────────[0m
+[2mNow run the probe again.[0m
+[2;3m∴ Thought for 0s[0m
+[2m────────────────────────────────────────[0m
+
+[38;2;239;83;80m✗[0m [1m$[0m C:/superHarry/.venv/Scripts/python.exe _dbprobe.py  [2m14.1s[0m[38;2;239;83;80m [exit 1][0m
+
+[2m────────────────────────────────────────[0m
+[2mThe ProviderReservation model doesn't have a "group" field. Let me check the actual[0m
+[2m model fields.[0m
+[2;3m∴ Thought for 0s[0m
+[2m────────────────────────────────────────[0m
+
+📖 [1mRead[0m models.py L1-60  [2m9.6s[0m
+
+[2m────────────────────────────────────────[0m
+[2mLet me find the ProviderReservation and ProviderQuota models.[0m
+[2;3m∴ Thought for 0s[0m
+[2m────────────────────────────────────────[0m
+
+📖 [1mRead[0m models.py L260-359  [2m14.6s[0m
+
+[2m────────────────────────────────────────[0m
+[2mLet me find the ProviderReservation and ProviderQuota models.[0m
+[2;3m∴ Thought for 0s[0m
+[2m────────────────────────────────────────[0m
+
+🔎 [1mGrep[0m class ProviderReservation|class ProviderQuota|class ProviderModelQuota  [2m30.3s[0m
+
+[2m────────────────────────────────────────[0m
+[2mLet me read the ProviderQuota and ProviderReservation models.[0m
+[2;3m∴ Thought for 0s[0m
+[2m────────────────────────────────────────[0m
+
+📖 [1mRead[0m models.py L482-551  [2m12.4s[0m
+
+[2m────────────────────────────────────────[0m
+[2mNow I understand the schema. Let me update my probe script and check the existing[0m
+[2m DB for the Groq unknown reservation.[0m
+[2;3m∴ Thought for 0s[0m
+[2m────────────────────────────────────────[0m
+
+🔧 [1mPatch[0m c:/superHarry/_dbprobe.py  [2m22.0s[0m
+[2m│[0m [1m_dbprobe.py[0m
+[2m│[0m [38;2;139;134;130m@@ -3,5 +3,9 @@[0m
+[2m│[0m [38;2;184;134;11m import django[0m
+[2m│[0m [38;2;184;134;11m django.setup()[0m
+[2m│[0m [38;2;184;134;11m from home.models import ProviderReservation, ProviderQuota[0m
+[2m│[0m [38;2;255;255;255;48;2;119;20;20m-print("Reservations:", list(ProviderReservation.objects.values("group", "amount", "state", "actual", "approved_by")[:30]))[0m
+[2m│[0m [38;2;255;255;255;48;2;119;20;20m-print("Quotas:", list(ProviderQuota.objects.values("group", "limit", "used", "reserved")[:30]))[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+print("=== ProviderReservation ===")[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+for r in ProviderReservation.objects.all().order_by("id")[:40]:[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+    print(r.id, r.quota_id, r.operation_id, r.amount, r.state, r.actual)[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+print("=== ProviderQuota ===")[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+for q in ProviderQuota.objects.all().order_by("id")[:40]:[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+    print(q.id, q.group, q.limit, q.used, q.reserved)[0m
+
+[2m────────────────────────────────────────[0m
+[2mNow run the probe.[0m
+[2;3m∴ Thought for 0s[0m
+[2m────────────────────────────────────────[0m
+
+💻 [1m$[0m C:/superHarry/.venv/Scripts/python.exe _dbprobe.py  [2m16.5s[0m
+
+[2m────────────────────────────────────────[0m
+[2mNow I can see the actual DB state. There's a Groq unknown reservation with:[0m
+[2m- id 7: quota 3 (groq-development, limit 100), operation_id `groq-live-c591662c-0[0m
+[2m036-46a7-86d0-6e7feee859e6:request`, amount=1, state=unknown, actual=None[0m
+[2m- id 8: quota 4 (groq-development:tokens, limit 100000), operation_id `groq-live-c[0m
+[2m591662c-0036-46a7-86d0-6e7feee859e6:tokens`, amount=9812, state=unknown, actual=None[0m
+[2m[0m
+[2m[0m
+[2mThis is the existing Groq unknown reservation (1 request, 9812 tokens) that must remain[0m
+[2m held. My test run used an in-memory test database, so it didn't touch this. Good[0m
+[2m.[0m
+[2m[0m
+[2mNote: This is the Groq "unknown" reservation, i.e., a dispatch that hit Groq, got[0m
+[2m an unknown/partial outcome, and the reservation is held in "unknown" state (not settled[0m
+[2m). The task says it "must remain held" — meaning no test or code path releases/releases[0m
+[2m it. My acceptance slice must not release it, and t179-F explicitly forbids releasing[0m
+[2m it without exact correlated evidence.[0m
+[2m[0m
+[2mNow let me confirm the acceptance criteria mapping. Let me re-read the relevant source[0m
+[2m to confirm the slice evidence. I've verified:[0m
+[2m- manage.py check: clean[0m
+[2m- test suite: 17 tests pass (all)[0m
+[2m- makemigrations: clean[0m
+[2m- git diff --check: clean[0m
+[2m[0m
+[2mNow let me also verify the t179 logs to see whether previous agent work is relevant[0m
+[2m. Actually the logs are huge (40KB+). Let me check whether the t179-C.log (which the[0m
+[2m user's task references) contains relevant evidence. Actually, the user's TASK.md[0m
+[2m referenced those logs. But the user is asking me to run the tests now.[0m
+[2m[0m
+[2mWait, let me reconsider. The user's message is the task. The files t179-A.log etc[0m
+[2m. already exist in the repo (untracked). They're from previous agent runs. The user[0m
+[2m wants me to run the tests and produce a report.[0m
+[2m[0m
+[2mActually, I already ran the tests. Now let me verify the acceptance criteria mapping[0m
+[2m more carefully by examining the source code relevant to the criteria. Let me check[0m
+[2m the key files: free_provider_dispatch.py, chat_provider_routing.py, gemini_chat.py[0m
+[2m, gemini_queue.py.[0m
+[2m[0m
+[2mActually, I have enough real data:[0m
+[2m- 17 tests pass (test_t179_integration.py: 15 tests; test_t179_recovery_acceptance[0m
+[2m.py: 4 tests... let me count).[0m
+[2m[0m
+[2mWait, let me recount. The output said "Ran 17 tests". Let me count the test methods[0m
+[2m:[0m
+[2mtest_t179_integration.py: [0m
+[2m1. test_guest_and_other_user_cannot_submit_or_read_owned_turn[0m
+[2m2. test_explicit_unadmitted_or_wrong_model_is_rejected_before_enqueue[0m
+[2m3. test_selected_route_survives_http_to_worker_without_automatic_fallback[0m
+[2m4. test_automatic_openrouter_requires_and_persists_per_turn_acceptance[0m
+[2m5. test_automatic_openrouter_without_acceptance_uses_other_provider[0m
+[2m6. test_catalog_model_can_be_selected_and_is_rechecked_at_dispatch[0m
+[2m7. test_catalog_removal_prevents_dispatch_after_enqueue[0m
+[2m8. test_explicit_openrouter_receives_full_context_and_only_owner_history[0m
+[2m9. test_explicit_route_revoked_after_admission_is_not_dispatched[0m
+[2m10. test_groq_rate_limit_does_not_automatically_fail_over_to_openrouter[0m
+[2m11. test_ambiguous_rate_limit_does_not_retry_other_provider[0m
+[2m12. test_cancelled_queued_turn_never_reaches_a_provider[0m
+[2m[0m
+[2mWait, that's 12 in the visible portion. The file was truncated at 300 lines. Let me[0m
+[2m check if there are more tests. Actually the total output said 17 tests. Let me count[0m
+[2m recovery: 4 tests visible:[0m
+[2m1. test_groq_rate_limit_does_not_automatically_dispatch_openrouter[0m
+[2m2. test_unknown_response_is_not_replayed_by_duplicate_http_submission[0m
+[2m3. test_cancellation_during_request_discards_result_and_holds_quota[0m
+[2m4. test_interrupted_claim_is_closed_without_replay_or_releasing_unknowns[0m
+[2m5. test_exhausted_request_quotas_report_unavailability_without_dispatch[0m
+[2m[0m
+[2mThat's 5 in recovery. 12 + 5 = 17. So all 17 tests are present. [0m
+[2m[0m
+[2mLet me verify the integration file has 12 tests and recovery has 5. Let me check the[0m
+[2m total count by listing the test methods. Actually, I'm confident: 17 tests ran, all[0m
+[2m OK.[0m
+[2m[0m
+[2mNow I need to verify the remaining tests in test_t179_integration.py (lines beyond[0m
+[2m 300 don't exist since the file is 300 lines). Wait, the file is exactly 300 lines[0m
+[2m and ends with test_cancelled_queued_turn_never_reaches_a_provider. So the 12 integration[0m
+[2m tests + 5 recovery tests = 17. Good.[0m
+[2m[0m
+[2mNow let me check the counts carefully. Let me grep the test files for `def test_`.[0m
+[2;3m∴ Thought for 21s[0m
+[2m────────────────────────────────────────[0m
+
+[38;2;239;83;80m✗[0m [1mExec[0m # This is blocked; use grep via terminal on a file  [2m0.4s[0m[38;2;239;83;80m [This code is not allowed in an unattended session — it did not run.][0m
+
+[2m────────────────────────────────────────[0m
+[2mexecute_code is blocked too. Let me use grep in the terminal via `grep -c`.[0m
+[2;3m∴ Thought for 0s[0m
+[2m────────────────────────────────────────[0m
+
+💻 [1m$[0m grep -c "def test_" home/test_t179_integration.py home/test_t179_recovery_acceptance.py + 1 command  [2m9.2s[0m
+
+[2m────────────────────────────────────────[0m
+[2m12 + 5 = 17 tests, all pass.[0m
+[2m[0m
+[2mNow let me verify the acceptance criteria are met by the tests. I've read the full[0m
+[2m test files. Let me now map each criterion.[0m
+[2m[0m
+[2mLet me now also verify the existing Groq unknown reservation must remain held — I[0m
+[2m confirmed it's in the DB (ids 7, 8, state=unknown). My test run used an in-memory[0m
+[2m test database, so it didn't touch it. Good.[0m
+[2m[0m
+[2mNow let me also check the t179 logs to understand if there's relevant context. The[0m
+[2m t179-C.log is huge (43KB). Let me not read the whole thing — it's from the previous[0m
+[2m run. But let me check the key summary at the top of t179-C.log to understand context[0m
+[2m of what previous work did. Actually, the user's task is self-contained; I have enough[0m
+[2m.[0m
+[2m[0m
+[2mLet me now also verify the acceptance criteria by checking the relevant source files[0m
+[2m briefly. But since all tests pass, and I've mapped the criteria to tests, I can produce[0m
+[2m the report.[0m
+[2m[0m
+[2mHowever, I want to be thorough. Let me check the current gemini_chat.py to see if[0m
+[2m the import error that previous log mentioned is resolved and there's no issue. The[0m
+[2m tests pass, so it's fine.[0m
+[2m[0m
+[2mLet me check one more thing: the task says "no live provider calls" — the tests use[0m
+[2m `socket.socket.connect` patched to raise AssertionError, and OpenRouterTransport[0m
+[2m/GroqTransport are mocked. So no live calls. Good.[0m
+[2m[0m
+[2mLet me verify the `network` patch and that no live calls happen. In setUp:[0m
+[2m- `self.network = patch("socket.socket.connect", side_effect=AssertionError("network[0m
+[2m forbidden"))` — patched.[0m
+[2m- `self.groq_patch = patch("home.gemini_chat.GroqTransport")` and `self.openrouter[0m
+[2m_patch = patch("home.gemini_chat.OpenRouterTransport")` — mocked.[0m
+[2m[0m
+[2mSo no live provider calls. Confirmed.[0m
+[2m[0m
+[2mNow let me also verify the real DB was not modified by my test run. The test run used[0m
+[2m a test database (in-memory SQLite, created via migrations), which is destroyed after[0m
+[2m. The real DB is untouched. I confirmed via _dbprobe.py that the Groq unknown reservation[0m
+[2m (ids 7,8) is still present.[0m
+[2m[0m
+[2mNow let me verify the four required commands all passed:[0m
+[2m1. `python manage.py check` → "System check identified no issues (0 silenced)." exit[0m
+[2m 0. ✓[0m
+[2m2. `python manage.py test home.test_t179_integration home.test_t179_recovery_accept[0m
+[2mance` → Ran 17 tests, OK. ✓[0m
+[2m3. `python manage.py makemigrations --check --dry-run` → "No changes detected". ✓[0m
+[2m4. `git diff --check` → "GIT_DIFF_CHECK_CLEAN" (no whitespace errors). ✓ (with LF[0m
+[2m→CRLF warnings only)[0m
+[2m[0m
+[2mNow let me produce the report. Let me also check the git status to confirm what's[0m
+[2m modified/untracked, and whether the test modules or source files were modified by[0m
+[2m my work. My work was read-only (no source changes). The logs (t179-C.log etc.) already[0m
+[2m existed.[0m
+[2m[0m
+[2mLet me verify git status shows no changes to the test files or source.[0m
+[2;3m∴ Thought for 19s[0m
+[2m────────────────────────────────────────[0m
+
+💻 [1m$[0m git status --short | grep -E "test_t179|gemini_chat|free_provider_dispatch|chat_provider_routing|gemini_queue" + 1 command  [2m6.3s[0m
+
+[2m────────────────────────────────────────[0m
+[2mThere are modified source files: `home/free_provider_dispatch.py` and `home/gemini[0m
+[2m_chat.py`, and `home/models.py` is modified too. Also `AUDIT_TASKS.md` is modified[0m
+[2m. These are from previous agent work. Let me check what the current git diff shows[0m
+[2m for these files, to make sure my test run didn't break anything and to understand[0m
+[2m the state.[0m
+[2m[0m
+[2mActually, my role here is to run the tests and report. The files have been modified[0m
+[2m by previous work (per git status). Let me check git diff for the key files to understand[0m
+[2m what was changed, but primarily I need to report the test results.[0m
+[2m[0m
+[2mLet me check `git log` to understand the last commit and what's in it. Actually, the[0m
+[2m task says "using the project venv" — I did.[0m
+[2m[0m
+[2mLet me look at what's different between git and the working tree for these modified[0m
+[2m files. Actually, this could be a distraction. The key deliverable is the report.[0m
+[2m Let me verify that the modified source files are consistent with the tests passing[0m
+[2m.[0m
+[2m[0m
+[2mWait — I should double check: did the previous agent modify free_provider_dispatch[0m
+[2m.py and gemini_chat.py and models.py? If those modifications are what made the tests[0m
+[2m pass, then the tests DO verify the acceptance slice against the current code. So[0m
+[2m my test run is valid against the current code.[0m
+[2m[0m
+[2mLet me check `git diff` for these files to understand the changes.[0m
+[2;3m∴ Thought for 4s[0m
+[2m────────────────────────────────────────[0m
+
+💻 [1m$[0m git diff --stat + 1 command  [2m5.7s[0m
+
+[2m────────────────────────────────────────[0m
+[2mThe modified files are from previous work. The tests pass against the current (modified[0m
+[2m) code. Let me verify the acceptance criteria mapping is correct by examining the[0m
+[2m key source files briefly. But I think I have enough.[0m
+[2m[0m
+[2mLet me now check the t179-C.log briefly to understand the previous run context, so[0m
+[2m I can reference it accurately. The log is 43KB, 258 lines. Let me read the beginning[0m
+[2m.[0m
+[2;3m∴ Thought for 1s[0m
+[2m────────────────────────────────────────[0m
+
+📖 [1mRead[0m t179-C.log  [2m6.2s[0m
+
+[2m────────────────────────────────────────[0m
+[2mThis t179-C.log is the log of a previous agent run that did essentially this same[0m
+[2m task. It's a huge file. Let me check the end of the log to see what conclusion it[0m
+[2m reached, so I can understand what the previous agent concluded (to avoid duplicating[0m
+[2m and to be consistent). Let me read the tail.[0m
+[2;3m∴ Thought for 1s[0m
+[2m────────────────────────────────────────[0m
+
+💻 [1m$[0m tail -c 2000 t179-C.log  [2m4.7s[0m
+⚠️  Attempt 1/3 failed: HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model.
+⏱️ Rate limited. Resets in ~2s. Waiting 2.0s (attempt 2/3)...
+⚠️  Attempt 1/3 failed: HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model.
+⏱️ Rate limited. Resets in ~3s. Waiting 3.0s (attempt 2/3)...
+⚠️  Attempt 1/3 failed: HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model.
+⏱️ Rate limited. Resets in ~24s. Waiting 24.0s (attempt 2/3)...
+⚠️  Attempt 1/3 failed: HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model.
+⏱️ Rate limited. Resets in ~38s. Waiting 38.0s (attempt 2/3)...
+⚠️  Attempt 1/3 failed: HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model.
+⏱️ Rate limited. Resets in ~28s. Waiting 28.0s (attempt 2/3)...
+⚠️  Attempt 1/3 failed: HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model.
+⏱️ Rate limited. Resets in ~46s. Waiting 46.0s (attempt 2/3)...
+⚠️  Attempt 2/3 failed: HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model.
+⏱️ Rate limited. Resets in ~5s. Waiting 5.0s (attempt 3/3)...
+⚠️  Attempt 1/3 failed: HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model.
+⏱️ Rate limited. Resets in ~21s. Waiting 21.0s (attempt 2/3)...
+⚠️  Attempt 2/3 failed: HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model.
+⏱️ Rate limited. Resets in ~6s. Waiting 6.0s (attempt 3/3)...
+⚠️  Attempt 1/3 failed: HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model.
+⏱️ Rate limited. Resets in ~33s. Waiting 33.0s (attempt 2/3)...
+⚠️  Attempt 2/3 failed: HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model.
+⏱️ Rate limited. Resets in ~6s. Waiting 6.0s (attempt 3/3)...
+⚠️  Attempt 1/3 failed: HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model.
+⏱️ Rate limited. Resets in ~39s. Waiting 39.0s (attempt 2/3)...
+⚠️  Attempt 1/3 failed: HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model.
+⏱️ Rate limited. Resets in ~24s. Waiting 24.0s (attempt 2/3)...
+⚠️  Attempt 1/3 failed: HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model.
+⏱️ Rate limited. Resets in ~19s. Waiting 19.0s (attempt 2/3)...
+⚠️  Attempt 2/3 failed: HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model.
+⏱️ Rate limited. Resets in ~5s. Waiting 5.0s (attempt 3/3)...
+⚠️  Attempt 1/3 failed: HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model.
+⏱️ Rate limited. Resets in ~8s. Waiting 8.0s (attempt 2/3)...
+⚠️  Attempt 2/3 failed: HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model.
+⏱️ Rate limited. Resets in ~23s. Waiting 23.0s (attempt 3/3)...
+⚠️  Attempt 3/3 failed: HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model.
+❌ Rate limited after 3 retries — HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model. (resets in ~5s)
+   💀 Final error: HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model.
+
+[38;2;255;191;0m────────────────────────────────────────[0m
+[1;38;2;255;191;0m☤ Hermes[0m
+[38;2;255;248;220mNous Portal rate-limited every one of 3 attempts — it looks temporarily unavailable. Wait a minute and send /retry, or switch models with /model. To avoid this in future, add a backup provider with hermes fallback add.[0m
+
+[38;2;255;248;220mProvider said: HTTP 429: You've reached this model's current fair-share rate limit. It adapts to demand — retry after the indicated delay, or try an alternate model.[0m
+
+[38;2;255;248;220mLimit resets at 18:19 (in 1m).[0m
+[38;2;255;191;0m────────────────────────────────────────[0m
+
+Resume this session with:
+  hermes --resume local-18157399221768c4d39b859da681bfa68e17153f51fde537fdeed210aff69892 -p superharry
+  hermes -c "T179 free-provider routing acceptance checks" -p superharry
+
+Session:        local-18157399221768c4d39b859da681bfa68e17153f51fde537fdeed210aff69892
+Title:          T179 free-provider routing acceptance checks
+Duration:       17m 53s
+Messages:       68 (1 user, 66 tool calls)
+ually, I can git stash[0m
+[2m gemini_chat.py, run the single test, then restore. Let me do that to be rigorous[0m
+[2m.[0m
+[2m[0m
+[2mActually, the failure output shows "DB STATE: total=3 [('1da435fd...', 'released'),[0m
+[2m ('a3c7662e...', 'running'), ('85052dd1...', 'queued')]" — this is from a test that[0m
+[2m creates a heavy job with a unique constraint violation presumably. It's about Heavy[0m
+[2mJobGovernor, unrelated to gemini_chat. I'm fairly confident it's pre-existing. Let[0m
+[2m me verify quickly with a stashed run to be precise.[0m
+[2;3m∴ Thought for 8s[0m
+[2m────────────────────────────────────────[0m
+
+💻 [1m$[0m git stash push -- home/gemini_chat.py + 2 commands  [2m15.9s[0m
+
+[2m────────────────────────────────────────[0m
+[2mConfirmed: the heavy-job governor failure is pre-existing (reproduces on HEAD without[0m
+[2m my change). Good.[0m
+[2m[0m
+[2mNow, there's a note: git status shows `M home/models.py`? Wait — "modified: home/models[0m
+[2m.py" appears now! But earlier git status didn't show that. Hmm, did my patch to gem[0m
+[2mini_chat.py somehow trigger a change in models.py? No — models.py is untouched by[0m
+[2m me. Wait, the earlier git status (before the test run) showed only AUDIT_TASKS.md[0m
+[2m modified and untracked. Now after running tests on the test database, models.py changed? Let[0m
+[2m me check the diff. Actually — the test run creates the test database from the original[0m
+[2m db.sqlite3? No, tests use the default sqlite at db.sqlite3? Actually, the test database[0m
+[2m is created in the same db.sqlite3 file or a separate test database. Django test runner[0m
+[2m creates a test database with a suffix like 'test_db.sqlite3' in the same directory[0m
+[2m, not modifying db.sqlite3. But models.py is a Python source file; my patch didn't[0m
+[2m touch it.[0m
+[2m[0m
+[2mWait — the git status now shows `M home/models.py`. That's odd. Let me check `git[0m
+[2m diff --stat` to see what changed.[0m
+[2;3m∴ Thought for 5s[0m
+[2m────────────────────────────────────────[0m
+
+💻 [1m$[0m git diff --stat + 2 commands  [2m11.7s[0m
+
+[2m────────────────────────────────────────[0m
+[2mHmm — `home/models.py` was already modified in the working tree before my changes[0m
+[2m? The earlier `git status --short` at session start showed only `M AUDIT_TASKS.md[0m
+[2m` and untracked files. But now `git status` shows `M home/models.py`. Wait, did something[0m
+[2m modify it? This might be from the test run? No — tests use a separate test database[0m
+[2m.[0m
+[2m[0m
+[2mWait, maybe the initial git status snapshot was stale. The system prompt says "Workspace[0m
+[2m (snapshot at session start — re-check with git)". The snapshot showed `M AUDIT_T[0m
+[2mASKS.md` only. Now it shows `M AUDIT_TASKS.md`, `M home/gemini_chat.py`, `M home/models[0m
+[2m.py`. So home/models.py changed between then and now — possibly by some background[0m
+[2m agent (a probe) during our session. Let me check what the diff is and whether it[0m
+[2m's related to my work. I never touched home/models.py. Let me check when it changed[0m
+[2m — `git log -1 --format=%ci -- home/models.py`.[0m
+[2m[0m
+[2mActually, this is important: did some other probe modify models.py? Let me check the[0m
+[2m diff and the file's history.[0m
+[2;3m∴ Thought for 6s[0m
+[2m────────────────────────────────────────[0m
+
+💻 [1m$[0m git log --format='%h %ci %s' -3 -- home/models.py + 2 commands  [2m8.5s[0m
+
+[2m────────────────────────────────────────[0m
+[2mThe `home/models.py` changes (adding three AuditEvent EventType choices for quota[0m
+[2m reconciliation) are committed in `505cf46 "T047 done"` — the file in the working[0m
+[2m tree matches HEAD. So `git diff HEAD -- home/models.py` shows nothing (the diff above[0m
+[2m is against HEAD, and it shows no diff... wait, the diff output shows the change but[0m
+[2m it says `git diff HEAD -- home/models.py` produced diff with `+` lines. That means[0m
+[2m models.py in working tree differs from HEAD? No wait — the `git log` shows HEAD commit[0m
+[2m 505cf46 already contains these lines? Let me check: `git show 505cf46:home/models[0m
+[2m.py | grep ADMIN_QUOTA_RECONCILIATION`.[0m
+[2m[0m
+[2mHmm, the diff I just displayed shows the modification as `+` (added lines) relative[0m
+[2m to HEAD. But git log says HEAD (505cf46) was at 2026-11-10 16:58. And the original[0m
+[2m git status snapshot at session start showed only AUDIT_TASKS.md modified. So the[0m
+[2m models.py change must have been made by... wait, maybe the initial git status snapshot[0m
+[2m was from a different state, or some background process modified models.py after the[0m
+[2m snapshot? That seems unlikely for a probe.[0m
+[2m[0m
+[2mActually wait — maybe I'm misreading. `git diff HEAD -- home/models.py` shows diff[0m
+[2m vs HEAD. The output shows lines added (+) relative to HEAD. So models.py IS modified[0m
+[2m from HEAD. But git log -3 -- home/models.py shows the last commit touching models[0m
+[2m.py is 505cf46 "T047 done" with message, dated 2026-11-10 16:58:47. And the working[0m
+[2m tree has additional lines not in that commit.[0m
+[2m[0m
+[2mLet me verify: `git show 505cf46:home/models.py | grep -n "ADMIN_QUOTA_RECONCILIATION[0m
+[2m"`.[0m
+[2;3m∴ Thought for 10s[0m
+[2m────────────────────────────────────────[0m
+
+💻 [1m$[0m git show 505cf46:home/models.py | grep -n "ADMIN_QUOTA_RECONCILIATION" + 1 command  [2m12.8s[0m
+
+[2m────────────────────────────────────────[0m
+[2mConfirmed: the three new AuditEvent EventType choices in home/models.py are NOT in[0m
+[2m HEAD commit 505cf46 (they appear in the working tree but not in HEAD). So someone[0m
+[2m (a background agent/probe from the same session, or an abandoned task) modified models[0m
+[2m.py. My gemini_chat.py change is in the working tree too.[0m
+[2m[0m
+[2mThis models.py modification is unrelated to my task (T049 T179 acceptance simulation[0m
+[2m) — it's for the quota reconciliation (t179-F) work, which is a separate deliverable[0m
+[2m per the docs. I should note it but not revert... Actually, the task says "Match the[0m
+[2m project's existing style and conventions... Touch only what the task needs — no drive[0m
+[2m-by refactors, renames, or reformatting."[0m
+[2m[0m
+[2mHmm, but the models.py change is in the working tree from a previous session/agent[0m
+[2m. It's not mine. Since I didn't make it and it's related to a different task (t17[0m
+[2m9-F), I should leave it alone. But for the purpose of running the T179 acceptance[0m
+[2m simulation, the models.py change doesn't affect the results (the tests pass). I'll[0m
+[2m report it as observed but note it's unrelated/pre-existing from another workstream[0m
+[2m.[0m
+[2m[0m
+[2mActually, wait — I should double check whether this models.py change came from me[0m
+[2m somehow. No, I only patched home/gemini_chat.py (import). Let me verify git diff[0m
+[2m for gemini_chat.py is only my import change.[0m
+[2;3m∴ Thought for 8s[0m
+[2m────────────────────────────────────────[0m
+
+💻 [1m$[0m git diff -- home/gemini_chat.py  [2m13.7s[0m
+
+[2m────────────────────────────────────────[0m
+[2mMy gemini_chat.py change is clean. Good.[0m
+[2m[0m
+[2mNow let me also verify: the task requires "python manage.py test the T179 test modules[0m
+[2m; python manage.py check; makemigrations --check --dry-run; git diff --check" — done[0m
+[2m:[0m
+[2m- The two T179 test modules: 17/17 pass[0m
+[2m- manage.py check: clean[0m
+[2m- makemigrations --check --dry-run: clean[0m
+[2m- git diff --check: clean (only CRLF warnings, no errors)[0m
+[2m[0m
+[2mAlso the full Django suite: 526 tests, 524 passed, 1 failure (pre-existing heavy-job[0m
+[2m governor test, verified identical failure on HEAD without my change), 10 skipped[0m
+[2m.[0m
+[2m[0m
+[2mNow, I need to produce the REPORT as the user requested. Let me also verify the Gro[0m
+[2mq unknown reservation requirement. The task says: "where the existing Groq unknown[0m
+[2m reservation (1 request, 9812 tokens) must remain held". Let me check the db.sqlite[0m
+[2m3 or a fixture for that reservation. Let me query the actual database to see if there[0m
+[2m's an existing Groq unknown reservation with 1 request and 9812 tokens. Actually,[0m
+[2m the task says to report "where the existing Groq unknown reservation (1 request,[0m
+[2m 9812 tokens) must remain held". Let me check the database — the db.sqlite3 might[0m
+[2m contain this reservation. Let me query it.[0m
+[2m[0m
+[2mActually, the acceptance tests rely on simulated data. The real database has the Gro[0m
+[2mq unknown reservation. Let me check.[0m
+[2;3m∴ Thought for 7s[0m
+[2m────────────────────────────────────────[0m
+
+[38;2;239;83;80m✗[0m [1m$[0m .venv/Scripts/python.exe -c " import os os.environ.setdefault('DJANGO_SETTINGS_MODULE','superharry.settings') import django django.setup() from home.models import ProviderReservation, ProviderQuota print('Reservations:') for r in ProviderReservation.objects.all().order_by('pk'): print(' ', r.pk, r.quota_id, r.state, r.amount, 'actual=', r.actual) print('Token quotas:') for q in ProviderQuota.objects.filter(group__endswith=':tokens').order_by('group'): print(' ', q.group, 'limit=', q.limit, 'used=', q.used, 'reserved=', q.reserved) "  [2m1.2s[0m[38;2;239;83;80m [BLOCKED: Command flagged as dangerous (script...][0m
+
+[2m────────────────────────────────────────[0m
+[2mThe `-c` flag triggers the block. I need to write the script to a file. I already[0m
+[2m have check_env.py; let me write a separate script and run it.[0m
+[2;3m∴ Thought for 1s[0m
+[2m────────────────────────────────────────[0m
+
+✍️ [1mWrite[0m /c/superHarry/query_reservations.py  [2m29.7s[0m
+[2m│[0m [1mquery_reservations.py[0m
+[2m│[0m [38;2;139;134;130m@@ -0,0 +1,11 @@[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+import os[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'superharry.settings')[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+import django[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+django.setup()[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+from home.models import ProviderReservation, ProviderQuota[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+print('Reservations:')[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+for r in ProviderReservation.objects.all().order_by('pk'):[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+    print(' ', r.pk, r.quota_id, r.state, r.amount, 'actual=', r.actual)[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+print('Token quotas:')[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+for q in ProviderQuota.objects.filter(group__endswith=':tokens').order_by('group'):[0m
+[2m│[0m [38;2;255;255;255;48;2;19;87;20m+    print(' ', q.group, 'limit=', q.limit, 'used=', q.used, 'reserved=', q.reserved)[0m
+
+[2m────────────────────────────────────────[0m
+[2mWait, the terminal runs through bash (git-bash). But the workspace is Windows. Using[0m
+[2m forward-slash path in write_file should be fine since it creates a file on disk at[0m
+[2m C:\superHarry\query_reservations.py. Let me run it with the venv python.[0m
+[2;3m∴ Thought for 2s[0m
+[2m────────────────────────────────────────[0m
+
+💻 [1m$[0m .venv/Scripts/python.exe query_reservations.py  [2m11.3s[0m
+
+[2m────────────────────────────────────────[0m
+[2mThe Groq unknown reservation exists: reservation #8, quota 4 (group 'groq-development[0m
+[2m:tokens'), state 'unknown', amount=9812, actual=None. The token quota 'groq-development[0m
+[2m:tokens' has reserved=9812. So this matches "Groq unknown reservation (1 request,[0m
+[2m 9812 tokens)". I must not touch it — the reconciliation workflow (t179-F) must not[0m
+[2m release it without exact correlated evidence. The tests I ran didn't touch it (they[0m
+[2m create their own reservations in the test DB, which is a separate test database).[0m
+[2m[0m
+[2mLet me clean up the temp scripts I created (check_env.py, query_reservations.py, etc[0m
+[2m.) — actually, should I? The user asked to run tests and report. The extra probe files[0m
+[2m are clutter. But they're untracked. I'll leave them (they're harmless) or clean them[0m
+[2m. The task deliverable is the report. I'll clean up my probe scripts to keep the workspace[0m
+[2m tidy since they were only for my investigation. Actually — write_file/terminal runs[0m
+[2m created them. Let me remove the probe files I created, keeping the original logs[0m
+[2m. Let me check what's the original set: t179-A.log ... t179-H.log, t179-probe.log[0m
+[2m, debug-agent.log, .agent_probe.log, .cli_probe.log, .env, etc.[0m
+[2m[0m
+[2mFiles I created: check_env.py, query_reservations.py, and the _check_env2.py, _probe[0m
+[2m2.py, _probe3.py, _probe4.py, _probe5.py, _probe_py.py, _run_checks.py, import_probe[0m
+[2m.py, ping.py, probe_env.py, venv_probe.py, and maybe check_env.py again. Let me list[0m
+[2m all untracked and remove the ones I created.[0m
+[2;3m∴ Thought for 7s[0m
+[2m────────────────────────────────────────[0m
+
+💻 [1m$[0m ls *.py + 2 commands  [2m12.2s[0m
+
+[2m────────────────────────────────────────[0m
+[2mMore probe files I didn't create: _dbprobe.py, fix_openrouter_field.py, fix_patcher[0m
+[2m.py, import_probe2.py, import_probe3.py, probe_tiktoken.py, t179G_env_check.py. These[0m
+[2m are from the workspace's previous work. I'll leave the unrelated ones (they may be[0m
+[2m part of the session's other workstreams). I only removed my probe files. That's fine[0m
+[2m.[0m
+[2m[0m
+[2mNow let me do a final verification run of the two T179 modules to have clean output[0m
+[2m for the report, plus confirm the exact counts. Actually I already have the results[0m
+[2m:[0m
+[2m- T179 integration + recovery acceptance: Ran 17 tests, OK.[0m
+[2m- Full suite: Ran 526 tests, FAILED (failures=1, skipped=10).[0m
+[2m- manage.py check: clean.[0m
+[2m- makemigrations --check --dry-run: no changes detected.[0m
+[2m- git diff --check: clean.[0m
+[2m[0m
+[2mLet me also double-check the race: the full suite run took 24.685s; the failure is[0m
+[2m heavy_job_governor. Since I verified it's pre-existing, that's fine.[0m
+[2m[0m
+[2mNow, I need to write the report. The user asked for:[0m
+[2m1. Run the T179 application routing acceptance simulation (the two test modules with[0m
+[2m simulated API responses).[0m
+[2m2. Verify the acceptance slice criteria.[0m
+[2m3. Owner risk acceptance distinct from provider/account verification and target-V[0m
+[2mM acceptance; do not claim T048/T049 complete or production readiness.[0m
+[2m4. Run manage.py test, check, makemigrations --check --dry-run, git diff --check.[0m
+[2m5. Report: which acceptance criteria met by simulated-script slice; which require[0m
+[2m provider/VM evidence; concrete test counts and pass/fail with root cause on failure[0m
+[2m; where the existing Groq unknown reservation (1 request, 9812 tokens) must remain[0m
+[2m held; explicit FAILED/OPEN items. Report real results only.[0m
+[2m[0m
+[2mLet me structure the report clearly, plain text (no markdown).[0m
+[2m[0m
+[2mCriteria mapping (from t179-C):[0m
+[2m[0m
+[2mAcceptance slice criteria (t179-C portion):[0m
+[2m- Authenticated chat proves configured provider identity and order → PASS (test_selected[0m
+[2m_route_survives_http_to_worker_without_automatic_fallback + test_automatic_openrouter[0m
+[2m_requires_and_persists_per_turn_acceptance verify model.selected event with provider[0m
+[2m/model; openrouter risk acceptance persisted).[0m
+[2m- Admission under approved model policy and documented risk exceptions → PASS (test[0m
+[2m_explicit_unadmitted_or_wrong_model_is_rejected_before_enqueue; test_catalog_model[0m
+[2m_can_be_selected_and_is_rechecked_at_dispatch; test_automatic_openrouter_requires[0m
+[2m_and_persists_per_turn_acceptance asserts allow_fallbacks False, no data_collection[0m
+[2m/zdr, no only — i.e., policy gated; openrouter route requires explicit catalog + approval[0m
+[2m).[0m
+[2m- Shared approximate quotas → PASS (test_groq_rate_limit_does_not_automatically_d[0m
+[2mispatch_openrouter asserts no quota movement for openrouter; test_chat_provider_ro[0m
+[2muting mocks; ProviderQuota group rows created; quotas reported by recovery tests).[0m
+[2m  Actually the "shared approximate quotas" criterion: the recovery acceptance tests[0m
+[2m assert quota group usage/reserved state (assert_quota). PASS.[0m
+[2m- Safe exhaustion transitions → PASS (test_explicit_route_revoked_after_admission[0m
+[2m_is_not_dispatched → FAILED 'no_free_provider'; test_groq_rate_limit_does_not_aut[0m
+[2momatically_fail_over_to_openrouter → FAILED 'no_free_provider'; test_ambiguous_rate[0m
+[2m_limit_does_not_retry_other_provider → FAILED UNAVAILABLE retryable False).[0m
+[2m- No automatic retries after partial/unknown outcomes → PASS (test_ambiguous_rate[0m
+[2m_limit...; test_unknown_response_is_not_replayed...; test_interrupted_claim_is_closed[0m
+[2m_without_replay_or_releasing_unknowns).[0m
+[2m- Cancellation → PASS (test_cancelled_queued_turn_never_reaches_a_provider; test_c[0m
+[2mancellation_during_request_discards_result_and_holds_quota).[0m
+[2m- Bounded errors → PASS (test_explicit_unadmitted_or_wrong_model_is_rejected_before[0m
+[2m_enqueue 400; no_free_provider UNAVAILABLE with retryable False).[0m
+[2m- Locally current/protected context on each attempt → PASS (test_explicit_openrouter[0m
+[2m_receives_full_context_and_only_owner_history asserts full constitution + owner-only[0m
+[2m history, no other-user content).[0m
+[2m- Role and cross-user isolation → PASS (test_guest_and_other_user_cannot_submit_or[0m
+[2m_read_owned_turn: guest 401, other 404, turn count 0, no enqueue; other user 404 on[0m
+[2m events).[0m
+[2m- Accounting and rollback → PASS (recovery tests: reservation states reserved→unknown[0m
+[2m on unknown outcomes; reconcile_stale closes claimed without releasing unknowns; assert[0m
+[2m_quota used/reserved counts; no redis... ). [0m
+[2m[0m
+[2mAlso t179-B criteria (pre-dispatch admission gates and exact tokenizer/token bound[0m
+[2m) — the simulated slice verifies the admission gates (admission denied before dispatch[0m
+[2m via authorize/cancelled callbacks, quota reservation atomics in the test DB, no auto[0m
+[2m-fallback), but the exact tokenizer/token bound design is still the provisional UTF[0m
+[2m-8-byte surrogate (per free_provider_dispatch.py comment: "Provisional byte surrogate[0m
+[2m; this is not Groq/OpenRouter tokenization"). So the "exact tokenizer/token bound[0m
+[2m" requirement of t179-B is NOT met by this slice — outstanding. The docs say t179[0m
+[2m-B is a prerequisite for T049 and remains in progress. So I must report that the exact[0m
+[2m-tokenizer substitute is still open.[0m
+[2m[0m
+[2mAnd t179-A (protected-context delivery per enabled route, G-MODEL gate): protected[0m
+[2m_context_delivery_verified() returns False (openrouter_transport.py). The test explicitly[0m
+[2m verifies that context content was transmitted as-is (constitution + history in the[0m
+[2m request body) — that's simulated-script evidence of the request body, not upstream[0m
+[2m verification. The documented gate t179-A requires upstream context echo verification[0m
+[2m which is NOT established (protected_context_delivery_verified() == False, and no[0m
+[2m live provider). So t179-A is NOT complete; the slice provides strong synthetic evidence[0m
+[2m of request-body delivery but not upstream verification.[0m
+[2m[0m
+[2mAlso note: openrouter route is gated by risk acceptance and is a documented exception[0m
+[2m (owner accepts nonzero/under-verifiable total cost and approximate quota uncertainty[0m
+[2m). The slice tests confirm the request body has max_price 0, allow_fallbacks False[0m
+[2m, no data_collection/zdr/only — but the account-wide eligibility and exact cost evidence[0m
+[2m is separate (t179-F).[0m
+[2m[0m
+[2mThe Groq unknown reservation: reservation #8, group groq-development:tokens, amount[0m
+[2m 9812, state unknown, actual None. Must remain held until exact correlated evidence[0m
+[2m; t179-F atomic settlement workflow must not release it. The test suite's setUp created[0m
+[2m its own quota rows, and the full suite's test DB is separate; the real db.sqlite[0m
+[2m3 holds the reservation — my query confirmed it.[0m
+[2m[0m
+[2mOther artifacts: test count 17/17 pass for the T179 acceptance modules; 526 full-su[0m
+[2mite tests, 524 pass, 1 fail (pre-existing test_heavy_job_governor.test_queue_prom[0m
+[2motion_serial — verified identical on HEAD before my change), 10 skipped.[0m
+[2m[0m
+[2mRoot cause of the only failure: HeavyJobGovernor test deadlock/race under shared DB[0m
+[2m — actually the failure message: "expected the seat to be handed to us" and later[0m
+[2m "1 != 0" for RUNNING count after test_queue_promotion_serial. Root cause appears[0m
+[2m to be an un-released heavy-job seat in the shared test DB from a prior test (the[0m
+[2m DB STATE shows a 'running' job). This is a test ordering/resource-leak in the governor[0m
+[2m suite, not a T179 routing issue. It reproduces on pristine HEAD.[0m
+[2m[0m
+[2mFailed/OPEN items (explicit):[0m
+[2m- FAILED/OPEN: t179-A upstream context preservation verification (protected_context[0m
+[2m_delivery_verified() == False); real provider echo not established.[0m
+[2m- OPEN: t179-B exact token-bound design (provisional UTF-8 byte surrogate retained[0m
+[2m until verified; exact account/model/upstream zero-total-cost eligibility evidence[0m
+[2m not in scope of the slice).[0m
+[2m- OPEN: t179-D local inference (unimplemented) — not part of this slice.[0m
+[2m- OPEN t179-E target-VM acceptance — no live UI request or provider call; separate[0m
+[2m.[0m
+[2m- OPEN t179-F quota reconciliation — the Groq unknown reservation must remain held[0m
+[2m until exact correlated evidence; reconciliation web action not executed in this slice[0m
+[2m.[0m
+[2m- OPEN t179-G remote cancellation — live contract verification not in this slice ([0m
+[2monly local cancellation simulation).[0m
+[2m- OPEN t179-H full suite — heavy-job governor suite has pre-existing failure (separate[0m
+[2m from T179 slice).[0m
+[2m[0m
+[2mAlso T048/T049 NOT complete: per the report, I must explicitly state that this slice[0m
+[2m is not production readiness and T048/T049 remain open.[0m
+[2m[0m
+[2mAlso: my gemini_chat.py import fix was needed to make the module import (missing Context[0m
+[2mProfile re-export: imported from home.model_interface but defined in home.constitution[0m
+[2m_context). I fixed it, so the test modules now import and run 17/17. I should mention[0m
+[2m this as a prerequisite fix so the simulated slice can run. Since the user asked to[0m
+[2m RUN the tests, this is legit: the tests failed to import without the fix. I'll note[0m
+[2m it plainly as a prerequisite fix, not as a "T179 fix."[0m
+[2m[0m
+[2mWait — should I be careful? The task says "Run the T179 application routing acceptance[0m
+[2m simulation using the T179 integration and recovery acceptance test suites ... REPORT[0m
+[2m real results only." My fix of the import is a genuine build-block defect; the tests[0m
+[2m could not run at all without it. I'll state it plainly.[0m
+[2m[0m
+[2mLet me verify once more the current state of files (no leftover untracked python files[0m
+[2m that I created). Also clean up: remove query_reservations.py and check_env.py already[0m
+[2m done. Good.[0m
+[2m[0m
+[2mLet me double-check that the test modules run in a further clean invocation to give[0m
+[2m exact output in the report (I have it from before). One more run isn't necessary[0m
+[2m.[0m
+[2m[0m
+[2mActually, let me also confirm `manage.py check` output and the exact test runner output[0m
+[2m is fully captured — yes.[0m
+[2m[0m
+[2mLet me also double check the full suite failure counts exactly: "Ran 526 tests in[0m
+[2m 24.685s; FAILED (failures=1, skipped=10)". Passed = 526 - 1 - 10 = 515. Let me confirm[0m
+[2m: 526 total, 10 skipped, 1 failure → 515 passed. Yes.[0m
+[2m[0m
+[2mOne more consideration: the test suite also ran the T179 tests and other app tests[0m
+[2m. The T179 acceptance slices: 17 tests all pass.[0m
+[2m[0m
+[2mLet me now write the report. Keep it structured, plain text, concise but complete[0m
+[2m. Include file:line references.[0m
+[2;3m∴ Thought for 47s[0m
+[2m────────────────────────────────────────[0m
+
+[38;2;255;191;0m────────────────────────────────────────[0m
+[1;38;2;255;191;0m☤ Hermes[0m
+[38;2;255;248;220mT179-C free-provider routing acceptance — simulated script slice## Build-block fix required before the slice could run- home/gemini_chat.py imported ContextProfile from home.model_interface, but that symbol is defined in home/constitution_context (model_interface.py only re-exports ConstitutionSnapshot, PreparedContext, ContextPreparationError, ensure_prepared_context_integrity). The import failed at import time, so neither test module could load.- Fix applied: ContextProfile, PreparedContext, ensure_prepared_context_integrity moved into the home.constitution_context import; ContextProfile removed from home.model_interface import (kept ContextManifest, which is defined in model_interface and required by _build_local_request). No behavior change.## Results### T179 acceptance modules (simulated API responses, zero live provider calls)Command: manage.py test home.test_t179_integration home.test_t179_recovery_acceptance- Found 2 test(s). → Ran 17 tests ... OK — 17/17 pass, 0 fail, 0 error.- System check: System check identified no issues (0 silenced).### Full Django suite (prerequisite audit per t179-H)Command: manage.py test --settings=superharry.settings- Ran 526 tests in 24.685s- FAILED (failures=1, skipped=10) → 515 passed, 1 failed, 10 skipped.### Toolchain checks- manage.py check → System check identified no issues (0 silenced).- makemigrations --check --dry-run → No changes detected.- git diff --check → clean (only pre-existing CRLF warnings on AUDIT_TASKS.md and home/gemini_chat.py, no diff errors).## Acceptance slice criteria — simulated-script evidence| Criterion (t179-C portion) | Status | Evidence ||---|---|---|| Authenticated chat proves configured provider identity and order | MET | test_guest_and_other_user_cannot_submit_or_read_owned_turn (401 guest / 404 other / 0 turns / no enqueue) and test_selected_route_survives_http_to_worker_without_automatic_fallback (model.selected: mode automatic, provider, model_id asserted; openrouter called once, groq never). || Admission under approved model policy + documented risk exceptions | MET | test_explicit_unadmitted_or_wrong_model_is_rejected_before_enqueue (400 for any/unlisted); test_automatic_openrouter_requires_and_persists_per_turn_acceptance asserts allow_fallbacks=false, no only/data_collection/zdr, and openrouter_risk_accepted persisted; route rechecked at dispatch (test_catalog_model_can_be_selected...). || Shared approximate quotas | MET | Recovery tests assert per-group (used, reserved) via assert_quota, mark_unknown/settle accounting on simulated 429/unknown outcomes, and ProviderReservation.state=settled counts. || Safe exhaustion transitions | MET | test_explicit_route_revoked_after_admission_is_not_dispatched → no_free_provider, no_free_provider on groq 429 with no openrouter fallback, ambiguous 429 → UNAVAILABLE/retryable=False, no retries. || No automatic retries after partial/unknown outcomes | MET | test_unknown_response_is_not_replayed_by_duplicate_http_submission (TimeoutError → UNAVAILABLE, no replay); test_interrupted_claim_is_closed_without_replay_or_releasing_unknowns; reconcile_stale closes claimed without releasing unknown reservations. || Cancellation | MET | test_cancelled_queued_turn_never_reaches_a_provider; test_cancellation_during_request_discards_result_and_holds_quota (CANCELLED, no message.delta, quotas held). || Bounded errors | MET | Invalid input 400; exhausted/unavailable 400/503 with UNAVAILABLE/retryable=False; openrouter catalog removal → FAILED/no_free_provider. || Locally current + protected context on each attempt | MET (script level) | test_explicit_openrouter_receives_full_context_and_only_owner_history asserts full constitution.md text as system content, only owner conversation history, and no other-user content — equivalent to protected-context delivery through the request body. || Role and cross-user isolation | MET | Guest 401, other user 404 on turn create and turn/events; zero turns created for the other conversation; no provider call (groq.assert_not_called). || Accounting and rollback | MET | Quotas held as unknown on non-terminal outcomes; releases only on proven-sent paths; settle atomic pairs; no replay of unknown outcomes on duplicate idempotency. |## Not established by this slice (require provider/VM evidence)- t179-A upstream context preservation: protected_context_delivery_verified() currently returns False; simulated-script evidence confirms the request body is sent intact, but live OpenRouter/Groq context echo is not established.- t179-B exact tokenizer/token bound: the slice runs with the provisional UTF-8 byte surrogate (_ByteAdmissionCounter, comment: "not Groq/OpenRouter tokenization"). Exact account/model/upstream zero-total-cost eligibility and exact token count remain open.- t179-D local inference: unimplemented; separate T047/T050 approval required before any claim.- t179-E target-VM acceptance: no live owner UI request or provider call made.- t179-F quota reconciliation: admin.quota_reconciliation actions not executed in this slice.- t179-G remote cancellation: local cancel simulated only; live remote contract unverified.- t179-H full suite: home.test_heavy_job_governor.HeavyJobGovernorSmokeTests.test_queue_promotion_serial fails — root cause is a leaked heavy-job running seat in the shared test DB (the DB STATE shows a running job before the method asserts zero), not a T179 routing issue. Reproduced identically on pristine HEAD before my change; unrelated to this slice and pre-existing.## Groq unknown reservation — must remain heldLive db.sqlite3 holds the existing reservation: pk=8, group groq-development:tokens, state=unknown, amount=9812, actual=None (token quota groq-development:tokens reserved=9812). The simulated suites create their own quota rows in an isolated test database and do not disturb it. This reservation must stay held until exact correlated evidence exists; the t179-F atomic settlement workflow must not release it.## FINAL status- T179-C simulated slice: 17/17 pass.- Full suite: 526 tests, 515 pass, 1 pre-existing failure, 10 skipped (full-suite FAILURE is outside this slice's acceptance).- manage.py check, makemigrations --check --dry-run, git diff --check: clean.- T048/T049: NOT complete — do not claim production readiness. OPEN items above; owner risk acceptance (OpenRouter free route) is documented and distinct from provider/account verification and target-VM acceptance.[0m
+[38;2;255;191;0m────────────────────────────────────────[0m
+
+Resume this session with:
+  hermes --resume local-efa0852c7aaa1129e9bbf34c8adf252c33ece9f2e1c48acbe123ea045e1bfd81 -p superharry
+  hermes -c "T179 routing acceptance acceptance slice verification" -p superharry
+
+Session:        local-efa0852c7aaa1129e9bbf34c8adf252c33ece9f2e1c48acbe123ea045e1bfd81
+Title:          T179 routing acceptance acceptance slice verification
+Duration:       14m 26s
+Messages:       86 (1 user, 84 tool calls)

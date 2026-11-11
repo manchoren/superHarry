@@ -1,0 +1,62 @@
+Found 1 test(s).
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Operations to perform:
+  Synchronize unmigrated apps: messages, staticfiles
+  Apply all migrations: admin, auth, contenttypes, home, sessions
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying auth.0001_initial... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying home.0001_initial... OK
+  Applying home.0002_auditevent... OK
+  Applying home.0003_diagnosticsettings_alter_auditevent_event_type... OK
+  Applying home.0004_alter_auditevent_event_type_chatturn_chatevent_and_more... OK
+  Applying home.0005_providerquota_providerreservation... OK
+  Applying home.0006_message_context_capacity_and_more... OK
+  Applying home.0007_geminichatjob... OK
+  Applying home.0008_chatturn_requested_route... OK
+  Applying home.0009_providermodelquota_providerreservation_model_quota_and_more... OK
+  Applying home.0010_remove_providermodelquota_home_model_quota_bounded_and_more... OK
+  Applying home.0011_audit_totp_enrollment_expired... OK
+  Applying home.0012_passwordresetgrant_totpdevice_totprecoverycode_and_more... OK
+  Applying home.0013_alter_auditevent_event_type... OK
+  Applying home.0014_loginattemptcounter... OK
+  Applying home.0015_alter_auditevent_event_type... OK
+  Applying home.0016_alter_auditevent_options_and_more... OK
+  Applying home.0017_alter_auditevent_event_type... OK
+  Applying home.0018_chatturn_openrouter_risk_accepted... OK
+  Applying home.0019_heavyjob... OK
+  Applying sessions.0001_initial... OK
+System check identified no issues (0 silenced).
+test_probe (tests.test_t179G_probe.ProbeCancellation.test_probe) ... FAIL
+
+======================================================================
+FAIL: test_probe (tests.test_t179G_probe.ProbeCancellation.test_probe)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\superHarry\tests\test_t179G_probe.py", line 35, in test_probe
+    self.assertEqual(response.status_code, 202)
+AssertionError: 403 != 202
+
+----------------------------------------------------------------------
+Ran 1 test in 0.026s
+
+FAILED (failures=1)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

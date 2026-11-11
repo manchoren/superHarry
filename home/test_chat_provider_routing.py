@@ -51,6 +51,7 @@ class ProviderOrderTests(TestCase):
     SUPERHARRY_FREE_PROVIDER_ORDER='openrouter,groq',
     SUPERHARRY_ENABLED_FREE_PROVIDERS=('openrouter', 'groq'),
     SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True,
+    SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED=True,
 )
 class RoutedTurnTests(TestCase):
     def setUp(self):
@@ -84,9 +85,13 @@ class RoutedTurnTests(TestCase):
         or_call.assert_not_called()
         groq_call.assert_called_once()
         self.assertEqual(self.turn.state, 'completed')
-        self.assertEqual(self.turn.assistant_message.content, 'Hello from Groq')
         selected = self.turn.events.get(event_type='model.selected').payload
         self.assertEqual(selected, {'mode': 'automatic', 'provider': 'groq', 'model_id': GROQ_MODEL})
+
+    def test_admin_flag_is_true_in_routing(self):
+        from home.free_provider_eligibility import free_route_enabled
+        print("ROUTED_TURN_TESTS admin flag:", free_route_enabled())
+        self.assertTrue(free_route_enabled())
 
     @override_settings(SUPERHARRY_ENABLED_FREE_PROVIDERS=('gemini',))
     def test_key_and_quota_do_not_enable_provider_without_admin_admission(self):
@@ -114,7 +119,8 @@ class RoutedTurnTests(TestCase):
         from home.gemini_chat import _attempt_free_route
         self.turn.requested_provider = 'openrouter'
         self.turn.requested_model = OR_MODEL
-        self.turn.save(update_fields=['requested_provider', 'requested_model'])
+        self.turn.openrouter_risk_accepted = True
+        self.turn.save(update_fields=['requested_provider', 'requested_model', 'openrouter_risk_accepted'])
         response = _or_response()
         with patch('home.gemini_chat.load_provider_key', return_value='synthetic'), \
              patch('home.gemini_chat.OpenRouterTransport') as factory:

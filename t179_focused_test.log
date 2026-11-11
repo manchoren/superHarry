@@ -1,0 +1,23 @@
+Found 17 test(s).
+Creating test database for alias 'default'...
+System check identified no issues (0 silenced).
+gemini_chat_worker_failed
+.....gemini_chat_routing_exhausted
+..gemini_chat_routing_exhausted
+.Bad Request: /api/v1/conversations/48348f2a-f6b9-4041-9f24-89c257963485/turns/
+Bad Request: /api/v1/conversations/48348f2a-f6b9-4041-9f24-89c257963485/turns/
+.gemini_chat_routing_exhausted
+.Unauthorized: /api/v1/conversations/0b1e84ef-2c53-4114-973f-287ffe2c0196/turns/
+Not Found: /api/v1/conversations/0b1e84ef-2c53-4114-973f-287ffe2c0196/turns/
+Not Found: /api/v1/conversations/0b1e84ef-2c53-4114-973f-287ffe2c0196/turns/b282cae5-6254-4603-a961-5baab16245ac/events/
+Unauthorized: /api/v1/conversations/0b1e84ef-2c53-4114-973f-287ffe2c0196/turns/b282cae5-6254-4603-a961-5baab16245ac/events/
+..gemini_chat_worker_failed
+.gemini_chat_routing_exhausted
+.gemini_chat_routing_exhausted
+..gemini_chat_worker_failed
+.
+----------------------------------------------------------------------
+Ran 17 tests in 2.259s
+
+OK
+Destroying test database for alias 'default'...

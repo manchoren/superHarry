@@ -71,6 +71,31 @@ if model_quotas_value not in {"0", "1"}:
     raise ImproperlyConfigured("SUPERHARRY_REQUIRE_MODEL_QUOTAS must be 0 or 1.")
 SUPERHARRY_REQUIRE_MODEL_QUOTAS = model_quotas_value == "1"
 
+# ---- T179-B zero-total-cost free-route gates ----------------------------------------
+# Administrator enablement: a free-provider route is NOT dispatched unless this
+# flag is explicitly True. Default is off so new routes cannot dispatch.
+SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED = os.environ.get("SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED", "0").strip().lower() in {"1", "true"}
+
+# Free-plan identity used by the exact zero-cost account check. The value must
+# be "free" for free-route dispatch to proceed.
+SUPERHARRY_FREE_PLAN = os.environ.get("SUPERHARRY_FREE_PLAN", "free").strip()
+
+# Billing methods on record for the account; an empty tuple means no payment
+# method or other billing mechanism is configured.
+SUPERHARRY_BILLING_METHODS = tuple(
+    item.strip() for item in os.environ.get("SUPERHARRY_BILLING_METHODS", "").split(",") if item.strip()
+)
+
+# Approved zero-total-cost models. A model must be present here (or published in
+# the OpenRouter public zero-price catalog) to be eligible.
+SUPERHARRY_APPROVED_FREE_MODELS = tuple(
+    item.strip() for item in os.environ.get("SUPERHARRY_APPROVED_FREE_MODELS", "openai/gpt-oss-20b,openai/gpt-oss-120b").split(",") if item.strip()
+)
+
+# Local tokenizer pin (exact OpenAI-official tokenizer).
+SUPERHARRY_LOCAL_TOKENIZER_MODEL_ID = os.environ.get("SUPERHARRY_LOCAL_TOKENIZER_MODEL_ID", "gpt2").strip()
+SUPERHARRY_LOCAL_TOKENIZER_REVISION = os.environ.get("SUPERHARRY_LOCAL_TOKENIZER_REVISION", "v1").strip()
+
 # ---- T047 local inference ---------------------------------------------------
 # The loopback URL of an on-demand local llama.cpp server managed by the
 # shared heavy-job governor (T050). When unset, local inference is disabled.
@@ -200,6 +225,7 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": database_path_value or BASE_DIR / "db.sqlite3",
+        "OPTIONS": {"timeout": 3000},
     }
 }
 

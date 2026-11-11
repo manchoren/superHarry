@@ -134,11 +134,11 @@ class HeavyJobGovernorSmokeTests(TransactionTestCase):
         t1 = threading.Thread(target=t1_holder)
         t2 = threading.Thread(target=t2_waiter)
         t3 = threading.Thread(target=t3_waiter)
+        import django.db
+        from home.models import HeavyJob
         t1.start(); time.sleep(0.05); t2.start(); time.sleep(0.05); t3.start()
         t1.join(); t2.join(); t3.join()
 
-        import django.db
-        from home.models import HeavyJob
         running = HeavyJob.objects.filter(state=HeavyJob.State.RUNNING).count()
         queued = HeavyJob.objects.filter(state=HeavyJob.State.QUEUED).count()
         print(f"DB STATE: total={HeavyJob.objects.count()}", [ (str(s.token), s.state) for s in HeavyJob.objects.all() ], file=sys.stderr)

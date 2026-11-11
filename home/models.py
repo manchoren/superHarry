@@ -1,6 +1,9 @@
 import uuid
+import hashlib
+import json
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -24,7 +27,8 @@ class HeavyJob(models.Model):
         RUNNING = "running", "Running"
         RELEASED = "released", "Released"
 
-    token = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.AutoField(primary_key=True)
+    token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     kind = models.CharField(max_length=32, choices=Kind.choices)
     operation_id = models.CharField(max_length=128)
     owner_id = models.CharField(max_length=128, blank=True)
@@ -53,6 +57,36 @@ class HeavyJob(models.Model):
         indexes = [
             models.Index(fields=["kind", "state"]),
             models.Index(fields=["-created_at"]),
+        ]
+
+
+class GovernorLock(models.Model):
+    """Singleton advisory lock for the shared heavy-job governor (T050).
+
+    SQLite has no SELECT ... FOR UPDATE, so the governor's critical cross-thread
+    and cross-process sections are protected here by an atomic compare-and-swap
+    (CAS) on a single lock row. Only one holder (one PID) owns the lock at a
+    time; a blocked acquirer spins on the lock row until it is released. The
+    lock is versioned so that an acquirer always CASes against the latest
+    version, and the held/release timestamps give operators visibility.
+    """
+
+    id = models.PositiveIntegerField(
+        primary_key=True, default=1, editable=False
+    )
+    version = models.PositiveIntegerField(default=0, editable=False)
+    holder_pid = models.PositiveIntegerField(null=True, blank=True, editable=False)
+    held_at = models.DateTimeField(null=True, blank=True, editable=False)
+    released_at = models.DateTimeField(null=True, blank=True, editable=False)
+
+    class Meta:
+        db_table = "home_governor_lock"
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(holder_pid__isnull=True)
+                | models.Q(held_at__isnull=False),
+                name="home_governorlock_held_state",
+            ),
         ]
 
 
@@ -318,6 +352,18 @@ class AuditEvent(models.Model):
             "chat.turn_cancel_requested",
             "Chat turn cancellation requested",
         )
+        ADMIN_QUOTA_RECONCILIATION = (
+            "admin.quota_reconciliation",
+            "Quota reconciliation",
+        )
+        ADMIN_QUOTA_RECONCILIATION_COMMITTED = (
+            "admin.quota_reconciliation_committed",
+            "Quota reconciliation committed",
+        )
+        ADMIN_QUOTA_RECONCILIATION_REJECTED = (
+            "admin.quota_reconciliation_rejected",
+            "Quota reconciliation rejected",
+        )
 
     class Outcome(models.TextChoices):
         SUCCESS = "success", "Success"
@@ -507,6 +553,56 @@ class ProviderReservation(models.Model):
 
     class Meta:
         constraints = [models.CheckConstraint(condition=models.Q(amount__gte=1), name='home_provider_reservation_positive')]
+
+
+class ProviderQuotaReconciliation(models.Model):
+    class Disposition(models.TextChoices):
+        SETTLE_ZERO = "settle_zero", "Settle zero"
+        SETTLE_VERIFIED = "settle_verified", "Settle verified usage"
+
+    class State(models.TextChoices):
+        PENDING = "pending", "Pending"
+        CONFIRMED = "confirmed", "Confirmed"
+        COMMITTED = "committed", "Committed"
+        REJECTED = "rejected", "Rejected"
+
+    operation_id = models.CharField(max_length=128, unique=True)
+    provider = models.CharField(max_length=32)
+    request_amount = models.PositiveBigIntegerField()
+    token_amount = models.PositiveBigIntegerField()
+    evidence_blob = models.TextField()
+    evidence_hash = models.CharField(max_length=64)
+    disposition = models.CharField(max_length=16, choices=Disposition.choices)
+    state = models.CharField(max_length=16, choices=State.choices, default=State.PENDING)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(disposition='settle_verified', evidence_blob=''),
+                name='home_reconciliation_evidence_not_empty',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(disposition='settle_zero', evidence_blob=''),
+                name='home_reconciliation_zero_evidence_empty',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['state', 'created_at'], name='home_rec_state_created_idx'),
+        ]
+
+    def clean(self):
+        if self.disposition == self.Disposition.SETTLE_ZERO:
+            if self.evidence_blob:
+                raise ValidationError('settle_zero requires an empty evidence blob')
+            return
+        if str(self.evidence_blob) and hashlib.sha256(str(self.evidence_blob).encode('utf-8')).hexdigest() != self.evidence_hash:
+            raise ValidationError('evidence_hash does not match evidence_blob')
+        try:
+            json.loads(str(self.evidence_blob))
+        except (TypeError, ValueError):
+            raise ValidationError('evidence_blob is not valid JSON')
+
 
 class GeminiChatJob(models.Model):
     """Durable development work record; a claimed job is never redispatched."""

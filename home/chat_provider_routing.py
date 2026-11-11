@@ -6,7 +6,8 @@ explicit quota row, are attempted. Failover decisions live in the chat worker.
 
 from home.free_provider_dispatch import FreeProviderRoute
 from home.groq_transport import CONTEXT_WINDOWS as GROQ_CONTEXT_WINDOWS, build_chat_body as build_groq_body
-from home.openrouter_transport import build_route_body, catalog_models, is_approved_route
+from home.openrouter_transport import (build_route_body, catalog_models,
+                                       is_approved_route, APPROVED_UPSTREAM)
 
 KNOWN_PROVIDERS = ('gemini', 'groq', 'openrouter')
 
@@ -41,6 +42,7 @@ def build_openrouter_route(model_id, upstream_id=None):
     return FreeProviderRoute(
         provider='openrouter', model_id=model_id, quota_group='openrouter-development',
         context_capacity=models[model_id].context_length,
+        upstream_id=APPROVED_UPSTREAM,
         build_body=lambda constitution, history, request, limit: build_route_body(
             model_id=model_id, upstream_id=None, constitution_text=constitution,
             history=history, user_request=request, output_limit=limit),

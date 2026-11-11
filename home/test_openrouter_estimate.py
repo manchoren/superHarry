@@ -47,7 +47,7 @@ class OpenRouterEstimateTests(SimpleTestCase):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 _ByteAdmissionCounter().count_upper_bound(value)
 
-    @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True)
+    @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True, SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED=True)
     def test_simulated_compressor_cannot_be_reached_while_delivery_is_unverified(self):
         route = build_openrouter_route('liquid/lfm-2.5-2.6b:free', 'liquid/fp8')
 
@@ -61,7 +61,7 @@ class OpenRouterEstimateTests(SimpleTestCase):
                                    authorize=lambda: True, cancelled=lambda: False, operation_id='compression')
         transport.generate.assert_not_called()
 
-    @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True)
+    @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True, SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED=True)
     def test_simulated_enforced_account_plugin_can_override_request_disable(self):
         body = build_route_body(
             model_id='liquid/lfm-2.5-2.6b:free', upstream_id='liquid/fp8',

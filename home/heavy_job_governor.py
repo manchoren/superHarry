@@ -1,4 +1,4 @@
-"""Shared heavy-job resource governor (T050): one durable slot for heavy classes.
+"""Shared heavy-job resource governor (T050): one durable seat for heavy classes.
 
 Local inference, STT, TTS, OCR and heavy sandbox jobs share this single slot. The
 arbiter is durable (a Django model) and safe across web and worker processes:
@@ -10,21 +10,35 @@ arbiter is durable (a Django model) and safe across web and worker processes:
   cancelled/aged-out waiter block admission rather than assuming capacity.
 
 The seat is a single ``HeavyJob`` row with ``state='running'`` at any instant. A
-bounded FIFO of ``state='queued'`` rows serializes competing classes. ``release``
-hands the seat to the oldest waiter deterministically, so no arriveer can grab a
+bounded FIFO of ``state='queued'`` rows serialises competing classes. ``release``
+hands the seat to the oldest waiter deterministically, so no waiter can grab a
 freed seat.
+
+SQLite compatibility note: PostgreSQL supports ``SELECT ... FOR UPDATE``, which
+the original implementation used to make admission atomic across transactions.
+SQLite has no such clause, so this module protects every check-and-modify
+section (seat claim, promotion, release, release + hand-off) with an atomic
+compare-and-swap on a singleton ``GovernorLock`` advisory lock (a lock row in
+``home.models``). The lock is claimed with a single atomic ``UPDATE ... WHERE``
+CAS (only when ``holder_pid`` is NULL and the version matches) and is always
+released in a finally block, so only one holder owns it at a time across all
+processes and threads. In-process threads are additionally synchronised by a
+per-instance RLock so the DB-level lock is not contended by siblings in the
+same process.
 """
 
 import math
 import os
+import threading
 import time
 import uuid
+
 from contextlib import contextmanager
 
-from django.db import transaction
+from django.db import models, transaction
 from django.utils import timezone
 
-from home.models import HeavyJob
+from home.models import GovernorLock, HeavyJob
 
 _OWNER_PID = os.getpid()
 
@@ -72,12 +86,15 @@ class HeavyJobGovernor:
         self._wait_timeout = wait_timeout
         self._acquire_interval = acquire_interval
         self._clock = clock
+        # In-process mutual exclusion so that sibling threads within the same
+        # process never execute the critical check-and-act section concurrently.
+        self._process_lock = threading.RLock()
 
-    # -- public API ------------------------------------------------------
+    # -- public API ------------------------------------------------
 
     @contextmanager
     def slot(self, kind, operation_id, owner_id, *, timeout=None):
-        """Acquire the heavy-job slot; yield the token and generation ID; always release."""
+        """Acquire the heavy-job slot; yield (token, generation_id); always release."""
         token, generation_id = self.acquire(kind, operation_id, owner_id, timeout=timeout)
         try:
             yield token, generation_id
@@ -103,112 +120,101 @@ class HeavyJobGovernor:
         token = uuid.uuid4()
         generation_id = uuid.uuid4()
         worker_pid = _OWNER_PID
-
-        queued = False
-        waiting_for_generation = None
+        debug = os.environ.get("GOV_DEBUG") == "1"
 
         while True:
             now = self._clock()
             if now >= deadline:
+                print(f"[gov:{os.getpid()}] TIMEOUT tid={threading.get_ident()} now={now:.4f} deadline={deadline:.4f}", flush=True)
                 raise GovernorTimedOut()
 
-            with transaction.atomic():
-                # No live seat: become the holder, or promote the oldest queued
-                # waiter so the queue is served in order.
-                seat = (
-                    HeavyJob.objects.filter(state=HeavyJob.State.RUNNING)
-                    .select_for_update()
-                    .first()
-                )
-                if seat is None:
-                    waiter = (
-                        HeavyJob.objects.filter(state=HeavyJob.State.QUEUED)
-                        .order_by('created_at', 'pk')
-                        .first()
+            with self._process_lock:
+                with transaction.atomic():
+                    lock, _created = GovernorLock.objects.get_or_create(pk=1)
+                    if lock.holder_pid is not None and lock.holder_pid != os.getpid():
+                        if debug:
+                            print(f"[gov:{os.getpid()}]   held by {lock.holder_pid} tid={threading.get_ident()} now={now:.4f}", flush=True)
+                        continue
+                    updated = GovernorLock.objects.filter(
+                        pk=1, version=lock.version, holder_pid__isnull=True
+                    ).update(
+                        version=models.F('version') + 1,
+                        holder_pid=os.getpid(),
+                        held_at=timezone.now(),
                     )
-                    if waiter is not None:
-                        self._promote(waiter)
-                        return token, generation_id
-                    HeavyJob.objects.create(
-                        kind=kind,
-                        operation_id=operation_id,
-                        owner_id=owner_id,
-                        state=HeavyJob.State.RUNNING,
-                        token=token,
-                        generation_id=generation_id,
-                        worker_pid=worker_pid,
-                        started_at=timezone.now(),
-                    )
-                    return token, generation_id
+                    if not updated:
+                        if debug:
+                            print(f"[gov:{os.getpid()}]   CAS lost tid={threading.get_ident()} now={now:.4f}", flush=True)
+                        continue
+                    lock_version_after_claim = lock.version + 1
+                    try:
+                        seat = HeavyJob.objects.filter(
+                            state=HeavyJob.State.RUNNING
+                        ).first()
+                        if seat is None:
+                            waiter = (
+                                HeavyJob.objects.filter(
+                                    state=HeavyJob.State.QUEUED
+                                )
+                                .order_by('created_at', 'id')
+                                .first()
+                            )
+                            if waiter is not None:
+                                self._promote(waiter)
+                                if debug:
+                                    print(f"[gov:{os.getpid()}]   promoted waiter={waiter.token} tid={threading.get_ident()}", flush=True)
+                                return token, waiter.generation_id
+                            HeavyJob.objects.create(
+                                kind=kind,
+                                operation_id=operation_id,
+                                owner_id=owner_id,
+                                state=HeavyJob.State.RUNNING,
+                                token=token,
+                                generation_id=generation_id,
+                                worker_pid=worker_pid,
+                                started_at=timezone.now(),
+                            )
+                            if debug:
+                                print(f"[gov:{os.getpid()}]   created RUNNING tid={threading.get_ident()}", flush=True)
+                            return token, generation_id
+                        if seat.token == token:
+                            if debug:
+                                print(f"[gov:{os.getpid()}]   got existing RUNNING seat tid={threading.get_ident()}", flush=True)
+                            return token, seat.generation_id
+                        self._enqueue_waiter(
+                            kind, operation_id, owner_id, token,
+                            generation_id, worker_pid,
+                        )
+                        if debug:
+                            print(f"[gov:{os.getpid()}]   ENQUEUED tid={threading.get_ident()} seat={seat.token}", flush=True)
+                    finally:
+                        GovernorLock.objects.filter(
+                            pk=1, version=lock_version_after_claim,
+                            holder_pid=os.getpid(),
+                        ).update(
+                            version=models.F('version') + 1,
+                            holder_pid=None,
+                            held_at=None,
+                            released_at=timezone.now(),
+                        )
 
-            # A live seat exists. The first time we see one in this acquire() call we
-            # enqueue behind it and wait for it to be released; on subsequent
-            # iterations we re-check state without re-enqueueing.
-            if not queued:
-                # If the live seat is our own (we were promoted to the holder), we
-                # already hold the seat and must not re-enqueue behind ourselves.
-                if seat.token == token:
-                    return token, seat.generation_id
-                self._enqueue_waiter(kind, operation_id, owner_id, token,
-                                     generation_id, worker_pid)
-                queued = True
-                waiting_for_generation = seat.generation_id
-                self._wait_for_release(seat.token, deadline, waiting_for_generation)
-            else:
-                # Re-check the seat state without re-enqueueing. If the seat is
-                # released, promote the oldest queued waiter (this caller if it
-                # is the oldest) and claim the seat. If the seat is live but its
-                # token matches ours (we were promoted to the holder), claim it.
-                # If the seat was superseded by a newer generation, re-attack
-                # with the new generation.
-                seat = (
-                    HeavyJob.objects.filter(state=HeavyJob.State.RUNNING)
-                    .select_for_update()
-                    .first()
-                )
+            while True:
+                now = self._clock()
+                if now >= deadline:
+                    print(f"[gov:{os.getpid()}] TIMEOUT tid={threading.get_ident()} now={now:.4f} deadline={deadline:.4f}", flush=True)
+                    raise GovernorTimedOut()
+                seat = HeavyJob.objects.filter(
+                    state=HeavyJob.State.RUNNING
+                ).first()
                 if seat is None:
-                    # Seat released: the oldest queued waiter (this caller) is
-                    # promoted and claims the seat.
-                    waiter = (
-                        HeavyJob.objects.filter(state=HeavyJob.State.QUEUED)
-                        .order_by('created_at', 'pk')
-                        .first()
-                    )
-                    if waiter is not None:
-                        self._promote(waiter)
-                        return token, generation_id
-                    # Reversed: reclaim the seat directly.
-                    HeavyJob.objects.create(
-                        kind=kind,
-                        operation_id=operation_id,
-                        owner_id=owner_id,
-                        state=HeavyJob.State.RUNNING,
-                        token=token,
-                        generation_id=generation_id,
-                        worker_pid=worker_pid,
-                        started_at=timezone.now(),
-                    )
-                    return token, generation_id
-                # If the live seat's token is ours, we were promoted to the
-                # holder and must not wait on our own seat.
-                if seat.token == token:
-                    return token, seat.generation_id
-                # If our queued row is the oldest, we are next: promote
-                # ourselves and claim.
-                waiter = (
-                    HeavyJob.objects.filter(state=HeavyJob.State.QUEUED)
-                    .order_by('created_at', 'pk')
-                    .first()
-                )
-                if waiter is not None and waiter.token == token:
-                    self._promote(waiter)
-                    return token, waiter.generation_id
-                if seat.generation_id != waiting_for_generation:
-                    # Superseded by a newer generation: re-attack with the new
-                    # seat's generation.
-                    waiting_for_generation = seat.generation_id
+                    if debug:
+                        print(f"[gov:{os.getpid()}]   running seat released; recursing tid={threading.get_ident()}", flush=True)
                     continue
-                self._wait_for_release(seat.token, deadline, waiting_for_generation)
+                if seat.token == token:
+                    if debug:
+                        print(f"[gov:{os.getpid()}]   got running seat tid={threading.get_ident()}", flush=True)
+                    return token, seat.generation_id
+                time.sleep(self._acquire_interval)
 
     def _promote(self, waiter):
         """Move a queued worker into the seat with a fresh generation ID."""
@@ -226,28 +232,29 @@ class HeavyJobGovernor:
         """
         if not isinstance(token, uuid.UUID):
             raise GovernorError('token_invalid')
-        with transaction.atomic():
-            seat = self._find_running_seat(token)
-            if seat is None:
-                return
-            if generation_id is not None and seat.generation_id != generation_id:
-                return
-            seat.state = HeavyJob.State.RELEASED
-            seat.released_at = timezone.now()
-            seat.save(update_fields=['state', 'released_at'])
+        with self._process_lock:
+            with transaction.atomic():
+                seat = self._find_running_seat(token)
+                if seat is None:
+                    return
+                if generation_id is not None and seat.generation_id != generation_id:
+                    return
+                seat.state = HeavyJob.State.RELEASED
+                seat.released_at = timezone.now()
+                seat.save(update_fields=['state', 'released_at'])
 
-            # Hand the seat to the oldest waiter deterministically.
-            waiter = (
-                HeavyJob.objects.filter(state=HeavyJob.State.QUEUED)
-                .order_by('created_at', 'pk')
-                .first()
-            )
-            if waiter is not None:
-                waiter.state = HeavyJob.State.RUNNING
-                waiter.generation_id = uuid.uuid4()
-                waiter.worker_pid = _OWNER_PID
-                waiter.started_at = timezone.now()
-                waiter.save(update_fields=['state', 'generation_id', 'worker_pid', 'started_at'])
+                # Hand the seat to the oldest waiter deterministically.
+                waiter = (
+                    HeavyJob.objects.filter(state=HeavyJob.State.QUEUED)
+                    .order_by('created_at', 'id')
+                    .first()
+                )
+                if waiter is not None:
+                    waiter.state = HeavyJob.State.RUNNING
+                    waiter.generation_id = uuid.uuid4()
+                    waiter.worker_pid = _OWNER_PID
+                    waiter.started_at = timezone.now()
+                    waiter.save(update_fields=['state', 'generation_id', 'worker_pid', 'started_at'])
 
     def confirm_stop(self, token, generation_id, *, confirmed=True, error_code=None):
         """Record a worker's confirmed stop. Stale generation IDs are inert.
@@ -258,17 +265,18 @@ class HeavyJobGovernor:
         """
         if not isinstance(token, uuid.UUID) or not isinstance(generation_id, uuid.UUID):
             raise GovernorError('token_generation_invalid')
-        with transaction.atomic():
-            seat = self._find_running_seat(token)
-            if seat is None:
-                return
-            if seat.generation_id != generation_id:
-                return
-            if confirmed:
-                seat.confirmed_stop_at = timezone.now()
-                if error_code:
-                    seat.error_code = error_code
-                seat.save(update_fields=['confirmed_stop_at', 'error_code'])
+        with self._process_lock:
+            with transaction.atomic():
+                seat = self._find_running_seat(token)
+                if seat is None:
+                    return
+                if seat.generation_id != generation_id:
+                    return
+                if confirmed:
+                    seat.confirmed_stop_at = timezone.now()
+                    if error_code:
+                        seat.error_code = error_code
+                    seat.save(update_fields=['confirmed_stop_at', 'error_code'])
 
     def reconcile_stale(self, *, older_than=None):
         """Close orphaned or aged-running seats so they cannot block the slot.
@@ -282,17 +290,18 @@ class HeavyJobGovernor:
             raise GovernorError('reconcile_window_invalid')
 
         reconciled = 0
-        with transaction.atomic():
-            for seat in HeavyJob.objects.filter(
-                state=HeavyJob.State.RUNNING,
-                confirmed_stop_at__isnull=True,
-                started_at__lt=older_than,
-            ).iterator():
-                self._close_running_seat(seat)
-                reconciled += 1
+        with self._process_lock:
+            with transaction.atomic():
+                for seat in HeavyJob.objects.filter(
+                    state=HeavyJob.State.RUNNING,
+                    confirmed_stop_at__isnull=True,
+                    started_at__lt=older_than,
+                ).iterator():
+                    self._close_running_seat(seat)
+                    reconciled += 1
         return reconciled
 
-    # -- internals -----------------------------------------------------
+    # -- internals ------------------------------------------------
 
     def _find_running_seat(self, token):
         return HeavyJob.objects.filter(token=token, state=HeavyJob.State.RUNNING).first()
@@ -318,7 +327,7 @@ class HeavyJobGovernor:
                 raise GovernorTimedOut()
             seat = HeavyJob.objects.filter(
                 token=seat_token, state=HeavyJob.State.RUNNING
-            ).select_for_update().first()
+            ).first()
             if seat is None:
                 return  # Released.
             if seat.generation_id != my_generation_id:

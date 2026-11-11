@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from home.chat_provider_routing import build_groq_route
 from home.free_provider_dispatch import dispatch_free_provider
@@ -18,6 +18,7 @@ def _ok_response(model=MODEL):
             'usage': {'prompt_tokens': 10, 'completion_tokens': 2, 'total_tokens': 12}}
 
 
+@override_settings(SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED=True)
 class FreeProviderDispatchTests(TestCase):
     def setUp(self):
         ProviderQuota.objects.create(group='groq-development', limit=5)

@@ -1,0 +1,220 @@
+Found 526 test(s).
+Creating test database for alias 'default'...
+System check identified no issues (0 silenced).
+.....Conflict: /api/v1/conversations/46326f24-d13c-492c-bcf3-e764ed207a24/turns/
+.chat_turn_cancel_unavailable
+Service Unavailable: /api/v1/conversations/10c52218-517e-4ee5-9280-132c2ba78de5/turns/bedfb28d-e5db-4d1e-a958-dd2f7c97fffa/cancel/
+.Service Unavailable: /api/v1/conversations/e72028d6-be42-487b-8cbf-6de4a793044b/turns/44e2b59f-a4b9-403f-aa62-9276a3020ef5/cancel/
+Service Unavailable: /api/v1/conversations/e72028d6-be42-487b-8cbf-6de4a793044b/turns/44e2b59f-a4b9-403f-aa62-9276a3020ef5/cancel/
+..Not Found: /api/v1/conversations/33f30cc5-88f7-4101-8256-edd62a8c97c7/turns/48e90681-a146-48c5-a6ed-e3f2de9a5fb4/cancel/
+.Forbidden (CSRF cookie not set.): /api/v1/conversations/693caf73-69f7-4201-b9b6-15e678d9ee35/turns/
+.Bad Request: /api/v1/conversations/a0f1a90a-fe24-4dd1-83f0-4cefd48bf1a9/turns/c54c0160-badd-4dbd-b787-a3147a29cf53/events/
+Bad Request: /api/v1/conversations/a0f1a90a-fe24-4dd1-83f0-4cefd48bf1a9/turns/c54c0160-badd-4dbd-b787-a3147a29cf53/events/
+Gone: /api/v1/conversations/a0f1a90a-fe24-4dd1-83f0-4cefd48bf1a9/turns/c54c0160-badd-4dbd-b787-a3147a29cf53/events/
+.Not Found: /api/v1/conversations/5dd80c36-ed87-40f8-83cb-ee3e5a0cec3f/turns/1b6b1bbc-73f5-4d1d-bb87-c9b856385dc7/events/
+..Conflict: /api/v1/conversations/f9ac9c29-f3bc-4177-bdd3-c3ae91e0497e/turns/
+.Bad Request: /api/v1/conversations/197c5fd2-b41a-498a-ab0f-162342bb56e0/turns/
+Bad Request: /api/v1/conversations/197c5fd2-b41a-498a-ab0f-162342bb56e0/turns/
+Bad Request: /api/v1/conversations/197c5fd2-b41a-498a-ab0f-162342bb56e0/turns/
+Bad Request: /api/v1/conversations/197c5fd2-b41a-498a-ab0f-162342bb56e0/turns/
+Bad Request: /api/v1/conversations/197c5fd2-b41a-498a-ab0f-162342bb56e0/turns/
+.Conflict: /api/v1/conversations/542fd60d-1a1b-4b19-a312-1b69e5531a27/turns/
+Conflict: /api/v1/conversations/542fd60d-1a1b-4b19-a312-1b69e5531a27/turns/
+..Bad Request: /api/v1/conversations/8d42cff3-268f-4fe0-b4a7-44fd49544a94/turns/
+Bad Request: /api/v1/conversations/8d42cff3-268f-4fe0-b4a7-44fd49544a94/turns/
+Bad Request: /api/v1/conversations/8d42cff3-268f-4fe0-b4a7-44fd49544a94/turns/
+Bad Request: /api/v1/conversations/8d42cff3-268f-4fe0-b4a7-44fd49544a94/turns/
+.Conflict: /api/v1/conversations/f37ed7c8-6799-4473-9dff-0dd1b8f57804/turns/
+.Bad Request: /api/v1/conversations/f1898d26-4ef1-4a37-916b-9c0b7a5c27ae/turns/
+Bad Request: /api/v1/conversations/f1898d26-4ef1-4a37-916b-9c0b7a5c27ae/turns/
+Bad Request: /api/v1/conversations/f1898d26-4ef1-4a37-916b-9c0b7a5c27ae/turns/
+Bad Request: /api/v1/conversations/f1898d26-4ef1-4a37-916b-9c0b7a5c27ae/turns/
+.Service Unavailable: /api/v1/conversations/9de38379-a5d2-4c14-a7bb-63dbfe1ec968/turns/
+.Bad Request: /api/v1/conversations/df064418-ccdb-4072-aa7e-e274f312edc3/turns/
+Conflict: /api/v1/conversations/df064418-ccdb-4072-aa7e-e274f312edc3/turns/
+..Service Unavailable: /api/v1/conversations/37788ab7-4fe3-4eb7-9982-b927c247e046/turns/
+chat_turn_dispatch_unavailable
+Service Unavailable: /api/v1/conversations/37788ab7-4fe3-4eb7-9982-b927c247e046/turns/
+.Not Found: /api/v1/conversations/df50fa2f-5282-4b14-8205-e3950735caad/turns/
+..fake_chat_worker_failed
+........gemini_chat_worker_failed
+..gemini_chat_routing_exhausted
+..gemini_chat_routing_exhausted
+.gemini_chat_routing_exhausted
+..gemini_chat_routing_exhausted
+.gemini_chat_routing_exhausted
+.gemini_chat_routing_exhausted
+.gemini_chat_routing_exhausted
+.gemini_chat_routing_exhausted
+.gemini_chat_worker_failed
+.provider_credential_configuration_invalid provider=openrouter
+.provider_credential_configuration_invalid provider=openrouter
+.provider_credential_configuration_invalid provider=openrouter
+.provider_credential_configuration_invalid provider=openrouter
+provider_credential_configuration_invalid provider=openrouter
+provider_credential_configuration_invalid provider=openrouter
+.provider_credential_configuration_invalid provider=openrouter
+..provider_credential_configuration_invalid provider=openrouter
+.provider_credential_configuration_invalid provider=openrouter
+.provider_credential_configuration_invalid provider=openrouter
+..provider_credential_configuration_invalid provider=openrouter
+.provider_credential_configuration_invalid provider=openrouter
+provider_credential_configuration_invalid provider=openrouter
+.provider_credential_configuration_invalid provider=openrouter
+.provider_credential_configuration_invalid provider=openrouter
+.provider_credential_configuration_invalid provider=openrouter
+.provider_credential_configuration_invalid provider=openrouter
+............gemini_chat_worker_failed
+.gemini_chat_routing_exhausted
+.gemini_chat_routing_exhausted
+...................provider_credential_configuration_invalid provider=openrouter
+.provider_credential_configuration_invalid provider=openrouter
+.provider_credential_configuration_invalid provider=openrouter
+provider_credential_configuration_invalid provider=openrouter
+.provider_credential_configuration_invalid provider=openrouter
+.provider_credential_configuration_invalid provider=openrouter
+.provider_credential_configuration_invalid provider=openrouter
+provider_credential_configuration_invalid provider=openrouter
+.provider_credential_configuration_invalid provider=openrouter
+.provider_credential_configuration_invalid provider=openrouter
+provider_credential_configuration_invalid provider=openrouter
+.provider_credential_configuration_invalid provider=openrouter
+provider_credential_configuration_invalid provider=openrouter
+provider_credential_configuration_invalid provider=openrouter
+provider_credential_configuration_invalid provider=openrouter
+provider_credential_configuration_invalid provider=openrouter
+provider_credential_configuration_invalid provider=openrouter
+.........................provider_credential_configuration_invalid provider=openrouter
+............................................................gemini_chat_worker_failed
+.....gemini_chat_routing_exhausted
+..gemini_chat_routing_exhausted
+.Bad Request: /api/v1/conversations/cf3a5aa3-d4e6-4e32-b185-fc776aef1b6e/turns/
+Bad Request: /api/v1/conversations/cf3a5aa3-d4e6-4e32-b185-fc776aef1b6e/turns/
+.gemini_chat_routing_exhausted
+.Unauthorized: /api/v1/conversations/7296f1d4-3cb0-4048-ab87-2ad85224f69d/turns/
+Not Found: /api/v1/conversations/7296f1d4-3cb0-4048-ab87-2ad85224f69d/turns/
+Not Found: /api/v1/conversations/7296f1d4-3cb0-4048-ab87-2ad85224f69d/turns/addaaf7a-e5ab-4bdd-9049-5c89196d3ed6/events/
+Unauthorized: /api/v1/conversations/7296f1d4-3cb0-4048-ab87-2ad85224f69d/turns/addaaf7a-e5ab-4bdd-9049-5c89196d3ed6/events/
+..gemini_chat_worker_failed
+.gemini_chat_routing_exhausted
+.gemini_chat_routing_exhausted
+..gemini_chat_worker_failed
+..provider_credential_configuration_invalid provider=openrouter
+.......C:\superHarry\.venv\Lib\site-packages\asgiref\sync.py:674: UserWarning: async_to_sync was passed a non-async-marked callable
+  return AsyncToSync(
+............provider_credential_configuration_invalid provider=openrouter
+...........provider_credential_configuration_invalid provider=openrouter
+....provider_credential_configuration_invalid provider=openrouter
+..provider_credential_configuration_invalid provider=openrouter
+......provider_credential_configuration_invalid provider=openrouter
+...provider_credential_configuration_invalid provider=openrouter
+provider_credential_configuration_invalid provider=openrouter
+provider_credential_configuration_invalid provider=openrouter
+...............provider_credential_configuration_invalid provider=openrouter
+.......provider_credential_configuration_invalid provider=openrouter
+.provider_credential_configuration_invalid provider=openrouter
+..provider_credential_configuration_invalid provider=openrouter
+..provider_credential_configuration_invalid provider=openrouter
+........Removed 2 expired diagnostic log file(s).
+...Keyboard interrupt received; any interrupted claim remains subject to stale-claim recovery.
+...................Exception in thread Thread-3 (t2_waiter):
+Traceback (most recent call last):
+  File "C:\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+Exception in thread Thread-4 (t3_waiter):
+    Traceback (most recent call last):
+self.run()
+  File "C:\Python312\Lib\threading.py", line 1012, in run
+  File "C:\superHarry\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+      self._target(*self._args, **self._kwargs)
+   File "C:\superHarry\home\test_heavy_job_governor.py", line 124, in t2_waiter
+        ^^^^^^^^^^^^^^^^^^^^    self.assertEqual(HeavyJob.objects.get(token=token).state,
+^ ^^^^^  ^^^  ^^  ^
+   File "C:\superHarry\.venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 359, in execute
+             ^^^^^^^^
+NameError: cannot access free variable 'HeavyJob' where it is not associated with a value in enclosing scope
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.IntegrityError: UNIQUE constraint failed: home_heavyjob.state
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\superHarry\home\test_heavy_job_governor.py", line 129, in t3_waiter
+    token, gen = g.acquire('local_inference', 'op-c', 'user-c')
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\superHarry\home\heavy_job_governor.py", line 204, in acquire
+    self._promote(waiter)
+  File "C:\superHarry\home\heavy_job_governor.py", line 219, in _promote
+    waiter.save(update_fields=['state', 'generation_id', 'worker_pid', 'started_at'])
+  File "C:\superHarry\.venv\Lib\site-packages\django\db\models\base.py", line 904, in save
+    self.save_base(
+  File "C:\superHarry\.venv\Lib\site-packages\django\db\models\base.py", line 996, in save_base
+    updated = self._save_table(
+              ^^^^^^^^^^^^^^^^^
+  File "C:\superHarry\.venv\Lib\site-packages\django\db\models\base.py", line 1142, in _save_table
+    results = self._do_update(
+              ^^^^^^^^^^^^^^^^
+  File "C:\superHarry\.venv\Lib\site-packages\django\db\models\base.py", line 1246, in _do_update
+    return filtered._update(values, returning_fields)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\superHarry\.venv\Lib\site-packages\django\db\models\query.py", line 1473, in _update
+    return query.get_compiler(self.db).execute_returning_sql(returning_fields)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\superHarry\.venv\Lib\site-packages\django\db\models\sql\compiler.py", line 2168, in execute_returning_sql
+    row_count = self.execute_sql(ROW_COUNT)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\superHarry\.venv\Lib\site-packages\django\db\models\sql\compiler.py", line 2139, in execute_sql
+    row_count = super().execute_sql(result_type)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\superHarry\.venv\Lib\site-packages\django\db\models\sql\compiler.py", line 1643, in execute_sql
+    cursor.execute(sql, params)
+  File "C:\superHarry\.venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\superHarry\.venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\superHarry\.venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\superHarry\.venv\Lib\site-packages\django\db\utils.py", line 94, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\superHarry\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\superHarry\.venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 359, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.IntegrityError: UNIQUE constraint failed: home_heavyjob.state
+DB STATE: total=3 [('9ba6b0a8-4563-4350-ae60-d095fbf44c61', 'released'), ('b819f9ec-7c29-4aae-a25e-9d5c57f57d44', 'running'), ('ea544fb7-908f-4ad4-84db-d5b8fcd775da', 'queued')]
+FException in thread Thread-6 (wait_seat):
+Traceback (most recent call last):
+  File "C:\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\superHarry\home\test_heavy_job_governor.py", line 55, in wait_seat
+    self.fail('expected the seat to be handed to us')
+  File "C:\Python312\Lib\unittest\case.py", line 715, in fail
+    raise self.failureException(msg)
+AssertionError: expected the seat to be handed to us
+...................................provider_credential_configuration_invalid provider=openrouter
+..........s..ssssssss..............................................................................................................................................s.................
+======================================================================
+FAIL: test_queue_promotion_serial (home.test_heavy_job_governor.HeavyJobGovernorSmokeTests.test_queue_promotion_serial)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\superHarry\home\test_heavy_job_governor.py", line 148, in test_queue_promotion_serial
+    self.assertEqual(HeavyJob.objects.filter(state=HeavyJob.State.RUNNING).count(), 0)
+AssertionError: 1 != 0
+
+----------------------------------------------------------------------
+Ran 526 tests in 34.190s
+
+FAILED (failures=1, skipped=10)
+Destroying test database for alias 'default'...

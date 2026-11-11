@@ -17,9 +17,15 @@ from django.db import transaction
 from home.chat_events import MAX_OUTPUT_CONTENT_BYTES
 from home.constitution_context import ContextProfile, ensure_release_context_is_current, prepare_release_context
 from home.groq_transport import GroqRateLimitError
+from home import local_tokenizer
 from home import openrouter_transport
-from home.provider_outcomes import NotDispatched, OutcomeUnknown, RateLimited
+from home.free_provider_eligibility import (
+    FreeRouteError,
+    free_route_enabled,
+    verify_free_route_eligibility,
+)
 from home.provider_quota import QuotaError, mark_unknown, reserve, settle
+from home.provider_outcomes import NotDispatched, OutcomeUnknown, RateLimited
 
 OUTPUT_LIMIT = 128
 logger = logging.getLogger(__name__)
@@ -32,6 +38,7 @@ class FreeProviderRoute:
     quota_group: str
     context_capacity: int
     build_body: Callable
+    upstream_id: str | None = None
 
     def __post_init__(self):
         if (self.provider not in ('groq', 'openrouter') or not isinstance(self.model_id, str) or not self.model_id
@@ -99,7 +106,32 @@ def _release(reservations):
             logger.warning('free_provider_reservation_release_failed')
 
 
-def dispatch_free_provider(*, route, transport, user_request, authorize, cancelled, operation_id, history=()):
+def _verify_pre_dispatch_admission(*, route: FreeProviderRoute, risk_accepted: bool) -> None:
+    """Fail closed before any request, token count, or reservation.
+
+    Re-implements the exact zero-total-cost contract at the one-shot dispatch
+    boundary so a private, under-qualified, or non-approved route never sends a
+    request. ``risk_accepted`` is the per-turn disclosure the caller must have
+    captured; account, model, and upstream checks are exact and deterministic.
+    """
+    admin_enabled = free_route_enabled()
+    if not admin_enabled:
+        raise NotDispatched('dispatch_private_configuration')
+    try:
+        reason = verify_free_route_eligibility(
+            provider=route.provider,
+            model_id=route.model_id,
+            upstream_id=route.upstream_id,
+            risk_accepted=risk_accepted,
+            admin_enabled=True,
+        )
+    except FreeRouteError:
+        raise NotDispatched('dispatch_private_configuration') from None
+    if reason:
+        raise NotDispatched('dispatch_disclosure:' + reason)
+
+
+def dispatch_free_provider(*, route, transport, user_request, authorize, cancelled, operation_id, history=(), risk_accepted: bool = True):
     """Return (text, (input_tokens, output_tokens)) after one bounded request."""
     if (not isinstance(route, FreeProviderRoute) or not callable(getattr(transport, 'generate', None))
             or not callable(authorize) or not callable(cancelled)
@@ -112,16 +144,18 @@ def dispatch_free_provider(*, route, transport, user_request, authorize, cancell
                 or current is None or route.context_capacity != current.context_length
                 or route.quota_group != 'openrouter-development'):
             raise NotDispatched('dispatch_not_sent')
+    _verify_pre_dispatch_admission(route=route, risk_accepted=risk_accepted)
     reservations = []
     try:
         if authorize() is not True or cancelled() is not False:
             raise ValueError('admission denied')
+        counter = local_tokenizer.build_counter(route.model_id)
         profile = ContextProfile(
             profile_id=route.model_id, profile_revision='1', tokenizer_id=route.model_id,
-            tokenizer_revision='provider-undocumented', counter_id='utf8-byte-admission-surrogate', counter_revision='v2',
+            tokenizer_revision=counter.revision, counter_id=counter.model_id, counter_revision=counter.revision,
             context_capacity=route.context_capacity, output_reserve=OUTPUT_LIMIT,
             safety_margin=min(32768, route.context_capacity // 4),
-            serializer=_RouteSerializer(route, history), counter=_ByteAdmissionCounter(),
+            serializer=_RouteSerializer(route, history), counter=counter,
         )
         prepared = prepare_release_context(user_request=user_request, profile=profile)
         ensure_release_context_is_current(prepared)
@@ -153,6 +187,7 @@ def dispatch_free_provider(*, route, transport, user_request, authorize, cancell
     request_reservation, token_reservation = reservations
     try:
         response = transport.generate(prepared.serialized_input)
+        print("DEBUG dispatch_free_provider after transport.generate", file=open('C:/superHarry/debug_dispatch.log', 'a'))
     except GroqRateLimitError:
         if route.provider != 'groq':
             raise OutcomeUnknown('dispatch_outcome_unknown') from None
