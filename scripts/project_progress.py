@@ -70,7 +70,7 @@ def main() -> int:
     repository = Path(__file__).resolve().parents[1]
     backlog_path = repository / "docs" / "reference" / "backlog.md"
     completed_path = repository / "docs" / "history" / "completed-tasks.md"
-    queue_path = repository / "TASK.md"
+    queue_path = repository / "tasks.md"
 
     try:
         tasks = read_tasks(backlog_path)
