@@ -1,19 +1,19 @@
-# Outstanding Design Items - Implementación Autónoma
+# Outstanding Design Items - Autonomous Implementation
 
-**Estado:** Implementaciones ejecutables sin aprobación requerida. Cada sección contiene código, tests y criterios de aceptación.
+**Status:** Executable implementations without approval required. Each section contains code, tests, and acceptance criteria.
 
-**Última actualización:** 2026-11-11
+**Last updated:** 2026-11-11
 
 ---
 
 ## 1. Sandbox Dependency Guard
 
-### Propósito
-Definir scoring multicapa para validar seguridad de paquetes sin confiar solo en hashes (integridad ≠ seguridad).
+### Purpose
+Define multi-layer scoring for validating package safety without trusting only hashes (integrity ≠ safety).
 
-### Implementación
+### Implementation
 
-#### Modelo de Scoring (80 puntos mínimo para instalar)
+#### Scoring Model (minimum 80 points to install)
 ```python
 # home/package_guard.py
 
@@ -206,6 +206,9 @@ class PackageGuard:
 ```
 
 #### Test Suite
+
+Tests validate the acceptance criteria defined in `docs/OUTSTANDING-ROADMAP.md § Item 1`.
+
 ```python
 # tests/test_package_guard.py
 
@@ -248,23 +251,16 @@ def test_score_calculation():
     assert score.is_safe(threshold=80)
 ```
 
-#### Criterios de Aceptación
-- ✅ Paquete conocido seguro (e.g., `requests`) puntúa ≥ 80
-- ✅ Paquete en lista bloqueada obtiene 0 puntos
-- ✅ Paquete con CVE crítico en los últimos 2 años puntúa < 80
-- ✅ Límite mínimo es configurable por admin (django admin panel)
-- ✅ Agente recibe feedback: "Package unsafe, try alternative" si falla
-
 ---
 
 ## 2. Memory Encryption & Recovery
 
-### Propósito
-Diseño de almacenamiento de claves en VM con unlock automático y backups pre-conversión sin exportar secretos.
+### Purpose
+Design key storage in VM with automatic unlock and pre-conversion backups without exporting secrets.
 
-### Implementación
+### Implementation
 
-#### Configuración SQLCipher
+#### SQLCipher Configuration
 ```python
 # home/memory_encryption.py
 
@@ -272,7 +268,7 @@ import os
 import sqlite3
 from pathlib import Path
 from cryptography.fernet import Fernet
-import systemd.daemon  # Para systemd encrypted credentials
+import systemd.daemon  # For systemd encrypted credentials
 
 class MemoryEncryption:
     """Manage encrypted SQLite memory store using SQLCipher."""
@@ -409,7 +405,7 @@ class MemoryEncryption:
         return conn
 ```
 
-#### Schema y Modelos Django
+#### Django Schema and Models
 ```python
 # home/models.py (addition)
 
@@ -460,7 +456,10 @@ class Memory(models.Model):
         return f"{self.kind}@{self.scope} ({self.created_at.date()})"
 ```
 
-#### Test de Conversión
+#### Test Suite
+
+Tests validate the acceptance criteria defined in `docs/OUTSTANDING-ROADMAP.md § Item 2`.
+
 ```python
 # tests/test_memory_encryption.py
 
@@ -499,21 +498,14 @@ def test_key_load():
         assert loaded_key == original_key
 ```
 
-#### Criterios de Aceptación
-- ✅ Clave generada es aleatoria de 32 bytes
-- ✅ Archivo de clave tiene permisos 0400
-- ✅ Conversión a encrypted crea backup antes
-- ✅ Si falta clave, la BD permanece encriptada (sin fallback a plaintext)
-- ✅ Unlock automático después de reinicio (sin contraseña del admin)
-
 ---
 
 ## 3. Browser Control & Display Isolation
 
-### Propósito
-Validar aislamiento por usuario, handover de pantalla y protección de credenciales antes de habilitar control de navegador.
+### Purpose
+Validate user isolation, display handover, and credential protection before enabling browser control.
 
-### Implementación (Mock para testing sin hardware)
+### Implementation (Mock for Testing Without Hardware)
 
 ```python
 # home/browser_isolation.py
@@ -638,6 +630,9 @@ class BrowserIsolation:
 ```
 
 #### Test Suite
+
+Tests validate the acceptance criteria defined in `docs/OUTSTANDING-ROADMAP.md § Item 3`.
+
 ```python
 # tests/test_browser_isolation.py
 
@@ -693,32 +688,25 @@ def test_cleanup():
     assert "alice" not in iso.sessions
 ```
 
-#### Criterios de Aceptación
-- ✅ Dos usuarios tienen displays separados (DISPLAY numbers distintos)
-- ✅ No hay compartición de sockets X11
-- ✅ Password fields rechazan keystroke injection
-- ✅ Display handover transmite screenshot
-- ✅ Cleanup kill Xvfb process
+---
+
+[... continuing with 7 additional items ...]
 
 ---
 
-[... continúa con 7 items adicionales ...]
+## Next Steps
+
+1. **Run tests:** `pytest tests/test_package_guard.py -v`
+2. **Validate on VM:** Each implementation includes verifiable criteria without real hardware
+3. **Django Integration:** Add admin panels to configure thresholds
+4. **Documentation:** Each item links to its section in product-requirements.md
 
 ---
 
-## Siguientes Pasos
+## Notes
 
-1. **Ejecutar tests:** `pytest tests/test_package_guard.py -v`
-2. **Validar en VM:** Cada implementación incluye criterios verificables sin hardware real
-3. **Integración Django:** Agregar admin panels para configurar umbrales
-4. **Documentación:** Cada item enlaza a su sección en product-requirements.md
-
----
-
-## Notas
-
-- Las implementaciones usan **mocks y stubs** donde sea apropiado (sin hardware real)
-- Cada sección incluye **test suite completa** con criterios de aceptación
-- Refactorizaciones posibles se indicarán con `# TODO:` comentarios
-- Sin requerir aprobación: El agent ejecuta, valida y reporta resultados
+- Implementations use **mocks and stubs** where appropriate (no real hardware)
+- Each section includes **complete test suite** with acceptance criteria
+- Possible refactorings are indicated with `# TODO:` comments
+- Without requiring approval: The agent executes, validates, and reports results
 

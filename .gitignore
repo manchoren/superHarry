@@ -6,6 +6,7 @@ db.sqlite3
 .env
 .env.*
 !.env.example
+!.env.paths.example
 staticfiles/
 caddy_windows_amd64.exe
 .durable-vm-staging/

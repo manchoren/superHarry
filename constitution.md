@@ -8,27 +8,30 @@ This constitution defines enduring rules. Requirements, operational policies
 and CONTRIBUTING.md define implementation details. Plans and proposals do
 not amend these rules; changes require explicit owner approval. Detailed
 policies must implement these principles without adding blanket prohibitions
-where informed approval is sufficient.
+where informed approval is sufficient. 
+Always use english for code, responses or documentation.
 
 ## 1. Always do
 
 - Protect safety, privacy and user control. Apply this priority: safety and
   privacy, permissions, authorized user instructions, personality. Privacy
   protection includes respecting informed decisions to share one's own data.
-- Enforce security and permissions in code, independently of model judgment.
-  Deny access by default and authorize every request, object, tool and channel.
-  Isolate users' data, memories, workspaces and browser sessions.
+- Deny access by default and authorize every request, object, tool and channel
+  based on user role. Isolate users' data, memories, workspaces and browser
+  sessions through application-level access control and RBAC.
 - Treat input, files, web content, memory, skills and model output as untrusted
   data. Validate boundaries, parameterize commands and queries, and block
   non-public destinations in public fetch tools.
 - Provide runtime models with required current policy context. Block actions
   when mandatory context is missing, stale or cannot fit.
 - Run generated task code and untrusted document processing in an isolated,
-  resource-limited sandbox without direct network access, host secrets,
-  application database access or host/container control interfaces.
-- Use supported Django security mechanisms and secure defaults. Keep secrets
-  outside source control, logs, shared evidence and downloadable backups.
-  Maintain mandatory security audit records.
+  resource-limited sandbox. See `docs/reference/security-policies.md § 3` for
+  detailed isolation rules.
+- Delegate AI model provider credential management to omniroute. The application
+  stores only omniroute's API key; omniroute manages credentials for Nous Portal,
+  OpenRouter, Groq, Gemini, and Ollama. The application manages its own user
+  authentication, database encryption keys, and TLS certificates independently.
+  See `docs/reference/security-policies.md § 2` for credential boundaries.
 - Keep guests local-model-only, without tools, uploads, persistent memory,
   scheduling, skills or external integrations. Linked channels have at most
   user privileges; administration stays in the web app. Scheduled jobs remain
@@ -48,7 +51,8 @@ where informed approval is sufficient.
   the limitation. Heavy workloads share one execution slot.
 - Keep deployment private to LAN/VPN over HTTPS. Preserve persistent data,
   support deletion of users' own memories and validate backup and recovery.
-  Transcribe audio locally; detailed diagnostics exclude secrets.
+  Transcribe audio locally; detailed diagnostics exclude secrets and are
+  filtered through audit logs.
 - Use the existing Debian ARM64 VM as the initial deployment and acceptance
   target. Raspberry Pi support is optional future work.
 - Complete routine implementation decisions autonomously within accepted
@@ -130,4 +134,7 @@ policy requires additional review.
 - Never use the retired `.dev-vm` as an execution target. Preserve or migrate
   its protected CA keys, configuration and database backups before deleting
   those artifacts; remove the directory only when empty.
+- Never conceal failures, alter action logs, fabricate APIs or results, weaken
+- Never repeat an action with an unknown outcome when repetition could
+  duplicate effects.
 - Never conceal failures, alter action logs, fabricate APIs or results, weaken

@@ -4,7 +4,7 @@ This is the working plan and detailed decision record for superHarry. The [const
 
 Status markers describe current decisions: accepted, proposed and open. Partially accepted items bind only their accepted parts. This consolidated edition integrates owner decisions through 2026-11-11.
 
-**Updated:** 2026-11-11. Original baseline: 2026-10-29.
+**Last updated:** 2026-11-11. Original baseline: 2026-10-29.
 
 **Conversation context and message meter (owner, 2026-11-04):** Authenticated chat supplies the selected model with prior completed user/assistant turns from the same authorized conversation, in chronological order, in addition to the complete protected constitution and current request. Never include another conversation, incomplete or cancelled turn, or treat history as protected instructions. The current development implementation includes at most the 100 most recent completed turns; when the prepared request cannot fit or cannot be counted, fail closed rather than truncate the constitution or current message. For each completed assistant response with a verified preflight count, show an accessible per-message context meter and numeric input-token count versus the selected model's context capacity. The count includes protected context and the actual history and is the provider's preflight input count, not an account quota, cost, live typing estimate, or guarantee of provider-side framing. Preserve this metadata with the message and show it after reloading. Show no invented measurement when unavailable. Nous Portal disclosures, provider authorization and quota controls remain in force.
 
@@ -14,7 +14,13 @@ Status markers describe current decisions: accepted, proposed and open. Partiall
 
 These are unresolved implementation decisions, not new policies:
 
-- **Sandbox dependency guard:** define evidence sources, scoring and test criteria before autonomous installation; package hashes prove integrity, not safety.
+- **omniroute integration (✅ resolved in part 2026-11-11):** See `docs/reference/security-policies.md § 5` for complete omniroute integration design. Key points:
+  - omniroute manages ALL AI model provider credentials (Nous Portal, OpenRouter, Groq, Gemini, Ollama)
+  - superHarry stores only omniroute's API key
+  - Smart routing with automatic fallback chains
+  - Local model (qwen3.5:4b) accessed via omniroute → Ollama proxy
+  - **Outstanding:** Exact schema for quota queries, health check frequency, transient vs permanent outage handling
+- **Sandbox dependency guard:** See `docs/reference/security-policies.md § 6` for complete scoring model. Status: PARTIALLY IMPLEMENTED (core structure done, API integrations pending).
 - **Memory encryption and recovery:** design access-restricted in-VM key storage, automatic unlock and pre-conversion/restore backups consistently with the ban on downloadable secrets. Define restore mechanics while the required key is available; losing the key makes affected encrypted data unrecoverable.
 - **Browser control and display:** validate per-user OS isolation, display handover, credential protection and in-flight action handling on the target VM before enabling browser control.
 - **Network recovery and onboarding:** design admin authentication and secure local access when Wi-Fi is unconfigured, including certificate provisioning and restricted credential storage.
@@ -29,20 +35,31 @@ These are unresolved implementation decisions, not new policies:
 
 ### Constitution delivery to agents
 
-- Supply the complete current `constitution.md` as protected instruction context to every runtime agent and delegated runtime agent, for every model and channel. The application must not silently truncate or omit it; if delivery fails or the context cannot accommodate it, block agent actions and surface the failure. Enforce permissions and security controls independently of the model.
-- Make the complete current constitution available to each development agent or delegated subagent and require it to read the document before acting. Track the loaded constitution version or hash so changes can be reflected in subsequent requests.
-- Measure the complete constitution and request overhead with each selected model's tokenizer, including changes to the constitution, model or prompt format. Reserve context for the full constitution, required instructions, tools, user input and output; trim only non-mandatory context. If the required material cannot fit, block agent actions and report the failure. Validate local context size and RAM on the target VM before finalizing the model and limits.
+See `docs/reference/security-policies.md § 4` for complete specification of runtime vs development agent context delivery.
+
+**Summary:**
+- **Runtime agents:** Constitution auto-injected as protected system context. Block if cannot fit.
+- **Development agents:** Must explicitly read constitution via tool before acting. Log version hash.
+- Measure token overhead and reserve budget. Never truncate constitution to fit other content.
 
 ```
                  ┌────────────────────────────────────────────┐
  Browser ──TLS──►│ Reverse proxy (Caddy) ─► Django application│
-                 │ auth · sessions · CSRF · permissions · SSE│
+                 │ omniroute delegation     RBAC · SSE        │
                  └───────────────┬────────────────────────────┘
+                                 │
+                 ┌───────────────────────────────────────────┐
+                 │ omniroute (Smart AI Gateway)              │
+                 │ · Provider credential storage             │
+                 │ · OpenAI-compatible endpoint (:20128/v1)  │
+                 │ · Fallback routing & quota tracking       │
+                 │ · Audit logs & health status              │
+                 └───────────────────────────────────────────┘
                                  │
                          Django app modules
         ┌───────────┬────────────┼─────────────┬──────────────┐
    Model router   Memory      Tool layer      Scheduler     Vision/OCR
-   (local+cloud)  (SQLite)    (RBAC-gated)    (cron)        (pipeline)
+  (omniroute+local)(SQLite)  (RBAC-gated)     (cron)        (pipeline)
                                  │
                  ┌───────────────┼───────────────┐
               Sandbox        Skills          Files store
@@ -58,8 +75,8 @@ These are unresolved implementation decisions, not new policies:
 
 ### 4.1 Provider, model and deployment ✅
 
-- ✅ **Q-04 / Q-06 — External inference:** Use **Nous Portal** with **`solar mini4:free`** as the default external model for `user` and `admin`. This provider/model combination is tested, current and authorized. Provider/model selection and authorization are resolved; implementation and VM release checks still apply. API key resides in `.env` as `NOUS_API_KEY`; read server-side only.
-- ✅ **Credential configuration:** Never send the API key to the browser, model context or sandbox. Exclude `.env` from version control and downloadable backups, restrict filesystem access, and include only an empty placeholder in `.env.example`. Missing credentials disable the route and produce a clear configuration message. Endpoint and transport configuration must follow Nous Portal's API contract; do not infer a URL or silently substitute another model ID.
+- ✅ **Q-04 / Q-06 — External inference and credential management:** Use **Nous Portal** with **`solar mini4:free`** as the default external model for `user` and `admin`. Provider/model selection and authorization are resolved; implementation and VM release checks still apply. **Credentials and API keys are managed by omniroute**, not stored in the application `.env` or filesystem. The application requests inference through omniroute's OpenAI-compatible endpoint (`http://localhost:20128/v1` or remote equivalent), which handles credential management, smart routing, fallback chains, and quota tracking transparently.
+- ✅ **Credential delegation to omniroute:** All provider credentials (API keys, OAuth tokens, provider configurations) are stored and managed exclusively by omniroute. The superHarry application never stores, generates, rotates, or exposes credentials directly. The application configures omniroute's dashboard (or CLI) once to connect providers, then uses the generated API key for all inference requests. Missing or invalid omniroute credentials are reported through omniroute's health checks and usage logs; the application receives clear errors when attempting inference through unavailable providers.
 - ✅ **Free-only routing:** Use the selected free route; enforce quotas and rate limits. Never switch to a paid route automatically. Owner authorization permits the intended authenticated inference and memory retrieval flows, subject to existing data-access controls, disclosures and protected-context policy. Groq, OpenRouter and Gemini remain optional configured alternatives, subject to their own eligibility, zero-cost, privacy and capability checks; their credential presence alone does not authorize dispatch. Nous Portal is the selected and authorized default. Preserve administrator-configurable ordering for eligible alternatives and safe fallback; paid routes remain forbidden.
 - ✅ **Q-05 / Q-63 / P-53 — Release platform:** The complete product runs on one persistent **Linux VM**, using native systemd services and durable storage. Freeze guest OS/kernel, architecture, vCPU, RAM, disk and runtime versions before acceptance. Raspberry Pi is an optional later port; physical hardware is not a VM release gate.
 
@@ -67,17 +84,24 @@ These are unresolved implementation decisions, not new policies:
 
 Measure Django, SQLite, local inference, STT, Piper, OCR, enabled graphical sessions and sandbox resource use on the actual target VM. Set bounded service and job limits from those measurements; do not treat former Raspberry Pi estimates as VM measurements. Preserve heavy-job serialization, responsiveness and disk-pressure controls. A headless VM requires no physical HDMI, Wi-Fi, microSD, active cooling or UPS acceptance.
 
-### 4.1.2 Model routes ✅ **P-49**
+### 4.1.2 Model routes with omniroute gateway ✅ **P-49**
 
-| Route | Provider/model | Execution | Use | Roles |
-|-------|----------------|-----------|-----|-------|
-| External default | Nous Portal / `solar mini4:free` | Cloud | Authenticated chat and eligible tasks | `user`, `admin` |
-| Memory agent | Nous Portal / `solar mini4:free`, reasoning disabled | Cloud | Mandatory initial memory retrieval and explicit re-invocation (§8.1.1) | Internal, on behalf of `user` or `admin` |
-| Local fallback | Model selected by target-VM bake-off | Inside VM | Offline/local requests, safe fallback and guest chat | All roles; sole route for `guest` |
+All external model routes are accessed through omniroute's smart router. omniroute manages provider credentials, handles fallback chains, tracks quota, and reports health status. The application never stores provider credentials directly.
+
+| Route | Provider/model | Execution | Use | Roles | Gateway |
+|-------|----------------|-----------|-----|-------|---------|
+| External default | Nous Portal / `solar mini4:free` (primary fallback chain configured in omniroute) | Cloud via omniroute | Authenticated chat and eligible tasks | `user`, `admin` | omniroute (http://localhost:20128/v1) |
+| Memory agent | Nous Portal / `solar mini4:free`, reasoning disabled (same fallback chain) | Cloud via omniroute | Mandatory initial memory retrieval and explicit re-invocation (§8.1.1) | Internal, on behalf of `user` or `admin` | omniroute (http://localhost:20128/v1) |
+| Local fallback | Ollama (via omniroute) / `qwen3.5:4b` | Inside VM via omniroute proxy | Offline/local requests, safe fallback when cloud unavailable, guest chat | All roles; sole route for `guest` | omniroute → Ollama (localhost:11434) |
+
+**omniroute routing logic:**
+- Each endpoint request carries `model=provider/model-id` (e.g., `model=nous-ai/solar-mini-4`). omniroute resolves this against its configured provider list and active quota.
+- If the primary provider is exhausted or unavailable, omniroute tries the next provider in the fallback chain, transparently re-routing the request.
+- superHarry may query omniroute's health and quota status before dispatching requests (e.g., `GET /health`, token budget queries). Quota exhaustion signals local fallback.
+- omniroute logs all requests, including provider, tokens, latency and cost, accessible through omniroute's dashboard and API.
 
 - ✅ **Q-60:** The selected external free route is permitted. On exhaustion or unavailability, use an eligible local route when safe; otherwise notify the user or keep an eligible task pending. Never retry unknown effects or dispatch to an ineligible external provider.
-- ✅ **P-51 — Local-model bake-off:** Benchmark Qwen3-4B-Instruct, Gemma 3 4B, Llama 3.2 3B and an appropriately licensed Spanish-focused candidate that fits the VM. Use a fixed corpus of 30–50 Spanish prompts, including neutral Spanish and voseo, chat, summaries, voice-style replies, JSON-schema tool calls and injected memory. Record model/quantization, prefill/decode throughput, RAM, protected-context overhead, valid tool calls and blind human fluency ratings. Set criteria before testing.
-- ✅ **Q-61:** Select the local model using actual target-VM evidence in Phase 10. This pending local selection does not reopen the accepted Nous Portal model decision.
+- ✅ **P-51 — Local model selection (✅ resolved 2026-11-11):** Selected model is **qwen3.5:4b** running via Ollama, accessed through omniroute proxy for consistent interface and logging. This provides adequate Spanish support, tool calling with constrained decoding, and fits VM resource budget.
 
 ### 4.1.3 Local-mode design implications ✅ **P-50**
 
@@ -119,12 +143,15 @@ At ~2–7 tokens/s, local mode must be designed around slowness:
 - The agent can **install libraries it considers appropriate** — within the controls below.
 
 ### 5.2 Isolation rules
-- ✅ **Never** execute code generated by superHarry's runtime agents on the host. Always in the sandbox. Repository application code written by development agents follows the constitution's development checks, review and deployment process and may run in development or as installed native services; runtime agents cannot use that process as a shortcut to execute task code on the host. Untrusted document processing remains sandboxed.
-- ✅ **Q-09 / P-09 — Isolation technology:** Use **nsjail** as the primary sandbox, subject to performance and isolation validation on the target VM; rootless **Podman** is the alternative. Each execution uses a fresh isolated environment, a non-root user, a read-only root filesystem, a writable workdir, dropped capabilities and a seccomp policy.
-- ✅ **Q-10 / P-10 — Resource limits:** Initial admin-configurable limits per run: 60 seconds wall-clock time, CPU equivalent to one core, 512 MB RAM, 256 MB temporary disk space, 64 processes and 10 MB combined console output. The console-output limit applies to stdout/stderr, not generated files; generated files count against the temporary disk limit. Validate and adjust limits on the target VM.
-- ✅ **Q-11 / P-11 — Network:** Sandboxed code has no direct network access. Authorized download tools or skills fetch required public resources outside the sandbox and stage validated, size-limited files through the file store. Dependencies are staged for offline installation under Q-12. No host network or credentials are exposed to sandboxed code.
-- ✅ **Q-12 — Package selection:** The agent may select task-specific libraries autonomously, using relevant user-scoped memory about prior results and feedback. An independent guard evaluates each directly requested package only (not its transitive dependencies), returns a 0–100 confidence score against an initial minimum of **80/100**, configurable by an admin, and rejects candidates below it. On rejection the agent is told the package may be unsafe and should try another. Missing essential evidence or a known malicious package blocks installation regardless of score. The score represents the guard's assessment, not a verified probability of safety. Task libraries are installed only in an isolated sandbox, never into the host or application environment. See P-12 for base criteria; the scoring formula and evidence requirements remain to be defined and tested before use.
-- ✅ **P-12 — Package guard criteria:** Evaluate exact package identity in the official configured registry, suspicious lookalike names, known malicious packages and vulnerabilities, and available provenance for the directly requested library or tool only. Do not separately audit transitive dependencies, bundled libraries or recursive dependency graphs, and do not block approval solely because those components lack individual audits. A dependency is audited separately only when requested directly. Apply this scope consistently to development approval and runtime package guards. The directly requested package must pass all required checks and reach the configured score threshold; if it fails, reject the installation. A known malicious package or one that cannot be verified is blocked regardless of score. If a required check cannot complete, temporarily block installation and tell the agent which check failed. Pin versions and artifact hashes, audit decisions, and install staged artifacts offline in a sandbox virtualenv. Registry existence or a matching hash does not prove safety. Design and validate the scoring formula and precise evidence requirements before enabling autonomous installation.
+
+See `docs/reference/security-policies.md § 3` for complete sandbox isolation specification.
+
+**Summary:**
+- ✅ **Never** execute runtime agent code on host. Always in sandbox.
+- ✅ **Q-09 / P-09 — Technology:** nsjail (primary) or rootless Podman (alternative)
+- ✅ **Q-10 / P-10 — Resource limits:** Configurable (defaults: 60s, 1 core, 512MB RAM, 256MB disk, 64 processes, 10MB output)
+- ✅ **Q-11 / P-11 — Network:** No direct access. Authorized tools stage files through file store.
+- ✅ **Q-12 — Package selection:** See `docs/reference/security-policies.md § 6` for complete package guard specification. Agent selects task-specific libraries autonomously. Independent guard evaluates directly requested packages only (not transitive dependencies), scores 0-100, rejects below configurable threshold (default 80). Status: PARTIALLY IMPLEMENTED.
 - ✅ **Q-13 / P-13 — Persistence and cleanup (resolved in part 2026-10-29):** Preserve per-user workspace files and scripts for later interactions; mount only the authorized workspace into a fresh sandbox, with no access to other users' workspaces, the application database, or secrets. A daily scheduled job runs at **03:00 in the VM's configured local time zone** and checks free space on the relevant storage volume. If the VM missed the job while off, check after restart under the same rule. If less than 20% is free, delete eligible stored user content, including images, workspace files, scripts, individual memory records and conversations that have not been accessed for more than six months, oldest access first, only until free space reaches 20%. Never delete system files or application files. Record access in application-managed metadata rather than assuming filesystem access times are reliable. If eligible cleanup cannot restore 20% free space, notify the admin. When at least 20% is free, do not delete content under this policy. Per-user workspace quotas are configurable, with none fixed initially.
 - ✅ **Q-13 dependency cache and quotas (accepted 2026-10-29):** Reuse cached task-specific packages and virtual environments while sufficient space remains. When free space falls below 20%, first remove eligible cached packages and environments unused for more than six months, stopping once 20% free space is restored; they may be recreated as needed. Do not delete application or system dependencies. The admin may configure per-user workspace quotas; initially there is no fixed per-user quota.
 - ✅ Inputs/outputs cross the sandbox boundary only through the file store, validated and size-limited.
@@ -277,7 +304,15 @@ CREATE TABLE memory (
 ### 10.1 Requirements ✅
 Real authentication (not cosmetic), aligned with **OWASP Top 10**.
 
-### 10.2 Authentication
+### 10.2 Authentication and Authorization
+
+#### Credential Management (omniroute)
+- ✅ **Credential delegation to omniroute:** Provider API keys and credentials are managed exclusively by omniroute. superHarry admin connects providers through omniroute's dashboard (http://localhost:20128), and omniroute securely stores and rotates credentials. superHarry itself never reads, stores or logs provider API keys.
+- ✅ omniroute manages: Provider credential storage and rotation, quota and rate-limit tracking, multi-account round-robin (if applicable), health status and fallback chains.
+- ✅ The application receives an API key from omniroute's Endpoints page and uses it to access the omniroute gateway. This key does not grant access to stored provider credentials; it authorizes inference requests through omniroute's smart router.
+
+#### User Authentication (Django + omniroute integration, design pending)
+- ✅ **Security delegation model:** superHarry application handles user authentication (login, sessions, RBAC) through Django and omniroute API calls. The exact boundary (which party manages user identity, session tokens, etc.) remains to be designed in coordination with omniroute's capabilities.
 - ✅ Passwords hashed with **Argon2id**. Minimum length policy; check against breached-password lists where feasible.
 - ✅ **Q-31 — Sessions (resolved 2026-10-29):** Use server-managed sessions that can be revoked server-side.
 - **P-26 — Cookie settings (modified 2026-11-01):** Use Django's documented session-cookie settings and defaults; do not impose the former `SameSite=Strict` design over Django's defaults. Enable `Secure` for HTTPS production deployment.
