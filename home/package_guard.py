@@ -123,7 +123,7 @@ class PackageScore:
     def can_authorize_scoped_installation(self, threshold: Optional[int] = None) -> bool:
         """Return eligibility only; an installer and admin approval remain separate gates."""
         return self.authorization is PackageAuthorization.ELIGIBLE_FOR_SCOPED_REVIEW and self.is_safe(
-            self.total if threshold is None else threshold
+            80 if threshold is None else threshold
         )
 
     def __str__(self) -> str:
@@ -219,9 +219,12 @@ class PackageGuard:
             static += (5 if evidence.namespace_confusion_passed else 0)
             static += (10 if evidence.malicious_pattern_passed else 0)
             provenance = (5 if evidence.slsa_verified else 0) + (5 if evidence.signed_artifact_verified else 0)
+            total = integrity + reputation + static + provenance
+            authorization = (PackageAuthorization.ELIGIBLE_FOR_SCOPED_REVIEW
+                             if total >= self.min_score else PackageAuthorization.DENIED)
             return PackageScore(package_name, version, registry, integrity, reputation,
                                 static, provenance, evidence_valid=True,
-                                authorization=PackageAuthorization.ELIGIBLE_FOR_SCOPED_REVIEW,
+                                authorization=authorization,
                                 artifact_sha256=evidence.artifact_sha256)
         except Exception:
             logger.exception("Package evidence evaluation failed")

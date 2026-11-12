@@ -114,8 +114,15 @@ class OmnirouteClient:
                 response.close()
                 raise
             return response
-        except requests.Timeout as exc: raise OutcomeUnknown("omniroute_timeout") from exc
-        except requests.RequestException as exc: raise OutcomeUnknown("omniroute_transport_failure") from exc
+        except requests.Timeout as exc:
+            self.close()
+            raise OutcomeUnknown("omniroute_timeout") from exc
+        except requests.RequestException as exc:
+            self.close()
+            raise OutcomeUnknown("omniroute_transport_failure") from exc
+        except Exception:
+            self.close()
+            raise
     def chat_completion(self, messages: List[Dict[str, str]], model="nous-ai/solar-mini-4", temperature=0.7, max_tokens=None, stream=False, reasoning=None, tools=None, **kwargs):
         if stream: raise ValueError("use chat_completion_stream for streaming")
         payload = {"model": model, "messages": messages, "temperature": temperature, **kwargs}

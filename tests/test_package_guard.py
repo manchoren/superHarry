@@ -67,6 +67,16 @@ def test_authorization_is_separate_from_score_and_is_only_scoped_eligibility():
     assert not blocked.can_authorize_scoped_installation()
 
 
+def test_configured_threshold_controls_scoped_eligibility():
+    score = PackageGuard(min_score=101).evaluate(
+        "safe-package", "1.2.3", evidence=evidence(), now=NOW
+    )
+    assert score.evidence_valid
+    assert score.total == 100
+    assert score.authorization is PackageAuthorization.DENIED
+    assert not score.can_authorize_scoped_installation()
+
+
 def test_stale_evidence_fails_closed():
     score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(
         collected_at=NOW - timedelta(hours=25), expires_at=NOW - timedelta(hours=1)), now=NOW)

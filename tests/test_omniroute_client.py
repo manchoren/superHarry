@@ -10,6 +10,7 @@ Para ejecutar con omniroute real (skip mocks):
 
 import os
 import pytest
+import requests
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
 
@@ -484,6 +485,32 @@ def test_http_rejection_closes_response_without_leaking_body(mock_post, client):
         client.chat_completion([{"role": "user", "content": "Test"}])
     response.close.assert_called_once_with()
     assert "secret response body" not in str(error.value)
+
+
+@patch("home.omniroute_client.requests.Session.post")
+def test_http_rejection_closes_session(mock_post, client):
+    response = Mock(status_code=401, text="secret response body")
+    mock_post.return_value = response
+    with patch.object(client, "close", wraps=client.close) as close:
+        with pytest.raises(Exception, match="rejected_401"):
+            client.chat_completion([{"role": "user", "content": "Test"}])
+    close.assert_called_once_with()
+
+
+@patch("home.omniroute_client.requests.Session.post", side_effect=requests.ConnectionError("connection failed"))
+def test_transport_failure_closes_session(mock_post, client):
+    with patch.object(client, "close", wraps=client.close) as close:
+        with pytest.raises(Exception, match="transport_failure"):
+            client.chat_completion([{"role": "user", "content": "Test"}])
+    close.assert_called_once_with()
+
+
+@patch("home.omniroute_client.requests.Session.post", side_effect=requests.Timeout("request timed out"))
+def test_timeout_closes_session(mock_post, client):
+    with patch.object(client, "close", wraps=client.close) as close:
+        with pytest.raises(Exception, match="omniroute_timeout"):
+            client.chat_completion([{"role": "user", "content": "Test"}])
+    close.assert_called_once_with()
 
 
 # Tests de Integración (requieren omniroute real)
