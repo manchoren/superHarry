@@ -118,6 +118,7 @@ def test_client_uses_env_vars():
     "ftp://gateway/v1",
     "http://user:secret@gateway/v1",
     "http://gateway/v1#fragment",
+    "http://gateway/v1?api_key=secret",
 ])
 def test_client_rejects_invalid_gateway_endpoint(endpoint):
     with patch.dict(os.environ, {"OMNIROUTE_ENDPOINT": endpoint}, clear=True):

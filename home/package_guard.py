@@ -64,6 +64,10 @@ class PackageEvidence:
     collected_at: datetime
     expires_at: datetime
     evidence_source: str = ""
+    # True means the collector completed the check, including a verified
+    # absence. False means the mandatory evidence was unavailable.
+    signature_evidence_available: bool = True
+    provenance_evidence_available: bool = True
 
     @property
     def artifact_sha256(self) -> str:
@@ -77,6 +81,7 @@ class PackageEvidence:
             self.registry == "pypi", bool(self.normalized_name), bool(self.version),
             bool(self.evidence_source.strip()),
             self.hash_verified, self.blocklist_checked,
+            self.signature_evidence_available, self.provenance_evidence_available,
             self.typosquatting_passed is not None,
             self.namespace_confusion_passed is not None,
             self.malicious_pattern_passed is not None,
@@ -185,6 +190,8 @@ class PackageGuard:
                     evidence.typosquatting_passed, evidence.namespace_confusion_passed,
                     evidence.malicious_pattern_passed, evidence.downloads_per_month,
                     evidence.age_days, evidence.security_patch_within_days)):
+                    reason = "mandatory_evidence_unavailable"
+                elif not evidence.signature_evidence_available or not evidence.provenance_evidence_available:
                     reason = "mandatory_evidence_unavailable"
                 return PackageScore(package_name, version, registry, blocked=True,
                                     reason=reason, artifact_sha256=evidence.artifact_sha256)

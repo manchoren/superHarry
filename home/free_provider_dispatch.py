@@ -241,7 +241,7 @@ def dispatch_free_provider(*, route, transport, user_request, authorize, cancell
             settle(token_reservation.pk, total, allow_overage=route.provider == 'openrouter')
             settle(request_reservation.pk, 1)
             if budget_reservation is not None:
-                settle_budget(budget_reservation.pk, total)
+                settle_budget(budget_reservation.pk, total, allow_overage=route.provider == 'openrouter')
     except Exception:
         raise OutcomeUnknown('dispatch_response_unusable') from None
     return text, (input_tokens, output_tokens)

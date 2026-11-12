@@ -3,7 +3,7 @@ from tempfile import TemporaryDirectory
 from unittest import TestCase
 from unittest.mock import patch
 
-from home.provider_credentials import CredentialConfigError, load_omniroute_key, load_provider_key
+from home.provider_credentials import CredentialConfigError, load_omniroute_endpoint, load_omniroute_key, load_provider_key
 
 
 class ProviderCredentialsTests(TestCase):
@@ -37,3 +37,17 @@ class ProviderCredentialsTests(TestCase):
             with self.assertRaises(CredentialConfigError) as error:
                 load_omniroute_key({'OMNIROUTE_API_KEY': value})
             self.assertNotIn('secret', str(error.exception))
+
+    def test_missing_systemd_credential_does_not_fallback_to_environment(self):
+        environ = {
+            'CREDENTIALS_DIRECTORY': '/run/credentials/superharry.service',
+            'OMNIROUTE_API_KEY': 'synthetic-environment-key',
+        }
+        with patch('home.provider_credentials.open_systemd_credential', side_effect=FileNotFoundError):
+            with self.assertRaises(CredentialConfigError) as error:
+                load_omniroute_key(environ)
+        self.assertEqual(str(error.exception), 'omniroute_credential_invalid')
+
+    def test_endpoint_rejects_query_parameters(self):
+        with self.assertRaises(CredentialConfigError):
+            load_omniroute_endpoint({'OMNIROUTE_ENDPOINT': 'http://gateway/v1?token=secret'})

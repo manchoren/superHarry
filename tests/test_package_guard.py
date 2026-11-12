@@ -172,6 +172,19 @@ def test_signature_and_provenance_flags_bind_to_the_artifact():
     assert score.provenance == 0
 
 
+def test_unavailable_signature_or_provenance_evidence_is_not_verified_absence():
+    for changes in (
+        {"signature_evidence_available": False},
+        {"provenance_evidence_available": False},
+    ):
+        score = PackageGuard().evaluate(
+            "safe-package", "1.2.3", evidence=evidence(**changes), now=NOW
+        )
+        assert score.blocked
+        assert score.reason == "mandatory_evidence_unavailable"
+        assert not score.can_authorize_scoped_installation()
+
+
 def test_freshness_accepts_exactly_one_day_and_rejects_older_evidence():
     exact = evidence(collected_at=NOW - timedelta(hours=24), expires_at=NOW)
     assert PackageGuard().evaluate("safe-package", "1.2.3", evidence=exact, now=NOW).evidence_valid

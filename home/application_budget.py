@@ -37,8 +37,16 @@ def reserve(operation_id, amount, *, user_key=None, at=None):
                         scope=scope, scope_key=key, period=period, period_start=start).first())
                     if budget is None:
                         raise ApplicationBudgetError('budget_exhausted')
+                    # Unknown reservations are not linked to the newly-created
+                    # period budget.  Find prior unknown reservations by the
+                    # same scope instead of requiring an M2M link to `budget`.
                     unknown = ApplicationBudgetReservation.objects.filter(
-                        state='unknown', budgets=budget).exclude(budgets__period_start=start).distinct()
+                        state='unknown',
+                        budgets__scope=scope,
+                        budgets__scope_key=key,
+                        budgets__period=period,
+                        budgets__period_start__lt=start,
+                    ).distinct()
                     encumbrance = sum(item.amount for item in unknown)
                     if budget.hard_limit - budget.used - budget.reserved - encumbrance < amount:
                         raise ApplicationBudgetError('budget_exhausted')
@@ -58,8 +66,9 @@ def reserve(operation_id, amount, *, user_key=None, at=None):
         raise ApplicationBudgetError('budget_unavailable') from None
 
 
-def settle(reservation_id, actual):
-    if type(actual) is not int or actual < 0 or actual > 9223372036854775807:
+def settle(reservation_id, actual, *, allow_overage=False):
+    if (type(actual) is not int or actual < 0 or actual > 9223372036854775807
+            or type(allow_overage) is not bool):
         raise ApplicationBudgetError('budget_unavailable')
     with transaction.atomic():
         reservation = ApplicationBudgetReservation.objects.select_for_update().filter(pk=reservation_id).first()
@@ -67,7 +76,8 @@ def settle(reservation_id, actual):
             if reservation is not None:
                 return
             raise ApplicationBudgetError('budget_unavailable')
-        if reservation.state not in ('reserved', 'unknown') or actual > reservation.amount:
+        if (reservation.state not in ('reserved', 'unknown')
+                or (actual > reservation.amount and not allow_overage)):
             raise ApplicationBudgetError('budget_unavailable')
         budgets = list(reservation.budgets.select_for_update())
         for budget in budgets:

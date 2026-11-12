@@ -138,7 +138,7 @@ def dispatch_gemini_with_quota(*, group: str, operation_id: str, on_context=None
             settle(token_reservation.pk, observed_usage)
             settle(reservation.pk, 1)
             if application_reservation is not None:
-                settle_budget(application_reservation.pk, observed_usage)
+                settle_budget(application_reservation.pk, observed_usage, allow_overage=True)
         return result
     except Exception:
         raise GeminiDispatchError('gemini_dispatch_failed') from None

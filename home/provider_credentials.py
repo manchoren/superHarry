@@ -60,6 +60,9 @@ def load_omniroute_key(environ):
         systemd_key = _load_omniroute_systemd_credential()
         if systemd_key is not None:
             return systemd_key
+        # An explicitly configured systemd credential directory is the
+        # custody contract; do not silently downgrade to an environment key.
+        raise CredentialConfigError('omniroute_credential_invalid')
     if 'OMNIROUTE_API_KEY' not in environ:
         return None
     return _validate(environ['OMNIROUTE_API_KEY'])
@@ -75,7 +78,8 @@ def load_omniroute_endpoint(environ):
     parsed = urlsplit(value)
     if parsed.scheme not in {'http', 'https'} or not parsed.netloc:
         raise CredentialConfigError('omniroute_endpoint_invalid')
-    if parsed.username is not None or parsed.password is not None or parsed.fragment:
+    if (parsed.username is not None or parsed.password is not None
+            or parsed.fragment or parsed.query):
         raise CredentialConfigError('omniroute_endpoint_invalid')
     return value.rstrip('/')
 

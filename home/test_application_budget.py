@@ -39,3 +39,20 @@ class ApplicationBudgetTests(TestCase):
         settle(reservation.pk, 10)
         budget = ApplicationBudget.objects.get(scope='global', scope_key='global', period='daily')
         self.assertEqual((budget.reserved, budget.used), (0, 10))
+
+    def test_unknown_reservation_blocks_new_daily_period(self):
+        reservation = reserve('unknown-rollover', 100, user_key='user-1', at=self.at)
+        mark_unknown(reservation.pk)
+        next_day = datetime(2026, 11, 13, 1, 0, tzinfo=timezone.utc)
+        for scope, key in (('global', 'global'), ('user', 'user-1')):
+            ApplicationBudget.objects.create(scope=scope, scope_key=key, period='daily',
+                                             period_start=period_start(next_day, 'daily'), hard_limit=100)
+        with self.assertRaises(ApplicationBudgetError):
+            reserve('blocked-after-rollover', 1, user_key='user-1', at=next_day)
+
+    def test_openrouter_overage_is_recorded_once(self):
+        reservation = reserve('known-overage', 10, user_key='user-1', at=self.at)
+        settle(reservation.pk, 12, allow_overage=True)
+        settle(reservation.pk, 12, allow_overage=True)
+        budget = ApplicationBudget.objects.get(scope='global', scope_key='global', period='daily')
+        self.assertEqual((budget.reserved, budget.used), (0, 12))
