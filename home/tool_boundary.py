@@ -48,6 +48,9 @@ class SideEffect(StrEnum):
     EXTERNAL = "external"
 
 
+MAX_ARGUMENT_BYTES = 32 * 1024
+
+
 @dataclass(frozen=True)
 class ToolDeclaration:
     name: str
@@ -179,6 +182,18 @@ class AuthorizedToolExecutor:
             raise ToolDenied("Role is not authorized for this tool.")
         if not isinstance(invocation.arguments, Mapping):
             raise ToolDenied("Tool arguments must be an object.")
+        try:
+            argument_bytes = len(json.dumps(
+                invocation.arguments,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=True,
+                allow_nan=False,
+            ).encode("utf-8"))
+        except (TypeError, ValueError) as exc:
+            raise ToolDenied("Tool arguments must be canonical JSON.") from exc
+        if argument_bytes > MAX_ARGUMENT_BYTES:
+            raise ToolDenied("Tool arguments exceed the execution boundary.")
         schema = declaration.schema
         required = schema.get("required", ())
         properties = schema.get("properties", {})

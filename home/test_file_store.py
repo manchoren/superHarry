@@ -44,6 +44,18 @@ class AuthorizedFileStoreTests(TestCase):
             upload(user=self.owner, uploaded_file=SimpleUploadedFile("large.txt", b"123456789"))
         self.assertEqual(len(list(Path(self.temp_dir.name, "store").iterdir())), 1)
 
+    def test_untrusted_storage_identifier_is_rejected_before_lookup(self):
+        for value in ("../../secret", Path("../../secret"), 42, None):
+            with self.subTest(value=value), self.assertRaises(FileStoreError):
+                open_for_download(user=self.owner, storage_id=value)
+
+    def test_store_root_must_be_a_directory(self):
+        root_file = Path(self.temp_dir.name, "store-file")
+        root_file.write_bytes(b"not a directory")
+        with override_settings(SUPERHARRY_FILE_STORE_ROOT=root_file):
+            with self.assertRaises(FileStoreError):
+                upload(user=self.owner, uploaded_file=SimpleUploadedFile("x.txt", b"hello"))
+
     def test_staging_requires_real_directory_and_owner(self):
         record = upload(user=self.owner, uploaded_file=SimpleUploadedFile("x.txt", b"hello"))
         staging = Path(self.temp_dir.name, "job")

@@ -22,8 +22,24 @@ def _root():
     if configured.exists() and configured.is_symlink():
         raise FileStoreError("File store root cannot be a symlink.")
     root = configured.resolve()
-    root.mkdir(parents=True, exist_ok=True)
+    try:
+        root.mkdir(parents=True, exist_ok=True)
+    except FileExistsError as exc:
+        raise FileStoreError("File store root must be a real directory.") from exc
+    if not root.is_dir() or root.is_symlink():
+        raise FileStoreError("File store root must be a real directory.")
     return root
+
+
+def _storage_uuid(storage_id):
+    if isinstance(storage_id, uuid.UUID):
+        return storage_id
+    if not isinstance(storage_id, str):
+        raise FileStoreError("Invalid storage identifier.")
+    try:
+        return uuid.UUID(storage_id)
+    except (ValueError, AttributeError, TypeError):
+        raise FileStoreError("Invalid storage identifier.")
 
 
 def _stored_path(record):
@@ -77,7 +93,7 @@ def open_for_download(*, user, storage_id, request_id=None):
     if not getattr(user, "is_authenticated", False):
         raise FileStoreError("Authentication required.")
     try:
-        record = StoredFile.objects.get(storage_id=storage_id, owner=user)
+        record = StoredFile.objects.get(storage_id=_storage_uuid(storage_id), owner=user)
         path = _stored_path(record)
     except (StoredFile.DoesNotExist, ValueError, TypeError, OSError):
         raise FileStoreError("File is unavailable.")
@@ -95,7 +111,7 @@ def stage_for_authorized_job(*, user, storage_id, destination_dir, request_id=No
     if not getattr(user, "is_authenticated", False):
         raise FileStoreError("Authentication required.")
     try:
-        record = StoredFile.objects.get(storage_id=storage_id, owner=user)
+        record = StoredFile.objects.get(storage_id=_storage_uuid(storage_id), owner=user)
         source = _stored_path(record)
     except (StoredFile.DoesNotExist, ValueError, TypeError, OSError):
         raise FileStoreError("File is unavailable.")

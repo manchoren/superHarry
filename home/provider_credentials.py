@@ -10,6 +10,10 @@ from superharry.runtime_config import open_systemd_credential
 _MAX_FILE_BYTES = 64 * 1024
 _OMNIROUTE_SYSTEMD_CREDENTIAL = 'omniroute-api-key'
 _DEFAULT_OMNIROUTE_ENDPOINT = 'http://localhost:20128/v1'
+_DEFAULT_OMNIROUTE_MODELS = {
+    'local': 'ollama/qwen3.5:4b',
+    'external': 'nous-ai/solar-mini-4',
+}
 
 
 class CredentialConfigError(ValueError):
@@ -86,6 +90,18 @@ def load_omniroute_endpoint(environ):
             or parsed.fragment or parsed.query):
         raise CredentialConfigError('omniroute_endpoint_invalid')
     return value.rstrip('/')
+
+
+def load_omniroute_model(environ, kind):
+    """Resolve a gateway model name without accepting malformed configuration."""
+    if not isinstance(environ, Mapping) or kind not in _DEFAULT_OMNIROUTE_MODELS:
+        raise CredentialConfigError('omniroute_model_invalid')
+    variable = f'OMNIROUTE_{kind.upper()}_MODEL'
+    value = environ.get(variable, _DEFAULT_OMNIROUTE_MODELS[kind])
+    if (not isinstance(value, str) or not value.strip()
+            or any(char.isspace() or not char.isprintable() for char in value)):
+        raise CredentialConfigError('omniroute_model_invalid')
+    return value
 
 
 def load_provider_key(provider, environ, *, debug, dotenv_path, allow_dotenv=False):

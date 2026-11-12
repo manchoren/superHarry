@@ -22,6 +22,20 @@ class ProviderCredentialsTests(TestCase):
         self.assertEqual(load_omniroute_key({'OMNIROUTE_API_KEY': 'synthetic-gateway'}), 'synthetic-gateway')
         self.assertIsNone(load_omniroute_key({}))
 
+    def test_gateway_loader_does_not_consume_direct_provider_keys(self):
+        environ = {
+            'GROQ_API_KEY': 'synthetic-groq',
+            'OPENROUTER_API_KEY': 'synthetic-openrouter',
+            'GEMINI_API_KEY': 'synthetic-gemini',
+        }
+        self.assertIsNone(load_omniroute_key(environ))
+
+    def test_gateway_endpoint_defaults_without_direct_provider_configuration(self):
+        self.assertEqual(
+            load_omniroute_endpoint({}),
+            'http://localhost:20128/v1',
+        )
+
     def test_omniroute_systemd_credential_precedes_environment(self):
         path = os.path.join(self.tmp.name, 'credential')
         with open(path, 'wb') as stream:

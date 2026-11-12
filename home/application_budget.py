@@ -67,25 +67,32 @@ def reserve(operation_id, amount, *, user_key=None, at=None):
 
 
 def settle(reservation_id, actual, *, allow_overage=False):
-    if (type(actual) is not int or actual < 0 or actual > 9223372036854775807
+    if (type(reservation_id) is not int or reservation_id <= 0
+            or type(actual) is not int or actual < 0 or actual > 9223372036854775807
             or type(allow_overage) is not bool):
         raise ApplicationBudgetError('budget_unavailable')
-    with transaction.atomic():
-        reservation = ApplicationBudgetReservation.objects.select_for_update().filter(pk=reservation_id).first()
-        if reservation is None or reservation.state == 'settled' and reservation.actual == actual:
-            if reservation is not None:
-                return
-            raise ApplicationBudgetError('budget_unavailable')
-        if (reservation.state not in ('reserved', 'unknown')
-                or (actual > reservation.amount and not allow_overage)):
-            raise ApplicationBudgetError('budget_unavailable')
-        budgets = list(reservation.budgets.select_for_update())
-        for budget in budgets:
-            budget.reserved -= reservation.amount
-            budget.used += actual
-            budget.save(update_fields=['reserved', 'used'])
-        reservation.state, reservation.actual = 'settled', actual
-        reservation.save(update_fields=['state', 'actual'])
+    try:
+        with transaction.atomic():
+            reservation = ApplicationBudgetReservation.objects.select_for_update().filter(pk=reservation_id).first()
+            if reservation is None or reservation.state == 'settled' and reservation.actual == actual:
+                if reservation is not None:
+                    return
+                raise ApplicationBudgetError('budget_unavailable')
+            if (reservation.state not in ('reserved', 'unknown')
+                    or (actual > reservation.amount and not allow_overage)):
+                raise ApplicationBudgetError('budget_unavailable')
+            budgets = list(reservation.budgets.select_for_update())
+            if (not budgets or any(budget.reserved < reservation.amount for budget in budgets)
+                    or any(budget.used > 9223372036854775807 - actual for budget in budgets)):
+                raise ApplicationBudgetError('budget_unavailable')
+            for budget in budgets:
+                budget.reserved -= reservation.amount
+                budget.used += actual
+                budget.save(update_fields=['reserved', 'used'])
+            reservation.state, reservation.actual = 'settled', actual
+            reservation.save(update_fields=['state', 'actual'])
+    except DatabaseError:
+        raise ApplicationBudgetError('budget_unavailable') from None
 
 
 def mark_unknown(reservation_id):

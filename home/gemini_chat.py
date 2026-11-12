@@ -59,7 +59,12 @@ from home.model_interface import (
 )
 from home import openrouter_transport
 from home.openrouter_transport import OpenRouterTransport
-from home.provider_credentials import CredentialConfigError, load_omniroute_key, load_provider_key
+from home.provider_credentials import (
+    CredentialConfigError,
+    load_omniroute_key,
+    load_omniroute_model,
+    load_provider_key,
+)
 from home.provider_outcomes import NotDispatched, OutcomeUnknown, RateLimited
 from home.heavy_job_governor import HeavyJobGovernor
 from home.omniroute_client import OmnirouteClient, OmnirouteError, OmnirouteUsageError
@@ -85,8 +90,15 @@ def _gateway_configured():
 
 def _gateway_model(turn):
     if turn.model_mode == ChatTurn.ModelMode.LOCAL:
-        return os.environ.get("OMNIROUTE_LOCAL_MODEL", "ollama/qwen3.5:4b")
-    return turn.requested_model or os.environ.get("OMNIROUTE_EXTERNAL_MODEL", "nous-ai/solar-mini-4")
+        kind = 'local'
+    else:
+        if turn.requested_model:
+            return turn.requested_model
+        kind = 'external'
+    try:
+        return load_omniroute_model(os.environ, kind)
+    except CredentialConfigError as exc:
+        raise OmnirouteError('omniroute_model_invalid') from exc
 
 
 def _attempt_gateway(*, turn, history, cancelled):

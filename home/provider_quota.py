@@ -92,8 +92,13 @@ def mark_unknown(reservation_id) -> None:
     if not _valid_reservation_id(reservation_id):
         raise QuotaError('quota_unavailable')
     try:
-        changed = ProviderReservation.objects.filter(pk=reservation_id, state='reserved').update(state='unknown')
-        if changed != 1 and not ProviderReservation.objects.filter(pk=reservation_id, state='unknown').exists():
-            raise QuotaError('quota_unavailable')
-    except DatabaseError:
+        with transaction.atomic():
+            reservation = (ProviderReservation.objects.select_for_update()
+                           .filter(pk=reservation_id).first())
+            if reservation is None or reservation.state not in ('reserved', 'unknown'):
+                raise QuotaError('quota_unavailable')
+            if reservation.state == 'reserved':
+                reservation.state = 'unknown'
+                reservation.save(update_fields=['state'])
+    except (DatabaseError, IntegrityError):
         raise QuotaError('quota_unavailable') from None

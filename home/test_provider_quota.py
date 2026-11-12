@@ -78,6 +78,19 @@ class ProviderQuotaTests(TestCase):
         self.assertEqual((reservation.state, reservation.actual), ('settled', 2))
         self.assertEqual((self.quota.reserved, self.quota.used), (0, 2))
 
+    def test_mark_unknown_rejects_unsupported_state_without_mutating_reservation(self):
+        reservation = reserve('synthetic', 'operation', 5)
+        reservation.state = 'invalid'
+        reservation.save(update_fields=['state'])
+
+        with self.assertRaises(QuotaError):
+            mark_unknown(reservation.pk)
+
+        reservation.refresh_from_db()
+        self.quota.refresh_from_db()
+        self.assertEqual(reservation.state, 'invalid')
+        self.assertEqual((self.quota.reserved, self.quota.used), (5, 0))
+
     def test_explicit_overage_keeps_other_holds_and_denies_new_reservations(self):
         first = reserve('synthetic', 'first', 4)
         second = reserve('synthetic', 'second', 6)

@@ -10,6 +10,7 @@ from home.model_interface import (
 
 from home.tool_boundary import (
     AuthorizedToolExecutor,
+    MAX_ARGUMENT_BYTES,
     Ownership,
     SideEffect,
     ToolDeclaration,
@@ -87,6 +88,19 @@ class AuthorizedToolBoundaryTests(TestCase):
                 with self.assertRaises(ToolDenied):
                     self.executor.execute(invocation)
         self.assertEqual(self.calls, [])
+
+    def test_denies_arguments_over_execution_boundary_before_effect(self):
+        oversized = "x" * MAX_ARGUMENT_BYTES
+        with self.assertRaises(ToolDenied):
+            self.executor.execute(self.invocation(arguments={"value": oversized}))
+        self.assertEqual(self.calls, [])
+        self.assertEqual(self.audit, [])
+
+    def test_denies_non_canonical_argument_values_before_effect(self):
+        with self.assertRaises(ToolDenied):
+            self.executor.execute(self.invocation(arguments={"value": float("nan")}))
+        self.assertEqual(self.calls, [])
+        self.assertEqual(self.audit, [])
 
     def test_success_is_audited_with_correlation(self):
         invocation = self.invocation()

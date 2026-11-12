@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from django.test import TestCase
 
 from home.application_budget import ApplicationBudgetError, mark_unknown, period_start, reserve, settle
-from home.models import ApplicationBudget
+from home.models import ApplicationBudget, ApplicationBudgetReservation
 
 
 class ApplicationBudgetTests(TestCase):
@@ -67,3 +67,22 @@ class ApplicationBudgetTests(TestCase):
         settle(reservation.pk, 12, allow_overage=True)
         budget = ApplicationBudget.objects.get(scope='global', scope_key='global', period='daily')
         self.assertEqual((budget.reserved, budget.used), (0, 12))
+
+    def test_settlement_rejects_malformed_reservation_id(self):
+        for reservation_id in (None, True, 0, -1, '1'):
+            with self.subTest(reservation_id=reservation_id), self.assertRaises(ApplicationBudgetError):
+                settle(reservation_id, 1)
+
+    def test_settlement_fails_closed_if_a_budget_hold_is_missing(self):
+        reservation = reserve('missing-hold', 40, user_key='user-1', at=self.at)
+        budget = ApplicationBudget.objects.get(scope='global', scope_key='global', period='daily')
+        budget.reserved = 0
+        budget.save(update_fields=['reserved'])
+
+        with self.assertRaises(ApplicationBudgetError):
+            settle(reservation.pk, 10)
+
+        reservation.refresh_from_db()
+        budget.refresh_from_db()
+        self.assertEqual((reservation.state, reservation.actual), ('reserved', None))
+        self.assertEqual((budget.reserved, budget.used), (0, 0))
