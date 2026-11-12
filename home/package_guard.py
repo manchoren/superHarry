@@ -226,6 +226,8 @@ class PackageGuard:
                              if total >= self.min_score else PackageAuthorization.DENIED)
             return PackageScore(package_name, version, registry, integrity, reputation,
                                 static, provenance, evidence_valid=True,
+                                reason=("" if authorization is PackageAuthorization.ELIGIBLE_FOR_SCOPED_REVIEW
+                                        else "score_below_threshold"),
                                 authorization=authorization,
                                 artifact_sha256=evidence.artifact_sha256)
         except Exception:

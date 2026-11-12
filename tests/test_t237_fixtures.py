@@ -69,6 +69,17 @@ class T237FixtureManifestTests(unittest.TestCase):
             self.assertNotIn("wer", text)
             self.assertNotIn("cer", text)
 
+    def test_local_fixtures_use_utf8_reference_text(self):
+        scenarios = {item["id"]: item for item in load_manifest()["scenarios"]}
+        retrieval = json_fixture(scenarios["retrieval-bilingual"])
+        ocr = json_fixture(scenarios["ocr-bilingual"])
+        voice = json_fixture(scenarios["stt-tts-local"])
+
+        self.assertIn("reunión", retrieval["documents"][0]["text"])
+        self.assertIn("mañana", retrieval["documents"][0]["text"])
+        self.assertIn("¿Vos podés", voice["cases"][0]["transcript"])
+        self.assertTrue(ocr["images"][2]["blank"])
+
 
 def json_fixture(item):
     with (FIXTURE_ROOT / "t237" / f"{item['fixture']}.json").open(encoding="utf-8") as stream:

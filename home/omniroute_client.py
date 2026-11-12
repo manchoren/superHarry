@@ -123,8 +123,20 @@ class OmnirouteClient:
         except Exception:
             self.close()
             raise
+    @staticmethod
+    def _validate_chat_request(messages, model, temperature, max_tokens):
+        if (not isinstance(messages, list) or not messages
+                or any(not isinstance(message, dict) for message in messages)):
+            raise ValueError("messages_invalid")
+        if not isinstance(model, str) or not model.strip():
+            raise ValueError("model_invalid")
+        if isinstance(temperature, bool) or not isinstance(temperature, (int, float)):
+            raise ValueError("temperature_invalid")
+        if max_tokens is not None and (type(max_tokens) is not int or max_tokens <= 0):
+            raise ValueError("max_tokens_invalid")
     def chat_completion(self, messages: List[Dict[str, str]], model="nous-ai/solar-mini-4", temperature=0.7, max_tokens=None, stream=False, reasoning=None, tools=None, **kwargs):
         if stream: raise ValueError("use chat_completion_stream for streaming")
+        self._validate_chat_request(messages, model, temperature, max_tokens)
         payload = {"model": model, "messages": messages, "temperature": temperature, **kwargs}
         if max_tokens is not None: payload["max_tokens"] = max_tokens
         if reasoning is not None: payload["reasoning"] = reasoning
@@ -137,6 +149,7 @@ class OmnirouteClient:
         except (ValueError, json.JSONDecodeError) as exc: raise OmnirouteError("gateway_response_invalid") from exc
         finally: response.close(); self.close()
     def chat_completion_stream(self, messages: List[Dict[str, str]], model="nous-ai/solar-mini-4", temperature=0.7, max_tokens=None, **kwargs) -> Iterator[OmnirouteStreamEvent]:
+        self._validate_chat_request(messages, model, temperature, max_tokens)
         payload = {"model": model, "messages": messages, "temperature": temperature, "stream": True, **kwargs}
         if max_tokens is not None: payload["max_tokens"] = max_tokens
         response = self._post(payload, stream=True)

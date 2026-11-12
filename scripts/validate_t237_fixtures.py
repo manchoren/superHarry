@@ -42,6 +42,9 @@ def validate_manifest(manifest: dict) -> list[str]:
     categories = {item.get("category") for item in scenarios if item.get("required")}
     errors.extend(f"missing required category: {category}" for category in REQUIRED_CATEGORIES - categories)
     for item in scenarios:
+        if not isinstance(item, dict) or not item.get("id"):
+            errors.append("each scenario must be an object with an id")
+            continue
         if item.get("source") not in ALLOWED_SOURCES:
             errors.append(f"invalid source for {item.get('id')}")
         if item.get("source") in {"mocked", "contract"} and not item.get("fixture"):
@@ -58,6 +61,11 @@ def validate_manifest(manifest: dict) -> list[str]:
                 except (OSError, json.JSONDecodeError) as exc:
                     errors.append(f"local fixture is unreadable: {item.get('id')}: {exc}")
                 else:
+                    if not isinstance(fixture, dict):
+                        errors.append(f"local fixture must be an object: {item['id']}")
+                        continue
+                    if fixture.get("schema_version") != 1:
+                        errors.append(f"local fixture has unsupported schema_version: {item['id']}")
                     if fixture.get("network_policy") != "deny":
                         errors.append(f"fixture network policy must be deny: {item.get('id')}")
                     if fixture.get("credential_policy") != "synthetic-only":
@@ -95,10 +103,13 @@ def validate_fixture_payloads(manifest: dict) -> list[str]:
         except (OSError, json.JSONDecodeError) as exc:
             errors.append(f"cannot inspect fixture {item['id']}: {exc}")
             continue
+        if not isinstance(fixture, dict):
+            errors.append(f"fixture must be an object: {item['id']}")
+            continue
         lowered = {value.lower() for value in _walk_values(fixture)}
         if any(marker in value for value in lowered for marker in SECRET_MARKERS):
             errors.append(f"fixture contains a credential marker: {item['id']}")
-        keys = {key.lower() for key in fixture if isinstance(fixture, dict)}
+        keys = {key.lower() for key in _walk_keys(fixture)}
         if keys & FORBIDDEN_BENCHMARK_KEYS:
             errors.append(f"fixture contains waived benchmark fields: {item['id']}")
         has_outcome = bool(
@@ -125,6 +136,16 @@ def validate_fixture_payloads(manifest: dict) -> list[str]:
         if item["category"] == "recovery" and fixture.get("expected_state") != "unknown":
             errors.append(f"recovery fixture must preserve unknown state: {item['id']}")
     return errors
+
+
+def _walk_keys(value):
+    if isinstance(value, dict):
+        for key, child in value.items():
+            yield str(key)
+            yield from _walk_keys(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from _walk_keys(child)
 
 
 def main() -> int:

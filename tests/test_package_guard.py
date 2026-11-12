@@ -76,6 +76,19 @@ def test_configured_threshold_controls_scoped_eligibility():
         raise AssertionError("threshold above 100 should be rejected")
 
 
+def test_valid_but_low_score_reports_threshold_reason():
+    score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(
+        downloads_per_month=0, age_days=0, security_patch_within_days=999,
+        signature_verified=False, slsa_verified=False, signed_artifact_verified=False,
+        signature_artifact_sha256="0" * 64, provenance_artifact_sha256="0" * 64,
+        typosquatting_passed=False, namespace_confusion_passed=False,
+        malicious_pattern_passed=False), now=NOW)
+    assert score.evidence_valid and not score.blocked
+    assert score.total == 25
+    assert score.authorization is PackageAuthorization.DENIED
+    assert score.reason == "score_below_threshold"
+
+
 def test_package_guard_rejects_threshold_outside_d1_range():
     for threshold in (-1, 101, True, 80.0):
         try:

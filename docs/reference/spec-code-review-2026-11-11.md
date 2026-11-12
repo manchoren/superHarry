@@ -143,6 +143,24 @@ The backlog owns status. These records own the scope, dependencies and acceptanc
   execution, target-VM acceptance, deployment and production acceptance remain
   open. T225 remains `Pending`.
 
+#### T225 portable contract checklist - 2026-11-12
+
+The portable baseline is now recorded as an explicit contract so future
+validation can distinguish missing files from failed execution:
+
+| Contract | Required repository artifact | Current local result |
+|---|---|---|
+| Root entrypoint | `manage.py` | Present; root-relative Django commands resolve |
+| Dependency pins | `requirements.txt` | Present; no dependency installation performed |
+| Case-sensitive queue | `tasks.md` | Present; links use the exact lowercase filename |
+| Test-selection policy | `docs/reference/test-scoping.md` | Present; required audit/full-suite rules resolve |
+| Read-only progress check | `scripts/project_progress.py` | Present; reports 10/75 and first open T225 |
+
+The portable contract is therefore statically complete in this checkout, but
+that result does not prove a clean Linux checkout, dependency reproducibility,
+independent audit, or target-VM/release acceptance. Those gates remain open and
+T225 remains `Pending`.
+
 ### T226 - Reconcile constitution identity and context regression coverage
 
 **Priority:** P0. **Dependencies:** None. **Evidence:** settings hash differs from raw constitution; constitution_context rejects mismatches.

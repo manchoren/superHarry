@@ -263,6 +263,29 @@ def test_chat_completion_stream_raises_error(client):
         )
 
 
+@pytest.mark.parametrize("kwargs, error", [
+    ({"messages": []}, "messages_invalid"),
+    ({"messages": [{"role": "user"}, "invalid"]}, "messages_invalid"),
+    ({"messages": [{"role": "user"}], "model": ""}, "model_invalid"),
+    ({"messages": [{"role": "user"}], "temperature": "warm"}, "temperature_invalid"),
+    ({"messages": [{"role": "user"}], "max_tokens": 0}, "max_tokens_invalid"),
+])
+def test_chat_completion_rejects_invalid_request_before_dispatch(client, kwargs, error):
+    with patch("home.omniroute_client.requests.Session.post") as mock_post:
+        with pytest.raises(ValueError, match=error):
+            client.chat_completion(**kwargs)
+    mock_post.assert_not_called()
+
+
+def test_chat_completion_stream_rejects_invalid_request_before_dispatch(client):
+    with patch("home.omniroute_client.requests.Session.post") as mock_post:
+        with pytest.raises(ValueError, match="max_tokens_invalid"):
+            list(client.chat_completion_stream(
+                [{"role": "user"}], max_tokens=-1
+            ))
+    mock_post.assert_not_called()
+
+
 # Tests de Streaming
 
 @patch('home.omniroute_client.requests.Session.post')
