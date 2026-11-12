@@ -3,8 +3,9 @@ from types import SimpleNamespace
 from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase
-from home.gemini_chat import run_gemini_turn
+from home.gemini_chat import OmnirouteError, _run_routing, run_gemini_turn
 from home.models import ChatTurn, Conversation, Message, ProviderQuota
+from home.provider_credentials import CredentialConfigError
 
 
 class GeminiChatTests(TestCase):
@@ -150,3 +151,26 @@ class GeminiChatTests(TestCase):
         self.assertEqual(self.turn.events.get(event_type='model.selected').payload['mode'], 'local')
         self.assertEqual(client_factory.return_value.chat_completion_stream.call_args.kwargs['model'],
                          'ollama/qwen3.5:4b')
+
+    @patch.dict('os.environ', {'CREDENTIALS_DIRECTORY': '/run/credentials/superharry.service'}, clear=True)
+    @patch('home.gemini_chat.load_omniroute_key', return_value='synthetic-systemd-key')
+    @patch('home.gemini_chat.OmnirouteClient')
+    def test_systemd_gateway_credential_selects_gateway(self, client_factory, load_key):
+        client_factory.return_value.chat_completion_stream.return_value = iter([
+            SimpleNamespace(event='delta', content='systemd gateway', usage=SimpleNamespace(
+                prompt_tokens=4, completion_tokens=2, total_tokens=6)),
+            SimpleNamespace(event='done', content='', usage=None),
+        ])
+        run_gemini_turn(self.turn.pk)
+        self.turn.refresh_from_db()
+        self.assertEqual(self.turn.state, 'completed')
+        load_key.assert_called()
+        client_factory.assert_called_once()
+
+    @patch.dict('os.environ', {'OMNIROUTE_API_KEY': 'synthetic-invalid-key'}, clear=True)
+    @patch('home.gemini_chat.load_omniroute_key', side_effect=CredentialConfigError('omniroute_credential_invalid'))
+    @patch('home.gemini_chat.OmnirouteClient')
+    def test_invalid_gateway_credential_does_not_fallback(self, client_factory, load_key):
+        with self.assertRaises(OmnirouteError):
+            _run_routing(turn=self.turn, history=[], authorized=True, cancelled=lambda: False)
+        client_factory.assert_not_called()

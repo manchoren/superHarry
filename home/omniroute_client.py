@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Iterator, List, Optional
 import requests
 from home.provider_outcomes import NotDispatched, OutcomeUnknown
+from home.provider_credentials import CredentialConfigError, load_omniroute_key
 
 logger = logging.getLogger(__name__)
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
@@ -64,7 +65,12 @@ class OmnirouteClient:
 
     @property
     def api_key(self):
-        return self._api_key if self._api_key is not None else os.getenv("OMNIROUTE_API_KEY")
+        if self._api_key is not None:
+            return self._api_key
+        try:
+            return load_omniroute_key(os.environ)
+        except CredentialConfigError as exc:
+            raise OmnirouteError("omniroute_credentials_invalid") from exc
 
     def _session_for_request(self):
         key = self.api_key

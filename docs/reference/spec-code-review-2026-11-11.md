@@ -183,15 +183,20 @@ The backlog owns status. These records own the scope, dependencies and acceptanc
 #### T229 bounded implementation evidence - 2026-11-12
 
 - The existing `GeminiChatJob` queue remains the sole durable dispatcher. When
-  `OMNIROUTE_API_KEY` is configured, authenticated automatic and local turns
-  use `OmnirouteClient` with selected model, bounded SSE parsing, verified
-  prompt/completion usage and persisted actual `omniroute` model metadata.
+  the gateway credential is configured through either `OMNIROUTE_API_KEY` or
+  the protected systemd `omniroute-api-key` credential, authenticated automatic
+  and local turns use `OmnirouteClient` with selected model, bounded SSE
+  parsing, verified prompt/completion usage and persisted actual `omniroute`
+  model metadata. Invalid gateway credentials fail closed instead of falling
+  back to a direct provider.
   Cancellation after stream dispatch is treated as an unknown outcome; no
   automatic replay is introduced. The legacy direct/local path remains only
   for development configurations without gateway credentials.
 - Synthetic coverage was added for automatic gateway streaming, local gateway
-  model selection and persisted usage metadata. The focused chat/routing run
-  passed 38 tests on local Windows PowerShell without provider calls.
+  model selection, systemd credential selection, invalid-credential rejection
+  and persisted usage metadata. The focused chat/routing/credential run passed
+  14 tests on local Windows PowerShell without provider calls; the full Django
+  suite passed 488 tests with 10 skipped.
 - Independent fresh-context audit was unavailable, so the full Django suite
   is required before handoff. No gateway, provider, VM or deployment
   acceptance was performed. T229 remains Pending; T227, T228 and T179 gates,

@@ -57,7 +57,7 @@ from home.model_interface import (
 )
 from home import openrouter_transport
 from home.openrouter_transport import OpenRouterTransport
-from home.provider_credentials import CredentialConfigError, load_provider_key
+from home.provider_credentials import CredentialConfigError, load_omniroute_key, load_provider_key
 from home.provider_outcomes import NotDispatched, OutcomeUnknown, RateLimited
 from home.heavy_job_governor import HeavyJobGovernor
 from home.omniroute_client import OmnirouteClient, OmnirouteError, OmnirouteUsageError
@@ -75,7 +75,10 @@ class RoutingExhausted(RuntimeError):
 
 def _gateway_configured():
     """Return whether the application has an explicitly configured gateway."""
-    return bool(os.environ.get("OMNIROUTE_API_KEY"))
+    try:
+        return load_omniroute_key(os.environ) is not None
+    except CredentialConfigError as exc:
+        raise OmnirouteError("omniroute_credentials_invalid") from exc
 
 
 def _gateway_model(turn):
