@@ -138,6 +138,8 @@ class PackageGuard:
     MIN_SCORE_THRESHOLD = 80
 
     def __init__(self, min_score: int = MIN_SCORE_THRESHOLD):
+        if not isinstance(min_score, int) or isinstance(min_score, bool) or not 0 <= min_score <= 100:
+            raise ValueError("Package guard threshold must be between 0 and 100.")
         self.min_score = min_score
         self.blocked_packages = {"malicious-pkg", "typosquat-requests"}
 

@@ -50,6 +50,17 @@ class ApplicationBudgetTests(TestCase):
         with self.assertRaises(ApplicationBudgetError):
             reserve('blocked-after-rollover', 1, user_key='user-1', at=next_day)
 
+    def test_unknown_reservation_blocks_new_monthly_period(self):
+        reservation = reserve('unknown-month-rollover', 100, user_key='user-1', at=self.at)
+        mark_unknown(reservation.pk)
+        next_month = datetime(2026, 12, 1, 1, 0, tzinfo=timezone.utc)
+        for scope, key in (('global', 'global'), ('user', 'user-1')):
+            ApplicationBudget.objects.create(scope=scope, scope_key=key, period='monthly',
+                                             period_start=period_start(next_month, 'monthly'),
+                                             hard_limit=100)
+        with self.assertRaises(ApplicationBudgetError):
+            reserve('blocked-after-month-rollover', 1, user_key='user-1', at=next_month)
+
     def test_openrouter_overage_is_recorded_once(self):
         reservation = reserve('known-overage', 10, user_key='user-1', at=self.at)
         settle(reservation.pk, 12, allow_overage=True)

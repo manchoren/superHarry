@@ -68,13 +68,21 @@ def test_authorization_is_separate_from_score_and_is_only_scoped_eligibility():
 
 
 def test_configured_threshold_controls_scoped_eligibility():
-    score = PackageGuard(min_score=101).evaluate(
-        "safe-package", "1.2.3", evidence=evidence(), now=NOW
-    )
-    assert score.evidence_valid
-    assert score.total == 100
-    assert score.authorization is PackageAuthorization.DENIED
-    assert not score.can_authorize_scoped_installation()
+    try:
+        PackageGuard(min_score=101)
+    except ValueError as exc:
+        assert str(exc) == "Package guard threshold must be between 0 and 100."
+    else:
+        raise AssertionError("threshold above 100 should be rejected")
+
+
+def test_package_guard_rejects_threshold_outside_d1_range():
+    for threshold in (-1, 101, True, 80.0):
+        try:
+            PackageGuard(min_score=threshold)
+        except ValueError:
+            continue
+        raise AssertionError(f"threshold {threshold!r} should be rejected")
 
 
 def test_stale_evidence_fails_closed():

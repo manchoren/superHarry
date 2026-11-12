@@ -5,7 +5,7 @@ from django.test import TestCase, override_settings
 from home.models import AuditEvent, PackageGuardEvaluation, PackageGuardSettings
 
 
-@override_settings(ALLOWED_HOSTS=["testserver"])
+@override_settings(DEBUG=True, ALLOWED_HOSTS=["testserver"], SUPERHARRY_HOSTNAME="testserver")
 class PackageGuardAdminTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_superuser(
@@ -17,6 +17,8 @@ class PackageGuardAdminTests(TestCase):
         response = self.client.post(
             "/admin/home/packageguardsettings/add/",
             {"minimum_score": "80", "blocked_packages": "TyPo\nmalicious_pkg\ntypo"},
+            secure=True,
+            HTTP_ORIGIN="https://testserver",
             follow=True,
         )
         self.assertEqual(response.status_code, 200)

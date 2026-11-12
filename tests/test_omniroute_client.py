@@ -120,6 +120,8 @@ def test_client_uses_env_vars():
     "http://user:secret@gateway/v1",
     "http://gateway/v1#fragment",
     "http://gateway/v1?api_key=secret",
+    "http://[::1",
+    "http://gateway:invalid-port/v1",
 ])
 def test_client_rejects_invalid_gateway_endpoint(endpoint):
     with patch.dict(os.environ, {"OMNIROUTE_ENDPOINT": endpoint}, clear=True):
@@ -511,6 +513,36 @@ def test_timeout_closes_session(mock_post, client):
         with pytest.raises(Exception, match="omniroute_timeout"):
             client.chat_completion([{"role": "user", "content": "Test"}])
     close.assert_called_once_with()
+
+
+@patch("home.omniroute_client.requests.Session.get")
+def test_health_check_rejection_closes_response_and_session(mock_get, client):
+    response = Mock(status_code=401, text="gateway secret body")
+    mock_get.return_value = response
+    with patch.object(client, "close", wraps=client.close) as close:
+        with pytest.raises(Exception, match="rejected_401") as error:
+            client.health_check()
+    response.close.assert_called_once_with()
+    close.assert_called_once_with()
+    assert "gateway secret body" not in str(error.value)
+
+
+@patch("home.omniroute_client.requests.Session.post")
+def test_successful_stream_closes_response_and_session(mock_post, client):
+    response = Mock(status_code=200)
+    response.iter_lines.return_value = [b'data: {"choices": [{"delta": {"content": "ok"}}]}', b"data: [DONE]"]
+    mock_post.return_value = response
+    with patch.object(client, "close", wraps=client.close) as close:
+        list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
+    response.close.assert_called_once_with()
+    close.assert_called_once_with()
+
+
+@patch("home.omniroute_client.requests.Session.get", side_effect=requests.ConnectionError("credential=secret"))
+def test_health_check_transport_error_does_not_leak_request_message(mock_get, client):
+    with pytest.raises(Exception, match="health_failure") as error:
+        client.health_check()
+    assert "credential=secret" not in str(error.value)
 
 
 # Tests de Integración (requieren omniroute real)
