@@ -7,6 +7,20 @@
 
 The [accepted benchmark waiver](owner-validation-decisions.md#benchmark-waiver---2026-11-11) supersedes performance/load and comparative model-quality benchmark prerequisites in these task criteria. T219 now verifies resource enforcement and serialization without requiring a throughput/latency/load campaign. T237/T222 still require functional/security/recovery acceptance; do not claim skipped benchmarks passed. DOCX-to-PDF and XLSX-to-PDF are required for T195. Dedicated mailbox configuration is selected; G1 read-only OAuth/local-draft design accepted; actual Google consent/activation remain pending. [R1/R2/R3](recovery-admin-proposals.md) are accepted T182/T188/T189 design contracts (owner, 2026-11-11), not implemented behavior.
 
+## Current documentation reconciliation - 2026-11-12
+
+The dated evidence below preserves the state inspected on 2026-11-11. Since
+then, the portable `manage.py` entrypoint was restored and bounded slices for
+T229, T231, T232 and T237 were implemented. The current local validation
+baseline is `manage.py check`, migration checks, `17 passed` package-guard
+pytest tests and `488 passed, 10 skipped` for the Django suite. These results
+are current local evidence only; they do not establish independent audit,
+gateway/provider, target-VM, deployment or production acceptance.
+
+Active backlog summaries were synchronized to distinguish historical counts
+from current evidence. No task status was changed to `Completed`, and no
+historical result or owner decision was rewritten.
+
 ## Evidence and limits
 
 - The actual queue file is `tasks.md`; all current delivery references use this case-sensitive spelling. Historical review notes retain the original discovery context.

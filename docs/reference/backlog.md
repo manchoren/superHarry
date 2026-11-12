@@ -112,18 +112,18 @@ Accepted owner follow-up (2026-11-11): [benchmarks waived](owner-validation-deci
 The [review and acceptance records](spec-code-review-2026-11-11.md) define the evidence, dependencies and Given/When/Then criteria for T179-T240. Existing completion markers are historical scope claims, not a new validation result. All pending tasks are **Unassigned**; no active implementer/model was verified. T179 retains its recorded In progress status, with current gateway acceptance still outstanding.
 
 - [ ] **T225 - Restore portable delivery and validation contracts** Status: Pending. Owner: Unassigned. Canonical scope/evidence: [dated specification review](spec-code-review-2026-11-11.md#t225---restore-portable-delivery-and-validation-contracts). The portable entrypoint, pinned dependency manifest, test-selection policy and validation commands are now present; fresh-audit and independent-acceptance gates remain open. Assignees named in other dated preparation records identify evidence authors for those records, not an active T225 owner.
-- [ ] **T226 - Reconcile constitution identity and context regression coverage** Status: Pending. Exact hash pin, `13 passed/6 subtests`, and equivalent module-runner suite (`475 passed, 10 skipped`) are recorded in [the dated review](spec-code-review-2026-11-11.md#t226-implementation-evidence---2026-11-11); `manage.py` is absent, and independent audit/acceptance blockers remain open.
-- [ ] **T227 - Harden and verify the gateway client contract** Status: Pending. Dated evidence records gateway `22 passed/3 skipped`, Gemini/routing/queue `50 passed`, and equivalent module-runner suite (`475 passed, 10 skipped`); real gateway/provider/VM acceptance and fresh-audit/contract blockers remain open.
+- [ ] **T226 - Reconcile constitution identity and context regression coverage** Status: Pending. Exact hash pin and context regression coverage remain valid; the portable `manage.py` entrypoint is now present. Historical `475 passed, 10 skipped` evidence is retained in the dated review; independent audit/acceptance blockers remain open.
+- [ ] **T227 - Harden and verify the gateway client contract** Status: Pending. Gateway focused evidence and later full-suite results are recorded in the dated review; historical counts remain labeled by date. Real gateway/provider/VM acceptance and fresh-audit/contract blockers remain open.
 - [ ] **T228 - Migrate model credentials and runtime configuration to omniroute** Status: Pending
-- [ ] **T229 - Connect durable chat and local inference to the gateway** Status: Pending
+- [ ] **T229 - Connect durable chat and local inference to the gateway** Status: Pending. Bounded gateway routing, credential resolution and fail-closed cancellation evidence is recorded in the dated review; real gateway, VM and release acceptance remain open.
 - [ ] **T230 - Enforce application budgets across gateway fallback and memory calls** Status: Pending
-- [ ] **T231 - Correct package guard scoring and evidence validation** Status: Pending
-- [ ] **T232 - Implement the common authorized tool execution boundary** Status: Pending
+- [ ] **T231 - Correct package guard scoring and evidence validation** Status: Pending. The bounded evaluator and contract-first tests are implemented; verifier integration, installation integration and independent acceptance remain open.
+- [ ] **T232 - Implement the common authorized tool execution boundary** Status: Pending. A bounded registry/executor slice exists; persistent grants, agent-loop integration and independent acceptance remain open.
 - [ ] **T233 - Implement the authorized file store and upload/download boundary** Status: Pending
 - [ ] **T234 - Deliver memory controls, personality and fixed-directive administration** Status: Pending
 - [ ] **T235 - Deliver the local-only guest session and chat flow** Status: Pending
 - [ ] **T236 - Deliver persisted accessible light, dark and system themes** Status: Pending
-- [ ] **T237 - Restore reproducible security, quality and VM evaluation fixtures** Status: Pending
+- [ ] **T237 - Restore reproducible security, quality and VM evaluation fixtures** Status: Pending. Synthetic manifest and validator fixtures are present; feature-specific cases, live-provider/VM validation and independent acceptance remain open.
   - Bounded fixture slice: [T237 evaluation fixtures](t237-evaluation-fixtures.md), including the synthetic-only manifest and mocked/contract/live-provider/VM separation. This does not close T237; audit, independent acceptance and live/VM gates remain open.
 - [ ] **T238 - Implement shared channel identity and attachment contracts** Status: Pending
 - [ ] **T239 - Implement storage-pressure cleanup across persisted user data** Status: Pending
