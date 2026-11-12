@@ -159,6 +159,7 @@ class OpenAIAdapterTests(TestCase):
             cancellation=cancellation,
         )
         if role is RequesterRole.GUEST:
+            kwargs["mode"] = ModelMode.LOCAL
             kwargs["guest_session_ref"] = uuid4()
         else:
             kwargs["principal_id"] = "user-1"

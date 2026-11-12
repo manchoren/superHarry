@@ -65,11 +65,17 @@ def reconcile_stale(*, now=None):
                 GeminiChatJob.objects.filter(pk=job.pk).update(state=GeminiChatJob.State.DONE)
             elif turn.state == ChatTurn.State.CANCEL_REQUESTED:
                 append_chat_event(turn=turn, event_type=ChatEvent.EventType.TURN_CANCELLED, payload={'status': 'cancelled'})
-            else:
+            elif turn.state in (ChatTurn.State.QUEUED, ChatTurn.State.RUNNING):
                 if turn.state == ChatTurn.State.QUEUED:
                     append_chat_event(turn=turn, event_type=ChatEvent.EventType.TURN_STARTED, payload={'status': 'running'})
                 append_chat_event(turn=turn, event_type=ChatEvent.EventType.TURN_FAILED,
                                   payload={'error': {'code': 'UNAVAILABLE', 'retryable': False}, 'reason': 'interrupted_unknown'})
+            else:
+                # Preserve the interruption without inventing a legal turn transition.
+                # An unknown persisted state must be investigated, never replayed.
+                logger.error('gemini_queue_unknown_turn_state', extra={
+                    'job_id': str(job.pk), 'turn_id': str(turn.pk), 'state': turn.state,
+                })
             reconciled += 1
     return reconciled
 

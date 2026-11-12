@@ -10,6 +10,7 @@ from home.model_interface import (
     ModelCompleted,
     ModelContractError,
     ModelFailed,
+    ModelMode,
     OutcomeCertainty,
     RequesterRole,
 )
@@ -66,7 +67,7 @@ class OpenRouterAdapterTests(TestCase):
                 self.assertIsInstance(event, ModelFailed)
                 self.assertEqual(event.error.outcome, OutcomeCertainty.NOT_DISPATCHED)
         guest = replace(
-            self.fixture.context, role=RequesterRole.GUEST, principal_id=None,
+            self.fixture.context, role=RequesterRole.GUEST, mode=ModelMode.LOCAL, principal_id=None,
             guest_session_ref=uuid4(),
         )
         self.assertIsInstance(

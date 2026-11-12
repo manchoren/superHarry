@@ -72,6 +72,24 @@ class GeminiQueueTests(TestCase):
             self.assertFalse(run_one())
             worker.assert_not_called()
 
+    def test_stale_claim_with_unknown_turn_state_is_interrupted_without_transition(self):
+        self.dispatcher.enqueue(self.turn.pk)
+        claim_next()
+        ChatTurn.objects.filter(pk=self.turn.pk).update(state='unexpected')
+        GeminiChatJob.objects.update(claimed_at=timezone.now() - timedelta(minutes=10))
+
+        with patch('home.gemini_queue.logger.error') as error:
+            self.assertEqual(reconcile_stale(now=timezone.now()), 1)
+
+        self.assertEqual(GeminiChatJob.objects.get().state, GeminiChatJob.State.INTERRUPTED)
+        self.turn.refresh_from_db()
+        self.assertEqual(self.turn.state, 'unexpected')
+        self.assertFalse(self.turn.events.exists())
+        error.assert_called_once()
+        with patch('home.gemini_chat.run_gemini_turn') as worker:
+            self.assertFalse(run_one())
+            worker.assert_not_called()
+
     def test_cancelled_queued_job_finishes_without_model_call(self):
         self.dispatcher.enqueue(self.turn.pk)
         ChatTurn.objects.filter(pk=self.turn.pk).update(state='cancel_requested')

@@ -305,7 +305,7 @@ class InvocationContext:
         if not isinstance(self.locale, str) or not self.locale:
             raise ModelContractError("invocation_scope_invalid")
         if self.role is RequesterRole.GUEST:
-            if self.principal_id is not None or not isinstance(
+            if self.mode is not ModelMode.LOCAL or self.principal_id is not None or not isinstance(
                 self.guest_session_ref,
                 UUID,
             ):

@@ -96,7 +96,7 @@ class FreeRouterTests(TestCase):
 
     def test_guest_local_and_mismatched_request_block_before_calls(self):
         c, a = self.candidate('one', [ModelCompleted(2)])
-        guest = replace(self.context, role=RequesterRole.GUEST, principal_id=None, guest_session_ref=uuid4())
+        guest = replace(self.context, role=RequesterRole.GUEST, mode=ModelMode.LOCAL, principal_id=None, guest_session_ref=uuid4())
         for context in (guest, replace(self.context, mode=ModelMode.LOCAL), replace(self.context, request_id=uuid4())):
             with self.subTest(context=context):
                 with self.assertRaises(RouterError): self.collect((c,), context=context)

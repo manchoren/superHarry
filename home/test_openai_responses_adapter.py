@@ -95,7 +95,7 @@ class OpenAIResponsesAdapterTests(TestCase):
         self.assertGreaterEqual(len(self.checks), 2)
 
     def test_guest_local_and_unsupported_options_are_never_dispatched(self):
-        for context in (replace(self.context, role=RequesterRole.GUEST, principal_id=None, guest_session_ref=uuid4()),
+        for context in (replace(self.context, role=RequesterRole.GUEST, mode=ModelMode.LOCAL, principal_id=None, guest_session_ref=uuid4()),
                         replace(self.context, mode=ModelMode.LOCAL)):
             with self.subTest(context=context):
                 events = list(self.adapter.stream(self.request, context))

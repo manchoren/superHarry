@@ -4,10 +4,19 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'home/chat.css' %}">
+    <script src="{% static 'home/theme.js' %}"></script>
     <title>{% translate "Sign in" %} · superHarry</title>
 </head>
 <body>
     <main>
+        <label for="theme-select">{% translate "Theme" context "chat.preferences.theme_label" %}</label>
+        <select id="theme-select" name="theme">
+            <option value="system">{% translate "System" context "chat.preferences.theme_system" %}</option>
+            <option value="light">{% translate "Light" context "chat.preferences.theme_light" %}</option>
+            <option value="dark">{% translate "Dark" context "chat.preferences.theme_dark" %}</option>
+        </select>
         <h1>{% translate "Sign in" %}</h1>
         {% if form.errors %}
             <p>{% translate "Your username and password didn't match. Please try again." %}</p>

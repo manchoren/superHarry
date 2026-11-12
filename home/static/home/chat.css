@@ -1,11 +1,25 @@
 :root {
-    color-scheme: light;
+    color-scheme: light dark;
     font-family: system-ui, sans-serif;
     color: #202a35;
     background: #f4f6f8;
     font-synthesis: none;
     text-rendering: optimizeLegibility;
 }
+
+:root[data-theme="dark"] { color-scheme: dark; color: #e7edf5; background: #17202b; }
+:root[data-theme="dark"] .sidebar,
+:root[data-theme="dark"] .conversation-area,
+:root[data-theme="dark"] .message-composer { border-color: #394858; background: #202c39; }
+:root[data-theme="dark"] .navigation-link,
+:root[data-theme="dark"] .account-action,
+:root[data-theme="dark"] .message-composer select,
+:root[data-theme="dark"] .message-composer textarea { color: #e7edf5; background: #293747; }
+:root[data-theme="dark"] .navigation-link[aria-current="page"] { color: #d6e7ff; background: #294b73; }
+:root[data-theme="dark"] .chat-header p,
+:root[data-theme="dark"] .empty-state p,
+:root[data-theme="dark"] .message-composer p,
+:root[data-theme="dark"] .account-name { color: #bdc9d7; }
 
 * {
     box-sizing: border-box;
@@ -122,6 +136,9 @@ textarea {
 .account-panel form {
     margin: 0;
 }
+
+.theme-control { display: grid; gap: 0.35rem; margin-top: 1rem; }
+.theme-control select { min-height: 2.75rem; padding: 0.45rem 0.6rem; border: 1px solid #aeb8c4; border-radius: 0.45rem; color: inherit; background: transparent; font: inherit; }
 
 .account-action {
     width: fit-content;

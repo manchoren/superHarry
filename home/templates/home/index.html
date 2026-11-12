@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% translate "Chat · superHarry" context "chat.shell.document_title" %}</title>
     <link rel="stylesheet" href="{% static 'home/chat.css' %}">
+    <script src="{% static 'home/theme.js' %}"></script>
 </head>
 <body>
     <a class="skip-link" href="#main-content">{% translate "Skip to main content" context "chat.accessibility.skip_link" %}</a>
@@ -53,6 +54,14 @@
             </section>
             {% endif %}
             <div class="account-panel">
+                <label class="theme-control" for="theme-select">
+                    {% translate "Theme" context "chat.preferences.theme_label" %}
+                    <select id="theme-select" name="theme">
+                        <option value="system">{% translate "System" context "chat.preferences.theme_system" %}</option>
+                        <option value="light">{% translate "Light" context "chat.preferences.theme_light" %}</option>
+                        <option value="dark">{% translate "Dark" context "chat.preferences.theme_dark" %}</option>
+                    </select>
+                </label>
                 {% if user.is_authenticated %}
                     <p class="account-name">
                         {% blocktranslate with username=user.get_username context "chat.account.signed_in_as" %}Signed in as {{ username }}{% endblocktranslate %}

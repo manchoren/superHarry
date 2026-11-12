@@ -258,6 +258,23 @@ class ModelInterfaceTests(TestCase):
             validate_invocation(request, mismatched)
         self.assertEqual(raised.exception.code, "invocation_request_mismatch")
 
+    def test_guest_invocation_requires_local_mode_and_ephemeral_session(self):
+        with self.assertRaises(ModelContractError) as raised:
+            InvocationContext(
+                request_id=self.request_id, operation_id=uuid4(),
+                role=RequesterRole.GUEST, channel=RequestChannel.WEB,
+                mode=ModelMode.AUTOMATIC, policy_revision="guest-v1",
+                locale="en", guest_session_ref=uuid4(),
+            )
+        self.assertEqual(raised.exception.code, "invocation_identity_invalid")
+        context = InvocationContext(
+            request_id=self.request_id, operation_id=uuid4(),
+            role=RequesterRole.GUEST, channel=RequestChannel.WEB,
+            mode=ModelMode.LOCAL, policy_revision="guest-v1", locale="en",
+            guest_session_ref=uuid4(),
+        )
+        self.assertEqual(context.role, RequesterRole.GUEST)
+
     def test_capability_report_requires_verified_current_support(self):
         report = self._report()
         requirements = CapabilityRequirements(
