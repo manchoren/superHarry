@@ -1,0 +1,31 @@
+{
+  "system": "Linux-6.12.115+deb13.1-arm64-aarch64-with-glibc2.41",
+  "python": "3.13.5 (main, Aug 10 2026, 12:06:59) [GCC 14.2.0]",
+  "machine": "aarch64",
+  "libc": [
+    "glibc",
+    "2.41"
+  ],
+  "os_release": {
+    "NAME": "Debian GNU/Linux",
+    "ID": "debian",
+    "PRETTY_NAME": "Debian GNU/Linux 13 (trixie)",
+    "VERSION_ID": "13",
+    "VERSION": "13 (trixie)",
+    "VERSION_CODENAME": "trixie",
+    "DEBIAN_VERSION_FULL": "13.7",
+    "HOME_URL": "https://www.debian.org/",
+    "SUPPORT_URL": "https://www.debian.org/support",
+    "BUG_REPORT_URL": "https://bugs.debian.org/"
+  },
+  "cpu_count": 4,
+  "meminfo": [
+    "MemTotal:        8121396 kB",
+    "MemFree:         6525928 kB",
+    "MemAvailable:    6503584 kB"
+  ],
+  "harness_sha256": "d78a99532b64846251d0c877dee63b0774b7f8d64efa2e63a29bb826c09f43ce",
+  "fixture_sha256": "8bf6f901f49dcebd8542ac3419b6a344baa308e8451ead23edc198063982c2e2",
+  "systemd_state": "running",
+  "guest_lab_du_kib": 809844
+}

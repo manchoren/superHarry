@@ -1,0 +1,58 @@
+{
+  "status": "indexing",
+  "queue_wait_seconds": 0,
+  "fixture_sha256": "8bf6f901f49dcebd8542ac3419b6a344baa308e8451ead23edc198063982c2e2",
+  "offline_network_namespace": true,
+  "elapsed_seconds": 1141.248,
+  "max_rss_kib": 903408,
+  "runtime": {
+    "onnxruntime": "1.31.1",
+    "numpy": "2.5.4",
+    "providers": [
+      "AzureExecutionProvider",
+      "CPUExecutionProvider"
+    ]
+  },
+  "cold_session_load_seconds": 5.346885480000083,
+  "session_providers": [
+    "CPUExecutionProvider"
+  ],
+  "inputs": [
+    {
+      "name": "input_ids",
+      "type": "tensor(int64)",
+      "shape": [
+        "batch_size",
+        "sequence_length"
+      ]
+    },
+    {
+      "name": "attention_mask",
+      "type": "tensor(int64)",
+      "shape": [
+        "batch_size",
+        "sequence_length"
+      ]
+    },
+    {
+      "name": "token_type_ids",
+      "type": "tensor(int64)",
+      "shape": [
+        "batch_size",
+        "sequence_length"
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "last_hidden_state",
+      "type": "tensor(float)",
+      "shape": [
+        "batch_size",
+        "sequence_length",
+        384
+      ]
+    }
+  ],
+  "indexed_records": 150
+}

@@ -1,0 +1,32 @@
+# T215 - Voice runtime and model selection
+
+Current validation policy (owner, 2026-11-11): [future benchmarks waived](owner-validation-decisions.md#benchmark-waiver---2026-11-11). Numerical/comparative benchmark gates below are superseded; historical results remain evidence. Functional, security, resource-enforcement, language/format smoke checks and recovery tests remain required. No package or deployment approval is implied.
+
+Status: Selected by the owner on 2026-11-11: whisper.cpp 1.9.5 with multilingual small for asynchronous notes and base for short commands; Piper 1.8.0 with Daniela preferred and Ald as fallback. If target-VM problems arise, revisit the selection later. Selection is not approval to download, install, run on the VM, deploy, or distribute. T215 remains pending; T218, T233, T237 and T238 remain prerequisites. Recheck upstream metadata and complete the artifact manifest before requesting scoped installation approval.
+
+## Selected components
+
+| Component | Selection | Evidence and limits |
+|---|---|---|
+| STT runtime | [whisper.cpp v1.9.5](https://github.com/ggml-org/whisper.cpp/releases/tag/v1.9.5), CPU build | Upstream release identifies commit `d1be6fd` (abbreviated); [runtime license MIT](https://github.com/ggml-org/whisper.cpp/blob/master/LICENSE). Resolve the full commit, source digest, build dependencies, compiler options and ARM64 compatibility before installation. |
+| STT for asynchronous notes | `ggml-small.bin`, multilingual, unquantized | [Upstream model catalog](https://huggingface.co/ggerganov/whisper.cpp) reports 466 MiB and SHA-1 `55356645c2b361a969dfd0ef2c5a50d530afd8d5`; model repository and [original Whisper](https://github.com/openai/whisper/blob/main/LICENSE) identify MIT. Pin repository revision and verify SHA-256 and provenance of the actual converted file before installation. |
+| STT for short commands | `ggml-base.bin`, multilingual, unquantized | Same catalog reports 142 MiB and SHA-1 `465707469ff3a37a2b9b8d8f89f2f99de7299dac`. Same model license and identity checks. The selections require target-VM validation before production acceptance. |
+| TTS runtime | [OHF Piper v1.8.0](https://github.com/OHF-Voice/piper1-gpl/releases/tag/v1.8.0), `piper-tts` | Maintained implementation identifies [GPL-3.0-or-later](https://github.com/OHF-Voice/piper1-gpl/blob/main/setup.py), unlike the former MIT engine. Pin the exact distribution, SHA-256 and dependencies; verify Linux ARM64/Python wheel availability or prepare a separately reviewed build. Assess integration and distribution obligations for the actual architecture before release; a separate process alone does not settle licensing. |
+| Preferred Spanish voice | `es_AR-daniela-high` ONNX plus matching JSON | [Model card](https://huggingface.co/rhasspy/piper-voices/blob/main/es/es_AR/daniela/high/MODEL_CARD) identifies the training dataset as CC BY-SA 4.0. This does not by itself establish all rights or obligations for the weights or synthesized audio. Resolve those questions before distribution or production use. |
+| Fallback Spanish voice | `es_MX-ald-medium` ONNX plus matching JSON | [Model card](https://huggingface.co/rhasspy/piper-voices/blob/main/es/es_MX/ald/medium/MODEL_CARD) identifies the dataset license as Unlicense and notes fine-tuning from davefx. Confirm actual model and base-voice rights independently before use or distribution. |
+
+Piper's [voice licensing guidance](https://github.com/OHF-Voice/piper1-gpl) calls for reviewing each voice. The repository-wide MIT metadata is insufficient evidence of an individual voice's rights. Record model card, dataset, base model, attribution and any unresolved share-alike or output questions for each artifact; do not infer legal clearance from benchmark success.
+
+## Frozen evaluation proposal
+
+Before measuring, T237 must freeze consented or synthetic local fixtures, reference transcripts, scoring normalization and numerical STT quality, latency and RAM acceptance thresholds. Include Spanish Latin American accents and voseo, English, short commands, asynchronous notes, numbers, names, background noise and silence. For each language explicitly configure the transcription language or document the detection mode; do not use `.en` models. Measure WER by language and difficult subset, hallucinations on silence, wall time, peak RAM and failure rate. Record thread count, CPU/VM configuration, model hashes, cold/warm state, queue time and audio duration. Validate the selected `small` and `base` models against the frozen gates for their respective uses. If either fails or causes target-VM problems, retain text fallback where needed and revisit the selection; no alternative is automatically approved.
+
+For TTS, evaluate both voices using the same frozen Spanish paragraph of approximately 100 words and pronunciation cases. Follow P-48 exactly: the local LLM is loaded but not inferencing, with idle and predefined ordinary background workload conditions. Daniela qualifies only at synthesis RTF <= 0.5 idle and < 1.0 under load. Otherwise evaluate ald as the fallback; do not assume it meets resource or license requirements. Measure synthesis time, audio duration, peak RAM, queue delay and time to first audio separately; evaluate sentence-by-sentence synthesis, intelligibility and pronunciation. Keep heavy LLM, STT, TTS, OCR and sandbox work serialized. Non-Spanish replies remain text-only under P-46.
+
+## Before any installation or benchmark
+
+1. Produce a manifest with immutable upstream revisions, exact source and binary/model URLs, SHA-256 for each artifact including both ONNX and JSON files, actual compressed/installed sizes, licenses and notices, dependency tree, architecture and compatibility, advisory review, and bounded CPU/RAM/disk expectations. Unknowns are blockers, not measured values.
+2. Define the isolated VM workspace, network-disabled inference, bounded fixtures, service configuration, resource limits, cancellation, deletion of processed audio and cleanup. No user audio leaves the VM; no production data, service or database changes. Record any external acquisition separately from offline inference.
+3. Obtain the applicable scoped artifact and isolated-test approval after prerequisites and health checks. Report results and failures with sanitized evidence. The selected models and voices remain subject to artifact, license, target-VM, deployment and release acceptance gates.
+
+No model files were downloaded, no packages installed and no benchmarks run for this selection.

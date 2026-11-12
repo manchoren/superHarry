@@ -21,6 +21,8 @@ All files containing cryptographic keys, secrets, credentials, or sensitive conf
 | Configuration files | `0640` (rw-r-----) | `superharry` | `superharry` | `/etc/superharry/*.conf` |
 | Backup archives | `0400` (r--------) | `superharry` | `superharry` | `/var/lib/superharry/backups/` |
 
+Accepted R1 exception (owner, 2026-11-11): the memory key's encrypted credential blob is root-owned, mode `0400`, outside application-writable state at `/etc/credstore.encrypted/superharry-memory-key.cred`. systemd delivers the decrypted credential through the owning unit's read-only credential directory; do not expose it through environment variables, logs, prompts or downloads. Protect the systemd host key with its platform-required root-only permissions. This exception supersedes the general service-owned key-file example for this memory credential only; actual unit provisioning remains T221 work.
+
 ### 1.2 Enforcement
 
 - Set permissions immediately after file creation
@@ -282,6 +284,42 @@ omniroute proxies Ollama for local model:
 - Centralized usage logs
 - Same retry/timeout policies
 
+### 5.5 External budgets and gateway accounting
+
+Accepted by the owner on 2026-11-11 in [D2](../owner-attention.md#d2---initial-external-budgets-and-gateway-accounting-t220--t230). Implementation and validation remain T230; this records policy rather than active runtime configuration.
+
+These are application allowances, not claims about provider free quotas, availability or actual workload needs. Review them against measured usage before release; administrator changes must be validated and audited.
+
+| Setting | Accepted initial value |
+|---|---|
+| External token hard limit per authenticated user | 100,000/day and 2,000,000/calendar month |
+| External token hard limit globally, including administrators and maintenance | 300,000/day and 6,000,000/calendar month |
+| Warning | Once per budget scope/period at 80% of its hard limit; also show blocked admission and unresolved reservations |
+| Billable model spend allowance | USD 0; no paid route or paid fallback |
+| Accounting periods | UTC calendar days/months, displayed with explicit UTC reset time; user's display timezone does not alter accounting |
+| Missing/invalid budget configuration | External dispatch unavailable until configured; eligible local inference remains available under existing controls |
+
+Count input and output tokens for every external invocation: mandatory context, history, tools, memory retrieval/recall, generated output and provider-reported additional token categories without double-counting. Attribute user-triggered subsidiary calls to that user and the global budget. Attribute shared maintenance to an explicit system scope and the global budget; its job-specific limits remain T202 work. Track local token usage separately without deducting it from external allowances; existing local resource/concurrency controls still apply. Guests remain local-only.
+
+The effective allowance is the minimum remaining applicable user daily/monthly, global daily/monthly, job-specific and provider/model quota. A zero monetary limit excludes known billable routes; it is not proof that a nominally free account cannot incur auxiliary charges. Existing informed consent remains valid only for its recorded provider, data and risk scope.
+
+#### Reservation, fallback and recovery contract
+
+Given an external call, when admission is evaluated, then atomically reserve a conservative bound for the full input plus enforced maximum output against every applicable budget before dispatch. If the bound cannot be established for an eligible model, do not dispatch externally; never truncate mandatory context to fit a budget.
+
+Given gateway fallback, when a further external attempt is considered, then it must remain within existing provider/data-sharing authorization, free-only eligibility and reserved capacity. Every potentially consuming attempt must be correlated and accounted for; reserve additional capacity before another attempt when needed. Disable opaque automatic retries/fallback if their consumption or replay behavior cannot be bounded and verified. Gateway health/usage endpoints and schemas require technical verification under T227; this decision does not assert their availability.
+
+Given success with trustworthy correlated usage, when settlement occurs, then record actual consumption once and release only the proven unused portion. Given missing/malformed usage, timeout, cancellation after possible dispatch or ambiguous fallback, then retain the conservative reservation as unknown and do not resend automatically. Cancellation before proven dispatch may release its reservation. Record proven overage rather than hiding it, block further calls when necessary and flag the bound failure for investigation.
+
+Given a UTC period rollover, when new admission occurs, then retain outstanding prior-period reservations. Until reconciled, carry their unresolved capacity as an encumbrance against current daily/monthly allowances, without duplicating settled historical usage. A reset, restart or administrative limit change must not erase unknown outcomes or reopen capacity through counter reset.
+
+Given exhausted external allowance, when a new request is submitted, then explain the exhausted scope/reset and use an eligible local route only when safe; preserve external-only work durably with cancellation. Local fallback must not replay an unknown external request automatically. Crossing a soft threshold warns without blocking; crossing a hard threshold prevents further external admission.
+
+#### Data-sharing boundary
+
+D2 grants no new provider or data-sharing consent. Main prompts, required policy context, authorized history, permitted memory excerpts and tool results may reach only routes covered by existing approval. A fallback provider receives data too and needs the same applicable authorization. Provider onboarding with materially uncertain terms, retention or auxiliary charges requires a separate concrete proposal stating provider, data, uncertainty and scope. Credentials and other users' data remain outside personal risk acceptance.
+
+
 ---
 
 ## 6. Package Installation Guard
@@ -312,48 +350,27 @@ Agent: "Install numpy==1.24.0 for performance"
 → Guard audits: numpy==1.24.0 independently
 ```
 
-### 6.3 Evidence Sources
+### 6.3 Accepted scoring and evidence contract
 
-Guard checks (for directly requested package only):
+Accepted by the owner on 2026-11-11 in [D1](../owner-attention.md#d1---package-guard-formula-and-required-evidence-t220--t231). This supersedes the previous formula and evidence-source list; implementation remains tracked by T231.
 
-1. **Registry verification:** Package exists in PyPI/npm with matching hash
-2. **Signature check:** GPG/PGP signature verification (if available)
-3. **CVE database:** NVD, GitHub Security Advisories (past 2 years)
-4. **Reputation:** Download count, package age, maintainer history
-5. **Name analysis:** Typosquatting detection, namespace confusion
-6. **Blocklist:** Known malicious packages (manual curated list)
+| Dimension | Reproducible points |
+|---|---|
+| Integrity (40) | Official-registry artifact hash verified: 20; verified release signature: 15; verified publisher identity: 5. |
+| Reputation (30) | More than 100,000 downloads/month: 10; age over two years: 10; verified security patch in the last six months: 10. Start at zero. |
+| Static analysis (20) | Completed typosquatting check: 5; completed namespace-confusion check: 5; completed malicious-pattern analysis of the requested artifact: 10. Award only on a passing result. |
+| Provenance (10) | Verified SLSA level 1 or higher: 5; verified signed release artifacts: 5. |
 
-### 6.4 Scoring Formula
+Deduct 10/5/2 reputation points per distinct applicable critical/high/medium advisory published in the preceding two years, bounded at zero reputation points. Do not introduce a separate deduction cap or popularity bonus. Record older still-applicable advisories separately; the scoring window does not establish that an older vulnerability is fixed. Deduplicate advisory aliases and record version applicability and severity evidence. An unresolved applicable advisory with unknown severity requires review rather than an invented severity.
 
-```
-Total score = Integrity (0-40) + Reputation (0-30) + Static (0-20) + Provenance (0-10)
+Mandatory evidence: exact registry, normalized package name, version, artifact digest; successful artifact-hash verification; current blocklist, advisory/applicability and all three static checks; source, collection time and expiry for each finding. Maximum evidence age: 24 hours; invalidate sooner when the artifact or blocklist changes. A missing signature or provenance attestation earns zero for that item when its absence is verified; unavailable evidence must remain distinguishable from verified absence. Unsupported registries or mandatory analyzers cannot authorize installation.
 
-Integrity:
-  + 20: Hash verified in official registry
-  + 15: Valid GPG signature
-  + 5:  Publisher identity verified
+Given a blocklist match or absent, stale, malformed or unavailable mandatory evidence, when the guard evaluates a request, then installation is not authorized regardless of score. Given complete evidence and a score of at least the configured threshold (default 80/100), when the installed artifact matches the evaluated digest, then the guard may authorize only the scoped sandbox installation. Application and system dependencies still require separate owner approval.
 
-Reputation:
-  - 10: Each CRITICAL CVE in past 2 years
-  - 5:  Each HIGH CVE in past 2 years
-  - 2:  Each MEDIUM CVE in past 2 years
-  + 10: >100k downloads/month
-  + 8:  Package age >2 years
-  + 5:  Security patch in last 6 months
+Known malicious packages score zero regardless of other findings.
 
-Static Analysis:
-  + 5:  No typosquatting risk
-  + 5:  No namespace confusion
-  + 10: No malicious code patterns
+Trade-off: unsigned or poorly documented packages may not reach 80. The guard must report missing points and offer evaluated alternatives; it must not manufacture evidence to make popular packages pass. Passing static checks does not prove absence of malicious code.
 
-Provenance:
-  + 5:  SLSA level 1+
-  + 5:  Signed release artifacts
-```
-
-**Threshold:** Configurable, default 80/100
-
-**Blocklist override:** Known malicious packages score 0 regardless of other factors
 
 ---
 
@@ -419,3 +436,7 @@ Exception: Example commands may show literal paths if clearly marked as examples
 - **Implementation:** Should import from config, not duplicate policies
 - **Tests:** Verify policy compliance, don't redefine policies
 
+
+## 8. Accepted recovery and email contracts
+
+Owner accepted [R1/R2/R3](recovery-admin-proposals.md) and [G1](gmail-auth-proposal.md) on 2026-11-11. These linked contracts are accepted policy for memory-key custody and same-VM recovery, data-only downloadable backups and staged restore, signed staged updates/rollback and dedicated Gmail read-only OAuth with local drafts and human sending. Credentials and keys stay outside downloadable backups. Preserve current authorization and action/audit/quota ledgers during content restore; never replay external effects. Actual package installation, privileged helper/unit deployment and consequential production operations still require their concrete applicable authorization. No Gmail grant, encryption activation, backup/restore or release update occurred from recording this acceptance.

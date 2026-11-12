@@ -3,6 +3,10 @@
 **Date:** 2026-11-11. **Method:** static inspection of the current working tree.
 **Constitution SHA-256:** `640c85a00d537e01fe446ac4516cb09cb53df2acdac493615fb5e72bdd792e64`.
 
+## Owner follow-up - 2026-11-11
+
+The [accepted benchmark waiver](owner-validation-decisions.md#benchmark-waiver---2026-11-11) supersedes performance/load and comparative model-quality benchmark prerequisites in these task criteria. T219 now verifies resource enforcement and serialization without requiring a throughput/latency/load campaign. T237/T222 still require functional/security/recovery acceptance; do not claim skipped benchmarks passed. DOCX-to-PDF and XLSX-to-PDF are required for T195. Dedicated mailbox configuration is selected; G1 read-only OAuth/local-draft design accepted; actual Google consent/activation remain pending. [R1/R2/R3](recovery-admin-proposals.md) are accepted T182/T188/T189 design contracts (owner, 2026-11-11), not implemented behavior.
+
 ## Evidence and limits
 
 - The actual queue file is `tasks.md`; the progress command failed trying to open `TASK.md` in this checkout. Its path was corrected during this review and the command rerun. Other documentation links still need one portable spelling under T225.
@@ -25,11 +29,11 @@ All references below are to `product-requirements.md` and `security-policies.md`
 | T179 | Direct-provider admission primitives exist; gateway admission is unproven. | Gate the actual gateway/upstream request, preserve complete protected context and verified input count, output reserve, authorization and cancellation; reject uncountable/oversized input. Depends on T225, T226, T227. |
 | T180 | No persisted grant model or enforcement flow found. | Operator-only provisioning; no app account/model creation; exact principal/tool/argument scope, atomic maximum 50 uses and 7 days, revocation and audit; consequential actions individually confirmed. Depends on T232. |
 | T181 | PackageGuard exists; no admin configuration registration. | Admin-only validated thresholds/blocklist and persisted evaluation evidence, with audited changes; a score never authorizes application dependency installation. Depends on T231. |
-| T182 | SQLCipher is a design, not a memory backend. | Approve binding/dependency; optional conversion with recovery backup, protected automatic unlock, missing/wrong-key denial, WAL/temp protection and rollback. Depends on T183, T225; target-VM acceptance in T223. |
+| T182 | SQLCipher is not yet a memory backend. Dated follow-up: [approved D3 binding experiment](t182-sqlcipher-binding-review.md#approved-d3-execution-evidence---2026-11-11) passed on an isolated ARM64 VM copy; production integration remains open. | Approve binding/dependency; optional conversion with recovery backup, protected automatic unlock, missing/wrong-key denial, WAL/temp protection and rollback. Depends on T183, T225; target-VM acceptance in T223. |
 | T183 | No memory model. | Global/user records with separate creation/access/confirmation metadata and cross-user denial. Depends on T225. |
 | T184 | Gateway memory helper exists without retrieval integration. | Initial permitted-scope retrieval before main dispatch, reasoning disabled, validated IDs, bounded context and charged usage; guests excluded. Depends on T183, T229, T230. |
 | T185 | No recall tool. | Bounded re-invocation of the same memory agent through authorized tools, with recursion/budget limits and audit. Depends on T184, T232. |
-| T186 | No semantic/keyword retrieval backend. | Fixed bilingual retrieval benchmark, approved embedding dependency/location, measured keyword fallback. Depends on T183, T237. |
+| T186 | No application retrieval backend. Dated follow-up: [candidate review and host keyword diagnostic](t186-semantic-retrieval-review.md); D4 approved isolated ARM64 experiment: MiniLM diagnostic passed and owner selected its tested ARM64 qint8 model baseline on 2026-11-11; E5 incomplete. Production serving location, integration and activation remain open. | Fixed bilingual retrieval benchmark, approved embedding dependency/location, measured keyword fallback. Depends on T183, T237. |
 | T187 | History already persists and authorized conversations reopen. | Add own-history navigation/deletion, consistent event/job cleanup and cancellation, cross-user denial, retention access tracking; preserve context meter and reattachment. Depends on T225; coordinate T239. |
 | T188 | No admin backup/download/restore flow. | Consistent staged snapshot; exclude secrets/keys; validate archive, key availability, integrity and isolation; confirm restore after verified recovery backup. Depends on T182, T183, T233. |
 | T189 | No admin update flow. | Approved source/version, staged checks, explicit admin confirmation, recovery backup and rollback, visible failure/audit. Depends on T188, T225; deployment approval remains required. |
@@ -38,7 +42,7 @@ All references below are to `product-requirements.md` and `security-policies.md`
 | T192 | No nsjail executor. | Updated threat model before implementation; offline per-user mounts, enforced time/CPU/RAM/disk/PID/output bounds and escape/cross-user tests on VM. Depends on T232, T233, T237; package/service approvals apply. |
 | T193 | Guard not connected to installation. | Independently evaluate directly requested packages, stage pinned artifacts through file store, verify installed artifact identity; no sandbox network, denied/unknown checks cannot install. Depends on T181, T192, T231. |
 | T194 | No public fetch/search tool. | Schema/RBAC checks, redirect and DNS destination validation, non-public destination denial, bounded downloads staged outside webroot. Depends on T232, T233. |
-| T195 | No document pipeline. | Approved format-specific dependencies, untrusted parsing inside sandbox, bounded output returned through authorized file store. Depends on T192, T193, T233. |
+| T195 | No document pipeline. | [D5 accepted initial formats and candidate operations](../owner-attention.md#d5---t195-document-formats-and-candidate-libraries); both DOCX-to-PDF and XLSX-to-PDF are required; exact package artifacts remain open. Approved format-specific dependencies, untrusted parsing inside sandbox, bounded output returned through authorized file store. Depends on T192, T193, T233. |
 | T196 | No skill registry/models. | Parse SKILL.md plus manifest permissions, role and dependencies without granting authority. Depends on T232, T233, updated threat model. |
 | T197 | No skill approval UI. | Admin reviews exact content/diff/manifest; users propose; agent cannot approve. Depends on T196, T198. |
 | T198 | No runtime skill integrity gate. | Verify approved complete content before load; changed content requires reapproval; invalid signature blocks, missing signature warns. Depends on T196. |
@@ -63,7 +67,7 @@ All references below are to `product-requirements.md` and `security-policies.md`
 | T217 | Deferred by accepted channel sequence. | Review current terms/options before method selection; no implicit activation. Depends on T213, T214, T218, T238. |
 | T218 | Audit checklist is not an external-service audit. | Record exact sources/date/scopes/licenses, consent boundaries and unresolved Gmail/voice/weather/WhatsApp decisions before integration. |
 | T219 | Governor code does not prove VM resource acceptance. | Freeze reproducible workloads/profile and measure enforced bounds, responsiveness, queue delay and heavy-job serialization. Depends on T237; service activation approval applies. |
-| T220 | Open implementation contracts remain. | Record owner decisions only where required: gateway schemas/model IDs, package evidence/formula conflicts, scheduler limits, backup and retrieval mechanics. Do not mark proposals accepted automatically. |
+| T220 | Open implementation contracts remain. | Record owner decisions only where required: gateway schemas/model IDs, scheduler limits, backup and retrieval mechanics. Package formula/evidence resolved by owner acceptance of [D1](../owner-attention.md#d1---package-guard-formula-and-required-evidence-t220--t231) on 2026-11-11. Budget limits/accounting resolved by owner acceptance of [D2](../owner-attention.md#d2---initial-external-budgets-and-gateway-accounting-t220--t230) on 2026-11-11. Remaining choices stay open; do not mark proposals accepted automatically. |
 | T221 | Existing scripts/configuration are not current deployment evidence. | Inventory existing persistent VM/services first; approved native services, gateway/Ollama, private TLS/LAN/VPN, protected credentials, restart and rollback. Depends on release feature subset, T225, T226, T228. |
 | T222 | Full-product VM acceptance not demonstrated. | Execute fixed enabled-feature security/functional/restart/load cases on frozen target profile; explicit exclusions and no synthetic production claims. Depends on T221, T237 and enabled feature tasks. |
 | T223 | Recovery design lacks current acceptance evidence. | Test backup consistency under writes, missing/wrong keys, corruption/interruption, same-VM staged restore, secret exclusion and rollback. Depends on T188, T221. |
@@ -122,14 +126,14 @@ The backlog owns status. These records own the scope, dependencies and acceptanc
 
 ### T230 - Enforce application budgets across gateway fallback and memory calls
 
-**Priority:** P0. **Dependencies:** T227, T228, T179. **Evidence:** existing ProviderQuota/ProviderModelQuota/ProviderReservation are keyed to direct-provider dispatch.
+**Priority:** P0. **Dependencies:** T227, T228, T179. **Owner authorization (2026-11-11):** D2 accepted; implement security policies section 5.5, including initial allowances, UTC periods, 80% warnings and unresolved-reservation carryover. Budget-policy decision prerequisite under T220 is resolved; implementation/validation remain open. **Evidence:** existing ProviderQuota/ProviderModelQuota/ProviderReservation are keyed to direct-provider dispatch.
 
 - Specify application versus gateway accounting ownership, reservations and correlated reconciliation. Enforce per-user/global daily/monthly soft/hard limits, including memory/recall calls, and the configured free-only route restrictions across the entire fallback chain.
 - Given a hard budget or unauthorized/paid fallback, when a request is considered, then no external dispatch occurs. Given concurrent calls, unknown usage or a timeout, then reservations remain bounded and uncertain usage is not released without evidence. Do not interpret a missing /usage endpoint as zero consumption.
 
 ### T231 - Correct package guard scoring and evidence validation
 
-**Priority:** P0. **Dependencies:** T225; resolve policy conflicts through T220 before changing accepted policy. **Evidence:** package_guard findings above; security-policies section 6 versus roadmap 80/105.
+**Priority:** P0. **Dependencies:** T225. **Owner authorization (2026-11-11):** D1 accepted; implement security policies section 6, including its 24-hour evidence limit. Package formula/evidence decision prerequisite under T220 is resolved; implementation and validation remain open. **Evidence:** package_guard findings above; security-policies section 6 versus roadmap 80/105.
 
 - Implement the approved 100-point dimensions/threshold and CVE window without unapproved bonus/cap substitutions. Bind findings to exact registry/package/version/artifact digest; hash the actual staged artifact and cryptographically verify claimed signatures/provenance rather than crediting metadata presence.
 - Implement or explicitly deny unsupported mandatory static checks and registries; distinguish unknown evidence and API failure from verified absence. Test normalization, blocklist override, CVE applicability, scoring boundaries, stale cache, malformed responses and unavailable services using deterministic fixtures.

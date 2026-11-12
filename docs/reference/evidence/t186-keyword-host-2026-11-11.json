@@ -1,0 +1,339 @@
+{
+  "fixture_sha256": "0c882b862e05893d99b38d6acf37916789f17d48d34b8f3d9198ea526b72f681",
+  "sqlite_version": "3.45.3",
+  "method": "FTS5 unicode61 OR terms, BM25; SQL owner filter; no stemming or translation",
+  "query_count": 36,
+  "metrics": {
+    "lexical": {
+      "recall_at_5": 1.0,
+      "mrr_at_5": 1.0
+    },
+    "overall": {
+      "recall_at_5": 0.5,
+      "mrr_at_5": 0.44305555555555554
+    },
+    "cross_language": {
+      "recall_at_5": 0.0,
+      "mrr_at_5": 0
+    },
+    "paraphrase": {
+      "recall_at_5": 0.5,
+      "mrr_at_5": 0.32916666666666666
+    }
+  },
+  "query_latency_p95_ms": 0.056400000175926834,
+  "details": [
+    {
+      "query_id": "m01-lexical",
+      "ranked_ids": [
+        "m01"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m01-cross_language",
+      "ranked_ids": [],
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0
+    },
+    {
+      "query_id": "m01-paraphrase",
+      "ranked_ids": [
+        "m11",
+        "m03"
+      ],
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0
+    },
+    {
+      "query_id": "m02-lexical",
+      "ranked_ids": [
+        "m02"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m02-cross_language",
+      "ranked_ids": [
+        "m01",
+        "m04",
+        "m08",
+        "m10"
+      ],
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0
+    },
+    {
+      "query_id": "m02-paraphrase",
+      "ranked_ids": [
+        "m02",
+        "m12",
+        "m06",
+        "m08"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m03-lexical",
+      "ranked_ids": [
+        "m03"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m03-cross_language",
+      "ranked_ids": [
+        "m04",
+        "m10"
+      ],
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0
+    },
+    {
+      "query_id": "m03-paraphrase",
+      "ranked_ids": [],
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0
+    },
+    {
+      "query_id": "m04-lexical",
+      "ranked_ids": [
+        "m04"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m04-cross_language",
+      "ranked_ids": [
+        "m03"
+      ],
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0
+    },
+    {
+      "query_id": "m04-paraphrase",
+      "ranked_ids": [
+        "m04",
+        "m08",
+        "m10"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m05-lexical",
+      "ranked_ids": [
+        "m05"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m05-cross_language",
+      "ranked_ids": [],
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0
+    },
+    {
+      "query_id": "m05-paraphrase",
+      "ranked_ids": [
+        "m03",
+        "m11",
+        "m09",
+        "m05"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 0.25
+    },
+    {
+      "query_id": "m06-lexical",
+      "ranked_ids": [
+        "m06"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m06-cross_language",
+      "ranked_ids": [],
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0
+    },
+    {
+      "query_id": "m06-paraphrase",
+      "ranked_ids": [
+        "m12",
+        "m06",
+        "m08",
+        "m02"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 0.5
+    },
+    {
+      "query_id": "m07-lexical",
+      "ranked_ids": [
+        "m07"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m07-cross_language",
+      "ranked_ids": [
+        "m08"
+      ],
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0
+    },
+    {
+      "query_id": "m07-paraphrase",
+      "ranked_ids": [
+        "m05"
+      ],
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0
+    },
+    {
+      "query_id": "m08-lexical",
+      "ranked_ids": [
+        "m08"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m08-cross_language",
+      "ranked_ids": [
+        "m03",
+        "m05"
+      ],
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0
+    },
+    {
+      "query_id": "m08-paraphrase",
+      "ranked_ids": [
+        "global",
+        "m12",
+        "m02",
+        "m06",
+        "m08"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 0.2
+    },
+    {
+      "query_id": "m09-lexical",
+      "ranked_ids": [
+        "m09"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m09-cross_language",
+      "ranked_ids": [
+        "m04",
+        "m10",
+        "m02",
+        "m06"
+      ],
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0
+    },
+    {
+      "query_id": "m09-paraphrase",
+      "ranked_ids": [
+        "m11",
+        "m03"
+      ],
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0
+    },
+    {
+      "query_id": "m10-lexical",
+      "ranked_ids": [
+        "m10"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m10-cross_language",
+      "ranked_ids": [
+        "m01",
+        "m09",
+        "m03"
+      ],
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0
+    },
+    {
+      "query_id": "m10-paraphrase",
+      "ranked_ids": [
+        "m06",
+        "m02",
+        "m08"
+      ],
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0
+    },
+    {
+      "query_id": "m11-lexical",
+      "ranked_ids": [
+        "m11"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m11-cross_language",
+      "ranked_ids": [
+        "m06"
+      ],
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0
+    },
+    {
+      "query_id": "m11-paraphrase",
+      "ranked_ids": [
+        "m05"
+      ],
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0
+    },
+    {
+      "query_id": "m12-lexical",
+      "ranked_ids": [
+        "m12"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m12-cross_language",
+      "ranked_ids": [
+        "m05"
+      ],
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0
+    },
+    {
+      "query_id": "m12-paraphrase",
+      "ranked_ids": [
+        "m12",
+        "m06",
+        "m02"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    }
+  ],
+  "limitations": "Host-only tiny synthetic baseline; not a target-VM benchmark or application authorization test. SQL filtering occurs before return but BM25 corpus statistics include fixture distractors; production isolation still needs design and tests."
+}

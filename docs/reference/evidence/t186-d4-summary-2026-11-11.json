@@ -1,0 +1,19 @@
+{
+  "date": "2026-11-11",
+  "scope": "D4 isolated synthetic ARM64 experiment only",
+  "minilm": {
+    "process_exit": 0,
+    "outcome": "completed_all_five_diagnostic_gates_passed",
+    "result": "t186-minilm-vm-2026-11-11.json"
+  },
+  "e5": {
+    "launcher_exit": 1,
+    "outcome": "incomplete_termination_cause_unverified",
+    "expected_timeout_code": 124,
+    "short_timeout_wrapper_probe_exit": 124,
+    "result": "t186-e5-vm-partial-2026-11-11.json",
+    "quality_metrics_available": false
+  },
+  "production_adoption": false,
+  "task_closed": false
+}

@@ -10,6 +10,12 @@ Status markers describe current decisions: accepted, proposed and open. Partiall
 
 **Chat recovery (owner, 2026-11-04):** Preserve submitted authenticated chat work in durable application storage in the same transaction as the turn. Work known not to have been claimed can be resumed after the development worker restarts. Claim each work item atomically; a claimed or possibly dispatched operation must not be automatically repeated after interruption. Keep uncertain provider quota reservations until reconciled. A development worker may close a claim that remains unresolved for five minutes as interrupted, preserving the request and notifying the user that the result is unknown and was not resent, including after reopening the conversation; this timeout is not proof that the provider stopped. A cancel request remains durable and must not dispatch unclaimed work. Recovery, concurrency and denial paths require tests; a local development worker does not establish durable VM deployment, remote cancellation or distributed exactly-once execution.
 
+## Owner updates - 2026-11-11
+
+[Accepted benchmark waiver](owner-validation-decisions.md#benchmark-waiver---2026-11-11) supersedes all benchmark-dependent activation/release thresholds below, including P-48. Preserve functional/security/resource-enforcement and recovery validation. Existing benchmark results remain historical evidence. Do not interpret remaining historical benchmark wording as a new approval gate.
+
+Dedicated Gmail identity is configured in the ignored local `SUPERHARRY_GMAIL_ACCOUNT` setting; account access, OAuth scopes and service activation are not established. Both DOCX-to-PDF and XLSX-to-PDF are required for the first release; exact conversion packages remain subject to review. R1/R2/R3 in [recovery/admin contracts](recovery-admin-proposals.md) and [G1 Gmail OAuth/read-only/local drafts](gmail-auth-proposal.md) were accepted by the owner on 2026-11-11. Implementation, actual Google consent and deployment remain pending.
+
 ## Outstanding design and coherence items
 
 These are unresolved implementation decisions, not new policies:
@@ -125,7 +131,7 @@ At ~2–7 tokens/s, local mode must be designed around slowness:
 | Long-document tasks | ✅ | ❌ | Queued until external budget is available |
 | Voice (STT/TTS) | Local STT on the target VM; Piper TTS | Local STT on the target VM; Piper TTS | Transcription always stays on the target VM (Q-54); plain text reply if the audio pipeline is unavailable |
 
-- ✅ **P-05 — Usage tracking:** Track tokens, free quotas and costs daily/monthly per user and globally, including initial and repeated memory-agent calls. Admin-configurable warnings and hard limits apply; hard limits prevent further external dispatch and never authorize paid fallback.
+- ✅ **P-05 — Usage tracking:** Track tokens, free quotas and costs daily/monthly per user and globally, including initial and repeated memory-agent calls. Admin-configurable warnings and hard limits apply; hard limits prevent further external dispatch and never authorize paid fallback. Initial allowances and reservation/fallback/rollover rules were accepted in D2 on 2026-11-11; see [security policies section 5.5](security-policies.md#55-external-budgets-and-gateway-accounting). Implementation remains T230.
 - ✅ **P-06 — Circuit breaker:** On Nous Portal errors, quota exhaustion or rate limits, use eligible local inference only after a known safe outcome. Apply exponential backoff to recovery probes. An eligible configured free alternative may be tried in administrator order after a known safe outcome. Do not automatically repeat a dispatched request with an unknown result; reconcile quota reservations and preserve cancellation.
 - ✅ **Interrupted external tasks:** Continue locally only when feasible and safe. Otherwise notify the user and preserve the task pending availability. Respect cancellation, permissions, confirmations and uncertain-dispatch recovery; do not repeat side effects.
 - ✅ **P-07 — Task queue:** Persist tasks requiring unavailable external capabilities; notify the user and allow cancellation. Resume only when the selected free model, quota, permissions and confirmations permit, without repeating unknown effects.
@@ -156,6 +162,8 @@ See `docs/reference/security-policies.md § 3` for complete sandbox isolation sp
 - ✅ **Q-13 dependency cache and quotas (accepted 2026-10-29):** Reuse cached task-specific packages and virtual environments while sufficient space remains. When free space falls below 20%, first remove eligible cached packages and environments unused for more than six months, stopping once 20% free space is restored; they may be recreated as needed. Do not delete application or system dependencies. The admin may configure per-user workspace quotas; initially there is no fixed per-user quota.
 - ✅ Inputs/outputs cross the sandbox boundary only through the file store, validated and size-limited.
 - ✅ **Q-14 — Document conversion (resolved 2026-10-29):** Prefer lightweight libraries for PDF, Excel and Word generation and conversion. Use LibreOffice when needed for complex formatting, subject to validation on the target VM and sandbox resource limits; allow appropriate task-specific limits when needed. Document processing and conversion run **inside** the sandbox because parsers handle untrusted files. Specific libraries remain to be selected under Q-12.
+
+  **D5, accepted 2026-11-11:** Initial formats are PDF, DOCX, XLSX, CSV and UTF-8 TXT, with the operations and candidate libraries recorded in [the owner decision](../owner-attention.md#d5---t195-document-formats-and-candidate-libraries). Both DOCX-to-PDF and XLSX-to-PDF are required in the first release (owner, 2026-11-11); evaluate LibreOffice as the conversion candidate. Exact package artifacts and installation remain subject to Q-12 and the applicable approval gates. T195 remains pending.
 - ✅ Every run is audit-logged: who/what requested it, code hash, limits, exit status, duration, truncated output.
 
 ### 5.3 Role access
@@ -258,10 +266,10 @@ CREATE TABLE memory (
 **Maintenance:** ✅ **P-22 (accepted in part 2026-10-29):** The agent may consolidate duplicate or near-duplicate memories while preserving useful information, the latest confirmation date and separate user scopes. Do not merge conflicting memories until their validity is resolved: retain and mark both as conflicting, then ask the user when the information becomes relevant rather than interrupting them for maintenance alone. Schedule consolidation daily after the storage check, when the VM is idle. If busy, keep the job pending without interrupting users and run it when the VM becomes idle; coalesce multiple pending runs into one. Handling of summaries, expiration and archival remains to be defined; retention remains subject to Q-13 and Q-25.
 
 **Open design questions:**
-- ✅ **Q-23 (resolved 2026-10-29):** Start with semantic memory retrieval. Benchmark latency, RAM and retrieval quality on the target VM; if performance is too slow, downgrade to keyword-based retrieval. The embedding model, implementation and performance threshold remain open (Q-26).
+- ✅ **Q-23 (resolved 2026-10-29):** Start with semantic memory retrieval. Benchmark latency, RAM and retrieval quality on the target VM; if performance is too slow, downgrade to keyword-based retrieval. The tested MiniLM ARM64 qint8 baseline was selected on 2026-11-11 (Q-26); implementation, serving location and release performance acceptance remain open.
 - ✅ **Q-24 (resolved 2026-10-29):** The agent may automatically save user-scoped preferences and facts likely to be useful later, and saves information when the user explicitly asks it to remember. Users retain control over their own memories. Global personality changes follow Q-27; other global-memory changes require admin approval (§8.3). `guest` has no persistent memory. Extraction timing and safeguards against poisoned or irrelevant memories remain to be designed.
 - ✅ **Q-25 (resolved 2026-10-29):** Mark memories as potentially outdated when retrieved if their information has not been confirmed or updated for six months. The agent may mention or confirm them when relevant instead of assuming they remain true. Age alone does not trigger deletion; the storage-pressure cleanup rule in Q-13 still applies.
-- ✅ **Q-26 (resolved in part 2026-10-29):** Defer selection of the semantic embedding model and its execution location until benchmarking retrieval quality, latency and RAM on the target VM. If semantic retrieval is too slow, use keyword retrieval as specified in Q-23.
+- ✅ **Q-26 (resolved in part 2026-10-29):** Following the isolated target-VM diagnostic, the owner selected `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` with the tested ARM64 qint8 artifact on 2026-11-11. Exact revision/artifact and remaining validation are recorded in the [T186 owner selection](t186-semantic-retrieval-review.md#owner-model-selection---2026-11-11). Production execution location and omniroute compatibility remain open; if semantic retrieval is too slow, use keyword retrieval as specified in Q-23.
 
 ### 8.3 Security & privacy rules
 - ✅ A user's memory is **never** retrievable by another user. Queries are always scoped by `user_id` at the data-access layer (not in prompts).
@@ -474,7 +482,7 @@ The agent must be reachable through **Telegram, WhatsApp, email and voice**, in 
 | Order | Channel | Suggested integration | Main risks / notes |
 |:----:|---------|-----------------------|--------------------|
 | 1 | **Telegram** | ✅ **Q-49:** Official **Bot API** via **long polling**, with private chats only initially; no inbound ports required. Allow only linked numeric user IDs. | Supports text, files, images and voice notes. Bot chats are not end-to-end encrypted. |
-| 2 | **Email** | IMAP + SMTP on a **dedicated mailbox** (app password or OAuth) — see §11A.5. | Highest prompt-injection and spoofing risk. Start read-only/draft-only. ❓ **Q-51** |
+| 2 | **Email** | Gmail API OAuth with gmail.readonly on the **dedicated mailbox**, local drafts and human sending (G1) — see §11A.5. | Highest prompt-injection and spoofing risk. Start read-only/draft-only. ❓ **Q-51** |
 | 3 | **Voice notes** (in Telegram/web, later WhatsApp) | STT → agent → TTS returned as an audio message — see §11A.6. | Easiest form of voice; asynchronous, so slower local models are acceptable. |
 | 4 | **WhatsApp** | Depends on strategy — see §11A.4. | Deferred pending integration and policy review (Q-50). |
 | 5 | **Hands-free voice** (mic + speaker connected to an authorized client) | Wake word + VAD + STT + TTS loop. | Deferred; requires hardware and performance testing (Q-52). |
@@ -499,7 +507,7 @@ Strategies considered:
 - **Autonomy ladder** (start at level 1–2): (1) read & summarize to the owner → (2) **draft** replies, a human sends → (3) send **with per-message approval** → (4) autonomous sending only for allowlisted templates/recipients. Levels 3 and 4 are proposals, not current authorization. Enabling autonomous sending without per-message approval requires explicit prior approval under the constitution's Ask First rules; applicable action and channel restrictions remain in force.
 - Outbound limits: rate limits, no auto-reply loops (respect `Auto-Submitted`/`List-*` headers), never include memory or private data in mail to third parties without approval.
 - ❗ Instructions found inside an email body are **data, never commands**.
-- ✅ **Q-51 (resolved in part 2026-10-29):** Use a dedicated Gmail mailbox. The tentative address is `superHarry@gmail.com`; availability has not been verified. Initially the agent may read messages and prepare drafts; a person reviews and sends each reply. The authentication method remains to be selected.
+- ✅ **Q-51 (resolved in part 2026-10-29):** Use a dedicated Gmail mailbox. The owner selected the dedicated account on 2026-11-11 and its address is stored in local `SUPERHARRY_GMAIL_ACCOUNT`; access and ownership have not been verified by this configuration. Initially the agent may read messages and prepare drafts; a person reviews and sends each reply. G1 accepted on 2026-11-11 selects Gmail API OAuth with gmail.readonly and drafts stored in superHarry; a human sends in Gmail. Actual account authorization, protected token provisioning and activation remain pending.
 
 ### 11A.6 Voice
 
@@ -509,7 +517,7 @@ Strategies considered:
 
 **Recommended engines** 💡 **P-42 (STT)** and 💡 **P-43 (TTS)**
 
-✅ **P-42 (accepted in part 2026-10-29):** Use whisper.cpp for local transcription on the target VM. Select multilingual model sizes after testing Spanish accuracy, latency and resource use on the device.
+✅ **P-42 (accepted in part 2026-10-29):** Use whisper.cpp for local transcription on the target VM. On 2026-11-11 the owner selected multilingual `small` for asynchronous notes and `base` for short commands; validate accuracy, latency and resource use on the target VM and revisit the selection if problems arise.
 
 | Stage | Local default (target VM) | Optional upgrade | When budget/LAN box is available |
 |-------|----------------------|------------------|----------------------------------|
@@ -525,7 +533,7 @@ Notes:
 - **Piper Spanish voices found (2026-10-29):** `es_ES` — carlfm (x_low), davefx (medium), mls_9972 and mls_10246 (low), sharvard (medium, 2 speakers); `es_MX` — ald (medium); `es_AR` — daniela (high). The list may have grown: check the official voice index (`rhasspy/piper-voices`). The original `rhasspy/piper` engine is MIT-licensed, but the currently maintained `piper-tts` pip package may carry a different license (reported as GPL): **verify before distributing**. **Each voice also has its own license** (e.g., `sharvard` is CC BY 3.0). Prefer `medium` on the target VM unless a `high` voice passes the benchmark gate (P-48).
 - ✅ **P-48 — Preferred voice and benchmark gate (accepted 2026-10-29).** Test **`es_AR-daniela-high`** on the target VM with the production OS and the local LLM loaded. Adopt it if a ~100-word paragraph synthesizes with a **real-time factor (synthesis time ÷ audio duration) ≤ 0.5 when idle and < 1.0 under load**; otherwise use `es_MX-ald-medium`. Synthesize sentence by sentence so audio can start early. Read the chosen voice's license before shipping.
   - **Load definition:** In both conditions the local LLM is loaded but performs no inference during synthesis. The idle condition has no additional test workload beyond required services. The loaded condition adds a predefined, reproducible workload of ordinary background services and web/display activity, including guest display and Brave when enabled in the tested configuration. Heavy LLM, STT, OCR and sandbox jobs remain queued under P-44/P-50. Define and record the workload and service configuration before the run. Measure synthesis time separately from queue waiting time; report queue delay and time to first audio separately so the RTF gate does not conceal scheduling latency.
-- ❓ **Q-53** Confirm the final voice after the benchmark.
+- ❓ **Q-53 (selection recorded 2026-11-11):** Daniela is the preferred voice and Ald the fallback; P-48 benchmark and license acceptance remain required before production use.
 - ✅ **P-44 — Audio resource management (accepted 2026-10-29):** Transcription runs locally on the target VM (Q-54), with Piper for speech output; if the audio pipeline is unavailable, use plain text where possible. Queue and serialize STT/TTS jobs with local LLM inference so they cannot starve the web server.
 - ✅ **P-45 — Spoken style (accepted 2026-10-29):** Voice replies use short, conversational text. Markdown, code blocks and long URLs are omitted or summarized; long or structured content is delivered as text or a file. Normalize numbers, dates and other expressions for Spanish speech after testing Piper's pronunciation.
 - ✅ **Voice is not authentication** (§11A.2). Voice commands run with the privileges of the linked account only; speaker recognition is not used for access control. Consequential browser actions require confirmation as defined in ?11.4; administrative actions require the web app.
@@ -625,7 +633,7 @@ Use this table to record outcomes. Status: `open` · `accepted` · `rejected` ·
 | Q-09 | Sandbox | Podman vs Docker vs bubblewrap/nsjail? | **accepted** | nsjail primary, subject to target-VM validation; rootless Podman alternative (2026-10-29). |
 | Q-10 | Sandbox | Initial resource limits? | **accepted** | 60 s, one CPU core equivalent, 512 MB RAM, 256 MB temporary disk, 64 processes and 10 MB console output (2026-10-29). |
 | Q-11 | Sandbox | Outbound network ever allowed? | **accepted** | No direct sandbox network; authorized tools stage downloads and dependencies (2026-10-29). |
-| Q-12 | Sandbox | Package allowlist vs denylist? | **accepted (partial)** | Autonomous selection and scored guard with alternative retry; threshold 80/100 and base criteria accepted. Formula and evidence requirements remain open (2026-10-29). |
+| Q-12 | Sandbox | Package allowlist vs denylist? | **accepted** | Autonomous selection and scored guard with alternative retry; threshold 80/100 and base criteria accepted. Formula and mandatory evidence accepted in [D1](../owner-attention.md#d1---package-guard-formula-and-required-evidence-t220--t231) on 2026-11-11; implementation remains T231. |
 | Q-13 | Sandbox | Workspace/venv persistence? | **accepted** | Daily 03:00 cleanup; stale task dependency caches first; configurable quotas, none fixed initially (2026-10-29). |
 | Q-14 | Sandbox | LibreOffice or lighter converters or lighter converters? | **accepted** | Prefer lightweight libraries; use LibreOffice for complex formatting when needed, subject to target-VM validation and sandbox limits (2026-10-29). |
 | Q-15 | RBAC | Can `user` trigger sandbox via the agent? | **accepted** | Yes, through the agent and subject to sandbox controls; guest remains excluded (2026-10-29). |
@@ -639,10 +647,10 @@ Use this table to record outcomes. Status: `open` · `accepted` · `rejected` ·
 | Q-23 | Memory | Keywords only vs hybrid with embeddings? | **accepted** | Semantic retrieval first; fall back to keywords if target-VM performance is too slow (2026-10-29). |
 | Q-24 | Memory | Who creates memories (auto / explicit / cron)? | **accepted** | Automatic user-scoped useful facts and preferences plus explicit remember requests; users retain control (2026-10-29). |
 | Q-25 | Memory | Old memories: down-weight, flag, delete? | **accepted** | Flag as potentially outdated after six months without confirmation or update; Q-13 cleanup still applies (2026-10-29). |
-| Q-26 | Memory | Embedding model & where it runs? | **accepted (partial)** | Defer model and execution location until target-VM benchmarks; keyword fallback if too slow (2026-10-29). |
+| Q-26 | Memory | Embedding model & where it runs? | **accepted (partial)** | Tested MiniLM ARM64 qint8 baseline selected by owner on 2026-11-11; exact identity in T186 selection record. Production location/integration and release validation remain open; keyword fallback retained. |
 | Q-27 | Memory | Can the agent propose personality edits? | **accepted** | Agent may autonomously adjust personality; fixed directives and permissions are protected (2026-10-29). |
-| Q-28 | Memory/Crypto | Encryption at rest & retention? | **accepted (partial)** | Optional admin-configurable encryption, an access-restricted key on the target VM for automatic unlock, and a pre-conversion recovery backup; loss of the required key makes affected encrypted data unrecoverable. Key protection and restore mechanics remain open (2026-10-29). |
-| Q-29 | OCR | Engine and languages? | **accepted (partial)** | Spanish and English initially; select engine after target-VM accuracy, latency and RAM benchmarks (2026-10-29). |
+| Q-28 | Memory/Crypto | Encryption at rest & retention? | **accepted (partial)** | Optional admin-configurable encryption, an access-restricted key on the target VM for automatic unlock, and a pre-conversion recovery backup; loss of the required key makes affected encrypted data unrecoverable. R1 key custody and R2 staged data restore accepted 2026-11-11; see recovery-admin contracts. Implementation and functional/security/recovery acceptance remain open. |
+| Q-29 | OCR | Engine and languages? | **accepted (partial)** | Spanish and English initially; evaluate Tesseract first on the target VM, with RapidOCR reserved if it performs poorly; production selection remains pending validation (updated 2026-11-11). |
 | Q-30 | Vision | Local vision model later? | **accepted in part** | Local vision remains deferred; image-capable external providers may be used only when their capability, eligibility, privacy and authorization are verified. Otherwise use permitted local OCR. |
 | Q-31 | Auth | Sessions vs JWT+refresh? | **accepted** | Server-managed, revocable sessions and secure cookie settings (2026-10-29). |
 | Q-32 | Auth | TOTP policy; WebAuthn later? | **accepted** | TOTP optional for admin and user; passkeys deferred until after beta (2026-10-29). |
@@ -664,7 +672,7 @@ Use this table to record outcomes. Status: `open` · `accepted` · `rejected` ·
 | Q-48 | Roadmap | Release sequence? | **accepted** | VM development and full target-VM acceptance under §17; auth, audit and files precede sandbox/skills. |
 | Q-49 | Channels | Telegram: long polling vs webhook; groups allowed? | **accepted** | Long polling and private chats only initially (2026-10-29). |
 | Q-50 | Channels | WhatsApp strategy: A official API / B unofficial / C defer? | **accepted** | WhatsApp remains in scope, deferred until after Telegram and email; review current API terms before choosing integration (2026-10-29). |
-| Q-51 | Channels | Email: provider, auth method, initial autonomy level? | **accepted (partial)** | Dedicated Gmail; `superHarry@gmail.com` tentative and unverified. Agent reads and drafts; person sends. Authentication remains open (2026-10-29). |
+| Q-51 | Channels | Email: provider, auth method, initial autonomy level? | **accepted (partial)** | Dedicated Gmail selected by owner and stored in local SUPERHARRY_GMAIL_ACCOUNT (2026-11-11); access unverified. Agent reads and drafts; person sends. G1 read-only OAuth/local drafts accepted 2026-11-11; actual consent/activation pending. |
 | Q-52 | Voice | Voice modes in v1: voice notes / push-to-talk / hands-free? | **accepted** | Voice notes and web push-to-talk in v1; hands-free deferred (2026-10-29). |
 | Q-53 | Voice | Spanish voice and accent? | **partial** | Language = Spanish. Preferred: `es_AR-daniela-high`, pending target-VM benchmark (P-48); fallback `es_MX-ald-medium`. |
 | Q-54 | Voice | Audio to external provider? Retention of audio? | **accepted** | Transcribe on the target VM; delete processed audio and retain transcript only with the conversation (2026-10-29). |
@@ -686,14 +694,14 @@ Use this table to record outcomes. Status: `open` · `accepted` · `rejected` ·
 |----|------------------|--------|-------|
 | P-03 | Tool layer as the only action path (role + schema + audit) | **accepted** | 2026-10-29 |
 | P-04 | Capability matrix for per-feature degradation | **accepted** | Local code generation allowed under the same sandbox controls (2026-10-29). |
-| P-05 | Token/cost budget tracking with soft/hard limits | **accepted** | Admin-configurable warnings and hard limits, tracked per user and globally (2026-10-29). |
+| P-05 | Token/cost budget tracking with soft/hard limits | **accepted** | Admin-configurable warnings and hard limits, tracked per user and globally (2026-10-29). D2 initial limits and accounting accepted 2026-11-11; security policies section 5.5; implementation T230. |
 | P-06 | Safe local fallback | **accepted** | Exhausted/unavailable selected free route falls back locally only after a safe outcome; do not repeat unknown effects. |
 | P-07 | Persistent queue for external-only tasks | **accepted** | Notify user, allow cancellation, and resume when an eligible external provider and quota permit; preserve permissions, confirmations and safe-retry rules. |
 | P-08 | Discreetly show which model/mode answered | **accepted** | Include model/mode in API response as well (2026-10-29). |
 | P-09 | nsjail isolated execution; rootless Podman alternative | **accepted** | Subject to target-VM validation (Q-09). |
 | P-10 | Per-run resource limits | **accepted** | Initial time, CPU, RAM, temporary disk, process and console output limits accepted. |
-| P-11 | Sandbox offline; authorized tools stage downloads and dependencies | **accepted (partial)** | Network separation accepted in Q-11; package policy remains open (Q-12). |
-| P-12 | Independent package guard, offline sandbox installation and audit | **accepted (partial)** | Base criteria and blocking rules accepted; scoring formula and evidence requirements remain open (2026-10-29). |
+| P-11 | Sandbox offline; authorized tools stage downloads and dependencies | **accepted (partial)** | Network separation accepted in Q-11; package formula and evidence accepted in D1 on 2026-11-11; implementation remains T193/T231. |
+| P-12 | Independent package guard, offline sandbox installation and audit | **accepted** | Base criteria and blocking rules accepted; formula and mandatory evidence accepted in D1 on 2026-11-11 (security policies section 6); implementation remains T231. |
 | P-13 | Persistent per-user workspace and storage-pressure cleanup | **accepted** | Six-month threshold, 20% target, cache cleanup and configurable quotas accepted. |
 | P-14 | Skill instructions in `SKILL.md`, with optional scripts and resources | **accepted** | Manifest requirements accepted under P-15. |
 | P-15 | Manifest declares permissions & minimum role | **accepted** | `manifest.json` alongside `SKILL.md`; both covered by integrity verification (2026-10-29). |
@@ -705,7 +713,7 @@ Use this table to record outcomes. Status: `open` · `accepted` · `rejected` ·
 | P-21 | User-scheduled tasks with admin visibility into token and resource usage | **accepted** | Q-20 resolved; separately required approvals remain in force. |
 | P-22 | Memory schema + scored retrieval + consolidation | **accepted (partial)** | Daily consolidation after storage check when idle; schema, scoring and remaining maintenance details open (2026-10-29). |
 | P-23 | Users can view/edit/export/delete own memory; admin can hide it | **accepted** | When hidden, users cannot view/edit/export but may delete all their own memories (2026-10-29). |
-| P-24 | Spanish and English OCR; benchmark candidate engines on the target VM | **accepted (partial)** | Languages and benchmark accepted; engine selection deferred. |
+| P-24 | Spanish and English OCR; evaluate Tesseract on the target VM | **accepted (partial)** | Tesseract is the initial candidate; RapidOCR is reserved if it performs poorly. Production selection remains pending validation. |
 | P-25 | Image hygiene (magic bytes, bombs, EXIF) | **accepted** | Validate and limit images, strip metadata, process in sandbox (2026-10-29). |
 | P-26 | Django session cookies under HTTPS | **accepted** | Use Django documented settings; enable Secure for production HTTPS. |
 | P-27 | Optional TOTP for admin and user | **accepted** | Passkeys deferred until after beta (Q-32). |
@@ -722,13 +730,13 @@ Use this table to record outcomes. Status: `open` · `accepted` · `rejected` ·
 | P-39 | Channel order: Telegram → email → voice notes/push-to-talk → WhatsApp → hands-free | **accepted** | WhatsApp integration remains to be selected (2026-10-29). |
 | P-40 | WhatsApp: defer and review integration options and terms | **accepted (partial)** | Deferral and policy review accepted; integration method remains undecided. |
 | P-41 | Email: dedicated mailbox, SPF/DKIM/DMARC checks, autonomy ladder | **accepted (partial)** | Dedicated mailbox and human-sent drafts accepted in Q-51; remaining details proposed. |
-| P-42 | Local STT: whisper.cpp | **accepted (partial)** | whisper.cpp selected; multilingual model sizes remain subject to target-VM tests (2026-10-29). |
+| P-42 | Local STT: whisper.cpp | **accepted (partial)** | whisper.cpp and multilingual small/base selected; target-VM validation remains pending (2026-11-11). |
 | P-43 | TTS: Piper default; Kokoro and cloud TTS deferred | **accepted (partial)** | Piper accepted for v1 (2026-10-29). Kokoro/cloud TTS deferred. |
 | P-44 | Voice degradation per capability matrix; queue/serialize audio jobs | **accepted** | Coordinate audio and local inference; text fallback where possible (2026-10-29). |
 | P-45 | Spoken-style replies (no markdown/code/URLs read aloud; Spanish text normalization) | **accepted** | 2026-10-29 |
 | P-46 | Agent reply language and Spanish voice fallback | **accepted** | Q-57 resolved (2026-10-29). |
 | P-47 | Django internationalization | **accepted** | English/Spanish catalogs, adaptable layouts and translation checks using Django facilities. |
-| P-48 | Voice `es_AR-daniela-high` gated by target-VM benchmark (RTF ≤ 0.5 idle, < 1.0 under load); fallback `es_MX-ald-medium` | **accepted** | LLM loaded without inference; predefined background workload respects heavy-job serialization. Final voice depends on target-VM benchmark. |
+| P-48 | Voice `es_AR-daniela-high` gated by target-VM benchmark (RTF ≤ 0.5 idle, < 1.0 under load); fallback `es_MX-ald-medium` | **accepted** | LLM loaded without inference; predefined background workload respects heavy-job serialization. Owner selected Daniela with Ald fallback; production use remains subject to target-VM benchmark and license review. |
 | P-49 | External, memory-agent and local routes | **accepted** | Nous Portal selected for external and non-reasoning memory agent; local model subject to target-VM bake-off. |
 | P-50 | Local-mode design: streaming, short prompts, fewer tools, resource governor | **accepted (partial)** | Principles accepted; exact limits require target-VM testing (2026-10-29). |
 | P-51 | Tier 3 shortlist (Qwen3-4B, Gemma 3 4B, Llama 3.2 3B + Spanish wildcard) and bake-off protocol | **accepted** | 2026-10-29 |

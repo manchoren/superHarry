@@ -1,0 +1,6 @@
+{
+  "tokenizers_license_source": "https://raw.githubusercontent.com/huggingface/tokenizers/v0.23.3/LICENSE",
+  "tokenizers_license": "Apache-2.0",
+  "native_dependency_preflight": "ELF AArch64 inspection; actual runtime loadability still pending isolated import",
+  "tokenizers_license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+}

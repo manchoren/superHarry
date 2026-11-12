@@ -1,0 +1,526 @@
+{
+  "status": "completed",
+  "queue_wait_seconds": 0,
+  "fixture_sha256": "8bf6f901f49dcebd8542ac3419b6a344baa308e8451ead23edc198063982c2e2",
+  "offline_network_namespace": true,
+  "elapsed_seconds": 981.681,
+  "max_rss_kib": 486820,
+  "runtime": {
+    "onnxruntime": "1.31.1",
+    "numpy": "2.5.4",
+    "providers": [
+      "AzureExecutionProvider",
+      "CPUExecutionProvider"
+    ]
+  },
+  "cold_session_load_seconds": 5.903270716000009,
+  "session_providers": [
+    "CPUExecutionProvider"
+  ],
+  "inputs": [
+    {
+      "name": "input_ids",
+      "type": "tensor(int64)",
+      "shape": [
+        "batch_size",
+        "sequence_length"
+      ]
+    },
+    {
+      "name": "attention_mask",
+      "type": "tensor(int64)",
+      "shape": [
+        "batch_size",
+        "sequence_length"
+      ]
+    },
+    {
+      "name": "token_type_ids",
+      "type": "tensor(int64)",
+      "shape": [
+        "batch_size",
+        "sequence_length"
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "last_hidden_state",
+      "type": "tensor(float)",
+      "shape": [
+        "batch_size",
+        "sequence_length",
+        384
+      ]
+    }
+  ],
+  "indexed_records": 1000,
+  "index_seconds": 925.4016047260001,
+  "index_records_per_second": 1.0806119147546622,
+  "vector_bytes": 1536000,
+  "metrics": {
+    "lexical": {
+      "recall_at_5": 1.0,
+      "mrr_at_5": 1.0
+    },
+    "overall": {
+      "recall_at_5": 1.0,
+      "mrr_at_5": 0.9268518518518518
+    },
+    "cross_language": {
+      "recall_at_5": 1.0,
+      "mrr_at_5": 0.9333333333333333
+    },
+    "paraphrase": {
+      "recall_at_5": 1.0,
+      "mrr_at_5": 0.8472222222222222
+    }
+  },
+  "warmup_queries": 10,
+  "timed_queries": 108,
+  "warm_query_p50_seconds": 0.35466772300003413,
+  "warm_query_p95_seconds": 0.49159327099982875,
+  "truncations": 0,
+  "details": [
+    {
+      "query_id": "m01-lexical",
+      "ranked_ids": [
+        "m01",
+        "distractor_0529",
+        "distractor_0119",
+        "distractor_0131",
+        "distractor_0949"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m01-cross_language",
+      "ranked_ids": [
+        "m01",
+        "m12",
+        "distractor_0365",
+        "distractor_0249",
+        "distractor_0953"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m01-paraphrase",
+      "ranked_ids": [
+        "m11",
+        "m01",
+        "global",
+        "m03",
+        "distractor_0202"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 0.5
+    },
+    {
+      "query_id": "m02-lexical",
+      "ranked_ids": [
+        "m02",
+        "distractor_0567",
+        "distractor_0257",
+        "distractor_0167",
+        "distractor_0577"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m02-cross_language",
+      "ranked_ids": [
+        "m02",
+        "m11",
+        "m07",
+        "m12",
+        "m01"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m02-paraphrase",
+      "ranked_ids": [
+        "m02",
+        "m11",
+        "m07",
+        "m01",
+        "m12"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m03-lexical",
+      "ranked_ids": [
+        "m03",
+        "m04",
+        "distractor_0786",
+        "m01",
+        "m10"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m03-cross_language",
+      "ranked_ids": [
+        "m03",
+        "m04",
+        "m11",
+        "m01",
+        "m05"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m03-paraphrase",
+      "ranked_ids": [
+        "m03",
+        "m04",
+        "m01",
+        "m11",
+        "distractor_0661"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m04-lexical",
+      "ranked_ids": [
+        "m04",
+        "m08",
+        "distractor_0610",
+        "distractor_0034",
+        "distractor_0100"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m04-cross_language",
+      "ranked_ids": [
+        "m02",
+        "m12",
+        "m09",
+        "m11",
+        "m04"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 0.2
+    },
+    {
+      "query_id": "m04-paraphrase",
+      "ranked_ids": [
+        "m04",
+        "m01",
+        "m09",
+        "m02",
+        "distractor_0824"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m05-lexical",
+      "ranked_ids": [
+        "m05",
+        "m12",
+        "distractor_0317",
+        "m07",
+        "distractor_0125"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m05-cross_language",
+      "ranked_ids": [
+        "m05",
+        "m07",
+        "m02",
+        "m12",
+        "distractor_0317"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m05-paraphrase",
+      "ranked_ids": [
+        "m02",
+        "m01",
+        "m05",
+        "m12",
+        "m09"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 0.3333333333333333
+    },
+    {
+      "query_id": "m06-lexical",
+      "ranked_ids": [
+        "m06",
+        "distractor_0650",
+        "distractor_0138",
+        "distractor_0970",
+        "distractor_0842"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m06-cross_language",
+      "ranked_ids": [
+        "m06",
+        "distractor_0325",
+        "distractor_0313",
+        "distractor_0613",
+        "distractor_0365"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m06-paraphrase",
+      "ranked_ids": [
+        "m06",
+        "distractor_0232",
+        "distractor_0236",
+        "distractor_0588",
+        "distractor_0044"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m07-lexical",
+      "ranked_ids": [
+        "m07",
+        "distractor_0519",
+        "distractor_0917",
+        "distractor_0949",
+        "distractor_0517"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m07-cross_language",
+      "ranked_ids": [
+        "m07",
+        "distractor_0317",
+        "distractor_0977",
+        "distractor_0915",
+        "distractor_0699"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m07-paraphrase",
+      "ranked_ids": [
+        "m07",
+        "m02",
+        "m11",
+        "m12",
+        "distractor_0977"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m08-lexical",
+      "ranked_ids": [
+        "m08",
+        "distractor_0904",
+        "distractor_0141",
+        "distractor_0584",
+        "distractor_0910"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m08-cross_language",
+      "ranked_ids": [
+        "m08",
+        "distractor_0550",
+        "distractor_0226",
+        "distractor_0294",
+        "distractor_0422"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m08-paraphrase",
+      "ranked_ids": [
+        "m08",
+        "distractor_0782",
+        "distractor_0398",
+        "distractor_0334",
+        "distractor_0778"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m09-lexical",
+      "ranked_ids": [
+        "m09",
+        "distractor_0667",
+        "distractor_0567",
+        "distractor_0967",
+        "distractor_0665"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m09-cross_language",
+      "ranked_ids": [
+        "m09",
+        "m04",
+        "m05",
+        "m02",
+        "m03"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m09-paraphrase",
+      "ranked_ids": [
+        "m09",
+        "m04",
+        "m02",
+        "m03",
+        "m01"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m10-lexical",
+      "ranked_ids": [
+        "m10",
+        "distractor_0940",
+        "distractor_0044",
+        "distractor_0748",
+        "distractor_0172"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m10-cross_language",
+      "ranked_ids": [
+        "m10",
+        "distractor_0700",
+        "distractor_0572",
+        "distractor_0508",
+        "distractor_0060"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m10-paraphrase",
+      "ranked_ids": [
+        "m10",
+        "m06",
+        "distractor_0748",
+        "distractor_0300",
+        "distractor_0260"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m11-lexical",
+      "ranked_ids": [
+        "m11",
+        "m07",
+        "m02",
+        "m12",
+        "distractor_0315"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m11-cross_language",
+      "ranked_ids": [
+        "m11",
+        "m07",
+        "m02",
+        "m05",
+        "m12"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m11-paraphrase",
+      "ranked_ids": [
+        "m07",
+        "m02",
+        "m11",
+        "m09",
+        "m12"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 0.3333333333333333
+    },
+    {
+      "query_id": "m12-lexical",
+      "ranked_ids": [
+        "m12",
+        "distractor_0409",
+        "distractor_0405",
+        "distractor_0751",
+        "distractor_0475"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m12-cross_language",
+      "ranked_ids": [
+        "m12",
+        "m02",
+        "m05",
+        "distractor_0575",
+        "m01"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    },
+    {
+      "query_id": "m12-paraphrase",
+      "ranked_ids": [
+        "m12",
+        "m05",
+        "m02",
+        "global",
+        "m07"
+      ],
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0
+    }
+  ],
+  "diagnostic_gates": {
+    "lexical_recall": true,
+    "cross_language_recall": true,
+    "paraphrase_recall": true,
+    "overall_mrr": true,
+    "warm_latency": true
+  },
+  "limitations": "Synthetic diagnostic only; no live memory, production RBAC, disk index encryption/deletion, gateway integration or release acceptance. Queue wait is zero for direct isolated execution. No 10,000-record scale test."
+}

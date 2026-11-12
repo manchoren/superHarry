@@ -50,7 +50,7 @@ Maintain this queue using [documentation ownership, update triggers and closure 
 | 28 | T239 | Implement storage-pressure cleanup across persisted user data |
 | 29 | T191 | Memory lifecycle (consolidation, cleanup, staleness marking) |
 | 30 | T212 | Network recovery and onboarding (bootstrap token, Wi-Fi config) |
-| 31 | T219 | Resource limits and concurrency benchmark |
+| 31 | T219 | Resource limits and concurrency validation |
 | 32 | T192 | nsjail sandbox isolation with resource limits |
 | 33 | T193 | Package guard integration with sandbox installation flow |
 | 34 | T194 | Public web search and download staging |

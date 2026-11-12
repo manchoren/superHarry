@@ -1,0 +1,58 @@
+{
+  "cipher_version": [
+    [
+      "4.20.0 community"
+    ]
+  ],
+  "cipher_provider": [
+    [
+      "openssl"
+    ]
+  ],
+  "cipher_provider_version": [
+    [
+      "OpenSSL 3.6.0 1 Oct 2025"
+    ]
+  ],
+  "sqlite_version": "3.54.1",
+  "cipher_present": "PASS",
+  "temp_store_memory": "PASS",
+  "wal_enabled": "PASS",
+  "transaction_rollback": "PASS",
+  "logical_integrity": "PASS",
+  "cipher_integrity": "PASS",
+  "wal_has_no_plain_marker": "PASS",
+  "database_has_no_plain_marker": "PASS",
+  "fixture_sizes_bytes": {
+    "encrypted.db-shm": 32768,
+    "encrypted.db-wal": 12392,
+    "encrypted.db": 4096
+  },
+  "correct_key_reopen": "PASS",
+  "missing_key_denied": "PASS",
+  "wrong_key_denied": "PASS",
+  "standard_sqlite_denied": "PASS",
+  "conversion_preserves_source": "PASS",
+  "plain_to_encrypted": "PASS",
+  "schema_version_preserved": "PASS",
+  "encrypted_to_plain": "PASS",
+  "corrupt_staging_rejected": "PASS",
+  "truncated_staging_rejected": "PASS",
+  "failed_staging_preserves_source": "PASS",
+  "conversion_process_interrupted": "PASS",
+  "interrupted_conversion_source_unchanged": "PASS",
+  "interrupted_conversion_source_readable": "PASS",
+  "interrupted_conversion_staging_incomplete": "PASS",
+  "interrupted_export_staged_rows": 0,
+  "writer_interrupted": "PASS",
+  "interrupted_transaction_recovered": "PASS",
+  "closed_snapshot_restore": "PASS",
+  "elapsed_seconds": 0.945,
+  "max_rss_kib": 26032,
+  "limitations": [
+    "No concurrent backup, production conversion, process restart with persistent key custody or Django integration",
+    "Memory temp_store tested; disk temporary-file leakage not exercised",
+    "Staged corruption/truncation, interrupted export and transaction tested; no application-level atomic promotion implementation",
+    "No secure deletion or forensic plaintext-erasure guarantee"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "onnxruntime": {
+    "version": "1.31.1",
+    "source": "https://api.osv.dev/v1/query",
+    "findings": {}
+  },
+  "tokenizers": {
+    "version": "0.23.3",
+    "source": "https://api.osv.dev/v1/query",
+    "findings": {}
+  },
+  "numpy": {
+    "version": "2.5.4",
+    "source": "https://api.osv.dev/v1/query",
+    "findings": {}
+  }
+}

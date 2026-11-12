@@ -1,0 +1,175 @@
+{
+  "verified_artifacts": [
+    {
+      "file": "wheels/onnxruntime-1.31.1-cp313-cp313-manylinux_2_28_aarch64.whl",
+      "sha256": "dcaedc50333876f3829ab966b242147f0e548229e29c36fe44622ecf748c25ee",
+      "bytes": 21420628
+    },
+    {
+      "file": "wheels/tokenizers-0.23.3-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl",
+      "sha256": "ec82e80e65a862275b97c3d90b7a523df8d9519ee48aeb4e9625b2cc909274e0",
+      "bytes": 3519944
+    },
+    {
+      "file": "wheels/numpy-2.5.4-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+      "sha256": "1c2e71b04c6cad90026e544501bbe0ab9290fa8a4d845e7e8c0d124fb429c988",
+      "bytes": 15689178
+    },
+    {
+      "file": "wheels/flatbuffers-25.12.19-py2.py3-none-any.whl",
+      "sha256": "7634f50c427838bb021c2d66a3d1168e9d199b0607e6329399f04846d42e20b4",
+      "bytes": 26661
+    },
+    {
+      "file": "wheels/packaging-26.3-py3-none-any.whl",
+      "sha256": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c",
+      "bytes": 129956
+    },
+    {
+      "file": "wheels/protobuf-7.36.2-cp310-abi3-manylinux2014_aarch64.whl",
+      "sha256": "e11e1f0180583a2af89db6a2ecd9e8dc40aa6d2988ca175bfd0e6d12ea72d74e",
+      "bytes": 344219
+    },
+    {
+      "file": "wheels/huggingface_hub-2.4.0-py3-none-any.whl",
+      "sha256": "42ecfd93ede47bdd333daebbf66a32d7bfe2e18752754fe4d2d4f98a0179d801",
+      "bytes": 857021
+    },
+    {
+      "file": "wheels/click-8.5.1-py3-none-any.whl",
+      "sha256": "8bb5376d2006950386f8c6427613334a2acadc5f559cb80e638d00b4df957e37",
+      "bytes": 126163
+    },
+    {
+      "file": "wheels/filelock-4.2.10-py3-none-any.whl",
+      "sha256": "9479aaeb4db20b5a53e3da28493edd24720b66b8a0b84030aa56ccdf243d6857",
+      "bytes": 218040
+    },
+    {
+      "file": "wheels/fsspec-2026.9.0-py3-none-any.whl",
+      "sha256": "8dd6e646e99ea382bd85f97a45e6b526a442d79423a7dc673f1e2756d05fcb5f",
+      "bytes": 221738
+    },
+    {
+      "file": "wheels/hf_xet-1.8.0-cp38-abi3-manylinux_2_28_aarch64.whl",
+      "sha256": "8800e3444770f2c630b361bc6d5c6ebb770b7830646cf632fbb79d0e5bbc9e7f",
+      "bytes": 4069340
+    },
+    {
+      "file": "wheels/httpx2-2.16.0-py3-none-any.whl",
+      "sha256": "fd2c5d7909e8d86fe92d53020c310ca0e4e431b838c207c5754b9bbf0308d49a",
+      "bytes": 97880
+    },
+    {
+      "file": "wheels/pyyaml-6.0.3-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl",
+      "sha256": "ee2922902c45ae8ccada2c5b501ab86c36525b883eff4255313a253a3160861c",
+      "bytes": 767081
+    },
+    {
+      "file": "wheels/tqdm-4.70.1-py3-none-any.whl",
+      "sha256": "c293e525e6fef9c20e8728fd4612df02a0aa31bb5fe91ecd93e123b1b7bffa73",
+      "bytes": 80199
+    },
+    {
+      "file": "wheels/typing_extensions-4.16.0-py3-none-any.whl",
+      "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8",
+      "bytes": 45571
+    },
+    {
+      "file": "wheels/anyio-4.16.0-py3-none-any.whl",
+      "sha256": "c66ae634e0b8228396b801741beb3294326d4b6102f7bba4041c0dfb58c29026",
+      "bytes": 134521
+    },
+    {
+      "file": "wheels/httpcore2-2.16.0-py3-none-any.whl",
+      "sha256": "5c4358319f2602d984ad93182c9fee5160f22e9da7babdda870a5e7c4e2dc34f",
+      "bytes": 85070
+    },
+    {
+      "file": "wheels/idna-3.20-py3-none-any.whl",
+      "sha256": "ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c",
+      "bytes": 69583
+    },
+    {
+      "file": "wheels/truststore-0.10.5-py3-none-any.whl",
+      "sha256": "9aaaedaefaf06d8b206278cf8b5012bc897f485a874503501e12d776df78951c",
+      "bytes": 19017
+    },
+    {
+      "file": "wheels/h11-0.16.0-py3-none-any.whl",
+      "sha256": "63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86",
+      "bytes": 37515
+    },
+    {
+      "file": "models/multilingual-e5-small/onnx/model.onnx",
+      "sha256": "ca456c06b3a9505ddfd9131408916dd79290368331e7d76bb621f1cba6bc8665",
+      "bytes": 470268510
+    },
+    {
+      "file": "models/multilingual-e5-small/tokenizer.json",
+      "sha256": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39",
+      "bytes": 17082730
+    },
+    {
+      "file": "models/multilingual-e5-small/config.json",
+      "sha256": "69137736cab8b8903a07fe8afaafdda25aac55415a12a55d1bffa9f581abf959",
+      "bytes": 655
+    },
+    {
+      "file": "models/multilingual-e5-small/tokenizer_config.json",
+      "sha256": "a1d6bc8734a6f635dc158508bef000f8e2e5a759c7d92f984b2c86e5ff53425b",
+      "bytes": 443
+    },
+    {
+      "file": "models/multilingual-e5-small/sentence_bert_config.json",
+      "sha256": "948201d8329907aae938fa62f9ceeed53f5694dacc2b87b9f3b78b37ee986529",
+      "bytes": 57
+    },
+    {
+      "file": "models/multilingual-e5-small/1_Pooling/config.json",
+      "sha256": "987f7a67a38fa564c849bb5d277c52ab9088a84368fc0be31a354125aebb12a0",
+      "bytes": 200
+    },
+    {
+      "file": "models/multilingual-e5-small/README.md",
+      "sha256": "0038de97aee16258cecbad7ffda4b4febd6953e747a00e0ddbc8e6ed241e9c1c",
+      "bytes": 497538
+    },
+    {
+      "file": "models/paraphrase-multilingual-MiniLM-L12-v2/onnx/model_qint8_arm64.onnx",
+      "sha256": "783fea82d71a58179b830a4dbd2d58447e640609e98eedf9ffa12622d375a672",
+      "bytes": 118412398
+    },
+    {
+      "file": "models/paraphrase-multilingual-MiniLM-L12-v2/tokenizer.json",
+      "sha256": "2c3387be76557bd40970cec13153b3bbf80407865484b209e655e5e4729076b8",
+      "bytes": 9081518
+    },
+    {
+      "file": "models/paraphrase-multilingual-MiniLM-L12-v2/config.json",
+      "sha256": "6300193cb75e01cf80c96decef7187dfb33094d97cc1490b7ead6ff134476e4e",
+      "bytes": 645
+    },
+    {
+      "file": "models/paraphrase-multilingual-MiniLM-L12-v2/tokenizer_config.json",
+      "sha256": "5036ea374ffedd706e3bef33e2e0d6953cb868ef8a490e76e32ba0faa37a6b9b",
+      "bytes": 526
+    },
+    {
+      "file": "models/paraphrase-multilingual-MiniLM-L12-v2/sentence_bert_config.json",
+      "sha256": "70f4448f31320443fe3557cacea5abf2dcc4915dda8c80646bec9f3bb0aa5a1f",
+      "bytes": 53
+    },
+    {
+      "file": "models/paraphrase-multilingual-MiniLM-L12-v2/1_Pooling/config.json",
+      "sha256": "4be450dde3b0273bb9787637cfbd28fe04a7ba6ab9d36ac48e92b11e350ffc23",
+      "bytes": 190
+    },
+    {
+      "file": "models/paraphrase-multilingual-MiniLM-L12-v2/README.md",
+      "sha256": "1e98ea05b0de579fcaad3d625b62ea55647142ed674d5f5ebf1440e4bbbb6f23",
+      "bytes": 3888
+    }
+  ],
+  "host_logical_lab_bytes": 3318192684
+}

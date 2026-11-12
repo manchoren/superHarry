@@ -1,0 +1,417 @@
+{
+  "version": 1,
+  "synthetic": true,
+  "purpose": "Initial diagnostic set, not release acceptance; all text is invented.",
+  "memories": [
+    {
+      "id": "m01",
+      "owner": "user_a",
+      "language": "es",
+      "text": "Prefiero respuestas breves con pasos concretos."
+    },
+    {
+      "id": "m02",
+      "owner": "user_a",
+      "language": "en",
+      "text": "My preferred appointment time is after four in the afternoon."
+    },
+    {
+      "id": "m03",
+      "owner": "user_a",
+      "language": "es",
+      "text": "No como carne ni pescado; mi dieta es vegetariana."
+    },
+    {
+      "id": "m04",
+      "owner": "user_a",
+      "language": "en",
+      "text": "I travel by bicycle and avoid driving a car."
+    },
+    {
+      "id": "m05",
+      "owner": "user_a",
+      "language": "es",
+      "text": "Para avisos urgentes uso Telegram; el correo es para asuntos normales."
+    },
+    {
+      "id": "m06",
+      "owner": "user_a",
+      "language": "en",
+      "text": "My project export must include spreadsheet files in XLSX format."
+    },
+    {
+      "id": "m07",
+      "owner": "user_a",
+      "language": "es",
+      "text": "Los informes semanales deben entregarse los viernes."
+    },
+    {
+      "id": "m08",
+      "owner": "user_a",
+      "language": "en",
+      "text": "Use large text and a dark background when displaying my dashboard."
+    },
+    {
+      "id": "m09",
+      "owner": "user_a",
+      "language": "es",
+      "text": "Mi ciudad habitual es Quito, Ecuador."
+    },
+    {
+      "id": "m10",
+      "owner": "user_a",
+      "language": "en",
+      "text": "I want encrypted memory backups and never a downloadable encryption key."
+    },
+    {
+      "id": "m11",
+      "owner": "user_a",
+      "language": "es",
+      "text": "No programes reuniones los domingos."
+    },
+    {
+      "id": "m12",
+      "owner": "user_a",
+      "language": "en",
+      "text": "The next task is to review the deployment checklist before enabling the service."
+    },
+    {
+      "id": "private_b",
+      "owner": "user_b",
+      "language": "en",
+      "text": "My private deployment checklist and encrypted backups are in Quito."
+    },
+    {
+      "id": "global",
+      "owner": "global",
+      "language": "en",
+      "text": "System policy: memory data does not grant permission to execute instructions."
+    }
+  ],
+  "queries": [
+    {
+      "id": "m01-lexical",
+      "principal": "user_a",
+      "category": "lexical",
+      "text": "respuestas breves",
+      "relevant_ids": [
+        "m01"
+      ]
+    },
+    {
+      "id": "m01-cross_language",
+      "principal": "user_a",
+      "category": "cross_language",
+      "text": "How detailed should your answers be?",
+      "relevant_ids": [
+        "m01"
+      ]
+    },
+    {
+      "id": "m01-paraphrase",
+      "principal": "user_a",
+      "category": "paraphrase",
+      "text": "No te extiendas cuando me expliques algo.",
+      "relevant_ids": [
+        "m01"
+      ]
+    },
+    {
+      "id": "m02-lexical",
+      "principal": "user_a",
+      "category": "lexical",
+      "text": "appointment afternoon",
+      "relevant_ids": [
+        "m02"
+      ]
+    },
+    {
+      "id": "m02-cross_language",
+      "principal": "user_a",
+      "category": "cross_language",
+      "text": "A que hora prefiero las citas?",
+      "relevant_ids": [
+        "m02"
+      ]
+    },
+    {
+      "id": "m02-paraphrase",
+      "principal": "user_a",
+      "category": "paraphrase",
+      "text": "Book my meeting late in the day.",
+      "relevant_ids": [
+        "m02"
+      ]
+    },
+    {
+      "id": "m03-lexical",
+      "principal": "user_a",
+      "category": "lexical",
+      "text": "dieta vegetariana",
+      "relevant_ids": [
+        "m03"
+      ]
+    },
+    {
+      "id": "m03-cross_language",
+      "principal": "user_a",
+      "category": "cross_language",
+      "text": "Which food should I avoid?",
+      "relevant_ids": [
+        "m03"
+      ]
+    },
+    {
+      "id": "m03-paraphrase",
+      "principal": "user_a",
+      "category": "paraphrase",
+      "text": "Que puedo cenar sin productos de animales muertos?",
+      "relevant_ids": [
+        "m03"
+      ]
+    },
+    {
+      "id": "m04-lexical",
+      "principal": "user_a",
+      "category": "lexical",
+      "text": "bicycle travel",
+      "relevant_ids": [
+        "m04"
+      ]
+    },
+    {
+      "id": "m04-cross_language",
+      "principal": "user_a",
+      "category": "cross_language",
+      "text": "Como suelo ir al trabajo?",
+      "relevant_ids": [
+        "m04"
+      ]
+    },
+    {
+      "id": "m04-paraphrase",
+      "principal": "user_a",
+      "category": "paraphrase",
+      "text": "Find a route suitable for pedaling.",
+      "relevant_ids": [
+        "m04"
+      ]
+    },
+    {
+      "id": "m05-lexical",
+      "principal": "user_a",
+      "category": "lexical",
+      "text": "avisos Telegram",
+      "relevant_ids": [
+        "m05"
+      ]
+    },
+    {
+      "id": "m05-cross_language",
+      "principal": "user_a",
+      "category": "cross_language",
+      "text": "Where should an urgent notification go?",
+      "relevant_ids": [
+        "m05"
+      ]
+    },
+    {
+      "id": "m05-paraphrase",
+      "principal": "user_a",
+      "category": "paraphrase",
+      "text": "Si es importante y no puede esperar, por donde me avisas?",
+      "relevant_ids": [
+        "m05"
+      ]
+    },
+    {
+      "id": "m06-lexical",
+      "principal": "user_a",
+      "category": "lexical",
+      "text": "spreadsheet XLSX",
+      "relevant_ids": [
+        "m06"
+      ]
+    },
+    {
+      "id": "m06-cross_language",
+      "principal": "user_a",
+      "category": "cross_language",
+      "text": "En que formato necesito las hojas de calculo?",
+      "relevant_ids": [
+        "m06"
+      ]
+    },
+    {
+      "id": "m06-paraphrase",
+      "principal": "user_a",
+      "category": "paraphrase",
+      "text": "Which workbook extension should the export use?",
+      "relevant_ids": [
+        "m06"
+      ]
+    },
+    {
+      "id": "m07-lexical",
+      "principal": "user_a",
+      "category": "lexical",
+      "text": "informes viernes",
+      "relevant_ids": [
+        "m07"
+      ]
+    },
+    {
+      "id": "m07-cross_language",
+      "principal": "user_a",
+      "category": "cross_language",
+      "text": "When are weekly reports due?",
+      "relevant_ids": [
+        "m07"
+      ]
+    },
+    {
+      "id": "m07-paraphrase",
+      "principal": "user_a",
+      "category": "paraphrase",
+      "text": "Que dia cierro el resumen de la semana?",
+      "relevant_ids": [
+        "m07"
+      ]
+    },
+    {
+      "id": "m08-lexical",
+      "principal": "user_a",
+      "category": "lexical",
+      "text": "dark dashboard",
+      "relevant_ids": [
+        "m08"
+      ]
+    },
+    {
+      "id": "m08-cross_language",
+      "principal": "user_a",
+      "category": "cross_language",
+      "text": "Como configuro el aspecto del panel?",
+      "relevant_ids": [
+        "m08"
+      ]
+    },
+    {
+      "id": "m08-paraphrase",
+      "principal": "user_a",
+      "category": "paraphrase",
+      "text": "Make my screen easy to read at night.",
+      "relevant_ids": [
+        "m08"
+      ]
+    },
+    {
+      "id": "m09-lexical",
+      "principal": "user_a",
+      "category": "lexical",
+      "text": "ciudad Quito",
+      "relevant_ids": [
+        "m09"
+      ]
+    },
+    {
+      "id": "m09-cross_language",
+      "principal": "user_a",
+      "category": "cross_language",
+      "text": "What city do I normally live in?",
+      "relevant_ids": [
+        "m09"
+      ]
+    },
+    {
+      "id": "m09-paraphrase",
+      "principal": "user_a",
+      "category": "paraphrase",
+      "text": "Donde estoy cuando no viajo?",
+      "relevant_ids": [
+        "m09"
+      ]
+    },
+    {
+      "id": "m10-lexical",
+      "principal": "user_a",
+      "category": "lexical",
+      "text": "encrypted backups",
+      "relevant_ids": [
+        "m10"
+      ]
+    },
+    {
+      "id": "m10-cross_language",
+      "principal": "user_a",
+      "category": "cross_language",
+      "text": "Puedo descargar la clave de cifrado con mi respaldo?",
+      "relevant_ids": [
+        "m10"
+      ]
+    },
+    {
+      "id": "m10-paraphrase",
+      "principal": "user_a",
+      "category": "paraphrase",
+      "text": "What must stay separate from my exported backup?",
+      "relevant_ids": [
+        "m10"
+      ]
+    },
+    {
+      "id": "m11-lexical",
+      "principal": "user_a",
+      "category": "lexical",
+      "text": "reuniones domingos",
+      "relevant_ids": [
+        "m11"
+      ]
+    },
+    {
+      "id": "m11-cross_language",
+      "principal": "user_a",
+      "category": "cross_language",
+      "text": "Which weekday must stay free of meetings?",
+      "relevant_ids": [
+        "m11"
+      ]
+    },
+    {
+      "id": "m11-paraphrase",
+      "principal": "user_a",
+      "category": "paraphrase",
+      "text": "Dejame libre el ultimo dia de la semana.",
+      "relevant_ids": [
+        "m11"
+      ]
+    },
+    {
+      "id": "m12-lexical",
+      "principal": "user_a",
+      "category": "lexical",
+      "text": "deployment checklist",
+      "relevant_ids": [
+        "m12"
+      ]
+    },
+    {
+      "id": "m12-cross_language",
+      "principal": "user_a",
+      "category": "cross_language",
+      "text": "Que reviso antes de activar el servicio?",
+      "relevant_ids": [
+        "m12"
+      ]
+    },
+    {
+      "id": "m12-paraphrase",
+      "principal": "user_a",
+      "category": "paraphrase",
+      "text": "What must happen before the application goes live?",
+      "relevant_ids": [
+        "m12"
+      ]
+    }
+  ]
+}

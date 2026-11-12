@@ -31,13 +31,18 @@ Apply the [documentation ownership, update triggers and closure rules](../../CON
 - [ ] **T180 - Tool confirmation policy (operator-configured grants)** Status: Pending
 - [ ] **T181 - Package guard Django admin UI integration** Status: Pending
 - [ ] **T182 - Memory encryption and recovery (SQLCipher)** Status: Pending
+  - [R1 custody/recovery proposal](recovery-admin-proposals.md#r1---t182-memory-encryption-and-key-custody) accepted by owner on 2026-11-11; implementation pending prerequisites.
+  - [Binding comparison and isolated-test proposal](t182-sqlcipher-binding-review.md), 2026-11-11: D3 approved and isolated ARM64 binding experiment passed; production integration and dependencies T183/T225 remain open.
 - [ ] **T183 - Memory model and schema (global and user scopes)** Status: Pending
 - [ ] **T184 - Memory-agent retrieval (pre-main-agent, non-reasoning)** Status: Pending
 - [ ] **T185 - recall_memory tool with bounded re-invocation** Status: Pending
 - [ ] **T186 - Semantic search with keyword fallback** Status: Pending
+  - [Candidate review and diagnostic benchmark](t186-semantic-retrieval-review.md), 2026-11-11: D4 approved and exercised on an isolated ARM64 VM copy: MiniLM diagnostic passed and owner selected its tested ARM64 qint8 baseline; E5 incomplete with unverified termination cause. Production location/activation and implementation dependencies T183/T237 remain open.
 - [ ] **T187 - Per-user chat history persistence** Status: Pending
 - [ ] **T188 - Admin downloadable backups and restore** Status: Pending
+  - [R2 proposal](recovery-admin-proposals.md#r2---t188-downloadable-data-backups-and-staged-restore) accepted by owner on 2026-11-11; implementation pending prerequisites; no live restore authorized.
 - [ ] **T189 - Application update from admin interface** Status: Pending
+  - [R3 proposal](recovery-admin-proposals.md#r3---t189-staged-application-update-and-rollback) accepted by owner on 2026-11-11; no service or update activation authorized.
 - [ ] **T190 - Minimal persistent scheduler (storage cleanup and memory consolidation)** Status: Pending
 - [ ] **T191 - Memory lifecycle (consolidation, cleanup, staleness marking)** Status: Pending
 
@@ -68,6 +73,7 @@ Apply the [documentation ownership, update triggers and closure rules](../../CON
 
 - [ ] **T206 - Image validation and hygiene (magic bytes, EXIF, decompression bombs)** Status: Pending
 - [ ] **T207 - OCR pipeline (Spanish and English)** Status: Pending
+  - Owner accepted Tesseract as the initial candidate; RapidOCR remains an alternative if it performs poorly. [Evaluation proposal](t207-ocr-comparison-proposal.md); VM validation and artifact approval remain pending.
 - [ ] **T208 - Browser control and display isolation** Status: Pending
 - [ ] **T209 - Optional guest graphical display** Status: Pending
 - [ ] **T210 - Brave session isolation and authorized browser control** Status: Pending
@@ -82,11 +88,14 @@ Apply the [documentation ownership, update triggers and closure rules](../../CON
 - [ ] **T216 - Web push-to-talk** Status: Pending
 - [ ] **T217 - WhatsApp channel adapter (deferred pending terms review)** Status: Deferred
 - [ ] **T218 - External services audit (Gmail, voice models, weather)** Status: Pending
-- [ ] **T219 - Resource limits and concurrency benchmark** Status: Pending
+- [ ] **T219 - Resource limits and concurrency validation** Status: Pending
+
+Accepted owner follow-up (2026-11-11): [benchmarks waived](owner-validation-decisions.md#benchmark-waiver---2026-11-11); functional/security/resource-enforcement/recovery checks remain required. No task closure inferred.
 
 ## Phase 10: VM deployment and release acceptance
 
 - [ ] **T220 - Open choices decision matrix (scheduler defaults, API contracts, backup mechanics)** Status: Pending
+  - Package scoring/evidence choice resolved by [D1](../owner-attention.md#d1---package-guard-formula-and-required-evidence-t220--t231), accepted 2026-11-11. Budget limits/accounting resolved by [D2](../owner-attention.md#d2---initial-external-budgets-and-gateway-accounting-t220--t230), accepted 2026-11-11. Other choices remain open; T231 depends on T225 and T230 on T227/T228/T179.
 - [ ] **T221 - VM deployment and native systemd services** Status: Pending
 - [ ] **T222 - Full stack acceptance tests on target VM** Status: Pending
 - [ ] **T223 - Backup and restore validation on target VM** Status: Pending

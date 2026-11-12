@@ -1,0 +1,473 @@
+[
+  {
+    "wheel": "anyio-4.16.0-py3-none-any.whl",
+    "license_expression": "MIT",
+    "license_classifier": [],
+    "license_files": [
+      "anyio-4.16.0.dist-info/licenses/LICENSE"
+    ],
+    "natives": []
+  },
+  {
+    "wheel": "click-8.5.1-py3-none-any.whl",
+    "license_expression": "BSD-3-Clause",
+    "license_classifier": [],
+    "license_files": [
+      "click-8.5.1.dist-info/licenses/LICENSE.txt"
+    ],
+    "natives": []
+  },
+  {
+    "wheel": "filelock-4.2.10-py3-none-any.whl",
+    "license_expression": "MIT",
+    "license_classifier": [],
+    "license_files": [
+      "filelock-4.2.10.dist-info/licenses/LICENSE"
+    ],
+    "natives": []
+  },
+  {
+    "wheel": "flatbuffers-25.12.19-py2.py3-none-any.whl",
+    "license_expression": null,
+    "license_classifier": [
+      "License :: OSI Approved :: Apache Software License"
+    ],
+    "license_files": [],
+    "natives": []
+  },
+  {
+    "wheel": "fsspec-2026.9.0-py3-none-any.whl",
+    "license_expression": "BSD-3-Clause",
+    "license_classifier": [],
+    "license_files": [
+      "fsspec-2026.9.0.dist-info/licenses/LICENSE"
+    ],
+    "natives": []
+  },
+  {
+    "wheel": "h11-0.16.0-py3-none-any.whl",
+    "license_expression": null,
+    "license_classifier": [
+      "License :: OSI Approved :: MIT License"
+    ],
+    "license_files": [
+      "h11-0.16.0.dist-info/licenses/LICENSE.txt"
+    ],
+    "natives": []
+  },
+  {
+    "wheel": "hf_xet-1.8.0-cp38-abi3-manylinux_2_28_aarch64.whl",
+    "license_expression": "Apache-2.0",
+    "license_classifier": [
+      "License :: OSI Approved :: Apache Software License"
+    ],
+    "license_files": [
+      "hf_xet-1.8.0.dist-info/licenses/LICENSE"
+    ],
+    "natives": [
+      {
+        "path": "hf_xet/hf_xet.abi3.so",
+        "needed": [
+          "libgcc_s.so.1",
+          "libpthread.so.0",
+          "libm.so.6",
+          "libdl.so.2",
+          "libc.so.6"
+        ]
+      }
+    ]
+  },
+  {
+    "wheel": "httpcore2-2.16.0-py3-none-any.whl",
+    "license_expression": "BSD-3-Clause",
+    "license_classifier": [
+      "License :: OSI Approved :: BSD License"
+    ],
+    "license_files": [
+      "httpcore2-2.16.0.dist-info/licenses/LICENSE.md"
+    ],
+    "natives": []
+  },
+  {
+    "wheel": "httpx2-2.16.0-py3-none-any.whl",
+    "license_expression": "BSD-3-Clause",
+    "license_classifier": [
+      "License :: OSI Approved :: BSD License"
+    ],
+    "license_files": [
+      "httpx2-2.16.0.dist-info/licenses/LICENSE.md"
+    ],
+    "natives": []
+  },
+  {
+    "wheel": "huggingface_hub-2.4.0-py3-none-any.whl",
+    "license_expression": null,
+    "license_classifier": [
+      "License :: OSI Approved :: Apache Software License"
+    ],
+    "license_files": [
+      "huggingface_hub-2.4.0.dist-info/licenses/LICENSE"
+    ],
+    "natives": []
+  },
+  {
+    "wheel": "idna-3.20-py3-none-any.whl",
+    "license_expression": "BSD-3-Clause",
+    "license_classifier": [],
+    "license_files": [
+      "idna-3.20.dist-info/licenses/LICENSE.md"
+    ],
+    "natives": []
+  },
+  {
+    "wheel": "numpy-2.5.4-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+    "license_expression": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+    "license_classifier": [],
+    "license_files": [
+      "numpy/_core/include/numpy/random/LICENSE.txt",
+      "numpy/ma/LICENSE",
+      "numpy/random/LICENSE.md",
+      "numpy-2.5.4.dist-info/licenses/",
+      "numpy-2.5.4.dist-info/licenses/LICENSE.txt",
+      "numpy-2.5.4.dist-info/licenses/numpy/",
+      "numpy-2.5.4.dist-info/licenses/numpy/_core/",
+      "numpy-2.5.4.dist-info/licenses/numpy/_core/include/",
+      "numpy-2.5.4.dist-info/licenses/numpy/_core/include/numpy/",
+      "numpy-2.5.4.dist-info/licenses/numpy/_core/include/numpy/libdivide/",
+      "numpy-2.5.4.dist-info/licenses/numpy/_core/include/numpy/libdivide/LICENSE.txt",
+      "numpy-2.5.4.dist-info/licenses/numpy/_core/src/",
+      "numpy-2.5.4.dist-info/licenses/numpy/_core/src/common/",
+      "numpy-2.5.4.dist-info/licenses/numpy/_core/src/common/pythoncapi-compat/",
+      "numpy-2.5.4.dist-info/licenses/numpy/_core/src/common/pythoncapi-compat/COPYING",
+      "numpy-2.5.4.dist-info/licenses/numpy/_core/src/highway/",
+      "numpy-2.5.4.dist-info/licenses/numpy/_core/src/highway/LICENSE",
+      "numpy-2.5.4.dist-info/licenses/numpy/_core/src/multiarray/",
+      "numpy-2.5.4.dist-info/licenses/numpy/_core/src/multiarray/dragon4_LICENSE.txt",
+      "numpy-2.5.4.dist-info/licenses/numpy/_core/src/npysort/",
+      "numpy-2.5.4.dist-info/licenses/numpy/_core/src/npysort/x86-simd-sort/",
+      "numpy-2.5.4.dist-info/licenses/numpy/_core/src/npysort/x86-simd-sort/LICENSE.md",
+      "numpy-2.5.4.dist-info/licenses/numpy/_core/src/umath/",
+      "numpy-2.5.4.dist-info/licenses/numpy/_core/src/umath/svml/",
+      "numpy-2.5.4.dist-info/licenses/numpy/_core/src/umath/svml/LICENSE",
+      "numpy-2.5.4.dist-info/licenses/numpy/fft/",
+      "numpy-2.5.4.dist-info/licenses/numpy/fft/pocketfft/",
+      "numpy-2.5.4.dist-info/licenses/numpy/fft/pocketfft/LICENSE.md",
+      "numpy-2.5.4.dist-info/licenses/numpy/linalg/",
+      "numpy-2.5.4.dist-info/licenses/numpy/linalg/lapack_lite/",
+      "numpy-2.5.4.dist-info/licenses/numpy/linalg/lapack_lite/LICENSE.txt",
+      "numpy-2.5.4.dist-info/licenses/numpy/ma/",
+      "numpy-2.5.4.dist-info/licenses/numpy/ma/LICENSE",
+      "numpy-2.5.4.dist-info/licenses/numpy/random/",
+      "numpy-2.5.4.dist-info/licenses/numpy/random/LICENSE.md",
+      "numpy-2.5.4.dist-info/licenses/numpy/random/src/",
+      "numpy-2.5.4.dist-info/licenses/numpy/random/src/distributions/",
+      "numpy-2.5.4.dist-info/licenses/numpy/random/src/distributions/LICENSE.md",
+      "numpy-2.5.4.dist-info/licenses/numpy/random/src/mt19937/",
+      "numpy-2.5.4.dist-info/licenses/numpy/random/src/mt19937/LICENSE.md",
+      "numpy-2.5.4.dist-info/licenses/numpy/random/src/pcg64/",
+      "numpy-2.5.4.dist-info/licenses/numpy/random/src/pcg64/LICENSE.md",
+      "numpy-2.5.4.dist-info/licenses/numpy/random/src/philox/",
+      "numpy-2.5.4.dist-info/licenses/numpy/random/src/philox/LICENSE.md",
+      "numpy-2.5.4.dist-info/licenses/numpy/random/src/sfc64/",
+      "numpy-2.5.4.dist-info/licenses/numpy/random/src/sfc64/LICENSE.md",
+      "numpy-2.5.4.dist-info/licenses/numpy/random/src/splitmix64/",
+      "numpy-2.5.4.dist-info/licenses/numpy/random/src/splitmix64/LICENSE.md"
+    ],
+    "natives": [
+      {
+        "path": "numpy/_core/_multiarray_tests.cpython-313-aarch64-linux-gnu.so",
+        "needed": [
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6"
+        ]
+      },
+      {
+        "path": "numpy/_core/_multiarray_umath.cpython-313-aarch64-linux-gnu.so",
+        "needed": [
+          "libscipy_openblas64_-f552eb69.so",
+          "libstdc++.so.6",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6"
+        ]
+      },
+      {
+        "path": "numpy/_core/_operand_flag_tests.cpython-313-aarch64-linux-gnu.so",
+        "needed": []
+      },
+      {
+        "path": "numpy/_core/_rational_tests.cpython-313-aarch64-linux-gnu.so",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      {
+        "path": "numpy/_core/_simd.cpython-313-aarch64-linux-gnu.so",
+        "needed": [
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6"
+        ]
+      },
+      {
+        "path": "numpy/_core/_struct_ufunc_tests.cpython-313-aarch64-linux-gnu.so",
+        "needed": []
+      },
+      {
+        "path": "numpy/_core/_umath_tests.cpython-313-aarch64-linux-gnu.so",
+        "needed": [
+          "libm.so.6",
+          "libc.so.6"
+        ]
+      },
+      {
+        "path": "numpy/fft/_pocketfft_umath.cpython-313-aarch64-linux-gnu.so",
+        "needed": [
+          "libstdc++.so.6",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6"
+        ]
+      },
+      {
+        "path": "numpy/linalg/_umath_linalg.cpython-313-aarch64-linux-gnu.so",
+        "needed": [
+          "libscipy_openblas64_-f552eb69.so",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6"
+        ]
+      },
+      {
+        "path": "numpy/linalg/lapack_lite.cpython-313-aarch64-linux-gnu.so",
+        "needed": [
+          "libscipy_openblas64_-f552eb69.so"
+        ]
+      },
+      {
+        "path": "numpy/random/_bounded_integers.cpython-313-aarch64-linux-gnu.so",
+        "needed": [
+          "libm.so.6",
+          "libc.so.6"
+        ]
+      },
+      {
+        "path": "numpy/random/_common.cpython-313-aarch64-linux-gnu.so",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      {
+        "path": "numpy/random/_generator.cpython-313-aarch64-linux-gnu.so",
+        "needed": [
+          "libm.so.6",
+          "libc.so.6"
+        ]
+      },
+      {
+        "path": "numpy/random/_mt19937.cpython-313-aarch64-linux-gnu.so",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      {
+        "path": "numpy/random/_pcg64.cpython-313-aarch64-linux-gnu.so",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      {
+        "path": "numpy/random/_philox.cpython-313-aarch64-linux-gnu.so",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      {
+        "path": "numpy/random/_sfc64.cpython-313-aarch64-linux-gnu.so",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      {
+        "path": "numpy/random/bit_generator.cpython-313-aarch64-linux-gnu.so",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      {
+        "path": "numpy/random/mtrand.cpython-313-aarch64-linux-gnu.so",
+        "needed": [
+          "libm.so.6",
+          "libc.so.6"
+        ]
+      },
+      {
+        "path": "numpy.libs/libgfortran-e1b7dfc8-d8198c01.so.5.0.0",
+        "needed": [
+          "libz.so.1",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      {
+        "path": "numpy.libs/libscipy_openblas64_-f552eb69.so",
+        "needed": [
+          "libm.so.6",
+          "libpthread.so.0",
+          "libgfortran-e1b7dfc8-d8198c01.so.5.0.0",
+          "libc.so.6"
+        ]
+      }
+    ]
+  },
+  {
+    "wheel": "onnxruntime-1.31.1-cp313-cp313-manylinux_2_28_aarch64.whl",
+    "license_expression": null,
+    "license_classifier": [
+      "License :: OSI Approved :: MIT License"
+    ],
+    "license_files": [
+      "onnxruntime/LICENSE",
+      "onnxruntime/ThirdPartyNotices.txt"
+    ],
+    "natives": [
+      {
+        "path": "onnxruntime/capi/libonnxruntime.so.1.31.1",
+        "needed": [
+          "libdl.so.2",
+          "librt.so.1",
+          "libpthread.so.0",
+          "libstdc++.so.6",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      {
+        "path": "onnxruntime/capi/libonnxruntime_providers_shared.so",
+        "needed": [
+          "libstdc++.so.6",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6"
+        ]
+      },
+      {
+        "path": "onnxruntime/capi/onnxruntime_pybind11_state.cpython-313-aarch64-linux-gnu.so",
+        "needed": [
+          "libdl.so.2",
+          "librt.so.1",
+          "libpthread.so.0",
+          "libstdc++.so.6",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      }
+    ]
+  },
+  {
+    "wheel": "packaging-26.3-py3-none-any.whl",
+    "license_expression": "Apache-2.0 OR BSD-2-Clause",
+    "license_classifier": [],
+    "license_files": [
+      "packaging/licenses/__init__.py",
+      "packaging/licenses/_spdx.py",
+      "packaging-26.3.dist-info/licenses/LICENSE",
+      "packaging-26.3.dist-info/licenses/LICENSE.APACHE",
+      "packaging-26.3.dist-info/licenses/LICENSE.BSD"
+    ],
+    "natives": []
+  },
+  {
+    "wheel": "protobuf-7.36.2-cp310-abi3-manylinux2014_aarch64.whl",
+    "license_expression": null,
+    "license_classifier": [],
+    "license_files": [
+      "protobuf-7.36.2.dist-info/LICENSE"
+    ],
+    "natives": [
+      {
+        "path": "google/_upb/_message.abi3.so",
+        "needed": [
+          "libstdc++.so.6",
+          "libm.so.6",
+          "libc.so.6"
+        ]
+      }
+    ]
+  },
+  {
+    "wheel": "pyyaml-6.0.3-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl",
+    "license_expression": null,
+    "license_classifier": [
+      "License :: OSI Approved :: MIT License"
+    ],
+    "license_files": [
+      "pyyaml-6.0.3.dist-info/licenses/",
+      "pyyaml-6.0.3.dist-info/licenses/LICENSE"
+    ],
+    "natives": [
+      {
+        "path": "yaml/_yaml.cpython-313-aarch64-linux-gnu.so",
+        "needed": [
+          "libpthread.so.0",
+          "libc.so.6"
+        ]
+      }
+    ]
+  },
+  {
+    "wheel": "tokenizers-0.23.3-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl",
+    "license_expression": null,
+    "license_classifier": [
+      "License :: OSI Approved :: Apache Software License"
+    ],
+    "license_files": [],
+    "natives": [
+      {
+        "path": "tokenizers/tokenizers.abi3.so",
+        "needed": [
+          "libstdc++.so.6",
+          "libgcc_s.so.1",
+          "libpthread.so.0",
+          "libm.so.6",
+          "libdl.so.2",
+          "libc.so.6"
+        ]
+      }
+    ]
+  },
+  {
+    "wheel": "tqdm-4.70.1-py3-none-any.whl",
+    "license_expression": null,
+    "license_classifier": [],
+    "license_files": [
+      "tqdm-4.70.1.dist-info/licenses/LICENCE"
+    ],
+    "natives": []
+  },
+  {
+    "wheel": "truststore-0.10.5-py3-none-any.whl",
+    "license_expression": "MIT",
+    "license_classifier": [],
+    "license_files": [
+      "truststore-0.10.5.dist-info/licenses/LICENSE"
+    ],
+    "natives": []
+  },
+  {
+    "wheel": "typing_extensions-4.16.0-py3-none-any.whl",
+    "license_expression": "PSF-2.0",
+    "license_classifier": [],
+    "license_files": [
+      "typing_extensions-4.16.0.dist-info/licenses/LICENSE"
+    ],
+    "natives": []
+  }
+]
