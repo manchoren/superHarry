@@ -293,8 +293,7 @@ def _run_routing(*, turn, history, authorized, cancelled, governor=None, adapter
         try:
             if provider == 'gemini':
                 return _attempt_gemini(turn=turn, key=key, authorized=authorized,
-                                       cancelled=cancelled, history=history,
-                                       contract=contract)
+                                       cancelled=cancelled, history=history)
             return _attempt_free_route(provider=provider, key=key, turn=turn, authorized=authorized,
                                        cancelled=cancelled, history=history)
         except (NotDispatched, RateLimited):

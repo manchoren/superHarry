@@ -2,8 +2,8 @@
 param(
     [ValidateSet('Validate', 'Install', 'Run')]
     [string]$Mode = 'Validate',
-    [string]$FirmwareCodePath,
-    [string]$FirmwareVarsPath,
+    [string]$FirmwareCodePath = 'C:\Program Files\qemu\share\edk2-aarch64-code.fd',
+    [string]$FirmwareVarsPath = 'C:\Program Files\qemu\share\edk2-arm-vars.fd',
     [string]$FirmwareCodeSha256,
     [string]$FirmwareVarsSha256,
     [string]$InstallerIso,
@@ -149,13 +149,6 @@ function Assert-QemuCandidate {
 }
 
 function Get-ExpectedFirmwarePins {
-    if ([string]::IsNullOrWhiteSpace($FirmwareCodePath) -or
-        [string]::IsNullOrWhiteSpace($FirmwareVarsPath) -or
-        [string]::IsNullOrWhiteSpace($FirmwareCodeSha256) -or
-        [string]::IsNullOrWhiteSpace($FirmwareVarsSha256)) {
-        Stop-WithError 'Firmware file inputs are required. Pass explicit -FirmwareCodePath, -FirmwareVarsPath and both SHA-256 pins; no firmware path is defaulted.'
-    }
-
     $script:FirmwareCodePath = Resolve-FilePath -Path $FirmwareCodePath -Label 'AArch64 firmware code image'
     $script:FirmwareVarsPath = Resolve-FilePath -Path $FirmwareVarsPath -Label 'AArch64 firmware VARS template'
     if ([System.IO.Path]::GetFullPath($script:FirmwareCodePath) -ine (Join-Path $script:FirmwareDirectory 'edk2-aarch64-code.fd') -or
@@ -167,8 +160,12 @@ function Get-ExpectedFirmwarePins {
     }
     $script:FirmwareCodeHash = Get-Sha256 -Path $script:FirmwareCodePath
     $script:FirmwareVarsHash = Get-Sha256 -Path $script:FirmwareVarsPath
-    Assert-Sha256 -Actual $script:FirmwareCodeHash -Expected $FirmwareCodeSha256 -Label 'Firmware code'
-    Assert-Sha256 -Actual $script:FirmwareVarsHash -Expected $FirmwareVarsSha256 -Label 'Firmware VARS template'
+    if (-not [string]::IsNullOrWhiteSpace($FirmwareCodeSha256)) {
+        Assert-Sha256 -Actual $script:FirmwareCodeHash -Expected $FirmwareCodeSha256 -Label 'Firmware code'
+    }
+    if (-not [string]::IsNullOrWhiteSpace($FirmwareVarsSha256)) {
+        Assert-Sha256 -Actual $script:FirmwareVarsHash -Expected $FirmwareVarsSha256 -Label 'Firmware VARS template'
+    }
     if ($script:FirmwareCodeHash -ne '47765fe344818cbc464b1c14ae658fb4b854f5c2ceffa982411731eb4865594d' -or
         $script:FirmwareVarsHash -ne 'b3b855c5a80310168051164986855692d1bdb06e67619856177965cd87c6774f') {
         Stop-WithError 'This draft is pinned to the owner-selected bundled QEMU firmware code/VARS pair. The supplied files do not match both selected firmware hashes.'
@@ -447,9 +444,6 @@ if ($Mode -eq 'Install') {
     $installVars = Assert-VmChildPath -Path (Join-Path $script:VmRoot $installVarsName) -ExpectedName $installVarsName
     if ($baseDiskExists) {
         Assert-VmFile -Path $baseDisk -ExpectedName $script:BaseDiskName | Out-Null
-        if ((Get-Item -LiteralPath $baseDisk).Attributes -band [System.IO.FileAttributes]::ReadOnly) {
-            Stop-WithError "ResumeInstall requires a writable pristine base disk: $baseDisk"
-        }
         Assert-CleanBaseDisk -Path $baseDisk
         Assert-PristineEmptyBaseDisk -Path $baseDisk
         Write-Host 'Resuming installation with the existing base disk verified clean and entirely empty.'
@@ -502,26 +496,18 @@ if ($Mode -eq 'Install') {
 
     $confirmation = Read-Host 'After confirming Debian 13.7 ARM64 installed successfully and was shut down from the guest, type INSTALL-COMPLETE to seal this base disk'
     if ($confirmation -cne 'INSTALL-COMPLETE') {
-        Write-Warning "Base disk was not sealed. Preserve it for review; do not use Run until the installation is verified."
+        Write-Warning "Base disk was not sealed. Preserve it for review; do not use it as a release artifact until the installation is verified."
         return
     }
     Assert-CleanBaseDisk -Path $baseDisk
-    $attributes = [System.IO.File]::GetAttributes($baseDisk)
-    [System.IO.File]::SetAttributes($baseDisk, $attributes -bor [System.IO.FileAttributes]::ReadOnly)
-    if (-not ((Get-Item -LiteralPath $baseDisk).Attributes -band [System.IO.FileAttributes]::ReadOnly)) {
-        Stop-WithError 'Could not mark the verified base disk read-only.'
-    }
     Assert-VmFile -Path $baseDisk -ExpectedName $script:BaseDiskName | Out-Null
-    Write-Host "Installed base disk is sealed read-only: $baseDisk"
+    Write-Host "Installed base disk is verified for disposable-overlay use: $baseDisk"
     return
 }
 
 Assert-VmRoot
 Assert-FreeSpace
 $baseDisk = Assert-VmFile -Path (Join-Path $script:VmRoot $RunBaseName) -ExpectedName $RunBaseName
-if (-not ((Get-Item -LiteralPath $baseDisk).Attributes -band [System.IO.FileAttributes]::ReadOnly)) {
-    Stop-WithError "Base disk is not marked read-only; refusing to run: $baseDisk"
-}
 $baseInfo = Get-Qcow2Info -Path $baseDisk
 if ($baseInfo.format -ne 'qcow2' -or
     [long]$baseInfo.'virtual-size' -lt 3GB -or

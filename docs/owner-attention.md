@@ -174,4 +174,4 @@ Evidence: 2026-11-11 static inspection of current task acceptance and product re
 - Scope: D1 owner acceptance recorded and synchronized with security policy section 6, Q-12/P-12 and T220/T231 criteria. No application, provider, installation or target-VM validation was performed. T231 implementation and remaining T220 choices stay open.
 - Constitution review: no amendment required. D1 implements the existing validated-package-policy and mandatory-check principles; scoring details belong in security policies. Constitution bytes and its hash are unchanged; the pre-existing settings hash mismatch remains T226.
 - Validation: project progress command passed (10/75 completed, first open T225); git diff --check passed. Untracked owner-attention.md checked separately for whitespace and local links.
-- Existing prerequisite: `docs/reference/test-scoping.md` is missing; T225 already covers restoring the validation contracts. This proposal does not use a scoped-test exception.
+- Existing prerequisite: `docs/reference/test-scoping.md` is restored by T225. This proposal does not use a scoped-test exception.

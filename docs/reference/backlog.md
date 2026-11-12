@@ -111,9 +111,9 @@ Accepted owner follow-up (2026-11-11): [benchmarks waived](owner-validation-deci
 
 The [review and acceptance records](spec-code-review-2026-11-11.md) define the evidence, dependencies and Given/When/Then criteria for T179-T240. Existing completion markers are historical scope claims, not a new validation result. All pending tasks are **Unassigned**; no active implementer/model was verified. T179 retains its recorded In progress status, with current gateway acceptance still outstanding.
 
-- [ ] **T225 - Restore portable delivery and validation contracts** Status: Pending
-- [ ] **T226 - Reconcile constitution identity and context regression coverage** Status: Pending
-- [ ] **T227 - Harden and verify the gateway client contract** Status: Pending
+- [ ] **T225 - Restore portable delivery and validation contracts** Status: Pending. Owner: Unassigned. Canonical scope/evidence: [dated specification review](spec-code-review-2026-11-11.md#t225---restore-portable-delivery-and-validation-contracts). Dated evidence records the current hash, equivalent module-runner suite (`475 passed, 10 skipped`) and missing `manage.py`; fresh-audit/reconciliation blockers remain open. Assignees named in other dated preparation records identify evidence authors for those records, not an active T225 owner.
+- [ ] **T226 - Reconcile constitution identity and context regression coverage** Status: Pending. Exact hash pin, `13 passed/6 subtests`, and equivalent module-runner suite (`475 passed, 10 skipped`) are recorded in [the dated review](spec-code-review-2026-11-11.md#t226-implementation-evidence---2026-11-11); `manage.py` is absent, and independent audit/acceptance blockers remain open.
+- [ ] **T227 - Harden and verify the gateway client contract** Status: Pending. Dated evidence records gateway `22 passed/3 skipped`, Gemini/routing/queue `50 passed`, and equivalent module-runner suite (`475 passed, 10 skipped`); real gateway/provider/VM acceptance and fresh-audit/contract blockers remain open.
 - [ ] **T228 - Migrate model credentials and runtime configuration to omniroute** Status: Pending
 - [ ] **T229 - Connect durable chat and local inference to the gateway** Status: Pending
 - [ ] **T230 - Enforce application budgets across gateway fallback and memory calls** Status: Pending
@@ -127,5 +127,9 @@ The [review and acceptance records](spec-code-review-2026-11-11.md) define the e
 - [ ] **T238 - Implement shared channel identity and attachment contracts** Status: Pending
 - [ ] **T239 - Implement storage-pressure cleanup across persisted user data** Status: Pending
 - [ ] **T240 - Implement capability degradation and external-only task recovery** Status: Pending
+
+### Reconciliation note (2026-11-12)
+
+T225 is represented exactly once in this active backlog and exactly once in the delivery queue; its authoritative status is `Pending` and its current owner is `Unassigned`. `tasks.md` supplies ordering only and does not repeat mutable status or ownership. The dated specification review is the linked T225 scope/evidence record. Historical completion records and preparation documents remain evidence of their own bounded work; they do not duplicate, reopen or complete T225 unless this backlog entry and its linked record are updated together under the synchronization rules.
 
 T187 extends existing conversation persistence with history management and deletion. T191 flags stale memory and consolidates it; T239 owns storage-pressure deletion. T179 owns pre-dispatch admission; T227-T230 own gateway contracts, credential migration, dispatch integration and accounting. T180 owns grants; T232 owns the common tool boundary. Optional Pi tasks T169/T175/T176 remain deferred.

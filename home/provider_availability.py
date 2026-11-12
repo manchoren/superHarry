@@ -5,10 +5,10 @@ import os
 
 from django.conf import settings
 
-from home.provider_credentials import CredentialConfigError, load_provider_key
+from home.provider_credentials import CredentialConfigError, load_omniroute_key
 
 logger = logging.getLogger(__name__)
-_PROVIDER_IDS = ("groq", "openrouter", "gemini")
+_PROVIDER_IDS = ("omniroute",)
 
 
 def configured_provider_ids():
@@ -16,13 +16,7 @@ def configured_provider_ids():
     configured = []
     for provider in _PROVIDER_IDS:
         try:
-            key = load_provider_key(
-                provider,
-                os.environ,
-                debug=settings.DEBUG,
-                dotenv_path=settings.BASE_DIR / ".env",
-                allow_dotenv=settings.DEBUG or provider == 'openrouter',
-            )
+            key = load_omniroute_key(os.environ)
         except CredentialConfigError:
             logger.warning("provider_credential_configuration_invalid provider=%s", provider)
             continue

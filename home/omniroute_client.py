@@ -1,418 +1,137 @@
-"""
-omniroute Client - Python interface for communication with omniroute gateway.
-
-This module provides a unified interface for all AI model calls,
-delegating routing, fallback and credential management to omniroute.
-
-Basic usage:
-    from home.omniroute_client import omniroute_client
-    
-    response = omniroute_client.chat_completion(
-        messages=[{"role": "user", "content": "Hello"}],
-        model="nous-ai/solar-mini-4"
-    )
-"""
-
-import os
-import logging
-import requests
-from typing import Dict, List, Optional, Iterator, Any
+"""Defensive OpenAI-compatible client for the local omniroute gateway."""
+import json, logging, os
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Any, Dict, Iterator, List, Optional
+import requests
+from home.provider_outcomes import NotDispatched, OutcomeUnknown
 
 logger = logging.getLogger(__name__)
+MAX_RESPONSE_BYTES = 2 * 1024 * 1024
+MAX_SSE_LINE_BYTES = 256 * 1024
 
+class OmnirouteError(RuntimeError):
+    """Gateway failure without credentials or response-body leakage."""
 
-@dataclass
+class OmnirouteUsageError(OmnirouteError):
+    """Gateway did not return trustworthy usage."""
+
+@dataclass(frozen=True)
 class OmnirouteUsage:
-    """Token usage information from a response."""
     prompt_tokens: int
     completion_tokens: int
     total_tokens: int
-    
     @classmethod
-    def from_dict(cls, data: Dict) -> 'OmnirouteUsage':
-        """Build from response dictionary."""
-        return cls(
-            prompt_tokens=data.get('prompt_tokens', 0),
-            completion_tokens=data.get('completion_tokens', 0),
-            total_tokens=data.get('total_tokens', 0)
-        )
+    def from_dict(cls, data: Dict[str, Any]) -> "OmnirouteUsage":
+        if not isinstance(data, dict): raise OmnirouteUsageError("gateway_usage_invalid")
+        values = tuple(data.get(k) for k in ("prompt_tokens", "completion_tokens", "total_tokens"))
+        if any(type(v) is not int or v < 0 for v in values) or values[2] != values[0] + values[1]:
+            raise OmnirouteUsageError("gateway_usage_invalid")
+        return cls(*values)
 
-
-@dataclass
+@dataclass(frozen=True)
 class OmnirouteResponse:
-    """Complete response from omniroute."""
-    id: str
-    model: str
-    content: str
-    finish_reason: str
-    usage: OmnirouteUsage
-    created: datetime
-    raw: Dict  # Complete response for debugging
-    
+    id: str; model: str; content: str; finish_reason: str; usage: OmnirouteUsage; created: datetime; raw: Dict[str, Any]
     @classmethod
-    def from_dict(cls, data: Dict) -> 'OmnirouteResponse':
-        """Build from response dictionary."""
-        choice = data['choices'][0]
-        message = choice['message']
-        
-        return cls(
-            id=data.get('id', 'unknown'),
-            model=data.get('model', 'unknown'),
-            content=message.get('content', ''),
-            finish_reason=choice.get('finish_reason', 'unknown'),
-            usage=OmnirouteUsage.from_dict(data.get('usage', {})),
-            created=datetime.fromtimestamp(data.get('created', 0)),
-            raw=data
-        )
+    def from_dict(cls, data: Dict[str, Any]) -> "OmnirouteResponse":
+        if not isinstance(data, dict) or data.get("object") != "chat.completion": raise OmnirouteError("gateway_response_invalid")
+        if not isinstance(data.get("id"), str) or not isinstance(data.get("model"), str): raise OmnirouteError("gateway_response_invalid")
+        choices = data.get("choices")
+        if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict): raise OmnirouteError("gateway_response_invalid")
+        choice, message = choices[0], choices[0].get("message")
+        if (choice.get("index") != 0 or not isinstance(message, dict) or message.get("role") != "assistant"
+                or not isinstance(message.get("content"), str) or not isinstance(choice.get("finish_reason"), str)):
+            raise OmnirouteError("gateway_response_invalid")
+        created = data.get("created")
+        if type(created) is not int or created < 0: raise OmnirouteError("gateway_response_invalid")
+        return cls(data["id"], data["model"], message["content"], choice["finish_reason"],
+                   OmnirouteUsage.from_dict(data.get("usage")), datetime.fromtimestamp(created, tz=timezone.utc), data)
 
+@dataclass(frozen=True)
+class OmnirouteStreamEvent:
+    event: str; content: str = ""; finish_reason: Optional[str] = None; usage: Optional[OmnirouteUsage] = None
 
 class OmnirouteClient:
-    """
-    Client for interacting with omniroute gateway.
-    
-    Handles:
-    - Authentication with API key
-    - OpenAI-compatible request formatting
-    - Response parsing
-    - SSE streaming
-    - Error handling and retries
-    - Audit logging
-    """
-    
-    def __init__(
-        self,
-        endpoint: Optional[str] = None,
-        api_key: Optional[str] = None,
-        timeout: int = 60
-    ):
-        """
-        Initialize omniroute client.
-        
-        Args:
-            endpoint: omniroute base URL (default: from env OMNIROUTE_ENDPOINT)
-            api_key: API key (default: from env OMNIROUTE_API_KEY)
-            timeout: Timeout in seconds for requests
-        """
-        self.endpoint = (
-            endpoint or 
-            os.getenv('OMNIROUTE_ENDPOINT', 'http://localhost:20128/v1')
-        ).rstrip('/')
-        
-        self.api_key = api_key or os.getenv('OMNIROUTE_API_KEY')
-        
-        if not self.api_key:
-            raise ValueError(
-                "OMNIROUTE_API_KEY not configured. "
-                "Set in .env or pass as argument."
-            )
-        
-        self.timeout = timeout
-        self.session = requests.Session()
-        self.session.headers.update({
-            'Authorization': f'Bearer {self.api_key}',
-            'Content-Type': 'application/json'
-        })
-        
-        logger.info(f"OmnirouteClient inicializado: {self.endpoint}")
-    
-    def chat_completion(
-        self,
-        messages: List[Dict[str, str]],
-        model: str = "nous-ai/solar-mini-4",
-        temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
-        stream: bool = False,
-        reasoning: Optional[bool] = None,
-        tools: Optional[List[Dict]] = None,
-        **kwargs
-    ) -> OmnirouteResponse:
-        """
-        Send chat completion request to omniroute.
-        
-        Args:
-            messages: List of messages [{"role": "user", "content": "..."}]
-            model: Model ID (e.g., "nous-ai/solar-mini-4", "ollama/qwen3.5:4b")
-            temperature: Sampling temperature (0.0-2.0)
-            max_tokens: Maximum tokens to generate
-            stream: If True, returns iterator (use chat_completion_stream)
-            reasoning: If False, disables reasoning (for memory agent)
-            tools: List of available tools for function calling
-            **kwargs: Additional parameters for the model
-        
-        Returns:
-            OmnirouteResponse with content and metadata
-        
-        Raises:
-            requests.HTTPError: If omniroute returns HTTP error
-            ValueError: If response has invalid format
-        """
-        if stream:
-            raise ValueError(
-                "For streaming, use chat_completion_stream() instead"
-            )
-        
-        payload = {
-            'model': model,
-            'messages': messages,
-            'temperature': temperature,
-            **kwargs
-        }
-        
-        if max_tokens is not None:
-            payload['max_tokens'] = max_tokens
-        
-        if reasoning is not None:
-            payload['reasoning'] = reasoning
-        
-        if tools is not None:
-            payload['tools'] = tools
-        
-        logger.debug(
-            f"Enviando chat completion: model={model}, "
-            f"msgs={len(messages)}, max_tokens={max_tokens}"
-        )
-        
+    def __init__(self, endpoint: Optional[str] = None, api_key: Optional[str] = None, timeout: int = 60):
+        self.endpoint = (endpoint or os.getenv("OMNIROUTE_ENDPOINT", "http://localhost:20128/v1")).rstrip("/")
+        self._api_key = api_key if api_key is not None else os.getenv("OMNIROUTE_API_KEY")
+        if type(timeout) is not int or timeout <= 0: raise ValueError("timeout_invalid")
+        self.timeout, self._session = timeout, None
+    @property
+    def api_key(self): return self._api_key
+    def _session_for_request(self):
+        key = self._api_key or os.getenv("OMNIROUTE_API_KEY")
+        if not key: raise NotDispatched("omniroute_credentials_missing")
+        self._session = requests.Session()
+        self._session.headers.update({"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
+        return self._session
+    @staticmethod
+    def _raise_http(response, operation):
+        if 200 <= response.status_code < 300: return
+        if response.status_code in (401, 403, 404, 409, 422, 429): raise NotDispatched(f"omniroute_{operation}_rejected_{response.status_code}")
+        raise OmnirouteError(f"omniroute_{operation}_failed_{response.status_code}")
+    def _post(self, payload, stream=False):
+        session = self._session_for_request()
         try:
-            response = self.session.post(
-                f"{self.endpoint}/chat/completions",
-                json=payload,
-                timeout=self.timeout
-            )
-            response.raise_for_status()
-            
-            data = response.json()
-            result = OmnirouteResponse.from_dict(data)
-            
-            logger.info(
-                f"Chat completion exitoso: model={result.model}, "
-                f"tokens={result.usage.total_tokens}, "
-                f"finish={result.finish_reason}"
-            )
-            
-            return result
-        
-        except requests.HTTPError as e:
-            logger.error(f"omniroute HTTP error: {e.response.status_code}")
-            logger.error(f"Response: {e.response.text}")
-            raise
-        
-        except Exception as e:
-            logger.error(f"Error en chat completion: {e}")
-            raise
-    
-    def chat_completion_stream(
-        self,
-        messages: List[Dict[str, str]],
-        model: str = "nous-ai/solar-mini-4",
-        temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
-        **kwargs
-    ) -> Iterator[str]:
-        """
-        Send chat completion with SSE streaming.
-        
-        Returns iterator that yields each text chunk as it arrives.
-        
-        Args:
-            messages: List of messages
-            model: Model ID
-            temperature: Temperature
-            max_tokens: Maximum tokens
-            **kwargs: Additional parameters
-        
-        Yields:
-            str: Each generated text chunk
-        
-        Example:
-            for chunk in client.chat_completion_stream(messages):
-                print(chunk, end='', flush=True)
-        """
-        payload = {
-            'model': model,
-            'messages': messages,
-            'temperature': temperature,
-            'stream': True,
-            **kwargs
-        }
-        
-        if max_tokens is not None:
-            payload['max_tokens'] = max_tokens
-        
-        logger.debug(f"Iniciando streaming: model={model}, msgs={len(messages)}")
-        
+            response = session.post(f"{self.endpoint}/chat/completions", json=payload, stream=stream, timeout=self.timeout)
+            self._raise_http(response, "chat"); return response
+        except requests.Timeout as exc: raise OutcomeUnknown("omniroute_timeout") from exc
+        except requests.RequestException as exc: raise OutcomeUnknown("omniroute_transport_failure") from exc
+    def chat_completion(self, messages: List[Dict[str, str]], model="nous-ai/solar-mini-4", temperature=0.7, max_tokens=None, stream=False, reasoning=None, tools=None, **kwargs):
+        if stream: raise ValueError("use chat_completion_stream for streaming")
+        payload = {"model": model, "messages": messages, "temperature": temperature, **kwargs}
+        if max_tokens is not None: payload["max_tokens"] = max_tokens
+        if reasoning is not None: payload["reasoning"] = reasoning
+        if tools is not None: payload["tools"] = tools
+        response = self._post(payload)
         try:
-            response = self.session.post(
-                f"{self.endpoint}/chat/completions",
-                json=payload,
-                stream=True,
-                timeout=self.timeout
-            )
-            response.raise_for_status()
-            
-            for line in response.iter_lines():
-                if not line:
-                    continue
-                
-                line = line.decode('utf-8')
-                
-                # SSE format: "data: {...}"
-                if line.startswith('data: '):
-                    data_str = line[6:]  # Remove "data: " prefix
-                    
-                    if data_str == '[DONE]':
-                        logger.debug("Streaming completed")
-                        break
-                    
-                    try:
-                        data = json.loads(data_str)
-                        choices = data.get('choices', [])
-                        
-                        if choices:
-                            delta = choices[0].get('delta', {})
-                            content = delta.get('content', '')
-                            
-                            if content:
-                                yield content
-                    
-                    except json.JSONDecodeError:
-                        logger.warning(f"Invalid JSON in stream: {data_str}")
-                        continue
-        
-        except requests.HTTPError as e:
-            logger.error(f"omniroute streaming error: {e.response.status_code}")
-            raise
-        
-        except Exception as e:
-            logger.error(f"Error en streaming: {e}")
-            raise
-    
-    def health_check(self) -> Dict[str, Any]:
-        """
-        Check omniroute status.
-        
-        Returns:
-            Dict with status and provider metadata
-        
-        Example:
-            health = client.health_check()
-            print(f"Status: {health['status']}")
-            print(f"Providers: {health['providers']}")
-        """
+            length = response.headers.get("Content-Length", 0)
+            if isinstance(length, str) and length.isdigit() and int(length) > MAX_RESPONSE_BYTES: raise OmnirouteError("gateway_response_too_large")
+            return OmnirouteResponse.from_dict(response.json())
+        except (ValueError, json.JSONDecodeError) as exc: raise OmnirouteError("gateway_response_invalid") from exc
+        finally: response.close(); self.close()
+    def chat_completion_stream(self, messages: List[Dict[str, str]], model="nous-ai/solar-mini-4", temperature=0.7, max_tokens=None, **kwargs) -> Iterator[OmnirouteStreamEvent]:
+        payload = {"model": model, "messages": messages, "temperature": temperature, "stream": True, **kwargs}
+        if max_tokens is not None: payload["max_tokens"] = max_tokens
+        response = self._post(payload, stream=True)
         try:
-            # Remove /v1 suffix for health endpoint
-            base_endpoint = self.endpoint.replace('/v1', '')
-            
-            response = self.session.get(
-                f"{base_endpoint}/health",
-                timeout=10
-            )
-            response.raise_for_status()
-            
-            data = response.json()
-            logger.info(f"Health check OK: {data.get('status')}")
-            
+            for raw_line in response.iter_lines():
+                if not raw_line: continue
+                if len(raw_line) > MAX_SSE_LINE_BYTES: raise OmnirouteError("gateway_sse_line_too_large")
+                line = raw_line.decode("utf-8") if isinstance(raw_line, bytes) else raw_line
+                if not line.startswith("data:"): continue
+                value = line[5:].strip()
+                if value == "[DONE]": yield OmnirouteStreamEvent("done"); return
+                try: data = json.loads(value)
+                except (TypeError, json.JSONDecodeError) as exc: raise OmnirouteError("gateway_sse_malformed") from exc
+                choices = data.get("choices") if isinstance(data, dict) else None
+                if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict): raise OmnirouteError("gateway_sse_schema_invalid")
+                choice, delta = choices[0], choices[0].get("delta", {})
+                if not isinstance(delta, dict) or not isinstance(delta.get("content", ""), str): raise OmnirouteError("gateway_sse_schema_invalid")
+                usage = OmnirouteUsage.from_dict(data["usage"]) if "usage" in data else None
+                yield OmnirouteStreamEvent("delta", delta.get("content", ""), choice.get("finish_reason"), usage)
+        except (requests.Timeout, requests.RequestException) as exc: raise OutcomeUnknown("omniroute_stream_failure") from exc
+        finally: response.close(); self.close()
+    def _get(self, path, missing_ok=False):
+        session = self._session_for_request()
+        try:
+            response = session.get(f"{self.endpoint.removesuffix('/v1')}/{path}", timeout=10)
+            if missing_ok and response.status_code == 404: return {}
+            self._raise_http(response, path); data = response.json()
+            if not isinstance(data, dict): raise OmnirouteError("gateway_response_invalid")
             return data
-        
-        except Exception as e:
-            logger.error(f"Health check failed: {e}")
-            raise
-    
-    def get_usage_stats(self) -> Dict[str, Any]:
-        """
-        Get omniroute usage statistics.
-        
-        Returns:
-            Dict with total requests, tokens, distribution by provider, etc.
-        
-        Note:
-            Endpoint may not be available in all omniroute installations.
-        """
-        try:
-            # Remove /v1 suffix
-            base_endpoint = self.endpoint.replace('/v1', '')
-            
-            response = self.session.get(
-                f"{base_endpoint}/usage",
-                timeout=10
-            )
-            
-            if response.status_code == 404:
-                logger.warning("Endpoint /usage not available in omniroute")
-                return {}
-            
-            response.raise_for_status()
-            return response.json()
-        
-        except Exception as e:
-            logger.error(f"Error getting usage stats: {e}")
-            return {}
+        except requests.RequestException as exc: raise OutcomeUnknown(f"omniroute_{path}_failure") from exc
+        finally:
+            if "response" in locals(): response.close()
+            self.close()
+    def health_check(self): return self._get("health")
+    def get_usage_stats(self): return self._get("usage", True)
+    def close(self):
+        if self._session is not None: self._session.close(); self._session = None
 
-
-# Global singleton for use across application
 omniroute_client = OmnirouteClient()
-
-
-# Helpers for common use cases
-
-def chat_with_external_model(
-    messages: List[Dict[str, str]],
-    **kwargs
-) -> OmnirouteResponse:
-    """
-    Send chat to external model (Nous Portal primary).
-    
-    Uses fallback chain configured in omniroute.
-    """
-    return omniroute_client.chat_completion(
-        messages=messages,
-        model="nous-ai/solar-mini-4",
-        **kwargs
-    )
-
-
-def chat_with_local_model(
-    messages: List[Dict[str, str]],
-    **kwargs
-) -> OmnirouteResponse:
-    """
-    Send chat to local model (Ollama).
-    
-    For guests or when cloud unavailable.
-    """
-    return omniroute_client.chat_completion(
-        messages=messages,
-        model="ollama/qwen3.5:4b",
-        **kwargs
-    )
-
-
-def memory_agent_search(
-    query: str,
-    conversation_context: Optional[List[Dict[str, str]]] = None
-) -> OmnirouteResponse:
-    """
-    Invoke memory agent with reasoning disabled.
-    
-    Args:
-        query: Current user query
-        conversation_context: Optional conversation context
-    
-    Returns:
-        Memory agent response with relevant memory IDs
-    """
-    messages = conversation_context or []
-    messages.append({"role": "user", "content": query})
-    
-    return omniroute_client.chat_completion(
-        messages=messages,
-        model="nous-ai/solar-mini-4",
-        reasoning=False,  # Critical: disable reasoning for memory agent
-        temperature=0.3,  # More deterministic for search
-        max_tokens=500
-    )
-
-
-# Import json for streaming
-import json
+def chat_with_external_model(messages, **kwargs): return omniroute_client.chat_completion(messages=messages, model="nous-ai/solar-mini-4", **kwargs)
+def chat_with_local_model(messages, **kwargs): return omniroute_client.chat_completion(messages=messages, model="ollama/qwen3.5:4b", **kwargs)
+def memory_agent_search(query, conversation_context=None):
+    messages = list(conversation_context or []); messages.append({"role": "user", "content": query})
+    return omniroute_client.chat_completion(messages=messages, model="nous-ai/solar-mini-4", reasoning=False, temperature=0.3, max_tokens=500)

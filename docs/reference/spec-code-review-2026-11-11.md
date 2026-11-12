@@ -9,7 +9,7 @@ The [accepted benchmark waiver](owner-validation-decisions.md#benchmark-waiver--
 
 ## Evidence and limits
 
-- The actual queue file is `tasks.md`; the progress command failed trying to open `TASK.md` in this checkout. Its path was corrected during this review and the command rerun. Other documentation links still need one portable spelling under T225.
+- The actual queue file is `tasks.md`; all current delivery references use this case-sensitive spelling. Historical review notes retain the original discovery context.
 - `home/apps.py` configures `GeminiChatDispatcher`; `home/gemini_queue.py` calls `run_gemini_turn`. `home/gemini_chat.py` loads provider keys and uses direct external transports and `LlamaCppModelAdapter`. `home/omniroute_client.py` exists, with tests in `tests/test_omniroute_client.py`, but is not connected to this dispatch path. A client helper is not mandatory memory retrieval or a completed gateway migration.
 - `superharry/settings.py` pins constitution hash `f1b1aed306f9e7ea9d5c26d78c00b74febedc43ee776d039a4734b7b0354c20c`, which differs from the file read above. `home/constitution_context.py` rejects a mismatch. This is a static finding; no runtime dispatch was attempted.
 - `home/provider_credentials.py` still supports Gemini, Groq and OpenRouter keys; `superharry/runtime_config.py` supports an OpenRouter systemd credential. The constitution now delegates model-provider credentials to omniroute. Authentication, TOTP keys and TLS remain application/operations responsibilities.
@@ -17,7 +17,7 @@ The [accepted benchmark waiver](owner-validation-decisions.md#benchmark-waiver--
 - `Conversation`, `Message`, `ChatTurn`, `ChatEvent`, `GeminiChatJob`, quota and heavy-job models already exist in `home/models.py`. T187 must extend existing history, not create it again. `home/urls.py` provides conversation creation/detail and turn/SSE/cancel routes, but no conversation deletion route.
 - `home/admin.py` registers audited users and diagnostics, not package policy, memory, backup, scheduler or skill management. `home/static/home/chat.css` declares only a light color scheme.
 - No memory, tool-grant, skill, file-store or user-scheduled-job models appear in the inspected model inventory. Sandbox, browser, channels and voice requirements remain delivery work; examples in design documents are not implementation evidence.
-- `CONTRIBUTING.md` references `docs/reference/test-scoping.md`, which is missing. `docs/README.md` and requirements reference other absent policy/proposal records. Dependency manifests are also absent from the current root inventory. Recover an approved baseline rather than inventing package versions.
+- `CONTRIBUTING.md` references `docs/reference/test-scoping.md`; that policy and the approved root dependency baseline are restored by T225. Portable references must use the case-sensitive `tasks.md` filename.
 - Existing completion markers are retained as historical claims, not revalidated. The queue, backlog and history were already untracked before this review. No `.env` values were read, no provider calls or VM operations were performed, and no application tests were run for this documentation change.
 
 ## Existing task scope corrections and acceptance
@@ -91,8 +91,21 @@ The backlog owns status. These records own the scope, dependencies and acceptanc
 - Defined task evidence, assignee/model recording, stable IDs, queue/backlog parity, reopening semantics and the distinction between implementation, authorization, deployment and VM acceptance. Existing completed duplicates and legacy ownership/status inconsistencies remain T225 reconciliation work; this change does not close T225.
 - `python scripts/project_progress.py`: exit 0; 10/75 counted completed, T225 first open entry. This count reflects existing markers, not revalidated acceptance.
 - `git diff --check`: exit 0; Git reported an LF-to-CRLF normalization warning for CONTRIBUTING.md, not a whitespace failure.
-- Static Python checks: affected relative links and anchors resolve except the previously missing test-scoping policy; no trailing whitespace in CONTRIBUTING.md, tasks.md or backlog.md; 65 unique open IDs match 65 unique queue IDs.
-- Documentation-only validation; no application tests or service changes. Constitution identity is the unchanged hash recorded at the top of this review. Remaining T225 scope includes the missing validation/dependency baseline, historical duplication and references outside this change.
+- Static Python checks: the test-scoping policy and approved dependency baseline now resolve; portable queue references use `tasks.md`; no trailing whitespace in CONTRIBUTING.md, tasks.md or backlog.md; 65 unique open IDs match 65 unique queue IDs.
+- Documentation-only validation; no application tests or service changes. Constitution identity is unchanged. T225 implementation scope is restored baseline, historical-reference reconciliation and portable queue spelling; task status remains Pending until independent review accepts the evidence.
+
+#### T225 verification update - 2026-11-11
+
+- Current repository constitution SHA-256: `640c85a00d537e01fe446ac4516cb09cb53df2acdac493615fb5e72bdd792e64`.
+- Equivalent module-runner validation was recorded with `DJANGO_SETTINGS_MODULE=superharry.settings .venv\\Scripts\\python.exe -m django test`: 475 passed, 10 skipped, exit code 0. `manage.py` is absent, so this is not literal `manage.py` evidence.
+- `django check`, `makemigrations --check --dry-run`, and `git diff --check` passed. This verifies the current local checkout only; it does not establish deployment, VM, provider, or release acceptance.
+- T225 remains Pending. The fresh-audit score and independent reconciliation requirements remain blockers.
+
+#### T225 reconciliation update - 2026-11-12
+
+- The canonical active record is the single `T225` entry in `docs/reference/backlog.md`; it remains `Pending` with owner `Unassigned`. `tasks.md` contains one queue row for ordering and intentionally carries no mutable status or owner.
+- No T225 record exists in `docs/history/completed-tasks.md`. Assignee labels in other dated evidence records identify the author of that bounded evidence, not an active T225 handoff or completion claim.
+- The backlog entry now links this section as T225's scope/evidence record. The fresh audit and independent acceptance gates remain open; this reconciliation does not close T225.
 
 ### T226 - Reconcile constitution identity and context regression coverage
 
@@ -101,6 +114,14 @@ The backlog owns status. These records own the scope, dependencies and acceptanc
 - Review the current approved constitution identity, synchronize the pin without weakening verification, and preserve exact bytes. Do not amend the constitution as part of this task.
 - Given current approved bytes, when context is prepared, then verification succeeds. Given changed/missing bytes, when dispatch is attempted, then no model request occurs. Cover external, local and memory-agent paths; record hash and full-suite evidence.
 
+#### T226 implementation evidence - 2026-11-11
+
+- Updated only `superharry/settings.py` to pin the exact raw `constitution.md` SHA-256: `640c85a00d537e01fe446ac4516cb09cb53df2acdac493615fb5e72bdd792e64`. `constitution.md` bytes were not changed.
+- Added regression coverage in `home/test_context.py` for exact repository identity and revalidation after constitution changes across external-provider, local-inference and memory-agent context profiles. The tests assert that stale context is rejected before use.
+- Focused validation: `DJANGO_SETTINGS_MODULE=superharry.settings .venv\\Scripts\\python.exe -m pytest home/test_context.py -q` -> `13 passed, 6 subtests passed` in the local Windows checkout.
+- Current equivalent module-runner validation: `DJANGO_SETTINGS_MODULE=superharry.settings .venv\\Scripts\\python.exe -m django test` -> `475 passed, 10 skipped, exit code 0`. `manage.py` is absent from the checkout; therefore this is equivalent module-runner evidence, not literal `manage.py` evidence.
+- `django check`, `makemigrations --check --dry-run`, and `git diff --check` passed. T226 remains Pending because the fresh-audit score/acceptance is unresolved and this evidence does not establish real gateway, provider, VM, deployment, or release acceptance.
+
 ### T227 - Harden and verify the gateway client contract
 
 **Priority:** P0. **Dependencies:** T225. **Evidence:** omniroute_client eagerly creates an authenticated singleton, logs raw HTTP error bodies, accepts response fields with default invented usage, and yields text-only SSE chunks.
@@ -108,6 +129,14 @@ The backlog owns status. These records own the scope, dependencies and acceptanc
 - Verify endpoints, exact model identifiers, reasoning flags and response/error/usage schemas against the chosen installed gateway version; current design examples are not verified API contracts.
 - Use lazy configuration, bounded response/SSE processing, explicit timeout/error/outcome classification, closed response/session resources and sanitized diagnostics. Separate post-response usage from verified preflight measurement. Avoid mutating caller-owned memory-search history.
 - Given missing credentials, malformed/truncated SSE, missing usage or a timeout after sending, when invoked, then return the appropriate structured failure/unknown outcome without replay, invented counts or secret/body leakage. Unit tests must collect without real credentials or network access.
+
+#### T227 verification evidence - 2026-11-11
+
+- Gateway focused validation: `tests/test_omniroute_client.py` -> `22 passed, 3 skipped`.
+- Gemini/routing/queue integration-focused validation -> `50 passed`.
+- Equivalent module-runner validation: `DJANGO_SETTINGS_MODULE=superharry.settings .venv\\Scripts\\python.exe -m django test` -> `475 passed, 10 skipped, exit code 0`. `manage.py` is absent; this is not literal `manage.py` evidence.
+- `git diff --check` passed. Migration-focused validation also passed (`2 passed`), and `django check` plus `makemigrations --check --dry-run` passed.
+- T227 remains Pending. Fresh-audit scope findings remain open; real installed-gateway contract verification, provider/account/context eligibility, VM/deployment acceptance and release acceptance are not established. Any unresolved gateway contract limitations remain applicable.
 
 ### T228 - Migrate model credentials and runtime configuration to omniroute
 

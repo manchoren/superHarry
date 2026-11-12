@@ -5,6 +5,101 @@ import uuid
 from django.db import migrations, models
 
 
+class HeavyJobPrimaryKeyTransition(migrations.operations.base.Operation):
+    """Add the surrogate key while retaining a safe SQLite reverse path."""
+
+    reduces_to_sql = True
+    reversible = True
+
+    def state_forwards(self, app_label, state):
+        migrations.AddField(
+            model_name='heavyjob',
+            name='id',
+            field=models.AutoField(primary_key=True, serialize=False),
+        ).state_forwards(app_label, state)
+        migrations.AlterField(
+            model_name='heavyjob',
+            name='token',
+            field=models.UUIDField(default=uuid.uuid4, editable=False, unique=True),
+        ).state_forwards(app_label, state)
+
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        old_model = from_state.apps.get_model(app_label, 'HeavyJob')
+        new_model = to_state.apps.get_model(app_label, 'HeavyJob')
+        schema_editor.add_field(old_model, new_model._meta.get_field('id'))
+        schema_editor.alter_field(
+            new_model,
+            old_model._meta.get_field('token'),
+            new_model._meta.get_field('token'),
+        )
+
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        if schema_editor.connection.vendor != 'sqlite':
+            old_model = from_state.apps.get_model(app_label, 'HeavyJob')
+            new_model = to_state.apps.get_model(app_label, 'HeavyJob')
+            schema_editor.alter_field(
+                old_model,
+                old_model._meta.get_field('token'),
+                new_model._meta.get_field('token'),
+            )
+            schema_editor.remove_field(old_model, old_model._meta.get_field('id'))
+            return
+
+        qn = schema_editor.quote_name
+        table = qn('home_heavyjob')
+        temporary = qn('home_heavyjob__migration_reverse')
+        schema_editor.execute(f'DROP TABLE IF EXISTS {temporary}')
+        schema_editor.execute(
+            f'''CREATE TABLE {temporary} (
+                "token" char(32) NOT NULL PRIMARY KEY,
+                "kind" varchar(32) NOT NULL,
+                "operation_id" varchar(128) NOT NULL,
+                "owner_id" varchar(128) NOT NULL,
+                "state" varchar(16) NOT NULL,
+                "generation_id" char(32) NULL,
+                "worker_pid" integer unsigned NULL,
+                "started_at" datetime NULL,
+                "confirmed_stop_at" datetime NULL,
+                "released_at" datetime NULL,
+                "error_code" varchar(32) NULL,
+                "created_at" datetime NOT NULL,
+                "updated_at" datetime NOT NULL,
+                CONSTRAINT "home_heavyjob_state_choice"
+                    CHECK ("state" IN ('queued', 'running', 'released'))
+            )'''
+        )
+        columns = (
+            'token', 'kind', 'operation_id', 'owner_id', 'state', 'generation_id',
+            'worker_pid', 'started_at', 'confirmed_stop_at', 'released_at',
+            'error_code', 'created_at', 'updated_at',
+        )
+        names = ', '.join(qn(column) for column in columns)
+        schema_editor.execute(
+            f'INSERT INTO {temporary} ({names}) SELECT {names} FROM {table}'
+        )
+        schema_editor.execute(f'DROP TABLE {table}')
+        schema_editor.execute(f'ALTER TABLE {temporary} RENAME TO {qn("home_heavyjob")}')
+        schema_editor.execute(
+            f'''CREATE INDEX {qn('home_heavyj_kind_57b429_idx')}
+                ON {table} ("kind", "state")'''
+        )
+        schema_editor.execute(
+            f'''CREATE INDEX {qn('home_heavyj_created_9d25d4_idx')}
+                ON {table} ("created_at" DESC)'''
+        )
+        schema_editor.execute(
+            f'''CREATE UNIQUE INDEX {qn('home_heavyjob_single_running')}
+                ON {table} ("state") WHERE "state" = 'running' '''
+        )
+
+    def describe(self):
+        return 'Add HeavyJob.id and make token non-primary-key'
+
+    @property
+    def migration_name_fragment(self):
+        return 'heavyjob_primary_key_transition'
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -27,20 +122,11 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now, editable=False)),
             ],
         ),
-        migrations.AddField(
-            model_name='heavyjob',
-            name='id',
-            field=models.AutoField(primary_key=True, serialize=False),
-        ),
+        HeavyJobPrimaryKeyTransition(),
         migrations.AlterField(
             model_name='auditevent',
             name='event_type',
             field=models.CharField(choices=[('auth.password_verification_failed', 'Password verification failed'), ('auth.totp_verification_failed', 'TOTP verification failed'), ('auth.login_succeeded', 'Login succeeded'), ('auth.session_created', 'Session created'), ('auth.logout_succeeded', 'Logout succeeded'), ('auth.session_revoked', 'Session revoked'), ('auth.password_recovery_issued', 'Password recovery issued'), ('auth.password_reset_completed', 'Password reset completed'), ('admin.recovery_credential_issued', 'Recovery credential issued'), ('admin.recovery_completed', 'Recovery completed'), ('admin.user_created', 'User created'), ('admin.user_deactivated', 'User deactivated'), ('admin.role_changed', 'Role changed'), ('auth.totp_enrollment_started', 'TOTP enrollment started'), ('auth.totp_enrollment_confirmed', 'TOTP enrollment confirmed'), ('auth.totp_enrollment_expired', 'TOTP enrollment expired'), ('auth.totp_key_unavailable', 'TOTP credential unavailable'), ('auth.totp_deactivated', 'TOTP deactivated'), ('auth.totp_recovery_used', 'TOTP recovery used'), ('admin.audit_read', 'Audit log read'), ('admin.audit_exported', 'Audit log exported'), ('maintenance.audit_retention_pruned', 'Expired audit events pruned'), ('admin.diagnostics_enabled', 'Diagnostic logging enabled'), ('admin.diagnostics_disabled', 'Diagnostic logging disabled'), ('chat.turn_created', 'Chat turn created'), ('chat.turn_cancel_requested', 'Chat turn cancellation requested'), ('admin.quota_reconciliation', 'Quota reconciliation'), ('admin.quota_reconciliation_committed', 'Quota reconciliation committed'), ('admin.quota_reconciliation_rejected', 'Quota reconciliation rejected')], max_length=64),
-        ),
-        migrations.AlterField(
-            model_name='heavyjob',
-            name='token',
-            field=models.UUIDField(default=uuid.uuid4, editable=False, unique=True),
         ),
         migrations.AddConstraint(
             model_name='governorlock',

@@ -1,6 +1,6 @@
 # Documentation index
 
-Start with the [constitution](../constitution.md), [delivery queue](../TASK.md), and [product requirements](reference/product-requirements.md). The constitution governs when documents conflict. Documents retain their own status, dates and scope; a folder does not imply acceptance.
+Start with the [constitution](../constitution.md), [delivery queue](../tasks.md), and [product requirements](reference/product-requirements.md). The constitution governs when documents conflict. Documents retain their own status, dates and scope; a folder does not imply acceptance.
 
 ## Navigation
 
@@ -25,6 +25,5 @@ docs/
 ## Binding detail and delivery records
 
 - [backlog](reference/backlog.md)
-- [delivery-constraints](reference/delivery-constraints.md)
 - [product-requirements](reference/product-requirements.md)
 - [test-scoping](reference/test-scoping.md)

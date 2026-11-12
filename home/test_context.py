@@ -58,9 +58,15 @@ class ConstitutionContextTests(TestCase):
         self.source_path.write_bytes(self.source_bytes)
         self.expected_sha256 = hashlib.sha256(self.source_bytes).hexdigest()
 
-    def _profile(self, token_count=10, serializer=None, context_capacity=100):
+    def _profile(
+        self,
+        token_count=10,
+        serializer=None,
+        context_capacity=100,
+        profile_id="test-adapter",
+    ):
         return ContextProfile(
-            profile_id="test-adapter",
+            profile_id=profile_id,
             profile_revision="1",
             tokenizer_id="test-counter",
             tokenizer_revision="1",
@@ -90,6 +96,37 @@ class ConstitutionContextTests(TestCase):
         )
 
         self.assertEqual(snapshot.sha256, settings.SUPERHARRY_CONSTITUTION_SHA256)
+
+    def test_release_identity_matches_exact_repository_bytes(self):
+        raw = (settings.BASE_DIR / "constitution.md").read_bytes()
+
+        self.assertEqual(
+            hashlib.sha256(raw).hexdigest(),
+            "640c85a00d537e01fe446ac4516cb09cb53df2acdac493615fb5e72bdd792e64",
+        )
+        self.assertEqual(settings.SUPERHARRY_CONSTITUTION_SHA256, hashlib.sha256(raw).hexdigest())
+
+    def test_context_revalidation_covers_external_local_and_memory_agent_profiles(self):
+        for profile_id in ("external-provider", "local-inference", "memory-agent"):
+            with self.subTest(profile_id=profile_id):
+                prepared = prepare_context(
+                    source_path=self.source_path,
+                    expected_sha256=self.expected_sha256,
+                    user_request="hello",
+                    profile=self._profile(profile_id=profile_id),
+                )
+                self.assertEqual(prepared.profile_id, profile_id)
+                self.source_path.write_bytes(b"changed constitution")
+                with self.assertRaises(ContextPreparationError) as raised:
+                    ensure_context_is_current(
+                        prepared,
+                        source_path=self.source_path,
+                        expected_sha256=hashlib.sha256(
+                            b"changed constitution"
+                        ).hexdigest(),
+                    )
+                self.assertEqual(raised.exception.code, "constitution_changed")
+                self.source_path.write_bytes(self.source_bytes)
 
     def test_release_preparation_uses_pinned_identity(self):
         with override_settings(

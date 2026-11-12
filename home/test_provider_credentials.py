@@ -1,113 +1,39 @@
-﻿from pathlib import Path
 import os
 from tempfile import TemporaryDirectory
-from unittest import TestCase, skipUnless
+from unittest import TestCase
 from unittest.mock import patch
 
-from home.provider_credentials import CredentialConfigError, load_provider_key
+from home.provider_credentials import CredentialConfigError, load_omniroute_key, load_provider_key
 
 
 class ProviderCredentialsTests(TestCase):
     def setUp(self):
         self.tmp = TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.path = Path(self.tmp.name) / '.env'
 
-    def load(self, provider, environ=None, *, debug=True, allow_dotenv=True):
-        return load_provider_key(provider, {} if environ is None else environ,
-                                 debug=debug, dotenv_path=self.path, allow_dotenv=allow_dotenv)
-
-    def test_environment_precedes_development_file(self):
-        self.path.mkdir()
-        self.assertEqual(self.load('groq', {'GROQ_API_KEY': 'synthetic-env'}), 'synthetic-env')
-        with self.assertRaises(CredentialConfigError):
-            self.load('groq', {'GROQ_API_KEY': ''})
-
-    def test_explicit_development_opt_in_and_provider_isolation(self):
-        self.path.write_text('GROQ_API_KEY="synthetic-groq"\nOPENROUTER_API_KEY=synthetic-router\nGEMINI_API_KEY=synthetic-gemini\n', encoding='utf-8')
-        self.assertIsNone(self.load('groq', debug=False))
-        self.assertIsNone(self.load('groq', allow_dotenv=False))
-        for provider, expected in [('groq','synthetic-groq'), ('openrouter','synthetic-router'), ('gemini','synthetic-gemini')]:
-            self.assertEqual(self.load(provider), expected)
-
-    def test_duplicate_invalid_and_unknown_fail_without_leaking(self):
-        for text in ('GROQ_API_KEY=synthetic-one\nGROQ_API_KEY=synthetic-two\n', 'GROQ_API_KEY="synthetic-secret\n', 'GROQ_API_KEY=synthetic secret\n'):
-            self.path.write_text(text, encoding='utf-8')
+    def test_direct_provider_credentials_are_retired_without_secret_leak(self):
+        for provider, variable in [('groq', 'GROQ_API_KEY'), ('openrouter', 'OPENROUTER_API_KEY'), ('gemini', 'GEMINI_API_KEY')]:
             with self.assertRaises(CredentialConfigError) as error:
-                self.load('groq')
+                load_provider_key(provider, {variable: 'synthetic-secret'}, debug=True, dotenv_path='unused', allow_dotenv=True)
+            self.assertEqual(str(error.exception), 'direct_provider_credentials_retired')
             self.assertNotIn('synthetic', str(error.exception))
-        with self.assertRaises(CredentialConfigError):
-            self.load('openai')
 
-    def test_deployment_dotenv_is_restricted_to_openrouter_and_opt_in(self):
-        with patch('home.provider_credentials._read_deployment_dotenv',
-                   return_value=b'OPENROUTER_API_KEY=synthetic-router\n') as read:
-            self.assertEqual(self.load('openrouter', debug=False), 'synthetic-router')
-            self.assertIsNone(self.load('groq', debug=False))
-            self.assertIsNone(self.load('openrouter', debug=False, allow_dotenv=False))
-            read.assert_called_once_with(self.path)
+    def test_omniroute_key_uses_environment_only_as_fallback(self):
+        self.assertEqual(load_omniroute_key({'OMNIROUTE_API_KEY': 'synthetic-gateway'}), 'synthetic-gateway')
+        self.assertIsNone(load_omniroute_key({}))
 
-    @skipUnless(os.name == 'posix' and hasattr(os, 'O_NOFOLLOW'), 'POSIX file controls required')
-    def test_deployment_dotenv_real_permissions_symlink_fifo_and_size(self):
-        self.path.write_bytes(b'OPENROUTER_API_KEY=synthetic-key\n')
-        self.path.chmod(0o600)
-        real_close = os.close
-        with patch('home.provider_credentials.os.close', wraps=real_close) as close:
-            self.assertEqual(self.load('openrouter', debug=False), 'synthetic-key')
-            self.assertEqual(close.call_count, 1)
-        self.path.chmod(0o640)
-        with self.assertRaises(CredentialConfigError):
-            self.load('openrouter', debug=False)
-        self.path.unlink()
-        target = self.path.with_name('target')
-        target.write_bytes(b'OPENROUTER_API_KEY=synthetic-key\n')
-        target.chmod(0o600)
-        self.path.symlink_to(target)
-        with self.assertRaises(CredentialConfigError):
-            self.load('openrouter', debug=False)
-        self.path.unlink()
-        os.mkfifo(self.path, 0o600)
-        with self.assertRaises(CredentialConfigError):
-            self.load('openrouter', debug=False)
-        self.path.unlink()
-        self.path.write_bytes(b'x' * 65537)
-        self.path.chmod(0o600)
-        with self.assertRaises(CredentialConfigError):
-            self.load('openrouter', debug=False)
+    def test_omniroute_systemd_credential_precedes_environment(self):
+        path = os.path.join(self.tmp.name, 'credential')
+        with open(path, 'wb') as stream:
+            stream.write(b'synthetic-systemd-key')
+        environ = {'CREDENTIALS_DIRECTORY': '/run/credentials/superharry.service', 'OMNIROUTE_API_KEY': 'synthetic-environment-key'}
+        descriptor = os.open(path, os.O_RDONLY)
+        with patch('home.provider_credentials.open_systemd_credential', return_value=descriptor) as opened:
+            self.assertEqual(load_omniroute_key(environ), 'synthetic-systemd-key')
+        opened.assert_called_once_with('omniroute-api-key')
 
-    def test_invalid_utf8_oversize_and_missing_file(self):
-        self.assertIsNone(self.load('groq'))
-        for raw in (b'x' * 65537, b'GROQ_API_KEY=\xff'):
-            self.path.write_bytes(raw)
-            with self.assertRaises(CredentialConfigError):
-                self.load('groq')
-
-    def test_openrouter_systemd_credential_is_used_without_environment_fallback(self):
-        self.path.write_bytes(b'synthetic-systemd-key')
-
-        def open_credential(name):
-            self.assertEqual(name, 'openrouter-api-key')
-            return os.open(self.path, os.O_RDONLY)
-
-        environ = {
-            'CREDENTIALS_DIRECTORY': '/run/credentials/superharry.service',
-            'OPENROUTER_API_KEY': 'synthetic-environment-key',
-        }
-        with patch('home.provider_credentials.open_systemd_credential', side_effect=open_credential):
-            self.assertEqual(self.load('openrouter', environ), 'synthetic-systemd-key')
-
-    def test_openrouter_missing_systemd_credential_uses_environment(self):
-        environ = {
-            'CREDENTIALS_DIRECTORY': '/run/credentials/superharry.service',
-            'OPENROUTER_API_KEY': 'synthetic-environment-key',
-        }
-        with patch('home.provider_credentials.open_systemd_credential', side_effect=FileNotFoundError):
-            self.assertEqual(self.load('openrouter', environ), 'synthetic-environment-key')
-
-    def test_openrouter_systemd_credential_invalid_fails_closed(self):
-        self.path.write_bytes(b'synthetic invalid key')
-        descriptor = os.open(self.path, os.O_RDONLY)
-        environ = {'CREDENTIALS_DIRECTORY': '/run/credentials/superharry.service'}
-        with patch('home.provider_credentials.open_systemd_credential', return_value=descriptor):
-            with self.assertRaises(CredentialConfigError):
-                self.load('openrouter', environ)
+    def test_invalid_gateway_value_is_rejected_without_leak(self):
+        for value in ('', 'secret with spaces', 'secret\\value'):
+            with self.assertRaises(CredentialConfigError) as error:
+                load_omniroute_key({'OMNIROUTE_API_KEY': value})
+            self.assertNotIn('secret', str(error.exception))

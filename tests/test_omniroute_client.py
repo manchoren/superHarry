@@ -17,6 +17,8 @@ from home.omniroute_client import (
     OmnirouteClient,
     OmnirouteResponse,
     OmnirouteUsage,
+    OmnirouteError,
+    OmnirouteStreamEvent,
     omniroute_client,
     chat_with_external_model,
     chat_with_local_model,
@@ -89,8 +91,9 @@ def test_client_initialization():
 def test_client_requires_api_key():
     """Test: Cliente requiere API key."""
     with patch.dict(os.environ, {}, clear=True):
-        with pytest.raises(ValueError, match="OMNIROUTE_API_KEY"):
-            OmnirouteClient(endpoint="http://test:20128")
+        client = OmnirouteClient(endpoint="http://test:20128")
+        with pytest.raises(Exception, match="credentials_missing"):
+            client.health_check()
 
 
 def test_client_uses_env_vars():
@@ -139,6 +142,7 @@ def test_chat_completion_success(mock_post, client, mock_response):
     """Test: chat_completion envía request correctamente."""
     mock_post.return_value.json.return_value = mock_response
     mock_post.return_value.raise_for_status = Mock()
+    mock_post.return_value.status_code = 200
     
     messages = [
         {"role": "user", "content": "¿Cuál es la capital de Argentina?"}
@@ -169,6 +173,7 @@ def test_chat_completion_with_reasoning_disabled(mock_post, client, mock_respons
     """Test: chat_completion puede deshabilitar reasoning."""
     mock_post.return_value.json.return_value = mock_response
     mock_post.return_value.raise_for_status = Mock()
+    mock_post.return_value.status_code = 200
     
     messages = [{"role": "user", "content": "Test"}]
     
@@ -186,6 +191,7 @@ def test_chat_completion_with_tools(mock_post, client, mock_response):
     """Test: chat_completion puede incluir tools."""
     mock_post.return_value.json.return_value = mock_response
     mock_post.return_value.raise_for_status = Mock()
+    mock_post.return_value.status_code = 200
     
     tools = [
         {
@@ -214,12 +220,13 @@ def test_chat_completion_http_error(mock_post, client):
     
     mock_response = Mock()
     mock_response.status_code = 401
+    mock_response.ok = False
     mock_response.text = "Unauthorized"
     mock_response.raise_for_status.side_effect = requests.HTTPError(response=mock_response)
     
     mock_post.return_value = mock_response
     
-    with pytest.raises(requests.HTTPError):
+    with pytest.raises(Exception, match="rejected_401"):
         client.chat_completion(
             messages=[{"role": "user", "content": "Test"}]
         )
@@ -242,6 +249,7 @@ def test_chat_completion_stream(mock_post, client):
     # Simular SSE stream
     mock_response = Mock()
     mock_response.raise_for_status = Mock()
+    mock_response.status_code = 200
     mock_response.iter_lines.return_value = [
         b'data: {"choices":[{"delta":{"content":"Hola"}}]}',
         b'data: {"choices":[{"delta":{"content":" mundo"}}]}',
@@ -254,7 +262,8 @@ def test_chat_completion_stream(mock_post, client):
         messages=[{"role": "user", "content": "Test"}]
     ))
     
-    assert chunks == ["Hola", " mundo"]
+    assert [chunk.content for chunk in chunks if chunk.event == "delta"] == ["Hola", " mundo"]
+    assert chunks[-1] == OmnirouteStreamEvent("done")
 
 
 # Tests de Health Check
@@ -264,6 +273,7 @@ def test_health_check_success(mock_get, client, mock_health_response):
     """Test: health_check retorna status."""
     mock_get.return_value.json.return_value = mock_health_response
     mock_get.return_value.raise_for_status = Mock()
+    mock_get.return_value.status_code = 200
     
     health = client.health_check()
     
@@ -278,7 +288,7 @@ def test_health_check_failure(mock_get, client):
     import requests
     mock_get.side_effect = requests.ConnectionError("Connection refused")
     
-    with pytest.raises(requests.ConnectionError):
+    with pytest.raises(Exception, match="health_failure"):
         client.health_check()
 
 
@@ -369,6 +379,31 @@ def test_memory_agent_search(mock_completion):
     messages = call_kwargs['messages']
     assert len(messages) == 2  # Context + query
     assert messages[-1]['content'] == "Buscar recuerdos sobre Python"
+
+
+def test_memory_agent_does_not_mutate_caller_context(client):
+    original = [{"role": "system", "content": "Context"}]
+    with patch.object(omniroute_client, "chat_completion", return_value=Mock()) as completion:
+        memory_agent_search("query", original)
+    assert original == [{"role": "system", "content": "Context"}]
+
+
+def test_missing_usage_is_rejected(mock_response):
+    del mock_response["usage"]
+    with pytest.raises(OmnirouteError, match="usage_invalid"):
+        OmnirouteResponse.from_dict(mock_response)
+
+
+def test_usage_total_must_match_components():
+    with pytest.raises(OmnirouteError, match="usage_invalid"):
+        OmnirouteUsage.from_dict({"prompt_tokens": 1, "completion_tokens": 2, "total_tokens": 99})
+
+
+def test_sse_malformed_json_is_rejected(client):
+    response = Mock(); response.status_code = 200; response.iter_lines.return_value = [b"data: {broken"]
+    with patch("home.omniroute_client.requests.Session.post", return_value=response):
+        with pytest.raises(OmnirouteError, match="sse_malformed"):
+            list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
 
 
 # Tests de Integración (requieren omniroute real)
