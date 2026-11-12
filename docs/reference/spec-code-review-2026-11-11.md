@@ -180,6 +180,23 @@ The backlog owns status. These records own the scope, dependencies and acceptanc
 - Given a selected route, when a turn runs, then that route governs the actual admitted request and the UI/API persist the actual answering model/mode and verified context metadata. Preserve permitted complete history, SSE reattachment, cancellation and single-heavy-job limits.
 - Given an interrupted claimed request or ambiguous gateway fallback, when recovery runs, then retain unknown outcome and never resend automatically. Validate gateway retries/fallback settings against this contract; disable unsafe replay rather than assume transparency proves safety.
 
+#### T229 bounded implementation evidence - 2026-11-12
+
+- The existing `GeminiChatJob` queue remains the sole durable dispatcher. When
+  `OMNIROUTE_API_KEY` is configured, authenticated automatic and local turns
+  use `OmnirouteClient` with selected model, bounded SSE parsing, verified
+  prompt/completion usage and persisted actual `omniroute` model metadata.
+  Cancellation after stream dispatch is treated as an unknown outcome; no
+  automatic replay is introduced. The legacy direct/local path remains only
+  for development configurations without gateway credentials.
+- Synthetic coverage was added for automatic gateway streaming, local gateway
+  model selection and persisted usage metadata. The focused chat/routing run
+  passed 38 tests on local Windows PowerShell without provider calls.
+- Independent fresh-context audit was unavailable, so the full Django suite
+  is required before handoff. No gateway, provider, VM or deployment
+  acceptance was performed. T229 remains Pending; T227, T228 and T179 gates,
+  gateway fallback verification and release acceptance remain open.
+
 ### T230 - Enforce application budgets across gateway fallback and memory calls
 
 **Priority:** P0. **Dependencies:** T227, T228, T179. **Owner authorization (2026-11-11):** D2 accepted; implement security policies section 5.5, including initial allowances, UTC periods, 80% warnings and unresolved-reservation carryover. Budget-policy decision prerequisite under T220 is resolved; implementation/validation remain open. **Evidence:** existing ProviderQuota/ProviderModelQuota/ProviderReservation are keyed to direct-provider dispatch.

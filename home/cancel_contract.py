@@ -44,6 +44,9 @@ from django.db import transaction
 from home.models import ChatTurn, ProviderReservation
 
 _PROVIDER_GROUPS = {
+    # Gateway dispatch is accounted and reconciled as one application route;
+    # provider selection remains inside omniroute and is intentionally opaque.
+    'omniroute': ('omniroute-development', 'omniroute-development:tokens'),
     # group = quota group for the shared request allowance; token group is
     # the quota group for the shared token allowance.
     'gemini': ('gemini-development', 'gemini-development:tokens'),

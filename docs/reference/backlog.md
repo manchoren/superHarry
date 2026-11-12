@@ -124,6 +124,7 @@ The [review and acceptance records](spec-code-review-2026-11-11.md) define the e
 - [ ] **T235 - Deliver the local-only guest session and chat flow** Status: Pending
 - [ ] **T236 - Deliver persisted accessible light, dark and system themes** Status: Pending
 - [ ] **T237 - Restore reproducible security, quality and VM evaluation fixtures** Status: Pending
+  - Bounded fixture slice: [T237 evaluation fixtures](t237-evaluation-fixtures.md), including the synthetic-only manifest and mocked/contract/live-provider/VM separation. This does not close T237; audit, independent acceptance and live/VM gates remain open.
 - [ ] **T238 - Implement shared channel identity and attachment contracts** Status: Pending
 - [ ] **T239 - Implement storage-pressure cleanup across persisted user data** Status: Pending
 - [ ] **T240 - Implement capability degradation and external-only task recovery** Status: Pending

@@ -1,4 +1,5 @@
 import uuid
+from types import SimpleNamespace
 from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -109,3 +110,43 @@ class GeminiChatTests(TestCase):
         self.assertEqual(self.turn.assistant_message.context_capacity, 1048576)
         event = self.turn.events.get(event_type='turn.completed')
         self.assertEqual(event.payload['context_usage'], {'input_tokens': 200, 'capacity': 1048576})
+
+    @patch.dict('os.environ', {'OMNIROUTE_API_KEY': 'synthetic-gateway-key'}, clear=False)
+    @patch('home.gemini_chat.OmnirouteClient')
+    def test_configured_gateway_stream_persists_actual_model_and_usage(self, client_factory):
+        client = client_factory.return_value
+        client.chat_completion_stream.return_value = iter([
+            SimpleNamespace(event='delta', content='Hello ', usage=None),
+            SimpleNamespace(event='delta', content='gateway', usage=SimpleNamespace(
+                prompt_tokens=12, completion_tokens=2, total_tokens=14)),
+            SimpleNamespace(event='done', content='', usage=None),
+        ])
+        run_gemini_turn(self.turn.pk)
+        self.turn.refresh_from_db()
+        self.assertEqual(self.turn.state, 'completed')
+        self.assertEqual(self.turn.assistant_message.content, 'Hello gateway')
+        selected = self.turn.events.get(event_type='model.selected').payload
+        self.assertEqual(selected, {
+            'mode': 'automatic', 'provider': 'omniroute', 'model_id': 'nous-ai/solar-mini-4',
+        })
+        self.assertEqual(self.turn.events.get(event_type='turn.completed').payload['context_usage'], {
+            'input_tokens': 12, 'capacity': 32768,
+        })
+        client.chat_completion_stream.assert_called_once()
+
+    @patch.dict('os.environ', {'OMNIROUTE_API_KEY': 'synthetic-gateway-key'}, clear=False)
+    @patch('home.gemini_chat.OmnirouteClient')
+    def test_local_mode_uses_gateway_local_model(self, client_factory):
+        self.turn.model_mode = 'local'
+        self.turn.save(update_fields=['model_mode'])
+        client_factory.return_value.chat_completion_stream.return_value = iter([
+            SimpleNamespace(event='delta', content='local answer', usage=SimpleNamespace(
+                prompt_tokens=5, completion_tokens=2, total_tokens=7)),
+            SimpleNamespace(event='done', content='', usage=None),
+        ])
+        run_gemini_turn(self.turn.pk)
+        self.turn.refresh_from_db()
+        self.assertEqual(self.turn.state, 'completed')
+        self.assertEqual(self.turn.events.get(event_type='model.selected').payload['mode'], 'local')
+        self.assertEqual(client_factory.return_value.chat_completion_stream.call_args.kwargs['model'],
+                         'ollama/qwen3.5:4b')

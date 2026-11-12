@@ -1,6 +1,6 @@
 # Contributing
 
-Read the complete [constitution](constitution.md), surrounding code and relevant [requirements](docs/reference/product-requirements.md). Record its SHA-256 with task evidence and reload it after changes. Use English for code, identifiers, comments, documentation and commits.
+Read the complete [constitution](constitution.md), the [test selection policy](docs/reference/test-scoping.md), surrounding code and relevant [requirements](docs/reference/product-requirements.md). Record the constitution SHA-256 with task evidence and reload it after changes. Use English for code, identifiers, comments, documentation and commits.
 
 ## Delivery workflow
 
@@ -23,10 +23,11 @@ The project-progress command is read-only and does not validate dependencies,
 readiness, acceptance, links or duplicate records.
 
 1. Select a ready task from [tasks.md](tasks.md), checking its dependencies and acceptance criteria in the backlog's linked record. Inspect the complete staged, unstaged and relevant untracked change set; preserve unrelated user work.
-2. State a short approach. Choose the smallest reversible implementation within standing authorization; record non-obvious decisions with the task and architectural decisions in an ADR. Ask only for remaining protected boundaries.
-3. Add regression tests for bugs and appropriate tests for behavior changes. Cover authorization, untrusted inputs, errors, audit and isolation. Use synthetic fixtures; mock models and network calls. Real-model evaluations remain separately controlled, with affected cases updated and results submitted for maintainer review under Q-45/T056.
-4. Self-review the diff and run relevant checks. Record actual results, environment, constitution hash and remaining limits. No second approval is required for ordinary authorized work; protected branches and deployment controls still apply.
-5. Apply the documentation maintenance rules below in the same change. Add all user-visible strings to both `en` and `es` catalogs.
+2. Read [the test selection policy](docs/reference/test-scoping.md) before running any executable tests. For executable changes, launch the required independent fresh-context audit with the complete protected context and change inventory; use its evidence to select scoped tests or trigger the full Django suite. If the audit is unavailable or incomplete, run the full suite.
+3. State a short approach. Choose the smallest reversible implementation within standing authorization; record non-obvious decisions with the task and architectural decisions in an ADR. Ask only for remaining protected boundaries.
+4. Add regression tests for bugs and appropriate tests for behavior changes. Cover authorization, untrusted inputs, errors, audit and isolation. Use synthetic fixtures; mock models and network calls. Real-model evaluations remain separately controlled, with affected cases updated and results submitted for maintainer review under Q-45/T056.
+5. Self-review the diff and run the checks selected under `test-scoping.md`. Record the audit identity, score/evidence, selected tests, exact commands, actual results, environment, constitution hash and remaining limits. No second approval is required for ordinary authorized work; protected branches and deployment controls still apply.
+6. Apply the documentation maintenance rules below in the same change. Add all user-visible strings to both `en` and `es` catalogs.
 
 Use short-lived `feature/`, `fix/` or `chore/` branches and Conventional Commits, one logical change per commit. Keep changes focused and reversible; resolve review comments. Do not add ticketless TODOs or suppress failures.
 
@@ -113,7 +114,7 @@ python manage.py makemigrations --check --dry-run
 python manage.py test
 ```
 
-The migration check detects missing migrations without creating them. Use the full suite for security, shared contracts, data/models/migrations or broad/uncertain impact. Scoped runs must meet the existing [test selection policy](docs/reference/test-scoping.md); documentation-only changes use relevant static checks. Report the selected scope and results. No global coverage target applies.
+The migration check detects missing migrations without creating them. Every task runner must consult the [test selection policy](docs/reference/test-scoping.md) before selecting tests. Use the full suite for security, shared contracts, data/models/migrations or broad/uncertain impact; a failed or unavailable independent audit also requires the full suite. Scoped runs must record the audit evidence, selected labels and limitations. Documentation-only changes use relevant static checks. No global coverage target applies.
 
 Run additional approved lint, formatting, typing, dependency/secret scans and build checks when applicable; do not claim unavailable tools passed. Regenerate translation binaries with `python manage.py compilemessages` when gettext is available. The target Linux VM establishes full VM functionality, isolation, load and recovery acceptance. Pi performance and physical HDMI/Wi-Fi/thermal claims require the optional future Pi port and never block the VM release.
 

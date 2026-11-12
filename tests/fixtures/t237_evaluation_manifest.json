@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task": "T237",
+  "purpose": "Reproducible synthetic evaluation boundaries",
+  "network_policy": "deny",
+  "credential_policy": "synthetic-only",
+  "benchmark_policy": "comparative-and-numerical-benchmarks-waived",
+  "scenarios": [
+    {
+      "id": "security-boundary",
+      "category": "security",
+      "source": "mocked",
+      "fixture": "synthetic_cross_user_request",
+      "required": true
+    },
+    {
+      "id": "gateway-schema",
+      "category": "functional",
+      "source": "contract",
+      "fixture": "synthetic_chat_completion",
+      "required": true
+    },
+    {
+      "id": "resource-enforcement",
+      "category": "resource",
+      "source": "mocked",
+      "fixture": "synthetic_budget_exhaustion",
+      "required": true
+    },
+    {
+      "id": "recovery-unknown-outcome",
+      "category": "recovery",
+      "source": "mocked",
+      "fixture": "synthetic_interrupted_request",
+      "required": true
+    },
+    {
+      "id": "provider-live-check",
+      "category": "external",
+      "source": "live-provider",
+      "fixture": null,
+      "required": false,
+      "status": "separately-controlled"
+    },
+    {
+      "id": "target-vm-acceptance",
+      "category": "deployment",
+      "source": "vm",
+      "fixture": null,
+      "required": false,
+      "status": "separately-controlled"
+    }
+  ]
+}

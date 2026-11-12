@@ -1,19 +1,13 @@
-"""
-Package Security Guard - Autonomous evaluation before installation
+"""Fail-closed package evaluation primitives.
 
-Scores packages 0-105 based on:
-- Integrity (0-45): Hash verification, signatures, publisher identity
-- Reputation (0-30): CVE history, download count, package age
-- Static Analysis (0-20): Typosquatting, dependency confusion, malicious patterns
-- Provenance (0-10): SLSA level, signed releases
-
-Minimum score to proceed: 80 (configurable by admin)
-Known malicious packages: blocked regardless of score
+The guard evaluates only a complete, recent evidence record. Network retrieval
+and cryptographic signature/provenance verification belong to the caller; this
+module binds their results to the exact artifact digest before awarding points.
 """
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 from enum import Enum
 import requests
@@ -41,6 +35,56 @@ class CVE:
     description: str = ""
 
 
+@dataclass(frozen=True)
+class PackageEvidence:
+    """Evidence produced by trusted, independently testable verifiers."""
+
+    registry: str
+    normalized_name: str
+    version: str
+    artifact_bytes: bytes
+    claimed_sha256: str
+    signature_artifact_sha256: str
+    provenance_artifact_sha256: str
+    hash_verified: bool
+    signature_verified: bool
+    publisher_verified: bool
+    slsa_verified: bool
+    signed_artifact_verified: bool
+    typosquatting_passed: Optional[bool]
+    namespace_confusion_passed: Optional[bool]
+    malicious_pattern_passed: Optional[bool]
+    downloads_per_month: Optional[int]
+    age_days: Optional[int]
+    security_patch_within_days: Optional[int]
+    advisories: Tuple[CVE, ...]
+    blocklist_checked: bool
+    blocklisted: bool
+    collected_at: datetime
+    expires_at: datetime
+
+    @property
+    def artifact_sha256(self) -> str:
+        return hashlib.sha256(self.artifact_bytes).hexdigest()
+
+    def is_complete(self, now: datetime) -> bool:
+        required = (
+            self.registry == "pypi", self.normalized_name != "", self.version != "",
+            self.hash_verified, self.blocklist_checked,
+            self.typosquatting_passed is not None,
+            self.namespace_confusion_passed is not None,
+            self.malicious_pattern_passed is not None,
+            self.downloads_per_month is not None, self.age_days is not None,
+            self.security_patch_within_days is not None,
+            self.expires_at - self.collected_at <= timedelta(hours=24),
+            self.collected_at <= now <= self.expires_at,
+            self.claimed_sha256 == self.artifact_sha256,
+            (not self.signature_verified or self.signature_artifact_sha256 == self.artifact_sha256),
+            (not self.slsa_verified or self.provenance_artifact_sha256 == self.artifact_sha256),
+        )
+        return all(required)
+
+
 @dataclass
 class PackageScore:
     """Complete security score for a package."""
@@ -58,17 +102,19 @@ class PackageScore:
     timestamp: datetime = field(default_factory=datetime.now)
     blocked: bool = False
     reason: str = ""
+    evidence_valid: bool = False
+    artifact_sha256: str = ""
     
     @property
     def total(self) -> float:
         """Total score out of 100."""
-        if self.blocked:
+        if self.blocked or not self.evidence_valid:
             return 0.0
         return self.integrity + self.reputation + self.static_analysis + self.provenance
     
     def is_safe(self, threshold: int = 80) -> bool:
         """True if score meets or exceeds threshold."""
-        if self.blocked:
+        if self.blocked or not self.evidence_valid:
             return False
         return self.total >= threshold
     
@@ -121,7 +167,9 @@ class PackageGuard:
             "cryptography", "pillow", "sqlalchemy", "celery", "boto3",
         }
     
-    def evaluate(self, package_name: str, version: str, registry: str = "pypi") -> PackageScore:
+    def evaluate(self, package_name: str, version: str, registry: str = "pypi",
+                 evidence: Optional[PackageEvidence] = None,
+                 now: Optional[datetime] = None) -> PackageScore:
         """
         Score a package 0-100.
         
@@ -134,22 +182,39 @@ class PackageGuard:
             PackageScore with total score and safe() judgment
         """
         
-        # Check if blocked first
-        if self._is_blocked(package_name):
+        normalized = package_name.strip().lower().replace("_", "-")
+        if evidence is None:
             return PackageScore(
                 package_name=package_name,
                 version=version,
                 registry=registry,
                 blocked=True,
-                reason="Known malicious package"
+                reason="Mandatory evidence unavailable",
             )
+
+        current = now or datetime.now(timezone.utc)
+        if evidence.blocklisted or self._is_blocked(normalized):
+            return PackageScore(package_name, version, registry, blocked=True,
+                                reason="Known malicious package")
+        if (evidence.registry != registry or evidence.normalized_name != normalized
+                or evidence.version != version or not evidence.is_complete(current)):
+            return PackageScore(package_name, version, registry, blocked=True,
+                                reason="Mandatory evidence absent, stale, malformed, or unavailable",
+                                artifact_sha256=evidence.artifact_sha256)
         
         # Try to evaluate components
         try:
-            integrity = self._evaluate_integrity(package_name, version, registry)
-            reputation = self._evaluate_reputation(package_name, version)
-            static = self._evaluate_static_analysis(package_name, version)
-            provenance = self._evaluate_provenance(package_name, version)
+            integrity = 20 + (15 if evidence.signature_verified else 0) + (5 if evidence.publisher_verified else 0)
+            reputation = 10 + (10 if evidence.age_days > 730 else 0) + (10 if evidence.security_patch_within_days <= 180 else 0)
+            for advisory in evidence.advisories:
+                advisory_date = advisory.date
+                if advisory_date.tzinfo is None:
+                    advisory_date = advisory_date.replace(tzinfo=timezone.utc)
+                if advisory_date >= current - timedelta(days=730):
+                    reputation -= advisory.severity.value
+            reputation = max(0, reputation)
+            static = (5 if evidence.typosquatting_passed else 0) + (5 if evidence.namespace_confusion_passed else 0) + (10 if evidence.malicious_pattern_passed else 0)
+            provenance = (5 if evidence.slsa_verified else 0) + (5 if evidence.signed_artifact_verified else 0)
             
             score = PackageScore(
                 package_name=package_name,
@@ -159,6 +224,8 @@ class PackageGuard:
                 reputation=reputation,
                 static_analysis=static,
                 provenance=provenance,
+                evidence_valid=True,
+                artifact_sha256=evidence.artifact_sha256,
             )
             
             logger.info(f"Package evaluated: {score}")

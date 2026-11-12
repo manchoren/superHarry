@@ -60,6 +60,7 @@ from home.openrouter_transport import OpenRouterTransport
 from home.provider_credentials import CredentialConfigError, load_provider_key
 from home.provider_outcomes import NotDispatched, OutcomeUnknown, RateLimited
 from home.heavy_job_governor import HeavyJobGovernor
+from home.omniroute_client import OmnirouteClient, OmnirouteError, OmnirouteUsageError
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +71,55 @@ class TurnCancelled(RuntimeError):
 
 class RoutingExhausted(RuntimeError):
     """No configured provider could serve the turn without an unsafe failover."""
+
+
+def _gateway_configured():
+    """Return whether the application has an explicitly configured gateway."""
+    return bool(os.environ.get("OMNIROUTE_API_KEY"))
+
+
+def _gateway_model(turn):
+    if turn.model_mode == ChatTurn.ModelMode.LOCAL:
+        return os.environ.get("OMNIROUTE_LOCAL_MODEL", "ollama/qwen3.5:4b")
+    return turn.requested_model or os.environ.get("OMNIROUTE_EXTERNAL_MODEL", "nous-ai/solar-mini-4")
+
+
+def _attempt_gateway(*, turn, history, cancelled):
+    """Run one admitted turn through omniroute's bounded OpenAI-compatible SSE."""
+    if cancelled():
+        raise TurnCancelled()
+    messages = [{"role": role, "content": content} for role, content in history]
+    messages.append({"role": "user", "content": turn.user_message.content})
+    model_id = _gateway_model(turn)
+    client = OmnirouteClient(timeout=30)
+    chunks = []
+    usage = None
+    dispatched = False
+    try:
+        for event in client.chat_completion_stream(messages, model=model_id, temperature=0.7,
+                                                   max_tokens=2048):
+            dispatched = True
+            if cancelled():
+                raise OutcomeUnknown("omniroute_cancelled_after_dispatch")
+            if event.event == "delta":
+                chunks.append(event.content)
+                if event.usage is not None:
+                    usage = event.usage
+            elif event.event == "done":
+                break
+        if not chunks or usage is None:
+            raise OmnirouteUsageError("gateway_usage_missing")
+    except OutcomeUnknown:
+        raise
+    except (NotDispatched, OmnirouteUsageError, OmnirouteError):
+        if dispatched:
+            raise OutcomeUnknown("omniroute_outcome_unknown") from None
+        raise NotDispatched("omniroute_not_dispatched") from None
+    return "".join(chunks), {
+        "mode": "local" if turn.model_mode == ChatTurn.ModelMode.LOCAL else "automatic",
+        "provider": "omniroute",
+        "model_id": model_id,
+    }, {"input_tokens": usage.prompt_tokens, "capacity": max(32768, usage.prompt_tokens)}
 
 
 def _load_history(turn):
@@ -252,6 +302,14 @@ def _run_local_fallback(*, turn, history, authorized, cancelled, adapter):
 
 def _run_routing(*, turn, history, authorized, cancelled, governor=None, adapter=None, contract=None):
     """Try providers in administrator order; fail over only before any request is sent."""
+    if _gateway_configured():
+        if contract is not None:
+            contract.before_dispatch("omniroute")
+        return _attempt_gateway(turn=turn, history=history, cancelled=cancelled)
+
+    if turn.model_mode == ChatTurn.ModelMode.LOCAL:
+        raise RoutingExhausted()
+
     configured_order = parse_provider_order(settings.SUPERHARRY_FREE_PROVIDER_ORDER)
     enabled = settings.SUPERHARRY_ENABLED_FREE_PROVIDERS
     if (not isinstance(enabled, tuple) or any(provider not in ('gemini', 'groq', 'openrouter') for provider in enabled)
