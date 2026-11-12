@@ -196,8 +196,14 @@ class PackageGuard:
         if evidence.blocklisted or self._is_blocked(normalized):
             return PackageScore(package_name, version, registry, blocked=True,
                                 reason="Known malicious package")
+        try:
+            evidence_complete = evidence.is_complete(current)
+        except Exception:
+            return PackageScore(package_name, version, registry, blocked=True,
+                                reason="Mandatory evidence validation failed",
+                                artifact_sha256=evidence.artifact_sha256)
         if (evidence.registry != registry or evidence.normalized_name != normalized
-                or evidence.version != version or not evidence.is_complete(current)):
+                or evidence.version != version or not evidence_complete):
             return PackageScore(package_name, version, registry, blocked=True,
                                 reason="Mandatory evidence absent, stale, malformed, or unavailable",
                                 artifact_sha256=evidence.artifact_sha256)

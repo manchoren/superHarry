@@ -217,6 +217,21 @@ The backlog owns status. These records own the scope, dependencies and acceptanc
 - Implement or explicitly deny unsupported mandatory static checks and registries; distinguish unknown evidence and API failure from verified absence. Test normalization, blocklist override, CVE applicability, scoring boundaries, stale cache, malformed responses and unavailable services using deterministic fixtures.
 - Given absent/invalid mandatory evidence, when evaluated, then no installation is authorized. Given a valid evaluation, then its score is reproducible and tied to the artifact later installed. A popularity score is not a safety proof.
 
+#### T231 contract-first coverage update - 2026-11-12
+
+- Replaced the historical network/heuristic-oriented test assumptions with
+  deterministic evidence-contract tests. Coverage now includes exact scoring,
+  threshold and blocking behavior, identity mismatches, artifact hash,
+  signature and provenance binding, unknown evidence, freshness boundaries,
+  advisory-window boundaries, normalization, exception fail-closed behavior
+  and an explicit no-network assertion.
+- `tests/test_package_guard.py` -> `17 passed` with pytest. `manage.py check`
+  passed and the full Django suite passed `488 tests, 10 skipped`.
+- `PackageGuard.evaluate()` now converts exceptions during evidence validation
+  into a blocked result instead of propagating them. T231 remains Pending:
+  independent fresh-context audit, verifier integration (GPG/SLSA) and safe
+  installation integration through T193 remain open.
+
 ### T232 - Implement the common authorized tool execution boundary
 
 **Priority:** P1. **Dependencies:** T225, T226. **Source:** P-03, sections 10.3 and 12. **Evidence:** no common runtime tool registry/executor found in the inspected inventory.
