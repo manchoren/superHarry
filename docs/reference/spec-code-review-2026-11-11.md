@@ -21,6 +21,15 @@ Active backlog summaries were synchronized to distinguish historical counts
 from current evidence. No task status was changed to `Completed`, and no
 historical result or owner decision was rewritten.
 
+Migration reconciliation evidence: the target VM database was inspected
+read-only over its loopback SSH session and had applied `home` migrations only
+through `0018_chatturn_openrouter_risk_accepted`; none of the new `0022`-
+`0025` migrations had been applied. The local migration graph was then
+linearized as `0022 -> 0023_toolgrant -> 0024 -> 0025 -> 0026_storedfile ->
+0027_alter_auditevent_event_type`. `makemigrations --check --dry-run`,
+`migrate --plan`, `manage.py check` and the full local suite passed. No VM
+migration was executed.
+
 ## Evidence and limits
 
 - The actual queue file is `tasks.md`; all current delivery references use this case-sensitive spelling. Historical review notes retain the original discovery context.

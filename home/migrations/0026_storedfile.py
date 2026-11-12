@@ -6,8 +6,6 @@ import uuid
 
 
 class Migration(migrations.Migration):
-    # T232/T231/T237 migrations are concurrent shared work; follow the current
-    # leaf so Django retains one linear migration history.
     dependencies = [("home", "0025_memoryrecord")]
     operations = [
         migrations.CreateModel(
