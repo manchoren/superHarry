@@ -84,19 +84,19 @@ def main() -> int:
             )
         queue = read_queue(queue_path)
     except OSError as error:
-        print(f"Error al leer los archivos de tareas: {error}", file=sys.stderr)
+        print(f"Error reading task files: {error}", file=sys.stderr)
         return 1
 
     if not tasks:
-        print("No se encontraron tareas en el backlog.", file=sys.stderr)
+        print("No tasks found in the backlog.", file=sys.stderr)
         return 1
 
     completed_count = sum(task.completed for task in tasks.values())
     total_count = len(tasks)
     percentage = completed_count / total_count * 100
 
-    print("Avance del proyecto")
-    print(f"Tareas completadas: {completed_count}/{total_count} ({percentage:.1f}%)")
+    print("Project progress")
+    print(f"Completed tasks: {completed_count}/{total_count} ({percentage:.1f}%)")
 
     current_task = next(
         (tasks[task_id] for task_id, _ in queue
@@ -104,15 +104,15 @@ def main() -> int:
         None,
     )
     if current_task is None:
-        print("Tarea actual: no hay tareas pendientes en la cola de entrega.")
+        print("Current task: no pending task in the delivery queue.")
         return 0
 
     title = current_task.title or next(
         (queue_title for task_id, queue_title in queue if task_id == current_task.task_id),
         "",
     )
-    print(f"Tarea actual: {current_task.task_id} - {title}")
-    print(f"Estado: {current_task.status or 'Pendiente'}")
+    print(f"Current task: {current_task.task_id} - {title}")
+    print(f"Status: {current_task.status or 'Pending'}")
     return 0
 
 

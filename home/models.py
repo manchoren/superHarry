@@ -604,6 +604,40 @@ class ProviderQuotaReconciliation(models.Model):
             raise ValidationError('evidence_blob is not valid JSON')
 
 
+class ApplicationBudget(models.Model):
+    """UTC calendar-period token allowance owned by the application."""
+
+    scope = models.CharField(max_length=16, choices=[('global', 'Global'), ('user', 'User')])
+    scope_key = models.CharField(max_length=128)
+    period = models.CharField(max_length=8, choices=[('daily', 'Daily'), ('monthly', 'Monthly')])
+    period_start = models.DateTimeField()
+    hard_limit = models.PositiveBigIntegerField()
+    reserved = models.PositiveBigIntegerField(default=0)
+    used = models.PositiveBigIntegerField(default=0)
+    warning_emitted = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=('scope', 'scope_key', 'period', 'period_start'), name='home_app_budget_period_unique'),
+            models.CheckConstraint(condition=models.Q(hard_limit__gte=1), name='home_app_budget_positive'),
+            models.CheckConstraint(condition=models.Q(scope='global', scope_key='global') | models.Q(scope='user'), name='home_app_budget_scope_key'),
+        ]
+
+
+class ApplicationBudgetReservation(models.Model):
+    """One correlated reservation spanning all applicable application budgets."""
+
+    operation_id = models.CharField(max_length=128, unique=True)
+    amount = models.PositiveBigIntegerField()
+    actual = models.PositiveBigIntegerField(null=True)
+    state = models.CharField(max_length=16, choices=[('reserved', 'Reserved'), ('unknown', 'Unknown'), ('settled', 'Settled')])
+    budgets = models.ManyToManyField(ApplicationBudget, related_name='reservations')
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        constraints = [models.CheckConstraint(condition=models.Q(amount__gte=1), name='home_app_budget_reservation_positive')]
+
+
 class GeminiChatJob(models.Model):
     """Durable development work record; a claimed job is never redispatched."""
     class State(models.TextChoices):

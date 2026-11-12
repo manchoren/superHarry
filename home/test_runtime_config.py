@@ -89,7 +89,7 @@ class SystemdCredentialTests(SimpleTestCase):
         ):
             self.assertEqual(open_systemd_credential("django-secret"), 41)
 
-    def test_opens_openrouter_systemd_credential_from_canonical_directory(self):
+    def test_opens_omniroute_systemd_credential_from_canonical_directory(self):
         file_metadata = self._metadata(stat.S_IFREG | 0o440)
         directory_metadata = self._metadata(stat.S_IFDIR | 0o550)
         with patch.dict(os.environ, {"CREDENTIALS_DIRECTORY": self._directory}), patch(
@@ -97,7 +97,7 @@ class SystemdCredentialTests(SimpleTestCase):
         ), patch("superharry.runtime_config.os.fstat", return_value=file_metadata), patch(
             "superharry.runtime_config.os.stat", return_value=directory_metadata
         ):
-            self.assertEqual(open_systemd_credential("openrouter-api-key"), 41)
+            self.assertEqual(open_systemd_credential("omniroute-api-key"), 41)
 
     def test_rejects_writable_systemd_credential(self):
         with patch.dict(os.environ, {"CREDENTIALS_DIRECTORY": self._directory}), patch(
@@ -142,6 +142,11 @@ class SystemdCredentialTests(SimpleTestCase):
         with patch.dict(os.environ, {"CREDENTIALS_DIRECTORY": self._directory}):
             with self.assertRaises(OSError):
                 open_systemd_credential("unexpected-secret")
+
+    def test_rejects_retired_direct_provider_credential_name(self):
+        with patch.dict(os.environ, {"CREDENTIALS_DIRECTORY": self._directory}):
+            with self.assertRaises(OSError):
+                open_systemd_credential("openrouter-api-key")
 
     def test_service_secret_reads_the_named_systemd_credential(self):
         credential_path = f"{self._directory}/django-secret"

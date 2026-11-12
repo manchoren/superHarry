@@ -18,7 +18,8 @@ def _ok_response(model=MODEL):
             'usage': {'prompt_tokens': 10, 'completion_tokens': 2, 'total_tokens': 12}}
 
 
-@override_settings(SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED=True)
+@override_settings(SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED=True,
+                   SUPERHARRY_LOCAL_TOKENIZER_APPROVED_MODELS=(MODEL,))
 class FreeProviderDispatchTests(TestCase):
     def setUp(self):
         ProviderQuota.objects.create(group='groq-development', limit=5)

@@ -15,7 +15,8 @@ from django.conf import settings
 from django.db import transaction
 
 from home.chat_events import MAX_OUTPUT_CONTENT_BYTES
-from home.constitution_context import ContextProfile, ensure_release_context_is_current, prepare_release_context
+from home.constitution_context import (ContextPreparationError, ContextProfile,
+                                       ensure_release_context_is_current, prepare_release_context)
 from home.groq_transport import GroqRateLimitError
 from home import local_tokenizer
 from home import openrouter_transport
@@ -180,6 +181,12 @@ def dispatch_free_provider(*, route, transport, user_request, authorize, cancell
             raise ValueError('admission revoked')
         for reservation in reservations:
             mark_unknown(reservation.pk)
+    except local_tokenizer.TokenizationUnavailableError:
+        _release(reservations)
+        raise NotDispatched('dispatch_tokenizer_unavailable') from None
+    except ContextPreparationError as exc:
+        _release(reservations)
+        raise NotDispatched(exc.code) from None
     except Exception:
         _release(reservations)
         raise NotDispatched('dispatch_not_sent') from None

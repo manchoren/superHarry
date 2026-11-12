@@ -6,6 +6,10 @@ Notable changes will be recorded here using the Keep a Changelog structure. Entr
 
 ### Changed
 
+- T225: restored the portable Django entrypoint and documented the pinned
+  validation baseline, task-policy references and read-only progress command.
+  Fresh audit, independent acceptance, VM and production gates remain open.
+
 - Adopted VM-first product/deployment acceptance (ADR 0012), retargeted T148-T157 and deferred Pi-only validation to T175/T176/T169. Added T174 for durable storage and operational boundaries separate from disposable VM tests; retained existing runtime security and resource policy.
 - Updated the pinned constitution identity for the VM-first target.
 

@@ -10,7 +10,8 @@ from home.provider_outcomes import OutcomeUnknown
 
 
 class QuotaReconciliationSafetyTests(TestCase):
-    @override_settings(SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED=True)
+    @override_settings(SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED=True,
+                       SUPERHARRY_LOCAL_TOKENIZER_APPROVED_MODELS=('openai/gpt-oss-20b',))
     def test_free_provider_unknown_pair_exists_before_provider_returns(self):
         ProviderQuota.objects.create(group='groq-development', limit=5)
         ProviderQuota.objects.create(group='groq-development:tokens', limit=100000)

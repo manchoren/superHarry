@@ -173,7 +173,9 @@ class ModelQuotaConcurrencyTests(TransactionTestCase):
         self.assertEqual(shared.reserved, sum(results))
 
 
-@override_settings(SUPERHARRY_REQUIRE_MODEL_QUOTAS=True)
+@override_settings(SUPERHARRY_REQUIRE_MODEL_QUOTAS=True,
+                   SUPERHARRY_LOCAL_TOKENIZER_APPROVED_MODELS=(
+                       'openai/gpt-oss-20b', 'liquid/lfm-2.5-2.6b:free'))
 class ModelQuotaDispatchTests(TestCase):
     def setUp(self):
         from home.openrouter_catalog import CatalogModel

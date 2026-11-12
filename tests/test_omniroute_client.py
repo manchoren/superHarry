@@ -406,6 +406,36 @@ def test_sse_malformed_json_is_rejected(client):
             list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
 
 
+def test_client_resolves_environment_configuration_at_request_time():
+    with patch.dict(os.environ, {}, clear=True):
+        client = OmnirouteClient()
+        assert client.api_key is None
+        with pytest.raises(Exception, match="credentials_missing"):
+            client.health_check()
+    with patch.dict(os.environ, {"OMNIROUTE_API_KEY": "synthetic-key", "OMNIROUTE_ENDPOINT": "http://gateway/v1"}, clear=True):
+        assert client.api_key == "synthetic-key"
+        assert client.endpoint == "http://gateway/v1"
+
+
+@patch("home.omniroute_client.requests.Session.get")
+def test_health_check_uses_configured_timeout(mock_get, client):
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.json.return_value = {"status": "ok"}
+    client.timeout = 7
+    client.health_check()
+    assert mock_get.call_args.kwargs["timeout"] == 7
+
+
+@patch("home.omniroute_client.requests.Session.post")
+def test_http_rejection_closes_response_without_leaking_body(mock_post, client):
+    response = Mock(status_code=401, text="secret response body")
+    mock_post.return_value = response
+    with pytest.raises(Exception, match="rejected_401") as error:
+        client.chat_completion([{"role": "user", "content": "Test"}])
+    response.close.assert_called_once_with()
+    assert "secret response body" not in str(error.value)
+
+
 # Tests de Integración (requieren omniroute real)
 
 @pytest.mark.skipif(

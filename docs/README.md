@@ -27,3 +27,19 @@ docs/
 - [backlog](reference/backlog.md)
 - [product-requirements](reference/product-requirements.md)
 - [test-scoping](reference/test-scoping.md)
+
+## Portable validation baseline
+
+From a clean checkout, prepare the approved environment from
+[requirements.txt](../requirements.txt), then run from the repository root:
+
+```text
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test
+python scripts/project_progress.py
+```
+
+Use `.venv/bin/python` on Linux or `.venv\Scripts\python.exe` on Windows.
+The progress summary is informational and does not establish VM, deployment,
+provider or production acceptance.

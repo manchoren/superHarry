@@ -8,7 +8,7 @@ Run `python scripts/project_progress.py` for a progress summary.
 
 Maintain this queue using [documentation ownership, update triggers and closure rules](CONTRIBUTING.md#documentation-ownership-and-synchronization). The backlog owns status; this file owns ordering. Check dependencies before starting the first listed task.
 
-**Last updated:** 2026-11-11
+**Last updated:** 2026-11-12
 
 ---
 

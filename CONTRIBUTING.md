@@ -4,6 +4,24 @@ Read the complete [constitution](constitution.md), surrounding code and relevant
 
 ## Delivery workflow
 
+### Portable checkout contract
+
+A clean checkout must contain `manage.py`, the pinned `requirements.txt`, the
+case-sensitive `tasks.md` queue, and the referenced test-selection policy.
+Run commands from the repository root. Use the checkout's virtual-environment
+interpreter (`.venv\Scripts\python.exe` on Windows or `.venv/bin/python` on
+Linux):
+
+```text
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test
+python scripts/project_progress.py
+```
+
+The project-progress command is read-only and does not validate dependencies,
+readiness, acceptance, links or duplicate records.
+
 1. Select a ready task from [tasks.md](tasks.md), checking its dependencies and acceptance criteria in the backlog's linked record. Inspect the complete staged, unstaged and relevant untracked change set; preserve unrelated user work.
 2. State a short approach. Choose the smallest reversible implementation within standing authorization; record non-obvious decisions with the task and architectural decisions in an ADR. Ask only for remaining protected boundaries.
 3. Add regression tests for bugs and appropriate tests for behavior changes. Cover authorization, untrusted inputs, errors, audit and isolation. Use synthetic fixtures; mock models and network calls. Real-model evaluations remain separately controlled, with affected cases updated and results submitted for maintainer review under Q-45/T056.

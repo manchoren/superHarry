@@ -52,6 +52,7 @@ class ProviderOrderTests(TestCase):
     SUPERHARRY_ENABLED_FREE_PROVIDERS=('openrouter', 'groq'),
     SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True,
     SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED=True,
+    SUPERHARRY_LOCAL_TOKENIZER_APPROVED_MODELS=(GROQ_MODEL, OR_MODEL),
 )
 class RoutedTurnTests(TestCase):
     def setUp(self):

@@ -9,6 +9,7 @@ from home.provider_outcomes import NotDispatched, OutcomeUnknown
 logger = logging.getLogger(__name__)
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 MAX_SSE_LINE_BYTES = 256 * 1024
+MAX_SSE_EVENTS = 4096
 
 class OmnirouteError(RuntimeError):
     """Gateway failure without credentials or response-body leakage."""
@@ -53,14 +54,20 @@ class OmnirouteStreamEvent:
 
 class OmnirouteClient:
     def __init__(self, endpoint: Optional[str] = None, api_key: Optional[str] = None, timeout: int = 60):
-        self.endpoint = (endpoint or os.getenv("OMNIROUTE_ENDPOINT", "http://localhost:20128/v1")).rstrip("/")
-        self._api_key = api_key if api_key is not None else os.getenv("OMNIROUTE_API_KEY")
+        self._endpoint = endpoint.rstrip("/") if endpoint else None
+        self._api_key = api_key
         if type(timeout) is not int or timeout <= 0: raise ValueError("timeout_invalid")
         self.timeout, self._session = timeout, None
     @property
-    def api_key(self): return self._api_key
+    def endpoint(self):
+        return (self._endpoint or os.getenv("OMNIROUTE_ENDPOINT", "http://localhost:20128/v1")).rstrip("/")
+
+    @property
+    def api_key(self):
+        return self._api_key if self._api_key is not None else os.getenv("OMNIROUTE_API_KEY")
+
     def _session_for_request(self):
-        key = self._api_key or os.getenv("OMNIROUTE_API_KEY")
+        key = self.api_key
         if not key: raise NotDispatched("omniroute_credentials_missing")
         self._session = requests.Session()
         self._session.headers.update({"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
@@ -74,7 +81,12 @@ class OmnirouteClient:
         session = self._session_for_request()
         try:
             response = session.post(f"{self.endpoint}/chat/completions", json=payload, stream=stream, timeout=self.timeout)
-            self._raise_http(response, "chat"); return response
+            try:
+                self._raise_http(response, "chat")
+            except Exception:
+                response.close()
+                raise
+            return response
         except requests.Timeout as exc: raise OutcomeUnknown("omniroute_timeout") from exc
         except requests.RequestException as exc: raise OutcomeUnknown("omniroute_transport_failure") from exc
     def chat_completion(self, messages: List[Dict[str, str]], model="nous-ai/solar-mini-4", temperature=0.7, max_tokens=None, stream=False, reasoning=None, tools=None, **kwargs):
@@ -95,10 +107,16 @@ class OmnirouteClient:
         if max_tokens is not None: payload["max_tokens"] = max_tokens
         response = self._post(payload, stream=True)
         try:
+            event_count = 0
             for raw_line in response.iter_lines():
                 if not raw_line: continue
                 if len(raw_line) > MAX_SSE_LINE_BYTES: raise OmnirouteError("gateway_sse_line_too_large")
-                line = raw_line.decode("utf-8") if isinstance(raw_line, bytes) else raw_line
+                event_count += 1
+                if event_count > MAX_SSE_EVENTS: raise OmnirouteError("gateway_sse_too_many_events")
+                try:
+                    line = raw_line.decode("utf-8") if isinstance(raw_line, bytes) else raw_line
+                except UnicodeDecodeError as exc:
+                    raise OmnirouteError("gateway_sse_malformed") from exc
                 if not line.startswith("data:"): continue
                 value = line[5:].strip()
                 if value == "[DONE]": yield OmnirouteStreamEvent("done"); return
@@ -107,7 +125,9 @@ class OmnirouteClient:
                 choices = data.get("choices") if isinstance(data, dict) else None
                 if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict): raise OmnirouteError("gateway_sse_schema_invalid")
                 choice, delta = choices[0], choices[0].get("delta", {})
-                if not isinstance(delta, dict) or not isinstance(delta.get("content", ""), str): raise OmnirouteError("gateway_sse_schema_invalid")
+                if (not isinstance(delta, dict) or not isinstance(delta.get("content", ""), str)
+                        or (choice.get("finish_reason") is not None and not isinstance(choice.get("finish_reason"), str))):
+                    raise OmnirouteError("gateway_sse_schema_invalid")
                 usage = OmnirouteUsage.from_dict(data["usage"]) if "usage" in data else None
                 yield OmnirouteStreamEvent("delta", delta.get("content", ""), choice.get("finish_reason"), usage)
         except (requests.Timeout, requests.RequestException) as exc: raise OutcomeUnknown("omniroute_stream_failure") from exc
@@ -115,7 +135,7 @@ class OmnirouteClient:
     def _get(self, path, missing_ok=False):
         session = self._session_for_request()
         try:
-            response = session.get(f"{self.endpoint.removesuffix('/v1')}/{path}", timeout=10)
+            response = session.get(f"{self.endpoint.removesuffix('/v1')}/{path}", timeout=self.timeout)
             if missing_ok and response.status_code == 404: return {}
             self._raise_http(response, path); data = response.json()
             if not isinstance(data, dict): raise OmnirouteError("gateway_response_invalid")

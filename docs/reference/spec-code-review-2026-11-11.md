@@ -107,6 +107,19 @@ The backlog owns status. These records own the scope, dependencies and acceptanc
 - No T225 record exists in `docs/history/completed-tasks.md`. Assignee labels in other dated evidence records identify the author of that bounded evidence, not an active T225 handoff or completion claim.
 - The backlog entry now links this section as T225's scope/evidence record. The fresh audit and independent acceptance gates remain open; this reconciliation does not close T225.
 
+#### T225 portable baseline update - 2026-11-12
+
+- Restored the standard repository-root `manage.py` entrypoint, retaining the
+  existing `requirements.txt` dependency pins and
+  `docs/reference/test-scoping.md` policy as the portable validation baseline.
+- Documented the same root-relative validation commands in `CONTRIBUTING.md`
+  and `docs/README.md`; changed `scripts/project_progress.py` output to English
+  without changing its read-only behavior.
+- Validation is limited to the current Windows checkout and synthetic/local
+  checks. Fresh-context audit, independent reconciliation, Linux clean-checkout
+  execution, target-VM acceptance, deployment and production acceptance remain
+  open. T225 remains `Pending`.
+
 ### T226 - Reconcile constitution identity and context regression coverage
 
 **Priority:** P0. **Dependencies:** None. **Evidence:** settings hash differs from raw constitution; constitution_context rejects mismatches.
@@ -138,12 +151,26 @@ The backlog owns status. These records own the scope, dependencies and acceptanc
 - `git diff --check` passed. Migration-focused validation also passed (`2 passed`), and `django check` plus `makemigrations --check --dry-run` passed.
 - T227 remains Pending. Fresh-audit scope findings remain open; real installed-gateway contract verification, provider/account/context eligibility, VM/deployment acceptance and release acceptance are not established. Any unresolved gateway contract limitations remain applicable.
 
+#### T227 implementation evidence - 2026-11-12
+
+- Changed `home/omniroute_client.py` and `tests/test_omniroute_client.py`. Configuration is resolved at request time; HTTP rejection responses are closed without exposing bodies; GET uses the configured timeout; SSE decoding validates UTF-8/finish reasons and bounds event count; caller-owned history remains copied before appending.
+- Synthetic focused validation: `.\\.venv\\Scripts\\python.exe -m pytest -q tests/test_omniroute_client.py` -> `25 passed, 3 skipped`, exit code 0. No real gateway, credentials or network call was used.
+- Static validation: `.\\.venv\\Scripts\\python.exe -m compileall -q home/omniroute_client.py` -> passed; `git diff --check` -> passed. Constitution SHA-256: `640C85A00D537E01FE446AC4516CB09CB53DF2ACDAC493615FB5E72BDD792E64`.
+- Django `check` and `makemigrations --check --dry-run` were attempted with `DJANGO_SETTINGS_MODULE=superharry.settings` but are blocked by the pre-existing `NameError: name 'self' is not defined` in `home/models.py:636`; no unrelated fix was made.
+- T227 remains Pending: independent fresh-context audit, full Django suite, installed-gateway schema verification, provider/account/context eligibility, VM/deployment and production/release acceptance remain outstanding.
+
 ### T228 - Migrate model credentials and runtime configuration to omniroute
 
 **Priority:** P0. **Dependencies:** T227. **Evidence:** provider_credentials and runtime_config retain direct-provider secrets; new client reads only gateway key.
 
 - Introduce validated gateway configuration and protected secret loading; migrate deployment examples, availability checks and worker configuration without displaying or copying live secrets.
 - Given gateway-only configuration, when the application starts and inspects available routes, then direct provider keys are unnecessary. Given gateway failure, then no direct transport is used. Preserve Django/TOTP/TLS key custody. Retire old model-secret paths only after a compatible migration/rollback plan.
+
+#### T228 implementation evidence - 2026-11-12
+
+- Gateway-only service configuration now uses `OMNIROUTE_ENDPOINT`, the `omniroute` availability/order identifier and a protected `omniroute-api-key` systemd credential. Direct provider key names are not loaded by application configuration or deployment unit files.
+- Django secret and TOTP credential names remain unchanged. TLS configuration remains service-owned and was not modified.
+- This bounded slice does not connect durable chat dispatch, prove the installed gateway contract, or validate the target VM.
 
 ### T229 - Connect durable chat and local inference to the gateway
 

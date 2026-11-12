@@ -33,12 +33,7 @@ Pin and version attestation
 from __future__ import annotations
 
 import json
-import logging
-from typing import Callable
-
 from django.conf import settings
-
-logger = logging.getLogger(__name__)
 
 _DEFAULT_TOKENIZER_MODEL_ID = "gpt2"
 _DEFAULT_TOKENIZER_REVISION = "v1"
@@ -70,10 +65,8 @@ def _get_tokenizer_revision() -> str:
 
 def _is_pin_approved(model_id: str) -> bool:
     approved = getattr(settings, "SUPERHARRY_LOCAL_TOKENIZER_APPROVED_MODELS", None)
-    if approved is None:
-        return True
     if not isinstance(approved, (list, tuple, set, frozenset)):
-        raise TokenizationError("tokenizer_approved_models_invalid")
+        return False
     return model_id in approved
 
 
@@ -87,20 +80,11 @@ def build_counter(model_id: str) -> "TokenizerTokenCounter":
     try:
         import tiktoken  # exact OpenAI-official tokenizer
     except Exception as exc:  # pragma: no cover - requires tiktoken
-        encoder = None
-    else:
-        encoder = _build_encoder(tiktoken, model_id)
-    if encoder is not None:
-        return TokenizerTokenCounter(
-            model_id=model_id,
-            revision=_get_tokenizer_revision(),
-            encoder=encoder,
-        )
-    # The model's exact tokenizer is not registered in the pinned tokenizer
-    # library. Return a documented conservative token counter rather than
-    # blocking dispatch; the admission remains a verified upper bound, never
-    # an exact count, until the model's official tokenizer is installed.
-    return ConservativeTokenCounter(model_id=model_id, revision=_get_tokenizer_revision())
+        raise TokenizationUnavailableError("tokenizer_import_failed") from exc
+    encoder = _build_encoder(tiktoken, _get_tokenizer_model_id())
+    if encoder is None:
+        raise TokenizationUnavailableError("tokenizer_encoder_unavailable")
+    return TokenizerTokenCounter(model_id=model_id, revision=_get_tokenizer_revision(), encoder=encoder)
 
 
 def _build_encoder(tiktoken, model_id: str):
@@ -127,61 +111,13 @@ class TokenizerTokenCounter:
     def count_upper_bound(self, serialized_input: bytes) -> int:
         if not isinstance(serialized_input, bytes) or not serialized_input:
             raise TokenizationError("serialized_input_invalid")
-        try:
-            return self._exact_count(serialized_input)
-        except TokenizationError:
-            raise
-        except Exception:
-            # Exact tokenizer could not consume the payload; fail closed to
-            # the documented conservative bound rather than proceeding on an
-            # unverified count.
-            return self._conservative_count(serialized_input)
+        return self._exact_count(serialized_input)
 
     def _exact_count(self, serialized_input: bytes) -> int:
         payload = json.loads(serialized_input.decode("utf-8"))
         texts = _extract_text_parts(payload)
         encoder = self._encoder
         return sum(len(encoder.encode(text)) for text in texts)
-
-    def _conservative_count(self, serialized_input: bytes) -> int:
-        # Documented overestimate: every whitespace-delimited chunk contributes
-        # at least one token and every 4 bytes contribute at most one token.
-        # This strictly over-approximates for any tokenizer that compresses
-        # content, so it is an upper bound, never an exact count.
-        raw = serialized_input.decode("utf-8", errors="strict")
-        total = 0
-        for chunk in raw.split():
-            total += max(1, len(chunk.encode("utf-8")) // 4 + 1)
-        return total
-
-
-class ConservativeTokenCounter(TokenizerTokenCounter):
-    """Documented upper-bound counter when the model's exact tokenizer is not
-    registered in the pinned tokenizer library. The exact path is disabled so
-    dispatch always proceeds on a verified bound."""
-
-    def __init__(self, *, model_id: str, revision: str) -> None:
-        super().__init__(model_id=model_id, revision=revision, encoder=None)
-
-    @property
-    def pin(self) -> str:
-        return f"{self.model_id}/{self.revision}"
-
-    def count_upper_bound(self, serialized_input: bytes) -> int:
-        if not isinstance(serialized_input, bytes) or not serialized_input:
-            raise TokenizationError("serialized_input_invalid")
-        return self._conservative_count(serialized_input)
-
-    def _exact_count(self, serialized_input: bytes) -> int:
-        raise TokenizationError("conservative_counter_no_exact_path")
-
-    def _conservative_count(self, serialized_input: bytes) -> int:
-        raw = serialized_input.decode("utf-8", errors="strict")
-        total = 0
-        for chunk in raw.split():
-            total += max(1, len(chunk.encode("utf-8")) // 4 + 1)
-        return total
-
 
 def _extract_text_parts(payload: object) -> list[str]:
     """Collect message-content strings from a serialized chat body.
