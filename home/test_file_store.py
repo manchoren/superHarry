@@ -4,8 +4,10 @@ from pathlib import Path
 from unittest import skipUnless
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase, override_settings
+from django.test import Client, TestCase, override_settings
+from django.urls import reverse
 
 from home.file_store import FileStoreError, open_for_download, stage_for_authorized_job, upload
 from home.models import AuditEvent
@@ -50,6 +52,38 @@ class AuthorizedFileStoreTests(TestCase):
         self.assertEqual(target.read_bytes(), b"hello")
         with self.assertRaises(FileStoreError):
             stage_for_authorized_job(user=self.other, storage_id=record.storage_id, destination_dir=staging)
+
+    def test_staging_requires_authentication_and_cleans_partial_output(self):
+        record = upload(user=self.owner, uploaded_file=SimpleUploadedFile("x.txt", b"hello"))
+        staging = Path(self.temp_dir.name, "job")
+        staging.mkdir()
+        with self.assertRaises(FileStoreError):
+            stage_for_authorized_job(user=AnonymousUser(), storage_id=record.storage_id,
+                                     destination_dir=staging)
+
+        record.size = 99
+        record.save(update_fields=["size"])
+        with self.assertRaises(FileStoreError):
+            stage_for_authorized_job(user=self.owner, storage_id=record.storage_id, destination_dir=staging)
+        self.assertFalse((staging / str(record.storage_id)).exists())
+
+    def test_http_boundary_requires_login_and_hides_internal_path(self):
+        client = Client()
+        response = client.post(reverse("file-upload"), {"file": SimpleUploadedFile("x.txt", b"hello")})
+        self.assertIn(response.status_code, (302, 403))
+        self.client.force_login(self.owner)
+        response = self.client.post(
+            reverse("file-upload"), {"file": SimpleUploadedFile("x.txt", b"hello")},
+            secure=True, HTTP_HOST="superharry.local", HTTP_ORIGIN="https://superharry.local",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertNotIn(str(self.temp_dir.name).encode(), response.content)
+        record = self.owner.stored_files.get()
+        response = self.client.get(reverse("file-download", args=[record.storage_id]), secure=True)
+        self.assertEqual(response.status_code, 200)
+        body = b"".join(response.streaming_content)
+        response.close()
+        self.assertNotIn(str(self.temp_dir.name).encode(), body)
 
     @skipUnless(hasattr(os, "symlink"), "symlink support is unavailable")
     def test_symlink_store_entry_is_denied(self):

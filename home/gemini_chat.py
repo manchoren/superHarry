@@ -324,7 +324,24 @@ def _run_routing(*, turn, history, authorized, cancelled, governor=None, adapter
         return _attempt_gateway(turn=turn, history=history, cancelled=cancelled)
 
     if turn.model_mode == ChatTurn.ModelMode.LOCAL:
-        raise RoutingExhausted()
+        # With no gateway credential, preserve the development/local adapter
+        # path instead of routing an explicit local selection through external
+        # providers or rejecting it before the existing fallback can run.
+        if not settings.SUPERHARRY_LOCAL_INFERENCE_ENABLED:
+            raise RoutingExhausted()
+        governor = governor or HeavyJobGovernor(
+            queue_capacity=settings.LLAMA_CPP_QUEUE_CAPACITY,
+            wait_timeout=settings.LLAMA_CPP_ACQUIRE_TIMEOUT,
+        )
+        adapter = adapter or LlamaCppModelAdapter(governor=governor)
+        try:
+            return _run_local_fallback(
+                turn=turn, history=history, authorized=authorized,
+                cancelled=cancelled, adapter=adapter,
+            )
+        except LocalInferenceError:
+            logger.info('gemini_chat_local_inference_failed')
+            raise RoutingExhausted() from None
 
     configured_order = parse_provider_order(settings.SUPERHARRY_FREE_PROVIDER_ORDER)
     enabled = settings.SUPERHARRY_ENABLED_FREE_PROVIDERS

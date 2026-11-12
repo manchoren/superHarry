@@ -1,6 +1,12 @@
+import json
 import unittest
 
-from scripts.validate_t237_fixtures import FIXTURE_ROOT, load_manifest, validate_manifest
+from scripts.validate_t237_fixtures import (
+    FIXTURE_ROOT,
+    load_manifest,
+    validate_fixture_payloads,
+    validate_manifest,
+)
 
 
 class T237FixtureManifestTests(unittest.TestCase):
@@ -8,6 +14,7 @@ class T237FixtureManifestTests(unittest.TestCase):
         manifest = load_manifest()
 
         self.assertEqual(validate_manifest(manifest), [])
+        self.assertEqual(validate_fixture_payloads(manifest), [])
         self.assertEqual(manifest["network_policy"], "deny")
         self.assertEqual(manifest["credential_policy"], "synthetic-only")
         external = {item["source"] for item in manifest["scenarios"] if not item["required"]}
@@ -37,6 +44,35 @@ class T237FixtureManifestTests(unittest.TestCase):
         for item in load_manifest()["scenarios"]:
             if item["source"] in {"live-provider", "vm"}:
                 self.assertIsNone(item.get("fixture"))
+
+    def test_required_cases_preserve_security_resource_and_recovery_contracts(self):
+        manifest = load_manifest()
+        by_id = {item["id"]: item for item in manifest["scenarios"]}
+
+        security = json_fixture(by_id["security-boundary"])
+        self.assertIn("deny", {case["expected"] for case in security["cases"]})
+
+        resource = json_fixture(by_id["resource-enforcement"])
+        self.assertIn("deny", {case["expected"] for case in resource["cases"]})
+
+        recovery = json_fixture(by_id["recovery-unknown-outcome"])
+        self.assertEqual(recovery["expected_state"], "unknown")
+        self.assertFalse(recovery["automatic_retry"])
+
+    def test_functional_fixtures_cover_both_languages_without_quality_metrics(self):
+        manifest = load_manifest()
+        for scenario_id in ("ocr-bilingual", "stt-tts-local", "retrieval-bilingual"):
+            fixture = json_fixture(next(item for item in manifest["scenarios"] if item["id"] == scenario_id))
+            text = json.dumps(fixture, ensure_ascii=False).lower()
+            self.assertIn("es", text)
+            self.assertIn("en", text)
+            self.assertNotIn("wer", text)
+            self.assertNotIn("cer", text)
+
+
+def json_fixture(item):
+    with (FIXTURE_ROOT / "t237" / f"{item['fixture']}.json").open(encoding="utf-8") as stream:
+        return json.load(stream)
 
 
 if __name__ == "__main__":

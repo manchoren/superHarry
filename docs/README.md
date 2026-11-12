@@ -27,6 +27,7 @@ docs/
 - [backlog](reference/backlog.md)
 - [product-requirements](reference/product-requirements.md)
 - [test-scoping](reference/test-scoping.md)
+- [agent chat](../agentchat.md): optional handoff channel for the overseer and subagents.
 
 ## Portable validation baseline
 

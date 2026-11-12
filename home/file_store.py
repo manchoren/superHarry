@@ -1,7 +1,6 @@
 """Bounded, authorized storage for user files outside the web root."""
 import hashlib
 import os
-import shutil
 import stat
 import uuid
 from pathlib import Path
@@ -93,6 +92,8 @@ def open_for_download(*, user, storage_id, request_id=None):
 
 def stage_for_authorized_job(*, user, storage_id, destination_dir, request_id=None):
     """Stage one owned file into an already-authorized job directory."""
+    if not getattr(user, "is_authenticated", False):
+        raise FileStoreError("Authentication required.")
     try:
         record = StoredFile.objects.get(storage_id=storage_id, owner=user)
         source = _stored_path(record)
@@ -104,9 +105,20 @@ def stage_for_authorized_job(*, user, storage_id, destination_dir, request_id=No
     target = destination / str(record.storage_id)
     if target.exists() or target.is_symlink():
         raise FileStoreError("Staging target already exists.")
-    with source.open("rb") as source_handle, target.open("xb") as target_handle:
-        shutil.copyfileobj(source_handle, target_handle, length=1024 * 1024)
-    os.chmod(target, stat.S_IRUSR | stat.S_IWUSR)
+    try:
+        copied = 0
+        with source.open("rb") as source_handle, target.open("xb") as target_handle:
+            while chunk := source_handle.read(1024 * 1024):
+                copied += len(chunk)
+                if copied > record.size:
+                    raise FileStoreError("Stored file changed during staging.")
+                target_handle.write(chunk)
+        if copied != record.size:
+            raise FileStoreError("Stored file changed during staging.")
+        os.chmod(target, stat.S_IRUSR | stat.S_IWUSR)
+    except Exception:
+        target.unlink(missing_ok=True)
+        raise
     record_event(event_type=AuditEvent.EventType.FILE_STAGED,
                  outcome=AuditEvent.Outcome.SUCCESS,
                  actor_kind=AuditEvent.ActorKind.USER,

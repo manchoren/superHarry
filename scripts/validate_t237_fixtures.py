@@ -9,6 +9,16 @@ MANIFEST = ROOT / "tests" / "fixtures" / "t237_evaluation_manifest.json"
 ALLOWED_SOURCES = {"mocked", "contract", "live-provider", "vm"}
 REQUIRED_CATEGORIES = {"security", "functional", "resource", "recovery"}
 FIXTURE_ROOT = ROOT / "tests" / "fixtures"
+FORBIDDEN_BENCHMARK_KEYS = {
+    "cer",
+    "wer",
+    "rtf",
+    "latency_ms",
+    "throughput",
+    "peak_ram_mb",
+    "quality_score",
+}
+SECRET_MARKERS = ("api_key", "access_token", "bearer ", "private_key", "password")
 
 
 def load_manifest() -> dict:
@@ -56,11 +66,70 @@ def validate_manifest(manifest: dict) -> list[str]:
                         errors.append(f"fixture scenario mismatch: {item.get('id')}")
         if item.get("source") in {"live-provider", "vm"} and item.get("required"):
             errors.append(f"externally controlled scenario cannot be required: {item.get('id')}")
+        if item.get("source") in {"live-provider", "vm"} and item.get("fixture") is not None:
+            errors.append(f"external scenario cannot carry a local fixture: {item.get('id')}")
+    return errors
+
+
+def _walk_values(value):
+    if isinstance(value, dict):
+        for key, child in value.items():
+            yield str(key)
+            yield from _walk_values(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from _walk_values(child)
+    else:
+        yield str(value)
+
+
+def validate_fixture_payloads(manifest: dict) -> list[str]:
+    errors: list[str] = []
+    for item in manifest.get("scenarios", []):
+        if item.get("source") not in {"mocked", "contract"}:
+            continue
+        fixture_path = FIXTURE_ROOT / "t237" / f"{item['fixture']}.json"
+        try:
+            with fixture_path.open(encoding="utf-8") as stream:
+                fixture = json.load(stream)
+        except (OSError, json.JSONDecodeError) as exc:
+            errors.append(f"cannot inspect fixture {item['id']}: {exc}")
+            continue
+        lowered = {value.lower() for value in _walk_values(fixture)}
+        if any(marker in value for value in lowered for marker in SECRET_MARKERS):
+            errors.append(f"fixture contains a credential marker: {item['id']}")
+        keys = {key.lower() for key in fixture if isinstance(fixture, dict)}
+        if keys & FORBIDDEN_BENCHMARK_KEYS:
+            errors.append(f"fixture contains waived benchmark fields: {item['id']}")
+        has_outcome = bool(
+            fixture.get("expected")
+            or fixture.get("expected_state")
+            or fixture.get("expected_ids")
+            or any(
+                isinstance(case, dict) and case.get("expected")
+                for case in fixture.get("cases", [])
+            )
+        )
+        if not has_outcome:
+            errors.append(f"fixture lacks a concrete functional outcome: {item['id']}")
+        if item["category"] == "security" and not any(
+            case.get("expected") == "deny" for case in fixture.get("cases", [])
+            if isinstance(case, dict)
+        ):
+            errors.append(f"security fixture lacks a denial case: {item['id']}")
+        if item["category"] == "resource" and not any(
+            case.get("expected") == "deny" for case in fixture.get("cases", [])
+            if isinstance(case, dict)
+        ):
+            errors.append(f"resource fixture lacks an enforcement denial: {item['id']}")
+        if item["category"] == "recovery" and fixture.get("expected_state") != "unknown":
+            errors.append(f"recovery fixture must preserve unknown state: {item['id']}")
     return errors
 
 
 def main() -> int:
-    errors = validate_manifest(load_manifest())
+    manifest = load_manifest()
+    errors = validate_manifest(manifest) + validate_fixture_payloads(manifest)
     if errors:
         for error in errors:
             print(f"ERROR: {error}")

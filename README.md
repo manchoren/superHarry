@@ -9,6 +9,7 @@ The repository now contains the initial Django monolith scaffold. It uses Django
 - [Task backlog](tasks.md): start with the current delivery priority; the full inventory tracks release scope and evidence.
 - [Specification-to-code review](docs/reference/spec-code-review-2026-11-11.md): current task scope, dependencies, acceptance and evidence boundaries.
 - [Contributing](CONTRIBUTING.md): review, security and local validation requirements.
+- [Agent chat](agentchat.md): repository-local handoff channel for the overseer and subagents.
 - [Documentation index](docs/README.md): domain tree and links to related specifications, decisions and evidence.
 - [Owner decisions](docs/owner-attention.md): current approvals and protected boundaries.
 

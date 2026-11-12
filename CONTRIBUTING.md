@@ -45,6 +45,11 @@ Use short-lived `feature/`, `fix/` or `chore/` branches and Conventional Commits
 
 The contributor making a change must update its affected records before handoff or completion. Record the active assignee and model when known; use `Unassigned` and `Unknown` when not known. Do not overwrite unrelated work or silently resolve a policy conflict by changing specifications to match code.
 
+When work is delegated to subagents, the overseer may instruct them to append
+their findings and conclusions to the repository-local [agent chat](agentchat.md)
+file. Use it to preserve handoff context across agent sessions; it does not
+replace authoritative task records, evidence, decisions or validation results.
+
 ### Update triggers
 
 | Trigger | Required updates in the same change |

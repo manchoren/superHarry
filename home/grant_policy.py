@@ -14,7 +14,7 @@ from uuid import UUID
 from django.db import transaction
 from django.utils import timezone
 
-from home.audit import AuditUnavailable, record_event
+from home.audit import record_event
 from home.models import AuditEvent, ToolGrant
 from home.tool_boundary import SideEffect, ToolDeclaration, ToolDenied, ToolInvocation
 
@@ -101,5 +101,5 @@ class ToolGrantPolicy:
         try:
             record_event(event_type=event_type, outcome=AuditEvent.Outcome.FAILURE if event_type == AuditEvent.EventType.TOOL_GRANT_DENIED else AuditEvent.Outcome.SUCCESS,
                          actor_kind=AuditEvent.ActorKind.SERVICE, request_id=request_id)
-        except AuditUnavailable as exc:
+        except Exception as exc:
             raise ToolDenied("Grant audit is unavailable.") from exc

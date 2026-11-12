@@ -2,8 +2,9 @@ import uuid
 from types import SimpleNamespace
 from unittest.mock import patch
 from django.contrib.auth import get_user_model
-from django.test import TestCase
-from home.gemini_chat import OmnirouteError, _run_routing, run_gemini_turn
+from django.test import TestCase, override_settings
+from home.gemini_chat import OmnirouteError, RoutingExhausted, _run_routing, run_gemini_turn
+from home.local_model_adapter import LocalInferenceError
 from home.models import ChatTurn, Conversation, Message, ProviderQuota
 from home.provider_credentials import CredentialConfigError
 from home.test_budget_support import create_application_budgets
@@ -176,3 +177,34 @@ class GeminiChatTests(TestCase):
         with self.assertRaises(OmnirouteError):
             _run_routing(turn=self.turn, history=[], authorized=True, cancelled=lambda: False)
         client_factory.assert_not_called()
+
+    @patch.dict('os.environ', {}, clear=True)
+    @patch('home.gemini_chat._run_local_fallback')
+    @patch('home.gemini_chat._gateway_configured', return_value=False)
+    @override_settings(SUPERHARRY_LOCAL_INFERENCE_ENABLED=True)
+    def test_explicit_local_mode_uses_local_adapter_without_gateway(self, gateway_configured,
+                                                                      local_fallback):
+        self.turn.model_mode = 'local'
+        self.turn.save(update_fields=['model_mode'])
+        local_fallback.return_value = ('local answer', {'mode': 'local'}, {'input_tokens': 0})
+
+        result = _run_routing(
+            turn=self.turn, history=[('user', 'prior')],
+            authorized=lambda: True, cancelled=lambda: False,
+        )
+
+        self.assertEqual(result, local_fallback.return_value)
+        gateway_configured.assert_called_once_with()
+        local_fallback.assert_called_once()
+
+    @patch.dict('os.environ', {}, clear=True)
+    @patch('home.gemini_chat._run_local_fallback', side_effect=LocalInferenceError('unavailable'))
+    @patch('home.gemini_chat._gateway_configured', return_value=False)
+    @override_settings(SUPERHARRY_LOCAL_INFERENCE_ENABLED=True)
+    def test_explicit_local_mode_fails_closed_when_local_adapter_unavailable(self, gateway_configured,
+                                                                               local_fallback):
+        self.turn.model_mode = 'local'
+        self.turn.save(update_fields=['model_mode'])
+
+        with self.assertRaises(RoutingExhausted):
+            _run_routing(turn=self.turn, history=[], authorized=lambda: True, cancelled=lambda: False)

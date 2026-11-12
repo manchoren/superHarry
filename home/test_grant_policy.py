@@ -6,7 +6,10 @@ from django.utils import timezone
 
 from home.grant_policy import MAX_LIFETIME, OperatorGrantAuthorization, ToolGrantPolicy
 from home.models import AuditEvent, ToolGrant
-from home.tool_boundary import SideEffect, ToolDeclaration, ToolDenied, ToolInvocation, ToolRole
+from home.tool_boundary import (
+    AuthorizedToolExecutor, SideEffect, ToolDeclaration, ToolDenied, ToolInvocation, ToolRole,
+    ToolRegistry,
+)
 
 
 class ToolGrantPolicyTests(TransactionTestCase):
@@ -61,3 +64,33 @@ class ToolGrantPolicyTests(TransactionTestCase):
             self.policy.provision(OperatorGrantAuthorization(""), principal="7", declaration=self.declaration,
                                   arguments={"item": "one"}, max_uses=1,
                                   expires_at=timezone.now() + timedelta(hours=1), policy_revision="p1")
+
+    def test_executor_consumes_grant_once_and_denies_after_expiry(self):
+        calls = []
+        declaration = ToolDeclaration(
+            name="safe.read", required_role=ToolRole.USER, ownership="actor",
+            side_effect=SideEffect.READ, confirmation_required=False, audit_event="tool.safe_read",
+            schema={"type": "object", "properties": {"item": {"type": "string"}}},
+            handler=lambda arguments: calls.append(arguments),
+        )
+        grant = self.issue(max_uses=1)
+        executor = AuthorizedToolExecutor(
+            ToolRegistry((declaration,)), lambda *_: None, self.policy,
+        )
+        invocation = ToolInvocation("safe.read", {"item": "one"}, 7, 7, ToolRole.USER,
+                                    policy_revision="p1")
+        executor.execute(invocation)
+        self.assertEqual(len(calls), 1)
+        with self.assertRaises(ToolDenied):
+            executor.execute(invocation)
+        grant.refresh_from_db()
+        self.assertEqual(grant.uses_remaining, 0)
+
+        expired = self.issue(arguments={"item": "expired"})
+        expired.expires_at = timezone.now() - timedelta(seconds=1)
+        expired.save(update_fields=["expires_at"])
+        with self.assertRaises(ToolDenied):
+            executor.execute(ToolInvocation("safe.read", {"item": "expired"}, 7, 7,
+                                            ToolRole.USER, policy_revision="p1"))
+        expired.refresh_from_db()
+        self.assertEqual(expired.uses_remaining, 2)

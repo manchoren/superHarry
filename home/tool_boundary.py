@@ -8,7 +8,7 @@ handler.
 import json
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Any, Callable, Mapping
+from typing import Any, Callable, Mapping, Protocol
 from uuid import UUID, uuid4
 
 from home.model_interface import (
@@ -69,6 +69,7 @@ class ToolInvocation:
     role: ToolRole | str
     confirmed: bool = False
     request_id: UUID | None = None
+    policy_revision: str | None = None
 
 
 @dataclass(frozen=True)
@@ -81,6 +82,11 @@ class ToolOutcome:
 
 
 AuditSink = Callable[[ToolInvocation, ToolOutcome, ToolDeclaration], None]
+
+
+class GrantConsumer(Protocol):
+    def consume(self, invocation: ToolInvocation, declaration: ToolDeclaration, *, policy_revision: str) -> Any:
+        """Atomically consume an exact, active grant or raise ToolDenied."""
 
 
 class ToolRegistry:
@@ -105,14 +111,19 @@ class ToolRegistry:
 
 
 class AuthorizedToolExecutor:
-    def __init__(self, registry: ToolRegistry, audit: AuditSink) -> None:
+    def __init__(self, registry: ToolRegistry, audit: AuditSink, grants: GrantConsumer | None = None) -> None:
         self._registry = registry
         self._audit = audit
+        self._grants = grants
 
     def execute(self, invocation: ToolInvocation) -> ToolOutcome:
         request_id = invocation.request_id or uuid4()
         declaration = self._registry.get(invocation.tool_name)
         self._validate(invocation, declaration)
+        if self._grants is not None and declaration.side_effect is SideEffect.READ and not declaration.confirmation_required:
+            if not invocation.policy_revision:
+                raise ToolDenied("Tool policy revision is required.")
+            self._grants.consume(invocation, declaration, policy_revision=invocation.policy_revision)
         try:
             value = declaration.handler(invocation.arguments)
         except UnknownEffect:
@@ -157,6 +168,7 @@ class AuthorizedToolExecutor:
             role=role,
             confirmed=confirmed,
             request_id=context.request_id,
+            policy_revision=context.policy_revision,
         ))
 
     @staticmethod
