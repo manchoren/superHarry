@@ -5,7 +5,11 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Iterator, List, Optional
 import requests
 from home.provider_outcomes import NotDispatched, OutcomeUnknown
-from home.provider_credentials import CredentialConfigError, load_omniroute_key
+from home.provider_credentials import (
+    CredentialConfigError,
+    load_omniroute_endpoint,
+    load_omniroute_key,
+)
 
 logger = logging.getLogger(__name__)
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
@@ -55,13 +59,23 @@ class OmnirouteStreamEvent:
 
 class OmnirouteClient:
     def __init__(self, endpoint: Optional[str] = None, api_key: Optional[str] = None, timeout: int = 60):
-        self._endpoint = endpoint.rstrip("/") if endpoint else None
+        if endpoint is not None:
+            try:
+                endpoint = load_omniroute_endpoint({"OMNIROUTE_ENDPOINT": endpoint})
+            except CredentialConfigError as exc:
+                raise ValueError("endpoint_invalid") from exc
+        self._endpoint = endpoint
         self._api_key = api_key
         if type(timeout) is not int or timeout <= 0: raise ValueError("timeout_invalid")
         self.timeout, self._session = timeout, None
     @property
     def endpoint(self):
-        return (self._endpoint or os.getenv("OMNIROUTE_ENDPOINT", "http://localhost:20128/v1")).rstrip("/")
+        if self._endpoint is not None:
+            return self._endpoint.rstrip("/")
+        try:
+            return load_omniroute_endpoint(os.environ)
+        except CredentialConfigError as exc:
+            raise OmnirouteError("omniroute_endpoint_invalid") from exc
 
     @property
     def api_key(self):
@@ -114,6 +128,7 @@ class OmnirouteClient:
         response = self._post(payload, stream=True)
         try:
             event_count = 0
+            completed = False
             for raw_line in response.iter_lines():
                 if not raw_line: continue
                 if len(raw_line) > MAX_SSE_LINE_BYTES: raise OmnirouteError("gateway_sse_line_too_large")
@@ -125,7 +140,10 @@ class OmnirouteClient:
                     raise OmnirouteError("gateway_sse_malformed") from exc
                 if not line.startswith("data:"): continue
                 value = line[5:].strip()
-                if value == "[DONE]": yield OmnirouteStreamEvent("done"); return
+                if value == "[DONE]":
+                    completed = True
+                    yield OmnirouteStreamEvent("done")
+                    return
                 try: data = json.loads(value)
                 except (TypeError, json.JSONDecodeError) as exc: raise OmnirouteError("gateway_sse_malformed") from exc
                 choices = data.get("choices") if isinstance(data, dict) else None
@@ -136,6 +154,8 @@ class OmnirouteClient:
                     raise OmnirouteError("gateway_sse_schema_invalid")
                 usage = OmnirouteUsage.from_dict(data["usage"]) if "usage" in data else None
                 yield OmnirouteStreamEvent("delta", delta.get("content", ""), choice.get("finish_reason"), usage)
+            if not completed:
+                raise OmnirouteError("gateway_sse_truncated")
         except (requests.Timeout, requests.RequestException) as exc: raise OutcomeUnknown("omniroute_stream_failure") from exc
         finally: response.close(); self.close()
     def _get(self, path, missing_ok=False):

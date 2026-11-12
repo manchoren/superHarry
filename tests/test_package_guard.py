@@ -20,7 +20,7 @@ def evidence(**changes):
         malicious_pattern_passed=True, downloads_per_month=100001, age_days=731,
         security_patch_within_days=180, advisories=(), blocklist_checked=True,
         blocklisted=False, collected_at=NOW - timedelta(hours=1),
-        expires_at=NOW + timedelta(hours=23))
+        expires_at=NOW + timedelta(hours=23), evidence_source="synthetic-fixture")
     values.update(changes)
     return PackageEvidence(**values)
 
@@ -34,10 +34,21 @@ def test_formula_is_exactly_100_points_and_threshold_is_applied():
 
 def test_reputation_starts_at_zero_and_uses_two_year_advisory_window():
     advisory = CVE("CVE-1", CVESeverity.HIGH, NOW - timedelta(days=100))
-    score = PackageGuard().evaluate("safe-package", "1.2.3", evidence(
+    score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(
         downloads_per_month=0, age_days=0, security_patch_within_days=999,
         advisories=(advisory,)), now=NOW)
     assert score.reputation == 0
+
+
+def test_formula_uses_exact_d1_dimensions_without_bonus_or_deduction_cap():
+    advisories = tuple(CVE(f"CVE-{i}", CVESeverity.HIGH, NOW - timedelta(days=10)) for i in range(7))
+    score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(
+        downloads_per_month=0, age_days=0, security_patch_within_days=999,
+        advisories=advisories), now=NOW)
+    assert score.integrity == 40
+    assert score.reputation == 0
+    assert score.static_analysis == 20
+    assert score.provenance == 10
 
 
 def test_missing_evidence_fails_closed_without_network():
@@ -110,6 +121,7 @@ def test_unchecked_or_unknown_evidence_fails_closed():
         {"downloads_per_month": None},
         {"age_days": None},
         {"security_patch_within_days": None},
+        {"evidence_source": ""},
     ):
         score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(**changes), now=NOW)
         assert score.blocked and not score.is_safe()
@@ -137,6 +149,27 @@ def test_advisory_at_two_year_boundary_is_still_deducted():
     score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(
         advisories=(boundary,)), now=NOW)
     assert score.reputation == 20
+
+
+def test_unknown_applicable_advisory_blocks_but_verified_non_applicability_does_not():
+    unknown = CVE("CVE-unknown", CVESeverity.UNKNOWN, NOW - timedelta(days=1))
+    blocked = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(advisories=(unknown,)), now=NOW)
+    assert blocked.blocked and blocked.reason == "advisory_severity_unknown"
+    not_applicable = PackageGuard().evaluate(
+        "safe-package", "1.2.3", evidence=evidence(advisories=(CVE(
+            "CVE-unknown", CVESeverity.UNKNOWN, NOW - timedelta(days=1), applicable=False),)), now=NOW)
+    assert not_applicable.evidence_valid
+
+
+def test_advisory_aliases_are_deduplicated():
+    advisories = (
+        CVE("GHSA-alias", CVESeverity.HIGH, NOW - timedelta(days=1), aliases=("CVE-alias",)),
+        CVE("CVE-alias", CVESeverity.HIGH, NOW - timedelta(days=1)),
+    )
+    score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(
+        downloads_per_month=0, age_days=0, security_patch_within_days=999,
+        advisories=advisories), now=NOW)
+    assert score.reputation == 0
 
 
 def test_package_name_normalization_accepts_underscore():

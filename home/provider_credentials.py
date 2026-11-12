@@ -2,12 +2,14 @@
 
 from collections.abc import Mapping
 import os
+from urllib.parse import urlsplit
 
 from superharry.runtime_config import open_systemd_credential
 
 
 _MAX_FILE_BYTES = 64 * 1024
 _OMNIROUTE_SYSTEMD_CREDENTIAL = 'omniroute-api-key'
+_DEFAULT_OMNIROUTE_ENDPOINT = 'http://localhost:20128/v1'
 
 
 class CredentialConfigError(ValueError):
@@ -61,6 +63,21 @@ def load_omniroute_key(environ):
     if 'OMNIROUTE_API_KEY' not in environ:
         return None
     return _validate(environ['OMNIROUTE_API_KEY'])
+
+
+def load_omniroute_endpoint(environ):
+    """Return a structurally valid gateway endpoint without accepting URL credentials."""
+    if not isinstance(environ, Mapping):
+        raise CredentialConfigError('omniroute_endpoint_invalid')
+    value = environ.get('OMNIROUTE_ENDPOINT', _DEFAULT_OMNIROUTE_ENDPOINT)
+    if not isinstance(value, str) or not value or any(char.isspace() for char in value):
+        raise CredentialConfigError('omniroute_endpoint_invalid')
+    parsed = urlsplit(value)
+    if parsed.scheme not in {'http', 'https'} or not parsed.netloc:
+        raise CredentialConfigError('omniroute_endpoint_invalid')
+    if parsed.username is not None or parsed.password is not None or parsed.fragment:
+        raise CredentialConfigError('omniroute_endpoint_invalid')
+    return value.rstrip('/')
 
 
 def load_provider_key(provider, environ, *, debug, dotenv_path, allow_dotenv=False):

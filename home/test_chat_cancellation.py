@@ -30,11 +30,13 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase as DjangoTestCase
 from home.models import ChatTurn, Conversation, Message, ProviderQuota, ProviderReservation
 from home.gemini_dispatch import GeminiDispatchError, dispatch_gemini_with_quota
+from home.test_budget_support import create_application_budgets
 
 
 class CancelledGeminiQuotaTests(DjangoTestCase):
     def test_cancel_during_generation_discards_response_and_retains_reservation(self):
         user = get_user_model().objects.create_user(username='synthetic-user')
+        create_application_budgets(user.pk)
         conversation = Conversation.objects.create(owner=user)
         message = Message.objects.create(conversation=conversation, role='user', content='hello')
         turn = ChatTurn.objects.create(     openrouter_risk_accepted=False,conversation=conversation, user_message=message,

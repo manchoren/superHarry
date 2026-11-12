@@ -192,6 +192,7 @@ def _attempt_free_route(*, provider, key, turn, authorized, cancelled, history):
         route=route, transport=transport, user_request=turn.user_message.content,
         authorize=authorized, cancelled=cancelled, operation_id=f'{provider}:{turn.pk}',
         history=tuple(history),
+        budget_user_key=str(turn.conversation.owner_id),
         risk_accepted=(turn.openrouter_risk_accepted if provider == 'openrouter' else True))
     model = {'mode': 'automatic', 'provider': provider, 'model_id': route.model_id}
     return answer, model, {'input_tokens': input_tokens, 'capacity': route.context_capacity}

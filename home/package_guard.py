@@ -27,6 +27,8 @@ class CVE:
     severity: CVESeverity
     date: datetime
     description: str = ""
+    applicable: bool = True
+    aliases: Tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -54,6 +56,7 @@ class PackageEvidence:
     blocklisted: bool
     collected_at: datetime
     expires_at: datetime
+    evidence_source: str = ""
 
     @property
     def artifact_sha256(self) -> str:
@@ -65,6 +68,7 @@ class PackageEvidence:
             return False
         return all((
             self.registry == "pypi", bool(self.normalized_name), bool(self.version),
+            bool(self.evidence_source.strip()),
             self.hash_verified, self.blocklist_checked,
             self.typosquatting_passed is not None,
             self.namespace_confusion_passed is not None,
@@ -124,28 +128,44 @@ class PackageGuard:
         normalized = package_name.strip().lower().replace("_", "-")
         if evidence is None:
             return PackageScore(package_name, version, registry, blocked=True,
-                                reason="Mandatory evidence unavailable")
+                                reason="mandatory_evidence_unavailable")
         current = now or datetime.now(timezone.utc)
         if evidence.blocklisted or normalized in self.blocked_packages:
             return PackageScore(package_name, version, registry, blocked=True,
-                                reason="Known malicious package")
+                                reason="blocklist_match")
         try:
             identity_matches = (evidence.registry == registry
                                 and evidence.normalized_name == normalized
                                 and evidence.version == version)
-            if not identity_matches or not evidence.is_complete(current):
+            if not identity_matches:
                 return PackageScore(package_name, version, registry, blocked=True,
-                                    reason="Mandatory evidence absent, stale, malformed, or unavailable",
+                                    reason="identity_mismatch",
                                     artifact_sha256=evidence.artifact_sha256)
+            if not evidence.is_complete(current):
+                age = current - evidence.collected_at
+                reason = "mandatory_evidence_invalid"
+                if evidence.collected_at.tzinfo is not None and age > timedelta(hours=24):
+                    reason = "evidence_stale"
+                elif evidence.collected_at <= current <= evidence.expires_at and not evidence.evidence_source.strip():
+                    reason = "evidence_source_unavailable"
+                return PackageScore(package_name, version, registry, blocked=True,
+                                    reason=reason, artifact_sha256=evidence.artifact_sha256)
             integrity = 20 + (15 if evidence.signature_verified else 0) + (5 if evidence.publisher_verified else 0)
             reputation = (10 if evidence.downloads_per_month > 100_000 else 0)
             reputation += (10 if evidence.age_days > 730 else 0)
             reputation += (10 if evidence.security_patch_within_days <= 180 else 0)
             seen_advisories = set()
             for advisory in evidence.advisories:
+                if not advisory.applicable:
+                    continue
+                if advisory.severity is CVESeverity.UNKNOWN:
+                    return PackageScore(package_name, version, registry, blocked=True,
+                                        reason="advisory_severity_unknown",
+                                        artifact_sha256=evidence.artifact_sha256)
                 if advisory.cve_id in seen_advisories:
                     continue
                 seen_advisories.add(advisory.cve_id)
+                seen_advisories.update(advisory.aliases)
                 date = advisory.date if advisory.date.tzinfo else advisory.date.replace(tzinfo=timezone.utc)
                 if date >= current - timedelta(days=730):
                     reputation -= advisory.severity.value

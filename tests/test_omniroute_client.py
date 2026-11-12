@@ -107,6 +107,18 @@ def test_client_uses_env_vars():
         assert client.api_key == "env-key-123"
 
 
+@pytest.mark.parametrize("endpoint", [
+    "not-a-url",
+    "ftp://gateway/v1",
+    "http://user:secret@gateway/v1",
+    "http://gateway/v1#fragment",
+])
+def test_client_rejects_invalid_gateway_endpoint(endpoint):
+    with patch.dict(os.environ, {"OMNIROUTE_ENDPOINT": endpoint}, clear=True):
+        with pytest.raises(OmnirouteError, match="endpoint_invalid"):
+            OmnirouteClient().endpoint
+
+
 # Tests de Parsing
 
 def test_omniroute_usage_from_dict():
@@ -403,6 +415,14 @@ def test_sse_malformed_json_is_rejected(client):
     response = Mock(); response.status_code = 200; response.iter_lines.return_value = [b"data: {broken"]
     with patch("home.omniroute_client.requests.Session.post", return_value=response):
         with pytest.raises(OmnirouteError, match="sse_malformed"):
+            list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
+
+
+def test_sse_without_done_marker_is_rejected(client):
+    response = Mock(); response.status_code = 200
+    response.iter_lines.return_value = [b'data: {"choices":[{"delta":{"content":"partial"}}]}']
+    with patch("home.omniroute_client.requests.Session.post", return_value=response):
+        with pytest.raises(OmnirouteError, match="sse_truncated"):
             list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
 
 

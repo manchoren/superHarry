@@ -8,6 +8,7 @@ from home.chat_provider_routing import parse_provider_order, build_groq_route, b
 from home.gemini_chat import run_gemini_turn
 from home.models import ChatTurn, Conversation, Message, ProviderQuota, ProviderReservation
 from home.openrouter_transport import OpenRouterRateLimitError
+from home.test_budget_support import create_application_budgets
 
 GROQ_MODEL = 'openai/gpt-oss-20b'
 OR_MODEL = 'liquid/lfm-2.5-2.6b:free'
@@ -62,6 +63,7 @@ class RoutedTurnTests(TestCase):
             catalog.start()
             self.addCleanup(catalog.stop)
         self.user = get_user_model().objects.create_user(username='routing-owner')
+        create_application_budgets(self.user.pk)
         self.conversation = Conversation.objects.create(owner=self.user)
         message = Message.objects.create(conversation=self.conversation, role='user', content='hello')
         self.turn = ChatTurn.objects.create(     openrouter_risk_accepted=False,conversation=self.conversation, user_message=message,

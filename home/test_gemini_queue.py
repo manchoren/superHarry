@@ -18,11 +18,13 @@ from home.gemini_queue import _WAKE, claim_next, reconcile_stale, run_chat_worke
 from home.management.commands.run_chat_worker import Command as RunChatWorkerCommand
 from home.models import ChatTurn, Conversation, GeminiChatJob, Message, ProviderQuota, ProviderReservation
 from home.provider_quota import reserve, mark_unknown
+from home.test_budget_support import create_application_budgets
 
 
 class GeminiQueueTests(TestCase):
     def setUp(self):
         user = get_user_model().objects.create_user(username='queue-owner')
+        create_application_budgets(user.pk)
         conversation = Conversation.objects.create(owner=user)
         message = Message.objects.create(conversation=conversation, role='user', content='synthetic')
         self.turn = ChatTurn.objects.create(     openrouter_risk_accepted=False,conversation=conversation, user_message=message,
@@ -120,6 +122,7 @@ from home.chat_dispatch import configure_chat_dispatcher
 class GeminiQueueAPITests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(username='queue-api-owner')
+        create_application_budgets(self.user.pk)
         self.conversation = Conversation.objects.create(owner=self.user)
         self.client.force_login(self.user)
         configure_chat_dispatcher(GeminiChatDispatcher())

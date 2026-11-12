@@ -6,11 +6,13 @@ from django.test import TestCase
 from home.gemini_chat import OmnirouteError, _run_routing, run_gemini_turn
 from home.models import ChatTurn, Conversation, Message, ProviderQuota
 from home.provider_credentials import CredentialConfigError
+from home.test_budget_support import create_application_budgets
 
 
 class GeminiChatTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(username='gemini-owner')
+        create_application_budgets(self.user.pk)
         self.conversation = Conversation.objects.create(owner=self.user)
         message = Message.objects.create(conversation=self.conversation, role='user', content='hello')
         self.turn = ChatTurn.objects.create(     openrouter_risk_accepted=False,conversation=self.conversation, user_message=message,

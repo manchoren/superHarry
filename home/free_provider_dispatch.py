@@ -26,6 +26,10 @@ from home.free_provider_eligibility import (
     verify_free_route_eligibility,
 )
 from home.provider_quota import QuotaError, mark_unknown, reserve, settle
+from home.application_budget import (ApplicationBudgetError,
+                                      mark_unknown as mark_budget_unknown,
+                                      reserve as reserve_budget,
+                                      settle as settle_budget)
 from home.provider_outcomes import NotDispatched, OutcomeUnknown, RateLimited
 
 OUTPUT_LIMIT = 128
@@ -132,7 +136,7 @@ def _verify_pre_dispatch_admission(*, route: FreeProviderRoute, risk_accepted: b
         raise NotDispatched('dispatch_disclosure:' + reason)
 
 
-def dispatch_free_provider(*, route, transport, user_request, authorize, cancelled, operation_id, history=(), risk_accepted: bool = True):
+def dispatch_free_provider(*, route, transport, user_request, authorize, cancelled, operation_id, history=(), risk_accepted: bool = True, budget_user_key=None):
     """Return (text, (input_tokens, output_tokens)) after one bounded request."""
     if (not isinstance(route, FreeProviderRoute) or not callable(getattr(transport, 'generate', None))
             or not callable(authorize) or not callable(cancelled)
@@ -147,6 +151,7 @@ def dispatch_free_provider(*, route, transport, user_request, authorize, cancell
             raise NotDispatched('dispatch_not_sent')
     _verify_pre_dispatch_admission(route=route, risk_accepted=risk_accepted)
     reservations = []
+    budget_reservation = None
     try:
         if authorize() is not True or cancelled() is not False:
             raise ValueError('admission denied')
@@ -167,6 +172,9 @@ def dispatch_free_provider(*, route, transport, user_request, authorize, cancell
         ):
             raise ValueError('route body mismatch')
         amount = prepared.input_token_upper_bound + prepared.output_reserve
+        if budget_user_key is not None:
+            budget_reservation = reserve_budget(operation_id + ':application-tokens', amount,
+                                                user_key=budget_user_key)
         require_models = settings.SUPERHARRY_REQUIRE_MODEL_QUOTAS
         if type(require_models) is not bool:
             raise ValueError('model quota configuration invalid')
@@ -181,20 +189,36 @@ def dispatch_free_provider(*, route, transport, user_request, authorize, cancell
             raise ValueError('admission revoked')
         for reservation in reservations:
             mark_unknown(reservation.pk)
+        if budget_reservation is not None:
+            mark_budget_unknown(budget_reservation.pk)
     except local_tokenizer.TokenizationUnavailableError:
         _release(reservations)
+        if budget_reservation is not None:
+            try:
+                settle_budget(budget_reservation.pk, 0)
+            except ApplicationBudgetError:
+                logger.warning('free_provider_application_reservation_release_failed')
         raise NotDispatched('dispatch_tokenizer_unavailable') from None
     except ContextPreparationError as exc:
         _release(reservations)
+        if budget_reservation is not None:
+            try:
+                settle_budget(budget_reservation.pk, 0)
+            except ApplicationBudgetError:
+                logger.warning('free_provider_application_reservation_release_failed')
         raise NotDispatched(exc.code) from None
     except Exception:
         _release(reservations)
+        if budget_reservation is not None:
+            try:
+                settle_budget(budget_reservation.pk, 0)
+            except ApplicationBudgetError:
+                logger.warning('free_provider_application_reservation_release_failed')
         raise NotDispatched('dispatch_not_sent') from None
 
     request_reservation, token_reservation = reservations
     try:
         response = transport.generate(prepared.serialized_input)
-        print("DEBUG dispatch_free_provider after transport.generate", file=open('C:/superHarry/debug_dispatch.log', 'a'))
     except GroqRateLimitError:
         if route.provider != 'groq':
             raise OutcomeUnknown('dispatch_outcome_unknown') from None
@@ -214,6 +238,8 @@ def dispatch_free_provider(*, route, transport, user_request, authorize, cancell
             with transaction.atomic():
                 settle(token_reservation.pk, reported_total, allow_overage=True)
                 settle(request_reservation.pk, 1)
+                if budget_reservation is not None:
+                    settle_budget(budget_reservation.pk, reported_total)
         ensure_release_context_is_current(prepared)
         if cancelled() is not False or authorize() is not True:
             raise ValueError('admission revoked')
@@ -222,6 +248,8 @@ def dispatch_free_provider(*, route, transport, user_request, authorize, cancell
             with transaction.atomic():
                 settle(token_reservation.pk, total)
                 settle(request_reservation.pk, 1)
+                if budget_reservation is not None:
+                    settle_budget(budget_reservation.pk, total)
     except Exception:
         raise OutcomeUnknown('dispatch_response_unusable') from None
     return text, (input_tokens, output_tokens)

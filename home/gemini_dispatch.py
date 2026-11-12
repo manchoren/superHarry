@@ -87,18 +87,34 @@ def dispatch_gemini_with_quota(*, group: str, operation_id: str, on_context=None
     from django.db import transaction
     from home.models import ProviderModelQuota
     from home.provider_quota import mark_unknown, reserve, settle
+    from home.application_budget import (mark_unknown as mark_budget_unknown,
+                                          reserve as reserve_budget,
+                                          settle as settle_budget)
 
     token_reservation = None
     observed_usage = None
+    application_reservation = None
     require_models = settings.SUPERHARRY_REQUIRE_MODEL_QUOTAS
     if type(require_models) is not bool:
         raise GeminiDispatchError('gemini_dispatch_failed')
     model_id = MODEL_ID if require_models else None
 
     def reserve_tokens(amount):
-        nonlocal token_reservation
-        token_reservation = reserve(group + ':tokens', operation_id + ':tokens', amount, model_id=model_id)
+        nonlocal token_reservation, application_reservation
+        principal_id = kwargs.get('principal_id')
+        if principal_id is not None:
+            application_reservation = reserve_budget(operation_id + ':application-tokens', amount,
+                                                     user_key=principal_id)
+        try:
+            token_reservation = reserve(group + ':tokens', operation_id + ':tokens', amount, model_id=model_id)
+        except Exception:
+            if application_reservation is not None:
+                settle_budget(application_reservation.pk, 0)
+                application_reservation = None
+            raise
         mark_unknown(token_reservation.pk)
+        if application_reservation is not None:
+            mark_budget_unknown(application_reservation.pk)
         if on_context is not None:
             on_context(amount - 128, 1048576)
 
@@ -121,6 +137,8 @@ def dispatch_gemini_with_quota(*, group: str, operation_id: str, on_context=None
         with transaction.atomic():
             settle(token_reservation.pk, observed_usage)
             settle(reservation.pk, 1)
+            if application_reservation is not None:
+                settle_budget(application_reservation.pk, observed_usage)
         return result
     except Exception:
         raise GeminiDispatchError('gemini_dispatch_failed') from None
