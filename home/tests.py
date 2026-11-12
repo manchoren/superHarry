@@ -19,6 +19,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser, Group, Permission
 from django.contrib.sessions.models import Session
 from django.core.management import call_command
+from django.core.exceptions import ValidationError
 from django.db import OperationalError, close_old_connections, transaction
 from django.http import Http404, HttpResponse
 from django.middleware.csrf import CSRF_SESSION_KEY
@@ -53,6 +54,7 @@ from home.models import (
     Conversation,
     DiagnosticSettings,
     Message,
+    MemoryRecord,
 )
 from home.observability import (
     DIAGNOSTIC_RETENTION_SECONDS,
@@ -122,6 +124,59 @@ class ConversationStorageTests(TestCase):
         self.assertFalse(Conversation.objects.filter(pk=conversation.pk).exists())
         self.assertFalse(Message.objects.filter(pk=message.pk).exists())
 
+
+class MemoryRecordSchemaTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.user_a = user_model.objects.create_user(username="memory-a")
+        self.user_b = user_model.objects.create_user(username="memory-b")
+
+    def test_user_and_global_records_have_separate_metadata(self):
+        created_at = timezone.now()
+        record = MemoryRecord.objects.create(
+            scope=MemoryRecord.Scope.USER,
+            owner=self.user_a,
+            created_by=self.user_a,
+            content="A non-secret fact",
+            created_at=created_at,
+            last_accessed_at=created_at,
+            confirmed_at=created_at,
+            confirmed_by=self.user_a,
+            retain_until=created_at + timedelta(days=30),
+        )
+        global_record = MemoryRecord.objects.create(
+            scope=MemoryRecord.Scope.GLOBAL,
+            created_by=self.user_a,
+            content="A shared non-secret fact",
+        )
+
+        visible_to_a = MemoryRecord.objects.visible_to(self.user_a)
+        self.assertEqual(set(visible_to_a.values_list("id", flat=True)), {record.id, global_record.id})
+        self.assertEqual(list(MemoryRecord.objects.visible_to(self.user_b)), [global_record])
+
+    def test_invalid_scope_ownership_is_rejected_by_validation(self):
+        with self.assertRaisesMessage(ValidationError, "Global memory records cannot have an owner."):
+            MemoryRecord(
+                scope=MemoryRecord.Scope.GLOBAL,
+                owner=self.user_a,
+                content="invalid",
+            ).full_clean()
+
+        with self.assertRaisesMessage(ValidationError, "User memory records require an owner."):
+            MemoryRecord(scope=MemoryRecord.Scope.USER, content="invalid").full_clean()
+
+    def test_deleted_records_and_anonymous_users_are_not_visible(self):
+        record = MemoryRecord.objects.create(
+            scope=MemoryRecord.Scope.USER,
+            owner=self.user_a,
+            content="retained until deletion",
+        )
+        record.deletion_requested_at = timezone.now()
+        record.deleted_at = timezone.now()
+        record.save(update_fields=["deletion_requested_at", "deleted_at"])
+
+        self.assertFalse(MemoryRecord.objects.visible_to(self.user_a).exists())
+        self.assertFalse(MemoryRecord.objects.visible_to(AnonymousUser()).exists())
 
 class ConversationAuthorizationTests(TestCase):
     @classmethod

@@ -5,6 +5,8 @@ from django.core.exceptions import ImproperlyConfigured
 from django.core.management.utils import get_random_secret_key
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+SUPERHARRY_FILE_STORE_ROOT = Path(os.environ.get("SUPERHARRY_FILE_STORE_ROOT", BASE_DIR / "var" / "files")).resolve()
+SUPERHARRY_FILE_MAX_BYTES = int(os.environ.get("SUPERHARRY_FILE_MAX_BYTES", str(25 * 1024 * 1024)))
 SUPERHARRY_CONSTITUTION_SHA256 = (
     "640c85a00d537e01fe446ac4516cb09cb53df2acdac493615fb5e72bdd792e64"
 )

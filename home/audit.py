@@ -15,6 +15,7 @@ _EVENT_OUTCOMES = {
     AuditEvent.EventType.PASSWORD_VERIFICATION_FAILED: AuditEvent.Outcome.FAILURE,
     AuditEvent.EventType.TOTP_VERIFICATION_FAILED: AuditEvent.Outcome.FAILURE,
     AuditEvent.EventType.TOTP_KEY_UNAVAILABLE: AuditEvent.Outcome.FAILURE,
+    AuditEvent.EventType.TOOL_GRANT_DENIED: AuditEvent.Outcome.FAILURE,
 }
 
 _SERVICE_EVENTS = {
@@ -27,6 +28,10 @@ _SERVICE_EVENTS = {
     AuditEvent.EventType.TOTP_ENROLLMENT_EXPIRED,
     AuditEvent.EventType.TOTP_KEY_UNAVAILABLE,
     AuditEvent.EventType.AUDIT_RETENTION_PRUNED,
+    AuditEvent.EventType.TOOL_GRANT_CREATED,
+    AuditEvent.EventType.TOOL_GRANT_REVOKED,
+    AuditEvent.EventType.TOOL_GRANT_CONSUMED,
+    AuditEvent.EventType.TOOL_GRANT_DENIED,
 }
 
 _EVENTS_REQUIRING_TARGET = {

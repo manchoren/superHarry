@@ -1,0 +1,1 @@
+{"schema_version":1,"scenario":"resource-enforcement","network_policy":"deny","credential_policy":"synthetic-only","cases":[{"name":"budget-at-limit","reserved":100,"limit":100,"expected":"allow"},{"name":"budget-over-limit","reserved":101,"limit":100,"expected":"deny"},{"name":"second-heavy-job","slot":"occupied","expected":"deny"}]}

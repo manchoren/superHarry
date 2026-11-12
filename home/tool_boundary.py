@@ -5,10 +5,17 @@ select and provide arguments, but it cannot provide executable code or a new
 handler.
 """
 
+import json
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, Callable, Mapping
 from uuid import UUID, uuid4
+
+from home.model_interface import (
+    InvocationContext,
+    ModelToolCallProposal,
+    RequesterRole,
+)
 
 
 class ToolBoundaryError(Exception):
@@ -117,6 +124,41 @@ class AuthorizedToolExecutor:
         self._audit(invocation, outcome, declaration)
         return outcome
 
+    def execute_proposal(
+        self,
+        proposal: ModelToolCallProposal,
+        context: InvocationContext,
+        *,
+        target_user_id: int | None = None,
+        confirmed: bool = False,
+    ) -> ToolOutcome:
+        """Adapt one validated agent proposal into the common boundary.
+
+        The model supplies only the tool name and JSON arguments. Identity,
+        role and correlation come from the existing invocation contract; all
+        authorization remains in ``execute`` and no model-provided callable is
+        accepted.
+        """
+        if not isinstance(proposal, ModelToolCallProposal) or not proposal.complete:
+            raise ToolDenied("Tool proposal is incomplete.")
+        try:
+            arguments = json.loads(proposal.arguments_fragment)
+        except (TypeError, json.JSONDecodeError) as exc:
+            raise ToolDenied("Tool proposal arguments must be valid JSON.") from exc
+        if not isinstance(arguments, Mapping):
+            raise ToolDenied("Tool proposal arguments must be an object.")
+        actor_user_id = _principal_user_id(context)
+        role = _tool_role(context.role)
+        return self.execute(ToolInvocation(
+            tool_name=proposal.name,
+            arguments=arguments,
+            actor_user_id=actor_user_id,
+            target_user_id=target_user_id if target_user_id is not None else actor_user_id,
+            role=role,
+            confirmed=confirmed,
+            request_id=context.request_id,
+        ))
+
     @staticmethod
     def _validate(invocation: ToolInvocation, declaration: ToolDeclaration) -> None:
         if invocation.role == "guest":
@@ -174,3 +216,21 @@ def _matches_schema_type(value: Any, expected: str) -> bool:
     if expected == "object":
         return isinstance(value, Mapping)
     return expected == "string" and isinstance(value, str)
+
+
+def _principal_user_id(context: InvocationContext) -> int | None:
+    if context.role is RequesterRole.GUEST:
+        return None
+    try:
+        principal_id = int(context.principal_id or "")
+    except (TypeError, ValueError) as exc:
+        raise ToolDenied("The invocation principal is invalid.") from exc
+    if principal_id <= 0:
+        raise ToolDenied("The invocation principal is invalid.")
+    return principal_id
+
+
+def _tool_role(role: RequesterRole) -> ToolRole | str:
+    if role is RequesterRole.GUEST:
+        return "guest"
+    return ToolRole.ADMIN if role is RequesterRole.ADMIN else ToolRole.USER

@@ -1,0 +1,1 @@
+{"schema_version":1,"scenario":"gateway-schema","network_policy":"deny","credential_policy":"synthetic-only","request":{"model":"synthetic-model","messages":[{"role":"user","content":"Use the weather tool."}],"tools":[{"name":"weather","arguments":{"city":"Quito"}}]},"response":{"type":"tool_call","name":"weather","arguments":{"city":"Quito"}},"expected":"schema-valid"}

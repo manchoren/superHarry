@@ -17,7 +17,9 @@ does not claim product, provider or VM acceptance.
 ## Discovery and execution separation
 
 The authoritative local inventory is
-`tests/fixtures/t237_evaluation_manifest.json`. The validator is:
+`tests/fixtures/t237_evaluation_manifest.json`. Local payloads live below
+`tests/fixtures/t237/`; every payload declares `network_policy: deny` and
+`credential_policy: synthetic-only`. The validator is:
 
 ```text
 python scripts/validate_t237_fixtures.py
@@ -31,14 +33,30 @@ denies network access by policy and uses synthetic credentials. The live and VM
 entries intentionally have no fixture payload and are not executed by these
 commands.
 
+The local fixture set covers cross-user and guest denial, tool-call schema,
+budget and heavy-job enforcement, unknown-outcome recovery, bilingual
+retrieval, bilingual OCR including a blank case, and local Spanish/English
+STT/TTS behavior. These are input and expected-outcome contracts; they do not
+invoke models, providers, network services or target-VM processes.
+
 ## Required evidence boundary
 
 Required local categories are functional behavior, security boundaries,
 resource enforcement and recovery. Comparative performance, load and model
 quality benchmarks are waived by the owner decision; omitted measurements must
-remain labeled unavailable rather than reported as passes. Spanish/voseo,
-schema/tool-call, bilingual retrieval/OCR and local STT/TTS fixtures still need
-domain-specific additions when their implementation tasks become active.
+remain labeled unavailable rather than reported as passes. OCR and STT/TTS
+fixtures assert functional shape and language coverage only; they do not assert
+CER/WER, RTF, latency, RAM, throughput or candidate ranking.
 
 This bounded slice remains dependent on T225. Fresh-context audit, independent
-acceptance, live-provider checks and target-VM checks remain open gates.
+acceptance, live-provider checks, artifact/model review and target-VM checks
+remain open gates. T237 remains Pending; no provider, credential, installation,
+deployment or VM evidence is created by these local fixtures.
+
+## Validation record - 2026-11-12
+
+- `python scripts/validate_t237_fixtures.py` — local manifest and fixture
+  policy validation.
+- `python -m unittest tests.test_t237_fixtures` — manifest coverage, fixture
+  parity, external-entry separation and secret-pattern guard.
+- No live-provider, network, installation, deployment or VM command was run.

@@ -1,5 +1,12 @@
 from unittest import TestCase
 from uuid import uuid4
+from home.model_interface import (
+    InvocationContext,
+    ModelMode,
+    ModelToolCallProposal,
+    RequestChannel,
+    RequesterRole,
+)
 
 from home.tool_boundary import (
     AuthorizedToolExecutor,
@@ -48,6 +55,22 @@ class AuthorizedToolBoundaryTests(TestCase):
         values.update(overrides)
         return ToolInvocation(**values)
 
+    def context(self, **overrides):
+        values = {
+            "request_id": uuid4(), "operation_id": uuid4(),
+            "role": RequesterRole.USER, "channel": RequestChannel.WEB,
+            "mode": ModelMode.LOCAL, "policy_revision": "test-policy",
+            "locale": "en", "principal_id": "7",
+        }
+        values.update(overrides)
+        return InvocationContext(**values)
+
+    def proposal(self, **overrides):
+        values = {"sequence": 2, "call_id": "call-1", "name": "owned.write",
+                  "arguments_fragment": '{"value":"synthetic"}', "complete": True}
+        values.update(overrides)
+        return ModelToolCallProposal(**values)
+
     def test_denies_guest_before_handler(self):
         with self.assertRaises(ToolDenied):
             self.executor.execute(self.invocation(role="guest"))
@@ -84,3 +107,28 @@ class AuthorizedToolBoundaryTests(TestCase):
         outcome = self.executor.execute(ToolInvocation("uncertain", {}, 7, 7, ToolRole.USER))
         self.assertEqual(outcome.status, "unknown_effect")
         self.assertEqual(outcome.error_code, "UNKNOWN_EFFECT")
+
+    def test_complete_agent_proposal_uses_existing_invocation_contract(self):
+        context = self.context()
+        outcome = self.executor.execute_proposal(self.proposal(), context, confirmed=True)
+        self.assertEqual(outcome.status, "succeeded")
+        self.assertEqual(outcome.request_id, context.request_id)
+        self.assertEqual(self.calls, [{"value": "synthetic"}])
+
+    def test_agent_proposal_denials_happen_before_handler(self):
+        cases = (
+            self.proposal(complete=False),
+            self.proposal(arguments_fragment="[]"),
+            self.proposal(arguments_fragment="not-json"),
+        )
+        for proposal in cases:
+            with self.subTest(proposal=proposal):
+                with self.assertRaises(ToolDenied):
+                    self.executor.execute_proposal(proposal, self.context(), confirmed=True)
+        with self.assertRaises(ToolDenied):
+            self.executor.execute_proposal(
+                self.proposal(), self.context(role=RequesterRole.GUEST,
+                                             principal_id=None, guest_session_ref=uuid4()),
+                confirmed=True,
+            )
+        self.assertEqual(self.calls, [])

@@ -1,0 +1,1 @@
+{"schema_version":1,"scenario":"recovery-unknown-outcome","network_policy":"deny","credential_policy":"synthetic-only","request_id":"synthetic-request-001","dispatch_state":"possibly-dispatched","expected_state":"unknown","automatic_retry":false,"reservation":"retain-until-reconciled"}

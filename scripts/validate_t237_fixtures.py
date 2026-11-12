@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "tests" / "fixtures" / "t237_evaluation_manifest.json"
 ALLOWED_SOURCES = {"mocked", "contract", "live-provider", "vm"}
 REQUIRED_CATEGORIES = {"security", "functional", "resource", "recovery"}
+FIXTURE_ROOT = ROOT / "tests" / "fixtures"
 
 
 def load_manifest() -> dict:
@@ -35,6 +36,24 @@ def validate_manifest(manifest: dict) -> list[str]:
             errors.append(f"invalid source for {item.get('id')}")
         if item.get("source") in {"mocked", "contract"} and not item.get("fixture"):
             errors.append(f"local scenario lacks fixture: {item.get('id')}")
+        if item.get("source") in {"mocked", "contract"}:
+            fixture_name = item.get("fixture")
+            fixture_path = FIXTURE_ROOT / "t237" / f"{fixture_name}.json"
+            if not fixture_name or not fixture_path.is_file():
+                errors.append(f"local fixture file is missing: {item.get('id')}")
+            else:
+                try:
+                    with fixture_path.open(encoding="utf-8") as stream:
+                        fixture = json.load(stream)
+                except (OSError, json.JSONDecodeError) as exc:
+                    errors.append(f"local fixture is unreadable: {item.get('id')}: {exc}")
+                else:
+                    if fixture.get("network_policy") != "deny":
+                        errors.append(f"fixture network policy must be deny: {item.get('id')}")
+                    if fixture.get("credential_policy") != "synthetic-only":
+                        errors.append(f"fixture credentials must be synthetic-only: {item.get('id')}")
+                    if fixture.get("scenario") != item.get("id"):
+                        errors.append(f"fixture scenario mismatch: {item.get('id')}")
         if item.get("source") in {"live-provider", "vm"} and item.get("required"):
             errors.append(f"externally controlled scenario cannot be required: {item.get('id')}")
     return errors

@@ -1,0 +1,49 @@
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from django.test import TestCase, override_settings
+
+from home.models import AuditEvent, PackageGuardEvaluation, PackageGuardSettings
+
+
+@override_settings(ALLOWED_HOSTS=["testserver"])
+class PackageGuardAdminTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="package-admin", password="test-password"
+        )
+        self.client.force_login(self.user)
+
+    def test_settings_normalize_and_audit_admin_change(self):
+        response = self.client.post(
+            "/admin/home/packageguardsettings/add/",
+            {"minimum_score": "80", "blocked_packages": "TyPo\nmalicious_pkg\ntypo"},
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        settings = PackageGuardSettings.objects.get()
+        self.assertEqual(settings.blocked_packages, "malicious-pkg\ntypo")
+        self.assertTrue(
+            AuditEvent.objects.filter(
+                event_type=AuditEvent.EventType.ADMIN_PACKAGE_GUARD_CHANGED,
+                actor_user_id=self.user.pk,
+            ).exists()
+        )
+
+    def test_invalid_threshold_is_rejected(self):
+        with self.assertRaises(ValidationError):
+            PackageGuardSettings(minimum_score=101).save()
+
+    def test_evaluations_are_visible_but_not_editable(self):
+        evaluation = PackageGuardEvaluation.objects.create(
+            package_name="safe-package", version="1.0", registry="pypi",
+            artifact_sha256="a" * 64, score=80, blocked=False,
+            evidence_valid=True, evidence={"source": "synthetic"},
+        )
+        change = self.client.get(f"/admin/home/packageguardevaluation/{evaluation.pk}/change/")
+        self.assertEqual(change.status_code, 200)
+        self.assertEqual(
+            self.client.post(
+                f"/admin/home/packageguardevaluation/{evaluation.pk}/change/", {}
+            ).status_code,
+            403,
+        )

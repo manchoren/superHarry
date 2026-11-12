@@ -1,6 +1,7 @@
 """Deterministic tests for the package evidence contract."""
 from datetime import datetime, timedelta, timezone
 import hashlib
+import socket
 
 from home.package_guard import CVE, CVESeverity, PackageEvidence, PackageGuard, PackageScore
 
@@ -153,7 +154,6 @@ def test_evaluate_does_not_use_network(monkeypatch):
     def fail_network(*args, **kwargs):
         raise AssertionError("network access is outside package evaluation")
 
-    monkeypatch.setattr("home.package_guard.requests.get", fail_network)
-    monkeypatch.setattr("home.package_guard.requests.post", fail_network)
+    monkeypatch.setattr(socket, "socket", fail_network)
     score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(), now=NOW)
     assert score.evidence_valid and score.is_safe()

@@ -33,7 +33,7 @@ Apply the [documentation ownership, update triggers and closure rules](../../CON
 - [ ] **T182 - Memory encryption and recovery (SQLCipher)** Status: Pending
   - [R1 custody/recovery proposal](recovery-admin-proposals.md#r1---t182-memory-encryption-and-key-custody) accepted by owner on 2026-11-11; implementation pending prerequisites.
   - [Binding comparison and isolated-test proposal](t182-sqlcipher-binding-review.md), 2026-11-11: D3 approved and isolated ARM64 binding experiment passed; production integration and dependencies T183/T225 remain open.
-- [ ] **T183 - Memory model and schema (global and user scopes)** Status: Pending
+- [ ] **T183 - Memory model and schema (global and user scopes)** Status: Pending. Bounded schema slice and tests are recorded in [T183 memory schema evidence](t183-memory-schema-evidence.md); independent audit and acceptance gates remain open.
 - [ ] **T184 - Memory-agent retrieval (pre-main-agent, non-reasoning)** Status: Pending
 - [ ] **T185 - recall_memory tool with bounded re-invocation** Status: Pending
 - [ ] **T186 - Semantic search with keyword fallback** Status: Pending
@@ -118,7 +118,7 @@ The [review and acceptance records](spec-code-review-2026-11-11.md) define the e
 - [ ] **T229 - Connect durable chat and local inference to the gateway** Status: Pending. Bounded gateway routing, credential resolution and fail-closed cancellation evidence is recorded in the dated review; real gateway, VM and release acceptance remain open.
 - [ ] **T230 - Enforce application budgets across gateway fallback and memory calls** Status: Pending
 - [ ] **T231 - Correct package guard scoring and evidence validation** Status: Pending. The bounded evaluator and contract-first tests are implemented; verifier integration, installation integration and independent acceptance remain open.
-- [ ] **T232 - Implement the common authorized tool execution boundary** Status: Pending. A bounded registry/executor slice exists; persistent grants, agent-loop integration and independent acceptance remain open.
+- [ ] **T232 - Implement the common authorized tool execution boundary** Status: Pending. A bounded registry/executor slice now adapts existing `ModelToolCallProposal` and `InvocationContext` contracts; persistent grants, real handlers and independent acceptance remain open. Evidence: [T232 boundary evidence](t232-tool-boundary-evidence.md).
 - [ ] **T233 - Implement the authorized file store and upload/download boundary** Status: Pending
 - [ ] **T234 - Deliver memory controls, personality and fixed-directive administration** Status: Pending
 - [ ] **T235 - Deliver the local-only guest session and chat flow** Status: Pending

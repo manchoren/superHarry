@@ -8,7 +8,12 @@ from django.conf import settings
 from django.http import HttpResponse
 
 from home.audit import AuditUnavailable, record_event
-from home.models import AuditEvent, DiagnosticSettings
+from home.models import (
+    AuditEvent,
+    DiagnosticSettings,
+    PackageGuardEvaluation,
+    PackageGuardSettings,
+)
 from home.password_reset import revoke_user_sessions
 
 
@@ -169,7 +174,49 @@ class DiagnosticSettingsAdmin(admin.ModelAdmin):
             )
 
 
+class PackageGuardSettingsAdmin(admin.ModelAdmin):
+    fields = ("minimum_score", "blocked_packages")
+
+    def has_add_permission(self, request):
+        return not PackageGuardSettings.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def save_model(self, request, obj, form, change):
+        previous = self.get_object(request, obj.pk) if change else None
+        previous_values = (
+            (previous.minimum_score, previous.blocked_packages) if previous else None
+        )
+        super().save_model(request, obj, form, change)
+        if previous_values != (obj.minimum_score, obj.blocked_packages):
+            record_event(
+                event_type=AuditEvent.EventType.ADMIN_PACKAGE_GUARD_CHANGED,
+                outcome=AuditEvent.Outcome.SUCCESS,
+                actor_kind=AuditEvent.ActorKind.USER,
+                actor_user_id=request.user.pk,
+            )
+
+
+class PackageGuardEvaluationAdmin(admin.ModelAdmin):
+    list_display = (
+        "package_name", "version", "score", "blocked", "evidence_valid", "evaluated_at"
+    )
+    readonly_fields = tuple(field.name for field in PackageGuardEvaluation._meta.fields)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 user_model = get_user_model()
 admin.site.unregister(user_model)
 admin.site.register(user_model, AuditedUserAdmin)
 admin.site.register(DiagnosticSettings, DiagnosticSettingsAdmin)
+admin.site.register(PackageGuardSettings, PackageGuardSettingsAdmin)
+admin.site.register(PackageGuardEvaluation, PackageGuardEvaluationAdmin)

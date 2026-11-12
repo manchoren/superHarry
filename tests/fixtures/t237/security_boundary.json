@@ -1,0 +1,1 @@
+{"schema_version":1,"scenario":"security-boundary","network_policy":"deny","credential_policy":"synthetic-only","cases":[{"name":"cross_user_memory","actor":"user-a","owner":"user-b","expected":"deny"},{"name":"guest_tool_call","actor":"guest","expected":"deny"},{"name":"synthetic_secret_log","value":"synthetic-token-only","expected":"redacted"}]}

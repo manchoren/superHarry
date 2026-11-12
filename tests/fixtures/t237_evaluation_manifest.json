@@ -10,28 +10,49 @@
       "id": "security-boundary",
       "category": "security",
       "source": "mocked",
-      "fixture": "synthetic_cross_user_request",
+      "fixture": "security_boundary",
       "required": true
     },
     {
       "id": "gateway-schema",
       "category": "functional",
       "source": "contract",
-      "fixture": "synthetic_chat_completion",
+      "fixture": "tool_call_contract",
       "required": true
     },
     {
       "id": "resource-enforcement",
       "category": "resource",
       "source": "mocked",
-      "fixture": "synthetic_budget_exhaustion",
+      "fixture": "resource_enforcement",
       "required": true
     },
     {
       "id": "recovery-unknown-outcome",
       "category": "recovery",
       "source": "mocked",
-      "fixture": "synthetic_interrupted_request",
+      "fixture": "recovery_unknown_outcome",
+      "required": true
+    },
+    {
+      "id": "retrieval-bilingual",
+      "category": "functional",
+      "source": "mocked",
+      "fixture": "retrieval_bilingual",
+      "required": true
+    },
+    {
+      "id": "ocr-bilingual",
+      "category": "functional",
+      "source": "mocked",
+      "fixture": "ocr_bilingual",
+      "required": true
+    },
+    {
+      "id": "stt-tts-local",
+      "category": "functional",
+      "source": "mocked",
+      "fixture": "stt_tts_local",
       "required": true
     },
     {

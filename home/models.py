@@ -132,6 +132,101 @@ class Conversation(models.Model):
         ]
 
 
+class MemoryRecordQuerySet(models.QuerySet):
+    def visible_to(self, user):
+        """Return active records visible to one authenticated principal."""
+        if user is None or not getattr(user, "is_authenticated", False):
+            return self.none()
+        return self.filter(deleted_at__isnull=True).filter(
+            models.Q(scope=MemoryRecord.Scope.GLOBAL)
+            | models.Q(scope=MemoryRecord.Scope.USER, owner_id=user.pk)
+        )
+
+
+class MemoryRecord(models.Model):
+    """Durable memory schema; encryption and retrieval are separate tasks."""
+
+    class Scope(models.TextChoices):
+        GLOBAL = "global", "Global"
+        USER = "user", "User"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    scope = models.CharField(max_length=8, choices=Scope.choices)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="memory_records",
+    )
+    content = models.TextField()
+
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_memory_records",
+    )
+    last_accessed_at = models.DateTimeField(null=True, blank=True)
+    access_count = models.PositiveBigIntegerField(default=0)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    confirmed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="confirmed_memory_records",
+    )
+
+    retain_until = models.DateTimeField(null=True, blank=True)
+    deletion_requested_at = models.DateTimeField(null=True, blank=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+    objects = MemoryRecordQuerySet.as_manager()
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(scope="global", owner__isnull=True)
+                    | models.Q(scope="user", owner__isnull=False)
+                ),
+                name="home_memory_scope_owner_ck",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(confirmed_at__isnull=True, confirmed_by__isnull=True)
+                    | models.Q(confirmed_at__isnull=False, confirmed_by__isnull=False)
+                ),
+                name="home_memory_confirmation_pair_ck",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(access_count__gte=0),
+                name="home_memory_access_count_ck",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(deleted_at__isnull=True)
+                | models.Q(deletion_requested_at__isnull=False),
+                name="home_memory_deleted_requested_ck",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["scope", "owner", "deleted_at"], name="home_memory_visible_idx"),
+            models.Index(fields=["retain_until", "deleted_at"], name="home_memory_retention_idx"),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.scope == self.Scope.GLOBAL and self.owner_id is not None:
+            raise ValidationError("Global memory records cannot have an owner.")
+        if self.scope == self.Scope.USER and self.owner_id is None:
+            raise ValidationError("User memory records require an owner.")
+        if (self.confirmed_at is None) != (self.confirmed_by_id is None):
+            raise ValidationError("Confirmation metadata must be provided together.")
+
+
 class Message(models.Model):
     class Role(models.TextChoices):
         USER = "user", "User"
@@ -364,6 +459,17 @@ class AuditEvent(models.Model):
             "admin.quota_reconciliation_rejected",
             "Quota reconciliation rejected",
         )
+        FILE_UPLOADED = "file.uploaded", "File uploaded"
+        FILE_DOWNLOADED = "file.downloaded", "File downloaded"
+        FILE_STAGED = "file.staged", "File staged"
+        ADMIN_PACKAGE_GUARD_CHANGED = (
+            "admin.package_guard_changed",
+            "Package guard configuration changed",
+        )
+        TOOL_GRANT_CREATED = "tool.grant_created", "Tool grant created"
+        TOOL_GRANT_REVOKED = "tool.grant_revoked", "Tool grant revoked"
+        TOOL_GRANT_CONSUMED = "tool.grant_consumed", "Tool grant consumed"
+        TOOL_GRANT_DENIED = "tool.grant_denied", "Tool grant denied"
 
     class Outcome(models.TextChoices):
         SUCCESS = "success", "Success"
@@ -483,6 +589,28 @@ class PasswordResetGrant(models.Model):
     consumed_at = models.DateTimeField(null=True, blank=True)
 
 
+class ToolGrant(models.Model):
+    """Operator-configured bounded authorization for a non-consequential tool."""
+
+    principal = models.CharField(max_length=128)
+    tool_name = models.CharField(max_length=128)
+    argument_scope = models.JSONField()
+    argument_scope_digest = models.CharField(max_length=64)
+    max_uses = models.PositiveSmallIntegerField()
+    uses_remaining = models.PositiveSmallIntegerField()
+    issued_at = models.DateTimeField(default=timezone.now, editable=False)
+    expires_at = models.DateTimeField()
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    policy_revision = models.CharField(max_length=128)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=models.Q(max_uses__gte=1, max_uses__lte=50), name="home_toolgrant_max_uses_ck"),
+            models.CheckConstraint(condition=models.Q(uses_remaining__lte=models.F("max_uses")), name="home_toolgrant_remaining_ck"),
+        ]
+        indexes = [models.Index(fields=("principal", "tool_name", "expires_at"), name="home_toolgrant_lookup_idx")]
+
+
 class LoginAttemptCounter(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -509,6 +637,63 @@ class DiagnosticSettings(models.Model):
 
     def __str__(self):
         return "Diagnostic settings"
+
+
+class PackageGuardSettings(models.Model):
+    """Admin-controlled guard policy; it never grants installation access."""
+
+    minimum_score = models.PositiveSmallIntegerField(default=80)
+    blocked_packages = models.TextField(blank=True, default="")
+
+    def clean(self):
+        if self.minimum_score > 100:
+            raise ValidationError("Package guard threshold must be between 0 and 100.")
+        names = [line.strip().lower().replace("_", "-") for line in self.blocked_packages.splitlines()]
+        if any(not name or any(char.isspace() for char in name) for name in names):
+            raise ValidationError("Blocklist entries must be non-empty package names.")
+        self.blocked_packages = "\n".join(sorted(set(names)))
+
+    def save(self, *args, **kwargs):
+        if self.pk not in (None, 1):
+            raise ValueError("Package guard settings use a fixed singleton identifier.")
+        self.full_clean()
+        self.pk = 1
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError("Package guard settings cannot be deleted.")
+
+    def __str__(self):
+        return "Package guard settings"
+
+
+class PackageGuardEvaluation(models.Model):
+    """Immutable admin evidence display; this record does not authorize installs."""
+
+    package_name = models.CharField(max_length=128)
+    version = models.CharField(max_length=128)
+    registry = models.CharField(max_length=64)
+    artifact_sha256 = models.CharField(max_length=64)
+    score = models.PositiveSmallIntegerField()
+    blocked = models.BooleanField(default=True)
+    evidence_valid = models.BooleanField(default=False)
+    reason = models.CharField(max_length=255, blank=True)
+    evidence = models.JSONField(default=dict)
+    evaluated_at = models.DateTimeField(default=timezone.now, editable=False)
+    expires_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-evaluated_at", "-pk"]
+
+    def clean(self):
+        if self.score > 100:
+            raise ValidationError("Package guard score must be between 0 and 100.")
+        if len(self.artifact_sha256) != 64:
+            raise ValidationError("Package guard evidence requires a SHA-256 digest.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
 
 class ProviderQuota(models.Model):
     """Conservative, explicitly configured shared request allowance."""
@@ -636,6 +821,21 @@ class ApplicationBudgetReservation(models.Model):
 
     class Meta:
         constraints = [models.CheckConstraint(condition=models.Q(amount__gte=1), name='home_app_budget_reservation_positive')]
+
+
+class StoredFile(models.Model):
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="stored_files")
+    storage_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    original_name = models.CharField(max_length=255)
+    size = models.PositiveBigIntegerField()
+    sha256 = models.CharField(max_length=64)
+    content_type = models.CharField(max_length=128, blank=True)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    last_accessed_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [models.CheckConstraint(condition=models.Q(size__gte=0), name="home_stored_file_size_ck")]
+        indexes = [models.Index(fields=("owner", "created_at"), name="home_stored_file_owner_idx")]
 
 
 class GeminiChatJob(models.Model):

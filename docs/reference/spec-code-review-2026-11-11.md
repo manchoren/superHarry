@@ -216,6 +216,21 @@ The backlog owns status. These records own the scope, dependencies and acceptanc
   acceptance was performed. T229 remains Pending; T227, T228 and T179 gates,
   gateway fallback verification and release acceptance remain open.
 
+#### T229 verification update - 2026-11-12
+
+- Corrected the gateway history adapter to serialize completed assistant turns
+  with the OpenAI-compatible `assistant` role, and included the same bounded
+  completed history in the local inference request while preserving the
+  protected constitution message and current user message.
+- Corrected the local request event imports so the existing local adapter path
+  can construct `MessageRole` and handle `ModelCancelled` without a runtime
+  name failure. No queue, model, credential, provider or persistence schema
+  was added or replaced.
+- The required independent fresh-context audit was unavailable; therefore the
+  full Django suite remains mandatory. This update does not establish gateway,
+  provider, VM, deployment or production acceptance, and T229 remains
+  `Pending`.
+
 ### T230 - Enforce application budgets across gateway fallback and memory calls
 
 **Priority:** P0. **Dependencies:** T227, T228, T179. **Owner authorization (2026-11-11):** D2 accepted; implement security policies section 5.5, including initial allowances, UTC periods, 80% warnings and unresolved-reservation carryover. Budget-policy decision prerequisite under T220 is resolved; implementation/validation remain open. **Evidence:** existing ProviderQuota/ProviderModelQuota/ProviderReservation are keyed to direct-provider dispatch.

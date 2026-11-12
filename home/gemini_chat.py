@@ -36,10 +36,12 @@ from home.model_interface import (
     ModelEvent,
     ModelFailed,
     ModelMessage,
+    MessageRole,
     ModelMode,
     ModelRequest,
     ModelStarted,
     ModelTextDelta,
+    ModelCancelled,
     ModelUsageUpdate,
     OutcomeCertainty,
     RequesterRole,
@@ -91,7 +93,8 @@ def _attempt_gateway(*, turn, history, cancelled):
     """Run one admitted turn through omniroute's bounded OpenAI-compatible SSE."""
     if cancelled():
         raise TurnCancelled()
-    messages = [{"role": role, "content": content} for role, content in history]
+    messages = [{"role": "assistant" if role == "model" else role, "content": content}
+                for role, content in history]
     messages.append({"role": "user", "content": turn.user_message.content})
     model_id = _gateway_model(turn)
     client = OmnirouteClient(timeout=30)
@@ -231,11 +234,19 @@ def _build_local_request(prepared, turn):
 
     requirement = CapabilityRequirements(frozenset({ModelCapability.TEXT_GENERATION}))
     request_id = uuid.uuid4()
+    history_messages = tuple(
+        ModelMessage(
+            MessageRole.USER if role == "user" else MessageRole.ASSISTANT,
+            (ContentPart(content, ContentTrust.USER, "conversation-history"),),
+        )
+        for role, content in getattr(turn, "_routing_history", ())
+    )
     messages = (
         ModelMessage(
             MessageRole.DEVELOPER,
             (ContentPart(prepared.constitution.text, ContentTrust.PROTECTED, "constitution.md"),),
         ),
+        *history_messages,
         ModelMessage(
             MessageRole.USER,
             (ContentPart(turn.user_message.content, ContentTrust.USER, "web-request"),),
@@ -273,6 +284,7 @@ def _run_local_fallback(*, turn, history, authorized, cancelled, adapter):
         prepared = prepare_release_context(user_request=turn.user_message.content, profile=_build_local_profile())
     except ContextPreparationError:
         raise LocalInferenceError("local_context_preparation_failed") from None
+    turn._routing_history = tuple(history)
     request = _build_local_request(prepared, turn)
     invocation = _build_local_invocation(request, turn)
     report = adapter.capability_report
