@@ -65,6 +65,13 @@ class OmnirouteClient:
             except CredentialConfigError as exc:
                 raise ValueError("endpoint_invalid") from exc
         self._endpoint = endpoint
+        if api_key is not None:
+            try:
+                # Keep explicitly injected credentials under the same strict
+                # validation as environment/systemd configuration.
+                api_key = load_omniroute_key({"OMNIROUTE_API_KEY": api_key})
+            except CredentialConfigError as exc:
+                raise ValueError("api_key_invalid") from exc
         self._api_key = api_key
         if type(timeout) is not int or timeout <= 0: raise ValueError("timeout_invalid")
         self.timeout, self._session = timeout, None
@@ -128,10 +135,14 @@ class OmnirouteClient:
         response = self._post(payload, stream=True)
         try:
             event_count = 0
+            response_bytes = 0
             completed = False
             for raw_line in response.iter_lines():
                 if not raw_line: continue
-                if len(raw_line) > MAX_SSE_LINE_BYTES: raise OmnirouteError("gateway_sse_line_too_large")
+                line_bytes = len(raw_line) if isinstance(raw_line, bytes) else len(raw_line.encode("utf-8"))
+                response_bytes += line_bytes
+                if line_bytes > MAX_SSE_LINE_BYTES: raise OmnirouteError("gateway_sse_line_too_large")
+                if response_bytes > MAX_RESPONSE_BYTES: raise OmnirouteError("gateway_sse_too_large")
                 event_count += 1
                 if event_count > MAX_SSE_EVENTS: raise OmnirouteError("gateway_sse_too_many_events")
                 try:
@@ -147,7 +158,16 @@ class OmnirouteClient:
                 try: data = json.loads(value)
                 except (TypeError, json.JSONDecodeError) as exc: raise OmnirouteError("gateway_sse_malformed") from exc
                 choices = data.get("choices") if isinstance(data, dict) else None
-                if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict): raise OmnirouteError("gateway_sse_schema_invalid")
+                if not isinstance(choices, list): raise OmnirouteError("gateway_sse_schema_invalid")
+                # OpenAI-compatible streams may send usage in a final chunk
+                # with no choices before the [DONE] sentinel.
+                if not choices:
+                    if not isinstance(data, dict) or "usage" not in data:
+                        raise OmnirouteError("gateway_sse_schema_invalid")
+                    usage = OmnirouteUsage.from_dict(data["usage"])
+                    yield OmnirouteStreamEvent("delta", "", None, usage)
+                    continue
+                if len(choices) != 1 or not isinstance(choices[0], dict): raise OmnirouteError("gateway_sse_schema_invalid")
                 choice, delta = choices[0], choices[0].get("delta", {})
                 if (not isinstance(delta, dict) or not isinstance(delta.get("content", ""), str)
                         or (choice.get("finish_reason") is not None and not isinstance(choice.get("finish_reason"), str))):

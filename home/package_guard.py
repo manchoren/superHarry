@@ -21,6 +21,13 @@ class CVESeverity(Enum):
     UNKNOWN = 0
 
 
+class PackageAuthorization(Enum):
+    """Installation authorization state; scoring alone never grants access."""
+
+    DENIED = "denied"
+    ELIGIBLE_FOR_SCOPED_REVIEW = "eligible_for_scoped_review"
+
+
 @dataclass
 class CVE:
     cve_id: str
@@ -97,6 +104,7 @@ class PackageScore:
     reason: str = ""
     evidence_valid: bool = False
     artifact_sha256: str = ""
+    authorization: PackageAuthorization = PackageAuthorization.DENIED
 
     @property
     def total(self) -> float:
@@ -106,6 +114,12 @@ class PackageScore:
 
     def is_safe(self, threshold: int = 80) -> bool:
         return not self.blocked and self.evidence_valid and self.total >= threshold
+
+    def can_authorize_scoped_installation(self, threshold: Optional[int] = None) -> bool:
+        """Return eligibility only; an installer and admin approval remain separate gates."""
+        return self.authorization is PackageAuthorization.ELIGIBLE_FOR_SCOPED_REVIEW and self.is_safe(
+            self.total if threshold is None else threshold
+        )
 
     def __str__(self) -> str:
         return (f"{self.package_name}=={self.version} | score={self.total:.0f} | "
@@ -141,13 +155,37 @@ class PackageGuard:
                 return PackageScore(package_name, version, registry, blocked=True,
                                     reason="identity_mismatch",
                                     artifact_sha256=evidence.artifact_sha256)
+            if evidence.claimed_sha256 != evidence.artifact_sha256:
+                return PackageScore(package_name, version, registry, blocked=True,
+                                    reason="artifact_digest_mismatch",
+                                    artifact_sha256=evidence.artifact_sha256)
+            if evidence.signature_verified and evidence.signature_artifact_sha256 != evidence.artifact_sha256:
+                return PackageScore(package_name, version, registry, blocked=True,
+                                    reason="signature_artifact_mismatch",
+                                    artifact_sha256=evidence.artifact_sha256)
+            if evidence.slsa_verified and evidence.provenance_artifact_sha256 != evidence.artifact_sha256:
+                return PackageScore(package_name, version, registry, blocked=True,
+                                    reason="provenance_artifact_mismatch",
+                                    artifact_sha256=evidence.artifact_sha256)
+            if not evidence.hash_verified:
+                return PackageScore(package_name, version, registry, blocked=True,
+                                    reason="artifact_hash_verification_failed",
+                                    artifact_sha256=evidence.artifact_sha256)
             if not evidence.is_complete(current):
-                age = current - evidence.collected_at
                 reason = "mandatory_evidence_invalid"
-                if evidence.collected_at.tzinfo is not None and age > timedelta(hours=24):
+                if evidence.collected_at.tzinfo is None or evidence.expires_at.tzinfo is None:
+                    reason = "evidence_malformed"
+                elif evidence.collected_at > current or evidence.expires_at < evidence.collected_at:
+                    reason = "evidence_malformed"
+                elif current - evidence.collected_at > timedelta(hours=24) or current > evidence.expires_at:
                     reason = "evidence_stale"
-                elif evidence.collected_at <= current <= evidence.expires_at and not evidence.evidence_source.strip():
+                elif not evidence.evidence_source.strip():
                     reason = "evidence_source_unavailable"
+                elif not evidence.blocklist_checked or any(value is None for value in (
+                    evidence.typosquatting_passed, evidence.namespace_confusion_passed,
+                    evidence.malicious_pattern_passed, evidence.downloads_per_month,
+                    evidence.age_days, evidence.security_patch_within_days)):
+                    reason = "mandatory_evidence_unavailable"
                 return PackageScore(package_name, version, registry, blocked=True,
                                     reason=reason, artifact_sha256=evidence.artifact_sha256)
             integrity = 20 + (15 if evidence.signature_verified else 0) + (5 if evidence.publisher_verified else 0)
@@ -176,6 +214,7 @@ class PackageGuard:
             provenance = (5 if evidence.slsa_verified else 0) + (5 if evidence.signed_artifact_verified else 0)
             return PackageScore(package_name, version, registry, integrity, reputation,
                                 static, provenance, evidence_valid=True,
+                                authorization=PackageAuthorization.ELIGIBLE_FOR_SCOPED_REVIEW,
                                 artifact_sha256=evidence.artifact_sha256)
         except Exception:
             logger.exception("Package evidence evaluation failed")

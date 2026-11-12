@@ -88,6 +88,12 @@ def test_client_initialization():
     assert client.timeout == 60
 
 
+@pytest.mark.parametrize("api_key", ["", "key with spaces", "key\\value", "key'quote"])
+def test_client_rejects_invalid_explicit_api_key(api_key):
+    with pytest.raises(ValueError, match="api_key_invalid"):
+        OmnirouteClient(endpoint="http://test:20128/v1", api_key=api_key)
+
+
 def test_client_requires_api_key():
     """Test: Cliente requiere API key."""
     with patch.dict(os.environ, {}, clear=True):
@@ -276,6 +282,29 @@ def test_chat_completion_stream(mock_post, client):
     
     assert [chunk.content for chunk in chunks if chunk.event == "delta"] == ["Hola", " mundo"]
     assert chunks[-1] == OmnirouteStreamEvent("done")
+
+
+@patch('home.omniroute_client.requests.Session.post')
+def test_chat_completion_stream_accepts_final_usage_only_chunk(mock_post, client):
+    response = Mock(status_code=200)
+    response.iter_lines.return_value = [
+        b'data: {"choices":[{"delta":{"content":"ok"}}]}',
+        b'data: {"choices":[],"usage":{"prompt_tokens":2,"completion_tokens":1,"total_tokens":3}}',
+        b'data: [DONE]',
+    ]
+    mock_post.return_value = response
+    chunks = list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
+    assert chunks[-2].usage == OmnirouteUsage(2, 1, 3)
+
+
+@patch('home.omniroute_client.requests.Session.post')
+def test_chat_completion_stream_rejects_oversized_total_stream(mock_post, client):
+    response = Mock(status_code=200)
+    response.iter_lines.return_value = [b'data: {"choices":[{"delta":{"content":"x"}}]}'] * 20
+    mock_post.return_value = response
+    with patch('home.omniroute_client.MAX_RESPONSE_BYTES', 100):
+        with pytest.raises(OmnirouteError, match="sse_too_large"):
+            list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
 
 
 # Tests de Health Check

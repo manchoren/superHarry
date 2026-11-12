@@ -305,7 +305,7 @@ class ModelQuotaDispatchTests(TestCase):
             reserve('openrouter-development:tokens', 'later', 1, model_id=model)
 
     @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True, SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED=True)
-    def test_openrouter_records_valid_usage_even_when_answer_is_unusable(self):
+    def test_openrouter_keeps_usage_unknown_when_answer_is_unusable(self):
         model = 'liquid/lfm-2.5-2.6b:free'
         route = build_openrouter_route(model, 'liquid/fp8')
         request_quota = ProviderQuota.objects.create(group='openrouter-development', limit=5)
@@ -320,8 +320,10 @@ class ModelQuotaDispatchTests(TestCase):
             dispatch_free_provider(route=route, transport=self.transport, user_request='synthetic',
                                    authorize=lambda: True, cancelled=lambda: False, operation_id='bad-answer')
         token_quota.refresh_from_db()
-        self.assertEqual((token_quota.used, token_quota.reserved), (100001, 0))
-        self.assertEqual(ProviderModelQuota.objects.get(quota=token_quota).used, 100001)
+        self.assertEqual(token_quota.used, 0)
+        self.assertGreater(token_quota.reserved, 0)
+        self.assertEqual(ProviderModelQuota.objects.get(quota=token_quota).used, 0)
+        self.assertEqual(ProviderReservation.objects.filter(state='unknown').count(), 2)
 
     @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=False)
     def test_openrouter_flag_is_required_at_dispatch(self):

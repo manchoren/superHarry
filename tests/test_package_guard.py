@@ -3,7 +3,9 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 import socket
 
-from home.package_guard import CVE, CVESeverity, PackageEvidence, PackageGuard, PackageScore
+from home.package_guard import (
+    CVE, CVESeverity, PackageAuthorization, PackageEvidence, PackageGuard, PackageScore,
+)
 
 NOW = datetime(2026, 11, 12, 12, tzinfo=timezone.utc)
 
@@ -56,6 +58,15 @@ def test_missing_evidence_fails_closed_without_network():
     assert score.blocked and not score.evidence_valid and not score.is_safe()
 
 
+def test_authorization_is_separate_from_score_and_is_only_scoped_eligibility():
+    score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(), now=NOW)
+    assert score.authorization is PackageAuthorization.ELIGIBLE_FOR_SCOPED_REVIEW
+    assert score.can_authorize_scoped_installation()
+    blocked = PackageGuard().evaluate("safe-package", "1.2.3")
+    assert blocked.authorization is PackageAuthorization.DENIED
+    assert not blocked.can_authorize_scoped_installation()
+
+
 def test_stale_evidence_fails_closed():
     score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(
         collected_at=NOW - timedelta(hours=25), expires_at=NOW - timedelta(hours=1)), now=NOW)
@@ -66,6 +77,19 @@ def test_digest_mismatch_fails_closed():
     score = PackageGuard().evaluate("safe-package", "1.2.3",
                                     evidence=evidence(claimed_sha256="0" * 64), now=NOW)
     assert score.blocked and not score.evidence_valid
+
+
+def test_digest_signature_and_provenance_mismatches_are_distinguishable():
+    digest = hashlib.sha256(b"different artifact").hexdigest()
+    assert PackageGuard().evaluate(
+        "safe-package", "1.2.3", evidence=evidence(claimed_sha256=digest), now=NOW
+    ).reason == "artifact_digest_mismatch"
+    assert PackageGuard().evaluate(
+        "safe-package", "1.2.3", evidence=evidence(signature_artifact_sha256=digest), now=NOW
+    ).reason == "signature_artifact_mismatch"
+    assert PackageGuard().evaluate(
+        "safe-package", "1.2.3", evidence=evidence(provenance_artifact_sha256=digest), now=NOW
+    ).reason == "provenance_artifact_mismatch"
 
 
 def test_unknown_static_check_fails_closed():
@@ -125,6 +149,17 @@ def test_unchecked_or_unknown_evidence_fails_closed():
     ):
         score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(**changes), now=NOW)
         assert score.blocked and not score.is_safe()
+
+
+def test_unavailable_mandatory_evidence_is_distinguished_from_malformed_evidence():
+    unavailable = PackageGuard().evaluate(
+        "safe-package", "1.2.3", evidence=evidence(malicious_pattern_passed=None), now=NOW
+    )
+    malformed = PackageGuard().evaluate(
+        "safe-package", "1.2.3", evidence=evidence(expires_at=NOW - timedelta(hours=1)), now=NOW
+    )
+    assert unavailable.reason == "mandatory_evidence_unavailable"
+    assert malformed.reason == "evidence_stale"
 
 
 def test_signature_and_provenance_flags_bind_to_the_artifact():

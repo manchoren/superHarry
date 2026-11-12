@@ -233,23 +233,15 @@ def dispatch_free_provider(*, route, transport, user_request, authorize, cancell
         raise OutcomeUnknown('dispatch_outcome_unknown') from None
 
     try:
-        if route.provider == 'openrouter':
-            _, _, reported_total = _validate_usage(response, route.model_id)
-            with transaction.atomic():
-                settle(token_reservation.pk, reported_total, allow_overage=True)
-                settle(request_reservation.pk, 1)
-                if budget_reservation is not None:
-                    settle_budget(budget_reservation.pk, reported_total)
         ensure_release_context_is_current(prepared)
         if cancelled() is not False or authorize() is not True:
             raise ValueError('admission revoked')
         text, input_tokens, output_tokens, total = _validate_response(response, route.model_id)
-        if route.provider != 'openrouter':
-            with transaction.atomic():
-                settle(token_reservation.pk, total)
-                settle(request_reservation.pk, 1)
-                if budget_reservation is not None:
-                    settle_budget(budget_reservation.pk, total)
+        with transaction.atomic():
+            settle(token_reservation.pk, total, allow_overage=route.provider == 'openrouter')
+            settle(request_reservation.pk, 1)
+            if budget_reservation is not None:
+                settle_budget(budget_reservation.pk, total)
     except Exception:
         raise OutcomeUnknown('dispatch_response_unusable') from None
     return text, (input_tokens, output_tokens)
