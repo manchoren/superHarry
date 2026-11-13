@@ -161,6 +161,20 @@ that result does not prove a clean Linux checkout, dependency reproducibility,
 independent audit, or target-VM/release acceptance. Those gates remain open and
 T225 remains `Pending`.
 
+#### T225 local validation update - 2026-11-12
+
+- `python manage.py check` passed with no issues.
+- `python manage.py makemigrations --check --dry-run` reported no changes.
+- `python manage.py test` passed: 555 tests, 11 skipped, exit code 0.
+- `python scripts/project_progress.py` passed and reported 10/75 completed with
+  T225 as the first open queue entry.
+- `git diff --check` passed. The independent fresh-context audit procedure was
+  invoked as required by `docs/reference/test-scoping.md`; its result and
+  acceptance review remain separate from this local validation record.
+- These results validate the current Windows checkout only. They do not prove
+  clean Linux dependency installation, target-VM behavior, deployment,
+  production acceptance or task closure.
+
 ### T226 - Reconcile constitution identity and context regression coverage
 
 **Priority:** P0. **Dependencies:** None. **Evidence:** settings hash differs from raw constitution; constitution_context rejects mismatches.
