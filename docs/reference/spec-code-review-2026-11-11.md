@@ -189,6 +189,25 @@ T225 remains `Pending`.
   authorization does not waive VM, deployment, provider or production gates
   belonging to other tasks.
 
+#### T225 independent audit and acceptance preparation - 2026-11-13
+
+- Fresh-context audit identity: `01a1d550-30cd-7a70-b3ea-82a4ddb52fad`.
+- Audit scores: inventory `25/25`, behavior-to-test mapping `22/35`, test
+  sufficiency `18/25`, isolation `15/15`, total `80/100`.
+- The audit confirmed the required portable artifacts, queue position, unique
+  T225 placement and clean worktree. It identified that the score at or below
+  80 and the shared-contract scope require the full Django suite.
+- Required local commands were executed after the audit: `manage.py check`
+  passed; migration dry-run reported no changes; `manage.py test` passed with
+  555 tests and 11 skips; `scripts/project_progress.py` passed; and
+  `git diff --check` passed.
+- Reconciliation confirmed 75 unique backlog IDs, 65 unique queue IDs and 10
+  unique historical IDs, with no open-task queue omissions, unknown queue IDs
+  or backlog duplicates. The clean Linux checkout is waived by the owner.
+- The audit remains evidence, not owner acceptance. T225 is ready for an
+  explicit independent/owner closure decision; it remains `Pending` until that
+  decision is recorded.
+
 ### T226 - Reconcile constitution identity and context regression coverage
 
 **Priority:** P0. **Dependencies:** None. **Evidence:** settings hash differs from raw constitution; constitution_context rejects mismatches.
