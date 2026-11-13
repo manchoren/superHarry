@@ -3,7 +3,13 @@ from tempfile import TemporaryDirectory
 from unittest import TestCase
 from unittest.mock import patch
 
-from home.provider_credentials import CredentialConfigError, load_omniroute_endpoint, load_omniroute_key, load_provider_key
+from home.provider_credentials import (
+    CredentialConfigError,
+    load_omniroute_endpoint,
+    load_omniroute_key,
+    load_omniroute_model,
+    load_provider_key,
+)
 
 
 class ProviderCredentialsTests(TestCase):
@@ -65,3 +71,11 @@ class ProviderCredentialsTests(TestCase):
     def test_endpoint_rejects_query_parameters(self):
         with self.assertRaises(CredentialConfigError):
             load_omniroute_endpoint({'OMNIROUTE_ENDPOINT': 'http://gateway/v1?token=secret'})
+
+    def test_gateway_models_are_configurable_without_direct_provider_names(self):
+        environ = {
+            'OMNIROUTE_EXTERNAL_MODEL': 'nous-ai/solar-mini-4',
+            'OMNIROUTE_LOCAL_MODEL': 'ollama/qwen3.5:4b',
+        }
+        self.assertEqual(load_omniroute_model(environ, 'external'), 'nous-ai/solar-mini-4')
+        self.assertEqual(load_omniroute_model(environ, 'local'), 'ollama/qwen3.5:4b')

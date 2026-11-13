@@ -49,6 +49,15 @@ class MutatingContextSerializer(JsonContextSerializer):
         return serialized
 
 
+class CountingContextSerializer(JsonContextSerializer):
+    def __init__(self):
+        self.calls = 0
+
+    def serialize(self, constitution_text, user_request):
+        self.calls += 1
+        return super().serialize(constitution_text, user_request)
+
+
 class ConstitutionContextTests(TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -164,6 +173,34 @@ class ConstitutionContextTests(TestCase):
                     load_verified_constitution(self.source_path, expected_hash)
 
                 self.assertEqual(raised.exception.code, "invalid_expected_identity")
+
+    def test_changed_or_missing_constitution_fails_before_context_serialization(self):
+        for profile_id in ("external-provider", "local-inference", "memory-agent"):
+            with self.subTest(profile_id=profile_id):
+                serializer = CountingContextSerializer()
+                self.source_path.write_bytes(b"changed constitution")
+                with self.assertRaises(ContextPreparationError) as changed:
+                    prepare_context(
+                        source_path=self.source_path,
+                        expected_sha256=self.expected_sha256,
+                        user_request="hello",
+                        profile=self._profile(profile_id=profile_id, serializer=serializer),
+                    )
+                self.assertEqual(changed.exception.code, "constitution_hash_mismatch")
+                self.assertEqual(serializer.calls, 0)
+
+                self.source_path.unlink()
+                with self.assertRaises(ContextPreparationError) as missing:
+                    prepare_context(
+                        source_path=self.source_path,
+                        expected_sha256=self.expected_sha256,
+                        user_request="hello",
+                        profile=self._profile(profile_id=profile_id, serializer=serializer),
+                    )
+                self.assertEqual(missing.exception.code, "constitution_unavailable")
+                self.assertEqual(serializer.calls, 0)
+
+                self.source_path.write_bytes(self.source_bytes)
 
     def test_rejects_hash_mismatch_and_invalid_utf8(self):
         with self.assertRaises(ContextPreparationError) as mismatch:

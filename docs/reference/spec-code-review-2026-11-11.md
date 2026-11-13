@@ -223,6 +223,14 @@ T225 remains `Pending`.
 - Current equivalent module-runner validation: `DJANGO_SETTINGS_MODULE=superharry.settings .venv\\Scripts\\python.exe -m django test` -> `475 passed, 10 skipped, exit code 0`. `manage.py` is absent from the checkout; therefore this is equivalent module-runner evidence, not literal `manage.py` evidence.
 - `django check`, `makemigrations --check --dry-run`, and `git diff --check` passed. T226 remains Pending because the fresh-audit score/acceptance is unresolved and this evidence does not establish real gateway, provider, VM, deployment, or release acceptance.
 
+#### T226 context rejection regression update - 2026-11-13
+
+- Added `ConstitutionContextTests.test_changed_or_missing_constitution_fails_before_context_serialization` in `home/test_context.py`. For the external-provider, local-inference and memory-agent profiles, changed or missing constitution bytes fail with no serializer call, preserving the fail-closed boundary before model request preparation.
+- Focused validation: `$env:DJANGO_SETTINGS_MODULE='superharry.settings'; .\\.venv\\Scripts\\python.exe -m pytest -q home/test_context.py` -> `14 passed, 9 subtests passed`.
+- Django validation: `.\\.venv\\Scripts\\python.exe manage.py check` passed; `.\\.venv\\Scripts\\python.exe manage.py makemigrations --check --dry-run` reported no changes.
+- Full suite: `.\\.venv\\Scripts\\python.exe manage.py test` ran 554 tests with 11 skipped but failed with 8 failures and 7 errors in existing provider-routing/openrouter-estimate/gemini-chat paths; do not attribute those failures to this T226 test.
+- Constitution SHA-256 remains `640c85a00d537e01fe446ac4516cb09cb53df2acdac493615fb5e72bdd792e64`; `constitution.md` was not changed. T226 remains Pending; no VM, provider, deployment or release acceptance is claimed.
+
 ### T227 - Harden and verify the gateway client contract
 
 **Priority:** P0. **Dependencies:** T225. **Evidence:** omniroute_client eagerly creates an authenticated singleton, logs raw HTTP error bodies, accepts response fields with default invented usage, and yields text-only SSE chunks.
@@ -259,6 +267,13 @@ T225 remains `Pending`.
 - Gateway-only service configuration now uses `OMNIROUTE_ENDPOINT`, the `omniroute` availability/order identifier and a protected `omniroute-api-key` systemd credential. Direct provider key names are not loaded by application configuration or deployment unit files.
 - Django secret and TOTP credential names remain unchanged. TLS configuration remains service-owned and was not modified.
 - This bounded slice does not connect durable chat dispatch, prove the installed gateway contract, or validate the target VM.
+
+#### T228 implementation evidence - 2026-11-13 worker C
+
+- Gateway runtime defaults now use `OMNIROUTE_ENDPOINT`, `OMNIROUTE_EXTERNAL_MODEL` and `OMNIROUTE_LOCAL_MODEL`; legacy model setting names remain compatibility aliases only and do not load direct-provider credentials.
+- Added regression coverage for gateway model resolution in `home/test_provider_credentials.py`. Direct provider credential loading remains rejected, and the application credential boundary remains the `omniroute-api-key` systemd credential or development-only environment fallback.
+- Focused validation: `.\\.venv\\Scripts\\python.exe manage.py test home.test_provider_credentials home.test_provider_availability` -> `Ran 14 tests ... OK`; `manage.py check` passed; `manage.py makemigrations --check --dry-run` reported no changes; `compileall` and `git diff --check` passed. Direct `pytest` invocation is not a supported Django test entry point and separately produced 9 passed, 5 setup errors before the supported command.
+- No live gateway, provider account, credential activation, deployment, VM or production/release acceptance was performed or inferred.
 
 ### T229 - Connect durable chat and local inference to the gateway
 
@@ -398,3 +413,10 @@ T225 remains `Pending`.
 
 - Define per-feature capability requirements and available/unavailable reasons. Offer constrained local tools and short-context behavior only when actually supported; show unavailable routes rather than silently changing a user's explicit selection.
 - Given a task that cannot run locally while external capacity is unavailable, when submitted, then preserve it durably, notify the user and allow cancellation. Resume only with current authority, context, budget and confirmations, without replaying claimed/unknown work. Reuse existing durable queue semantics rather than introducing parallel retry ownership.
+
+#### T227 contract follow-up - 2026-11-13
+
+- `home/omniroute_client.py` now rejects a streaming completion at the `[DONE]` boundary when no validated usage record was received; this prevents successful settlement from invented or missing token counts. The focused synthetic stream fixtures in `tests/test_omniroute_client.py` include a usage-only final chunk and cover the missing-usage rejection.
+- Focused validation: `.\\.venv\\Scripts\\python.exe -m pytest -q tests/test_omniroute_client.py` -> `52 passed, 3 skipped`, exit code 0. No gateway, provider credentials or network calls were used.
+- Static and Django validation: `.\\.venv\\Scripts\\python.exe -m compileall -q home/omniroute_client.py` passed; `.\\.venv\\Scripts\\python.exe manage.py check` passed; `.\\.venv\\Scripts\\python.exe manage.py makemigrations --check --dry-run` reported `No changes detected`; `.\\.venv\\Scripts\\python.exe manage.py test` -> `557 tests, 11 skipped, OK`, exit code 0.
+- Constitution SHA-256: `640C85A00D537E01FE446AC4516CB09CB53DF2ACDAC493615FB5E72BDD792E64`. T227 remains Pending: the independent fresh-context audit, installed-gateway endpoint/schema verification, provider/account/context eligibility, VM/deployment verification and production/release acceptance remain outstanding.

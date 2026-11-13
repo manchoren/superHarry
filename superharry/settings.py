@@ -49,21 +49,27 @@ ALLOWED_HOSTS = [
 ]
 SUPERHARRY_HOSTNAME = "superharry.local"
 
-# Development free-provider routing. The order is administrator-configured; a
-# provider is attempted only with a configured key and an explicit quota row.
-SUPERHARRY_FREE_PROVIDER_ORDER = os.environ.get("SUPERHARRY_FREE_PROVIDER_ORDER", "gemini,groq,openrouter")
+# Model-provider credentials are owned by omniroute. The application receives
+# only the gateway credential at request time; these values are routing hints,
+# not direct provider configuration.
+OMNIROUTE_ENDPOINT = os.environ.get("OMNIROUTE_ENDPOINT", "http://localhost:20128/v1")
+OMNIROUTE_EXTERNAL_MODEL = os.environ.get("OMNIROUTE_EXTERNAL_MODEL", "nous-ai/solar-mini-4")
+OMNIROUTE_LOCAL_MODEL = os.environ.get("OMNIROUTE_LOCAL_MODEL", "ollama/qwen3.5:4b")
+
 # Provider admission is separate from credential presence and routing order.
-# Gemini and Groq are explicitly enabled for the current development slice.
-# Groq admission remains conditional on the administrator-confirmed Free account
-# having no payment method or other billing mechanism configured.
+# Keep the established development defaults for compatibility with the
+# pre-gateway synthetic Gemini tests. Deployment units select omniroute
+# explicitly, and direct provider credential loading remains retired.
+SUPERHARRY_FREE_PROVIDER_ORDER = os.environ.get("SUPERHARRY_FREE_PROVIDER_ORDER", "gemini,groq,openrouter")
 SUPERHARRY_ENABLED_FREE_PROVIDERS = tuple(
     item.strip()
     for item in os.environ.get("SUPERHARRY_ENABLED_FREE_PROVIDERS", "gemini,groq").split(",")
     if item.strip()
 )
-GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b")
-OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "liquid/lfm-2.5-2.6b:free")
-OPENROUTER_UPSTREAM = os.environ.get("OPENROUTER_UPSTREAM", "liquid/fp8")
+# Compatibility names remain available to the pre-gateway routing slice. They
+# resolve to gateway model hints and never load provider credentials.
+GROQ_MODEL = OMNIROUTE_EXTERNAL_MODEL
+OPENROUTER_MODEL = OMNIROUTE_EXTERNAL_MODEL
 openrouter_approximate_quota = os.environ.get("SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA", "0").strip()
 if openrouter_approximate_quota not in {"0", "1"}:
     raise ImproperlyConfigured("SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA must be 0 or 1.")

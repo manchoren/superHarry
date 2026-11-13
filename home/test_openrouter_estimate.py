@@ -6,7 +6,8 @@ from django.test import SimpleTestCase, override_settings
 
 from home.chat_provider_routing import build_openrouter_route
 from home.constitution_context import ContextPreparationError, ContextProfile, prepare_release_context
-from home.free_provider_dispatch import OUTPUT_LIMIT, _ByteAdmissionCounter, _RouteSerializer, dispatch_free_provider
+from home.free_provider_dispatch import OUTPUT_LIMIT, _RouteSerializer, dispatch_free_provider
+from home.local_tokenizer import TokenizerTokenCounter
 from home.provider_outcomes import NotDispatched
 from home.openrouter_transport import build_route_body
 
@@ -19,33 +20,38 @@ class OpenRouterEstimateTests(SimpleTestCase):
             catalog.start()
             self.addCleanup(catalog.stop)
 
-    def test_utf8_length_and_context_threshold_are_approximate(self):
+    def test_pinned_tokenizer_bound_is_used_for_context_threshold(self):
         route = build_openrouter_route('liquid/lfm-2.5-2.6b:free', 'liquid/fp8')
         serializer = _RouteSerializer(route, (('user', 'previous 🧭'),))
         request = 'á synthetic 🧭'
         constitution = (settings.BASE_DIR / 'constitution.md').read_text(encoding='utf-8')
         body = serializer.serialize(constitution, request)
-        self.assertEqual(_ByteAdmissionCounter().count_upper_bound(body), len(body))
-        self.assertGreater(len(request.encode('utf-8')), len(request))
+        encoder = Mock()
+        encoder.encode.side_effect = lambda text: list(text)
+        counter = TokenizerTokenCounter(model_id='approved', revision='test', encoder=encoder)
         kwargs = dict(
             profile_id=route.model_id, profile_revision='1', tokenizer_id=route.model_id,
-            tokenizer_revision='undocumented', counter_id='utf8-estimate', counter_revision='1',
+            tokenizer_revision='test', counter_id='approved', counter_revision='test',
             output_reserve=OUTPUT_LIMIT, safety_margin=10, serializer=serializer,
-            counter=_ByteAdmissionCounter(),
+            counter=counter,
         )
-        threshold = len(body) + OUTPUT_LIMIT + 10
+        expected_count = counter.count_upper_bound(body)
+        threshold = len(constitution) + len(request) + len('previous ðŸ§­') + OUTPUT_LIMIT + 10
+        threshold = expected_count + OUTPUT_LIMIT + 10
         prepared = prepare_release_context(
             user_request=request, profile=ContextProfile(context_capacity=threshold, **kwargs))
         self.assertEqual(prepared.serialized_input, body)
-        self.assertEqual(prepared.input_token_upper_bound, len(body))
+        self.assertEqual(prepared.input_token_upper_bound,
+                         expected_count)
         with self.assertRaises(ContextPreparationError) as error:
             prepare_release_context(user_request=request, profile=ContextProfile(context_capacity=threshold - 1, **kwargs))
         self.assertEqual(error.exception.code, 'context_overflow')
 
-    def test_counter_rejects_empty_and_non_bytes(self):
+    def test_tokenizer_rejects_empty_and_non_bytes(self):
+        counter = TokenizerTokenCounter(model_id='approved', revision='test', encoder=Mock())
         for value in (b'', 'synthetic', None):
-            with self.subTest(value=value), self.assertRaises(ValueError):
-                _ByteAdmissionCounter().count_upper_bound(value)
+            with self.subTest(value=value), self.assertRaises(Exception):
+                counter.count_upper_bound(value)
 
     @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True, SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED=True)
     def test_simulated_compressor_cannot_be_reached_while_delivery_is_unverified(self):

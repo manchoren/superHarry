@@ -62,15 +62,6 @@ class _RouteSerializer:
         return self._route.build_body(constitution_text, self._history, user_request, OUTPUT_LIMIT)
 
 
-class _ByteAdmissionCounter:
-    """Provisional byte surrogate; this is not Groq/OpenRouter tokenization."""
-
-    def count_upper_bound(self, serialized_input):
-        if not isinstance(serialized_input, bytes) or not serialized_input:
-            raise ValueError('count_invalid')
-        return len(serialized_input)
-
-
 def _validate_usage(response, model_id):
     if (not isinstance(response, dict) or response.get('object') != 'chat.completion'
             or response.get('model') != model_id):

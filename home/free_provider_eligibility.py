@@ -38,9 +38,8 @@ class FreeRouteError(RuntimeError):
 
 def _freeze() -> None:
     global _free_plan, _billing_methods
-    if _free_plan is None:
-        _free_plan = getattr(settings, "SUPERHARRY_FREE_PLAN", "free")
-        _billing_methods = getattr(settings, "SUPERHARRY_BILLING_METHODS", [])
+    _free_plan = getattr(settings, "SUPERHARRY_FREE_PLAN", "free")
+    _billing_methods = getattr(settings, "SUPERHARRY_BILLING_METHODS", [])
     if not isinstance(_billing_methods, list):
         _billing_methods = list(_billing_methods)
 
@@ -51,18 +50,10 @@ def _billing_has_method() -> bool:
 
 
 def _approved_model_zero_cost(model_id: str) -> bool:
-    """Model-level: approved zero-total-cost via the allow-list or the OpenRouter
-    public catalog. The allow-list overrides the catalog; a model in the
-    catalog is approved even if absent from the allow-list."""
+    """Require explicit application approval; public catalog metadata is discovery only."""
     _freeze()
     allowed = getattr(settings, 'SUPERHARRY_APPROVED_FREE_MODELS', None)
-    if allowed is not None and model_id in allowed:
-        return True
-    try:
-        from home.openrouter_transport import catalog_has_model
-        return catalog_has_model(model_id)
-    except Exception:
-        return False
+    return isinstance(allowed, (list, tuple, set, frozenset)) and model_id in allowed
 
 
 def verify_free_route_eligibility(*, provider: str, model_id: str,

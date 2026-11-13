@@ -298,6 +298,7 @@ def test_chat_completion_stream(mock_post, client):
     mock_response.iter_lines.return_value = [
         b'data: {"choices":[{"delta":{"content":"Hola"}}]}',
         b'data: {"choices":[{"delta":{"content":" mundo"}}]}',
+        b'data: {"choices":[],"usage":{"prompt_tokens":2,"completion_tokens":1,"total_tokens":3}}',
         b'data: [DONE]'
     ]
     
@@ -307,7 +308,7 @@ def test_chat_completion_stream(mock_post, client):
         messages=[{"role": "user", "content": "Test"}]
     ))
     
-    assert [chunk.content for chunk in chunks if chunk.event == "delta"] == ["Hola", " mundo"]
+    assert [chunk.content for chunk in chunks if chunk.event == "delta" and chunk.content] == ["Hola", " mundo"]
     assert chunks[-1] == OmnirouteStreamEvent("done")
 
 
@@ -482,6 +483,17 @@ def test_sse_without_done_marker_is_rejected(client):
             list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
 
 
+def test_sse_without_usage_is_rejected(client):
+    response = Mock(); response.status_code = 200
+    response.iter_lines.return_value = [
+        b'data: {"choices":[{"delta":{"content":"partial"}}]}',
+        b"data: [DONE]",
+    ]
+    with patch("home.omniroute_client.requests.Session.post", return_value=response):
+        with pytest.raises(OmnirouteError, match="usage_missing"):
+            list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
+
+
 def test_client_resolves_environment_configuration_at_request_time():
     with patch.dict(os.environ, {}, clear=True):
         client = OmnirouteClient()
@@ -553,7 +565,11 @@ def test_health_check_rejection_closes_response_and_session(mock_get, client):
 @patch("home.omniroute_client.requests.Session.post")
 def test_successful_stream_closes_response_and_session(mock_post, client):
     response = Mock(status_code=200)
-    response.iter_lines.return_value = [b'data: {"choices": [{"delta": {"content": "ok"}}]}', b"data: [DONE]"]
+    response.iter_lines.return_value = [
+        b'data: {"choices": [{"delta": {"content": "ok"}}]}',
+        b'data: {"choices":[],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}',
+        b"data: [DONE]",
+    ]
     mock_post.return_value = response
     with patch.object(client, "close", wraps=client.close) as close:
         list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))

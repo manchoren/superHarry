@@ -157,6 +157,7 @@ class OmnirouteClient:
             event_count = 0
             response_bytes = 0
             completed = False
+            usage_seen = False
             for raw_line in response.iter_lines():
                 if not raw_line: continue
                 line_bytes = len(raw_line) if isinstance(raw_line, bytes) else len(raw_line.encode("utf-8"))
@@ -173,6 +174,8 @@ class OmnirouteClient:
                 value = line[5:].strip()
                 if value == "[DONE]":
                     completed = True
+                    if not usage_seen:
+                        raise OmnirouteUsageError("gateway_usage_missing")
                     yield OmnirouteStreamEvent("done")
                     return
                 try: data = json.loads(value)
@@ -185,6 +188,7 @@ class OmnirouteClient:
                     if not isinstance(data, dict) or "usage" not in data:
                         raise OmnirouteError("gateway_sse_schema_invalid")
                     usage = OmnirouteUsage.from_dict(data["usage"])
+                    usage_seen = True
                     yield OmnirouteStreamEvent("delta", "", None, usage)
                     continue
                 if len(choices) != 1 or not isinstance(choices[0], dict): raise OmnirouteError("gateway_sse_schema_invalid")
@@ -193,9 +197,13 @@ class OmnirouteClient:
                         or (choice.get("finish_reason") is not None and not isinstance(choice.get("finish_reason"), str))):
                     raise OmnirouteError("gateway_sse_schema_invalid")
                 usage = OmnirouteUsage.from_dict(data["usage"]) if "usage" in data else None
+                if usage is not None:
+                    usage_seen = True
                 yield OmnirouteStreamEvent("delta", delta.get("content", ""), choice.get("finish_reason"), usage)
             if not completed:
                 raise OmnirouteError("gateway_sse_truncated")
+            if not usage_seen:
+                raise OmnirouteUsageError("gateway_usage_missing")
         except (requests.Timeout, requests.RequestException) as exc: raise OutcomeUnknown("omniroute_stream_failure") from exc
         finally: response.close(); self.close()
     def _get(self, path, missing_ok=False):
