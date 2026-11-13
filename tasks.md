@@ -20,7 +20,6 @@ Maintain this queue using [documentation ownership, update triggers and closure 
 
 | # | Task ID | Title |
 |---|---------|-------|
-| 1 | T225 | Restore portable delivery and validation contracts |
 | 2 | T226 | Reconcile constitution identity and context regression coverage |
 | 3 | T227 | Harden and verify the gateway client contract |
 | 4 | T228 | Migrate model credentials and runtime configuration to omniroute |

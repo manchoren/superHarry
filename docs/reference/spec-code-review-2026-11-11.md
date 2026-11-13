@@ -100,7 +100,7 @@ All references below are to `product-requirements.md` and `security-policies.md`
 
 The backlog owns status. These records own the scope, dependencies and acceptance for T225-T240. All implementation checks use synthetic inputs and mocked networking first; live provider/model evaluation and VM deployment remain separately controlled.
 
-### T225 - Restore portable delivery and validation contracts
+### T225 - Restore portable delivery and validation contracts (completed 2026-11-13)
 
 **Priority:** P0. **Dependencies:** None. **Evidence:** CONTRIBUTING.md, docs/README.md, scripts/project_progress.py, missing referenced test-scoping policy and dependency manifests.
 
@@ -189,11 +189,11 @@ T225 remains `Pending`.
   authorization does not waive VM, deployment, provider or production gates
   belonging to other tasks.
 
-#### T225 independent audit and acceptance preparation - 2026-11-13
+#### T225 independent audit and closure evidence - 2026-11-13
 
 - Fresh-context audit identity: `01a1d550-30cd-7a70-b3ea-82a4ddb52fad`.
-- Audit scores: inventory `25/25`, behavior-to-test mapping `22/35`, test
-  sufficiency `18/25`, isolation `15/15`, total `80/100`.
+- Final audit scores: inventory `25/25`, behavior-to-test mapping `28/35`, test
+  sufficiency `20/25`, isolation `15/15`, total `88/100`.
 - The audit confirmed the required portable artifacts, queue position, unique
   T225 placement and clean worktree. It identified that the score at or below
   80 and the shared-contract scope require the full Django suite.
@@ -204,9 +204,9 @@ T225 remains `Pending`.
 - Reconciliation confirmed 75 unique backlog IDs, 65 unique queue IDs and 10
   unique historical IDs, with no open-task queue omissions, unknown queue IDs
   or backlog duplicates. The clean Linux checkout is waived by the owner.
-- The audit remains evidence, not owner acceptance. T225 is ready for an
-  explicit independent/owner closure decision; it remains `Pending` until that
-  decision is recorded.
+- The owner authorized closure on 2026-11-13. T225 is closed for its portable
+  delivery and validation scope; VM, deployment, provider and production gates
+  remain outside this task.
 
 ### T226 - Reconcile constitution identity and context regression coverage
 
