@@ -6,6 +6,7 @@ from scripts.validate_t237_fixtures import (
     load_manifest,
     validate_fixture_payloads,
     validate_manifest,
+    _validate_ocr_fixture,
 )
 
 
@@ -79,6 +80,131 @@ class T237FixtureManifestTests(unittest.TestCase):
         self.assertIn("mañana", retrieval["documents"][0]["text"])
         self.assertIn("¿Vos podés", voice["cases"][0]["transcript"])
         self.assertTrue(ocr["images"][2]["blank"])
+
+    def test_ocr_fixture_has_bilingual_blank_safe_shape(self):
+        scenarios = {item["id"]: item for item in load_manifest()["scenarios"]}
+        self.assertEqual(_validate_ocr_fixture(json_fixture(scenarios["ocr-bilingual"])), [])
+
+    def test_ocr_fixture_rejects_duplicate_ids_and_nonempty_blank_reference(self):
+        fixture = {
+            "images": [
+                {"id": "same", "language": "es", "reference": "Hola", "blank": False},
+                {"id": "same", "language": "und", "reference": "ruido", "blank": True},
+            ]
+        }
+        errors = _validate_ocr_fixture(fixture)
+        self.assertIn("OCR image ids must be unique", errors)
+        self.assertIn("blank OCR image must have an empty reference", errors)
+
+    def test_ocr_security_probes_are_explicitly_untrusted(self):
+        scenarios = {item["id"]: item for item in load_manifest()["scenarios"]}
+        fixture = json_fixture(scenarios["ocr-bilingual"])
+        probes = fixture["security_probes"]
+        self.assertTrue(any("<script>" in probe["text"] for probe in probes))
+        self.assertTrue(any("$(cat" in probe["text"] for probe in probes))
+        self.assertTrue(all(probe["expected"] == "untrusted-text" for probe in probes))
+        self.assertTrue(all(probe["handling"] == "text-only" for probe in probes))
+
+    def test_ocr_security_probe_rejects_interpretation_mode(self):
+        fixture = {
+            "images": [
+                {"id": "es", "language": "es", "reference": "Hola", "blank": False},
+                {"id": "en", "language": "en", "reference": "Hello", "blank": False},
+                {"id": "blank", "language": "und", "reference": "", "blank": True},
+            ],
+            "security_probes": [
+                {"id": "probe", "text": "<b>OCR</b>", "expected": "untrusted-text", "handling": "html"}
+            ],
+        }
+        self.assertIn(
+            "OCR security probes must not be interpreted as HTML or shell",
+            _validate_ocr_fixture(fixture),
+        )
+
+    def test_ocr_security_probe_rejects_malformed_and_oversized_payloads(self):
+        malformed = {
+            "images": [
+                {"id": "es", "language": "es", "reference": "Hola", "blank": False},
+                {"id": "en", "language": "en", "reference": "Hello", "blank": False},
+                {"id": "blank", "language": "und", "reference": "", "blank": True},
+            ],
+            "security_probes": [{"id": "missing-text", "expected": "untrusted-text", "handling": "text-only"}],
+        }
+        self.assertIn("OCR security probes must contain text strings", _validate_ocr_fixture(malformed))
+
+        oversized = {
+            "images": malformed["images"],
+            "security_probes": [
+                {"id": "large", "text": "á" * 4097, "expected": "untrusted-text", "handling": "text-only"}
+            ],
+        }
+        self.assertIn("OCR security probe text exceeds the size limit", _validate_ocr_fixture(oversized))
+
+        self.assertIn(
+            "OCR fixture must include synthetic security probes",
+            _validate_ocr_fixture({"images": malformed["images"], "security_probes": {}}),
+        )
+
+    def test_ocr_security_probe_rejects_invalid_types_and_unicode_overflow(self):
+        images = [
+            {"id": "es", "language": "es", "reference": "Hola", "blank": False},
+            {"id": "en", "language": "en", "reference": "Hello", "blank": False},
+            {"id": "blank", "language": "und", "reference": "", "blank": True},
+        ]
+        invalid_types = {
+            "images": images,
+            "security_probes": [
+                {"id": 42, "text": ["<script>"], "expected": "untrusted-text", "handling": "text-only"}
+            ],
+        }
+        errors = _validate_ocr_fixture(invalid_types)
+        self.assertIn("OCR security probes must contain text strings", errors)
+
+        unicode_overflow = {
+            "images": images,
+            "security_probes": [
+                {"id": "unicode", "text": "😀" * 1025, "expected": "untrusted-text", "handling": "text-only"}
+            ],
+        }
+        self.assertIn("OCR security probe text exceeds the size limit", _validate_ocr_fixture(unicode_overflow))
+
+    def test_ocr_security_probe_rejects_all_non_text_interpretation_modes(self):
+        images = [
+            {"id": "es", "language": "es", "reference": "Hola", "blank": False},
+            {"id": "en", "language": "en", "reference": "Hello", "blank": False},
+            {"id": "blank", "language": "und", "reference": "", "blank": True},
+        ]
+        for mode in ("html", "shell", "markdown", "template"):
+            with self.subTest(mode=mode):
+                fixture = {
+                    "images": images,
+                    "security_probes": [
+                        {"id": "mode", "text": "payload", "expected": "untrusted-text", "handling": mode}
+                    ],
+                }
+                errors = _validate_ocr_fixture(fixture)
+                self.assertIn("OCR security probes must use text-only handling", errors)
+
+    def test_ocr_future_consumer_contract_preserves_untrusted_text_and_limits(self):
+        scenarios = {item["id"]: item for item in load_manifest()["scenarios"]}
+        fixture = json_fixture(scenarios["ocr-bilingual"])
+        for probe in fixture["security_probes"]:
+            with self.subTest(probe=probe["id"]):
+                self.assertIsInstance(probe["text"], str)
+                self.assertLessEqual(len(probe["text"].encode("utf-8")), 4096)
+                self.assertEqual(probe["expected"], "untrusted-text")
+                self.assertEqual(probe["handling"], "text-only")
+                self.assertNotIn("render_as", probe)
+                self.assertNotIn("execute_as", probe)
+
+    def test_ocr_future_consumer_contract_rejects_interpretation_fields(self):
+        scenarios = {item["id"]: item for item in load_manifest()["scenarios"]}
+        fixture = json_fixture(scenarios["ocr-bilingual"])
+        for forbidden_field in ("render_as", "execute_as", "html", "shell"):
+            with self.subTest(field=forbidden_field):
+                probe = dict(fixture["security_probes"][0])
+                probe[forbidden_field] = "enabled"
+                self.assertNotEqual(probe.get(forbidden_field), "text-only")
 
 
 def json_fixture(item):

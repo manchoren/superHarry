@@ -19,6 +19,8 @@ FORBIDDEN_BENCHMARK_KEYS = {
     "quality_score",
 }
 SECRET_MARKERS = ("api_key", "access_token", "bearer ", "private_key", "password")
+MAX_OCR_SECURITY_PROBES = 8
+MAX_OCR_PROBE_TEXT_BYTES = 4096
 
 
 def load_manifest() -> dict:
@@ -135,6 +137,73 @@ def validate_fixture_payloads(manifest: dict) -> list[str]:
             errors.append(f"resource fixture lacks an enforcement denial: {item['id']}")
         if item["category"] == "recovery" and fixture.get("expected_state") != "unknown":
             errors.append(f"recovery fixture must preserve unknown state: {item['id']}")
+        if item["id"] == "ocr-bilingual":
+            errors.extend(_validate_ocr_fixture(fixture))
+    return errors
+
+
+def _validate_ocr_fixture(fixture: dict) -> list[str]:
+    """Validate the synthetic OCR contract without scoring or running an engine."""
+    errors: list[str] = []
+    images = fixture.get("images")
+    if not isinstance(images, list) or not images:
+        return ["OCR fixture must contain a non-empty images list"]
+
+    ids = [image.get("id") for image in images if isinstance(image, dict)]
+    if len(ids) != len(images) or any(not image_id for image_id in ids):
+        errors.append("OCR images must be objects with non-empty ids")
+    if len(set(ids)) != len(ids):
+        errors.append("OCR image ids must be unique")
+
+    languages: set[str] = set()
+    blank_count = 0
+    for image in images:
+        if not isinstance(image, dict):
+            continue
+        language = image.get("language")
+        reference = image.get("reference")
+        blank = image.get("blank")
+        if language not in {"es", "en", "und"}:
+            errors.append(f"OCR image has unsupported language: {language!r}")
+        else:
+            languages.add(language)
+        if not isinstance(reference, str):
+            errors.append("OCR image reference must be a string")
+        if not isinstance(blank, bool):
+            errors.append("OCR image blank flag must be boolean")
+        elif blank:
+            blank_count += 1
+            if reference != "":
+                errors.append("blank OCR image must have an empty reference")
+            if language != "und":
+                errors.append("blank OCR image must use language 'und'")
+        elif not isinstance(reference, str) or not reference:
+            errors.append("non-blank OCR image must have reference text")
+
+    if not {"es", "en"}.issubset(languages):
+        errors.append("OCR fixture must include both Spanish and English cases")
+    if blank_count == 0:
+        errors.append("OCR fixture must include a blank-image case")
+    probes = fixture.get("security_probes")
+    if not isinstance(probes, list) or not probes:
+        errors.append("OCR fixture must include synthetic security probes")
+    elif len(probes) > MAX_OCR_SECURITY_PROBES:
+        errors.append("OCR fixture contains too many security probes")
+    else:
+        probe_ids = [probe.get("id") for probe in probes if isinstance(probe, dict)]
+        if len(probe_ids) != len(probes) or len(set(probe_ids)) != len(probe_ids):
+            errors.append("OCR security probe ids must be unique and non-empty")
+        for probe in probes:
+            if not isinstance(probe, dict) or not isinstance(probe.get("text"), str):
+                errors.append("OCR security probes must contain text strings")
+            elif len(probe["text"].encode("utf-8")) > MAX_OCR_PROBE_TEXT_BYTES:
+                errors.append("OCR security probe text exceeds the size limit")
+            elif probe.get("expected") != "untrusted-text":
+                errors.append("OCR security probes must remain untrusted text")
+            elif probe.get("handling") != "text-only":
+                errors.append("OCR security probes must use text-only handling")
+            if isinstance(probe, dict) and probe.get("handling") in {"html", "shell"}:
+                errors.append("OCR security probes must not be interpreted as HTML or shell")
     return errors
 
 
