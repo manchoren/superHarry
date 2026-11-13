@@ -175,6 +175,20 @@ T225 remains `Pending`.
   clean Linux dependency installation, target-VM behavior, deployment,
   production acceptance or task closure.
 
+#### T225 owner authorization update - 2026-11-13
+
+- The owner explicitly authorized omitting the clean Linux checkout gate for
+  this task. No Linux checkout or Linux dependency-installation evidence will
+  be requested as a prerequisite for T225 closure.
+- The independent fresh-context audit was attempted again on the complete
+  current change set but did not return a usable evidence package. Per the test
+  policy, the full Django suite was therefore retained as mandatory and passed
+  locally as recorded above.
+- Remaining closure gates are the independent audit/reconciliation acceptance
+  record and any applicable non-Linux application acceptance review. This
+  authorization does not waive VM, deployment, provider or production gates
+  belonging to other tasks.
+
 ### T226 - Reconcile constitution identity and context regression coverage
 
 **Priority:** P0. **Dependencies:** None. **Evidence:** settings hash differs from raw constitution; constitution_context rejects mismatches.
