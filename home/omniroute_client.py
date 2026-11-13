@@ -1,5 +1,5 @@
 """Defensive OpenAI-compatible client for the local omniroute gateway."""
-import json, logging, os
+import json, logging, os, uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterator, List, Optional
@@ -226,6 +226,20 @@ class OmnirouteClient:
 omniroute_client = OmnirouteClient()
 def chat_with_external_model(messages, **kwargs): return omniroute_client.chat_completion(messages=messages, model="nous-ai/solar-mini-4", **kwargs)
 def chat_with_local_model(messages, **kwargs): return omniroute_client.chat_completion(messages=messages, model="ollama/qwen3.5:4b", **kwargs)
-def memory_agent_search(query, conversation_context=None):
+def memory_agent_search(query, conversation_context=None, *, user_key=None, operation_id=None):
     messages = list(conversation_context or []); messages.append({"role": "user", "content": query})
-    return omniroute_client.chat_completion(messages=messages, model="nous-ai/solar-mini-4", reasoning=False, temperature=0.3, max_tokens=500)
+    if user_key is None:
+        return omniroute_client.chat_completion(messages=messages, model="nous-ai/solar-mini-4", reasoning=False, temperature=0.3, max_tokens=500)
+    from home.application_budget import mark_unknown, reserve, settle
+    bound = sum(len(str(message.get("content", "")).encode("utf-8")) for message in messages) + 500
+    reservation = reserve(operation_id or f"memory-search:{uuid.uuid4()}:application-tokens", bound, user_key=str(user_key))
+    mark_unknown(reservation.pk)
+    try:
+        response = omniroute_client.chat_completion(messages=messages, model="nous-ai/solar-mini-4", reasoning=False, temperature=0.3, max_tokens=500)
+        settle(reservation.pk, response.usage.total_tokens, allow_overage=True)
+        return response
+    except NotDispatched:
+        settle(reservation.pk, 0)
+        raise
+    except Exception:
+        raise

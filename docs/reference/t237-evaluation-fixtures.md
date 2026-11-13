@@ -53,7 +53,7 @@ acceptance, live-provider checks, artifact/model review and target-VM checks
 remain open gates. T237 remains Pending; no provider, credential, installation,
 deployment or VM evidence is created by these local fixtures.
 
-## Validation record - 2026-11-12
+## Validation record - 2026-11-13
 
 - `python scripts/validate_t237_fixtures.py` — local manifest and fixture
   policy validation.

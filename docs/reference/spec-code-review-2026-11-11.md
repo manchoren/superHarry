@@ -320,6 +320,19 @@ T225 remains `Pending`.
   provider, VM, deployment or production acceptance, and T229 remains
   `Pending`.
 
+#### T229 verification update - 2026-11-13
+
+- Gateway-bound turns now load the pinned `constitution.md` identity and send
+  it as the first OpenAI-compatible `developer` message; a missing or changed
+  protected context fails closed before gateway dispatch. Added a regression
+  assertion for the protected message in `home/test_gemini_chat.py`.
+- Focused chat/routing/cancellation/queue/reattachment tests passed 54 tests;
+  `manage.py check`, migration dry-run and `git diff --check` passed locally.
+  The independent fresh-context audit was unavailable, so the full Django
+  suite remains required before handoff.
+- No live gateway, provider, VM, deployment or production/release acceptance
+  was performed or inferred. T229 remains `Pending`.
+
 ### T230 - Enforce application budgets across gateway fallback and memory calls
 
 **Priority:** P0. **Dependencies:** T227, T228, T179. **Owner authorization (2026-11-11):** D2 accepted; implement security policies section 5.5, including initial allowances, UTC periods, 80% warnings and unresolved-reservation carryover. Budget-policy decision prerequisite under T220 is resolved; implementation/validation remain open. **Evidence:** existing ProviderQuota/ProviderModelQuota/ProviderReservation are keyed to direct-provider dispatch.

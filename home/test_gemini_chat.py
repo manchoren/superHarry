@@ -136,6 +136,9 @@ class GeminiChatTests(TestCase):
         self.assertEqual(self.turn.events.get(event_type='turn.completed').payload['context_usage'], {
             'input_tokens': 12, 'capacity': 32768,
         })
+        messages = client.chat_completion_stream.call_args.args[0]
+        self.assertEqual(messages[0]['role'], 'developer')
+        self.assertIn('Protect safety, privacy and user control.', messages[0]['content'])
         client.chat_completion_stream.assert_called_once()
 
     @patch.dict('os.environ', {'OMNIROUTE_API_KEY': 'synthetic-gateway-key'}, clear=False)

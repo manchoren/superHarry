@@ -7,6 +7,42 @@ owner-attention records or the constitution.
 
 ## Chat
 
+### 2026-11-13 19:30 America/Guayaquil - overseer - T229
+
+- **Assignment:** Connect durable chat and local inference to the gateway within the existing queue, turn, event, cancellation and protected-context contracts.
+- **Result:** Gateway dispatch now prepends the verified pinned constitution as a `developer` message and fails closed when protected context is unavailable; no queue or replay behavior changed.
+- **Evidence:** Changed `home/gemini_chat.py`, `home/test_gemini_chat.py` and T229 evidence in `docs/reference/spec-code-review-2026-11-11.md`. Focused suite passed 54 tests; `manage.py check`, migration dry-run and `git diff --check` passed.
+- **Conclusion:** The bounded application slice preserves durable dispatch and protected context locally.
+- **Blockers or limits:** Independent fresh-context audit, full-suite handoff, live gateway/provider, VM, deployment and production/release acceptance remain open. T229 remains Pending.
+- **Next action:** Review the combined T229/T227/T228 diff and run the required independent audit/full-suite process.
+
+### 2026-11-13 19:00 America/Guayaquil - overseer - T230
+
+- **Assignment:** Implement the bounded application-budget slice across gateway fallback and memory calls.
+- **Result:** Added conservative UTC application-budget reservation/settlement to the omniroute gateway stream and authenticated `memory_agent_search` calls; proven pre-dispatch failures release capacity, while possible dispatch failures retain unknown reservations.
+- **Evidence:** Changed `home/gemini_chat.py` and `home/omniroute_client.py`; focused application-budget and gateway tests used mocked transports only.
+- **Conclusion:** The local code covers the identified gateway/memory application-budget gap without adding provider consent or paid routes.
+- **Blockers or limits:** No live gateway/provider, VM, deployment, recovery, or production acceptance was performed.
+- **Next action:** Review the bounded diff and arrange the required independent audit and separately authorized gateway/VM validation.
+
+### 2026-11-13 10:03 America/Guayaquil - overseer - T231 package guard
+
+- **Assignment:** Correct the accepted D1 package scoring and evidence-validation behavior.
+- **Result:** Preserved the exact 40/30/20/10 formula and added source, collection-time and expiry validation to each advisory finding; incomplete advisory evidence now fails closed.
+- **Evidence:** Changed `home/package_guard.py` and `tests/test_package_guard.py`. Focused tests: `28 passed`; `manage.py check`, compileall and `git diff --check` passed. Synthetic fixtures only; no network or credentials.
+- **Conclusion:** The bounded evaluator now enforces D1 advisory evidence freshness without installation or dependency changes.
+- **Blockers or limits:** T231 remains Pending; verifier integration, T193 installation integration, independent audit, VM, deployment and release acceptance remain open.
+- **Next action:** Review the bounded diff and complete the separate verifier/integration gates.
+
+### 2026-11-13 00:00 America/Guayaquil - overseer - T237 bounded fixture evidence
+
+- **Assignment:** Implement and validate the bounded reproducible T237 security, quality and VM evaluation fixture slice.
+- **Result:** Confirmed the synthetic manifest, fixture payloads and validator preserve denied networking, synthetic credentials, functional/security/resource/recovery cases, and the owner benchmark waiver. Added dated evidence at `docs/reference/evidence/t237-bounded-fixtures-2026-11-13.md`.
+- **Evidence:** `\.venv\Scripts\python.exe scripts\validate_t237_fixtures.py` passed; `\.venv\Scripts\python.exe -m unittest tests.test_t237_fixtures` passed with 16 tests. No production VM, service, database, provider or network call was used.
+- **Conclusion:** The local T237 fixture boundary is reproducible and locally validated. This is application/fixture evidence only; T237 remains Pending.
+- **Blockers or limits:** Independent fresh-context audit, live-provider checks, artifact/model review, target-VM acceptance, deployment and release acceptance remain open. Comparative and numerical benchmarks remain waived.
+- **Next action:** Review the evidence and arrange separately authorized audit/provider/VM validation when prerequisites are available.
+
 Keep entries in this section only, with the newest entry first. Append new
 entries immediately after this heading; do not place entries between the
 instructions or in another section. Use English, keep entries concise, and

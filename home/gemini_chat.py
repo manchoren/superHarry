@@ -27,6 +27,7 @@ from home.constitution_context import (
     ContextProfile,
     PreparedContext,
     ensure_prepared_context_integrity,
+    load_verified_constitution,
     prepare_release_context,
 )
 from home.model_interface import (
@@ -68,6 +69,12 @@ from home.provider_credentials import (
 from home.provider_outcomes import NotDispatched, OutcomeUnknown, RateLimited
 from home.heavy_job_governor import HeavyJobGovernor
 from home.omniroute_client import OmnirouteClient, OmnirouteError, OmnirouteUsageError
+from home.application_budget import (
+    ApplicationBudgetError,
+    mark_unknown as mark_budget_unknown,
+    reserve as reserve_application_budget,
+    settle as settle_application_budget,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -105,15 +112,32 @@ def _attempt_gateway(*, turn, history, cancelled):
     """Run one admitted turn through omniroute's bounded OpenAI-compatible SSE."""
     if cancelled():
         raise TurnCancelled()
-    messages = [{"role": "assistant" if role == "model" else role, "content": content}
-                for role, content in history]
+    try:
+        constitution = load_verified_constitution(
+            settings.BASE_DIR / "constitution.md",
+            settings.SUPERHARRY_CONSTITUTION_SHA256,
+        )
+    except ContextPreparationError as exc:
+        raise OmnirouteError("protected_context_unavailable") from exc
+    messages = [{"role": "developer", "content": constitution.text}]
+    messages.extend(
+        {"role": "assistant" if role == "model" else role, "content": content}
+        for role, content in history
+    )
     messages.append({"role": "user", "content": turn.user_message.content})
     model_id = _gateway_model(turn)
     client = OmnirouteClient(timeout=30)
     chunks = []
     usage = None
     dispatched = False
+    application_reservation = None
+    bound = sum(len(str(message['content']).encode('utf-8')) for message in messages) + 2048
     try:
+        application_reservation = reserve_application_budget(
+            f'gateway:{turn.pk}:application-tokens', bound,
+            user_key=str(turn.conversation.owner_id),
+        )
+        mark_budget_unknown(application_reservation.pk)
         for event in client.chat_completion_stream(messages, model=model_id, temperature=0.7,
                                                    max_tokens=2048):
             dispatched = True
@@ -127,12 +151,22 @@ def _attempt_gateway(*, turn, history, cancelled):
                 break
         if not chunks or usage is None:
             raise OmnirouteUsageError("gateway_usage_missing")
+        settle_application_budget(application_reservation.pk, usage.total_tokens, allow_overage=True)
     except OutcomeUnknown:
         raise
     except (NotDispatched, OmnirouteUsageError, OmnirouteError):
         if dispatched:
             raise OutcomeUnknown("omniroute_outcome_unknown") from None
+        if application_reservation is not None:
+            try:
+                settle_application_budget(application_reservation.pk, 0)
+            except ApplicationBudgetError:
+                raise OutcomeUnknown("omniroute_budget_release_failed") from None
         raise NotDispatched("omniroute_not_dispatched") from None
+    except ApplicationBudgetError as exc:
+        if application_reservation is None:
+            raise NotDispatched("omniroute_budget_unavailable") from exc
+        raise OutcomeUnknown("omniroute_budget_settlement_failed") from exc
     return "".join(chunks), {
         "mode": "local" if turn.model_mode == ChatTurn.ModelMode.LOCAL else "automatic",
         "provider": "omniroute",

@@ -27,6 +27,12 @@ def evidence(**changes):
     return PackageEvidence(**values)
 
 
+def make_advisory(cve_id, severity, *, applicable=True, aliases=()):
+    return CVE(cve_id, severity, NOW - timedelta(days=1), applicable=applicable,
+               aliases=aliases, evidence_source="synthetic-advisory",
+               collected_at=NOW - timedelta(hours=1), expires_at=NOW + timedelta(hours=23))
+
+
 def test_formula_is_exactly_100_points_and_threshold_is_applied():
     score = PackageGuard().evaluate("safe_package", "1.2.3", evidence=evidence(), now=NOW)
     assert score.total == 100
@@ -35,15 +41,15 @@ def test_formula_is_exactly_100_points_and_threshold_is_applied():
 
 
 def test_reputation_starts_at_zero_and_uses_two_year_advisory_window():
-    advisory = CVE("CVE-1", CVESeverity.HIGH, NOW - timedelta(days=100))
+    finding = make_advisory("CVE-1", CVESeverity.HIGH)
     score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(
         downloads_per_month=0, age_days=0, security_patch_within_days=999,
-        advisories=(advisory,)), now=NOW)
+        advisories=(finding,)), now=NOW)
     assert score.reputation == 0
 
 
 def test_formula_uses_exact_d1_dimensions_without_bonus_or_deduction_cap():
-    advisories = tuple(CVE(f"CVE-{i}", CVESeverity.HIGH, NOW - timedelta(days=10)) for i in range(7))
+    advisories = tuple(make_advisory(f"CVE-{i}", CVESeverity.HIGH) for i in range(7))
     score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(
         downloads_per_month=0, age_days=0, security_patch_within_days=999,
         advisories=advisories), now=NOW)
@@ -224,26 +230,39 @@ def test_freshness_accepts_exactly_one_day_and_rejects_older_evidence():
 
 
 def test_advisory_at_two_year_boundary_is_still_deducted():
-    boundary = CVE("CVE-boundary", CVESeverity.CRITICAL, NOW - timedelta(days=730))
+    boundary = make_advisory("CVE-boundary", CVESeverity.CRITICAL)
+    boundary = CVE(boundary.cve_id, boundary.severity, NOW - timedelta(days=730),
+                   evidence_source=boundary.evidence_source,
+                   collected_at=boundary.collected_at, expires_at=boundary.expires_at)
     score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(
         advisories=(boundary,)), now=NOW)
     assert score.reputation == 20
 
 
 def test_unknown_applicable_advisory_blocks_but_verified_non_applicability_does_not():
-    unknown = CVE("CVE-unknown", CVESeverity.UNKNOWN, NOW - timedelta(days=1))
+    unknown = make_advisory("CVE-unknown", CVESeverity.UNKNOWN)
     blocked = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(advisories=(unknown,)), now=NOW)
     assert blocked.blocked and blocked.reason == "advisory_severity_unknown"
     not_applicable = PackageGuard().evaluate(
         "safe-package", "1.2.3", evidence=evidence(advisories=(CVE(
-            "CVE-unknown", CVESeverity.UNKNOWN, NOW - timedelta(days=1), applicable=False),)), now=NOW)
+            "CVE-unknown", CVESeverity.UNKNOWN, NOW - timedelta(days=1), applicable=False,
+            evidence_source="synthetic-advisory", collected_at=NOW - timedelta(hours=1),
+            expires_at=NOW + timedelta(hours=23)),)), now=NOW)
     assert not_applicable.evidence_valid
+
+
+def test_advisory_without_source_or_freshness_evidence_fails_closed():
+    incomplete = CVE("CVE-incomplete", CVESeverity.HIGH, NOW - timedelta(days=1))
+    score = PackageGuard().evaluate(
+        "safe-package", "1.2.3", evidence=evidence(advisories=(incomplete,)), now=NOW
+    )
+    assert score.blocked and score.reason == "mandatory_evidence_unavailable"
 
 
 def test_advisory_aliases_are_deduplicated():
     advisories = (
-        CVE("GHSA-alias", CVESeverity.HIGH, NOW - timedelta(days=1), aliases=("CVE-alias",)),
-        CVE("CVE-alias", CVESeverity.HIGH, NOW - timedelta(days=1)),
+        make_advisory("GHSA-alias", CVESeverity.HIGH, aliases=("CVE-alias",)),
+        make_advisory("CVE-alias", CVESeverity.HIGH),
     )
     score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(
         downloads_per_month=0, age_days=0, security_patch_within_days=999,

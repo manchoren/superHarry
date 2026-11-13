@@ -36,6 +36,9 @@ class CVE:
     description: str = ""
     applicable: bool = True
     aliases: Tuple[str, ...] = ()
+    evidence_source: str = ""
+    collected_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
 
 
 @dataclass(frozen=True)
@@ -77,6 +80,16 @@ class PackageEvidence:
         aware = all(value.tzinfo is not None for value in (now, self.collected_at, self.expires_at))
         if not aware or self.expires_at < self.collected_at:
             return False
+        advisory_evidence_complete = all(
+            advisory.evidence_source.strip()
+            and advisory.collected_at is not None
+            and advisory.expires_at is not None
+            and advisory.collected_at.tzinfo is not None
+            and advisory.expires_at.tzinfo is not None
+            and advisory.collected_at <= now <= advisory.expires_at
+            and advisory.expires_at - advisory.collected_at <= timedelta(hours=24)
+            for advisory in self.advisories
+        )
         return all((
             self.registry == "pypi", bool(self.normalized_name), bool(self.version),
             bool(self.evidence_source.strip()),
@@ -89,6 +102,7 @@ class PackageEvidence:
             self.security_patch_within_days is not None,
             self.expires_at - self.collected_at <= timedelta(hours=24),
             self.collected_at <= now <= self.expires_at,
+            advisory_evidence_complete,
             self.claimed_sha256 == self.artifact_sha256,
             (not self.signature_verified or self.signature_artifact_sha256 == self.artifact_sha256),
             (not self.slsa_verified or self.provenance_artifact_sha256 == self.artifact_sha256),
@@ -194,6 +208,19 @@ class PackageGuard:
                     evidence.age_days, evidence.security_patch_within_days)):
                     reason = "mandatory_evidence_unavailable"
                 elif not evidence.signature_evidence_available or not evidence.provenance_evidence_available:
+                    reason = "mandatory_evidence_unavailable"
+                elif any(
+                    not advisory.evidence_source.strip()
+                    or advisory.collected_at is None
+                    or advisory.expires_at is None
+                    or advisory.collected_at.tzinfo is None
+                    or advisory.expires_at.tzinfo is None
+                    or advisory.collected_at > current
+                    or advisory.expires_at < advisory.collected_at
+                    or current > advisory.expires_at
+                    or advisory.expires_at - advisory.collected_at > timedelta(hours=24)
+                    for advisory in evidence.advisories
+                ):
                     reason = "mandatory_evidence_unavailable"
                 return PackageScore(package_name, version, registry, blocked=True,
                                     reason=reason, artifact_sha256=evidence.artifact_sha256)
