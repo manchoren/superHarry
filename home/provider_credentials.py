@@ -77,14 +77,15 @@ def load_omniroute_endpoint(environ):
     if not isinstance(environ, Mapping):
         raise CredentialConfigError('omniroute_endpoint_invalid')
     value = environ.get('OMNIROUTE_ENDPOINT', _DEFAULT_OMNIROUTE_ENDPOINT)
-    if not isinstance(value, str) or not value or any(char.isspace() for char in value):
+    if (not isinstance(value, str) or not value
+            or any(char.isspace() or not char.isprintable() for char in value)):
         raise CredentialConfigError('omniroute_endpoint_invalid')
     try:
         parsed = urlsplit(value)
         parsed.port
     except ValueError:
         raise CredentialConfigError('omniroute_endpoint_invalid') from None
-    if parsed.scheme not in {'http', 'https'} or not parsed.netloc:
+    if parsed.scheme not in {'http', 'https'} or not parsed.netloc or not parsed.hostname:
         raise CredentialConfigError('omniroute_endpoint_invalid')
     if (parsed.username is not None or parsed.password is not None
             or parsed.fragment or parsed.query):

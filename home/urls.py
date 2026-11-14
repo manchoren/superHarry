@@ -3,8 +3,10 @@ from django.urls import path
 from .chat_views import cancel_turn, create_turn, turn_events
 from .views import conversation_detail, home, start_conversation
 from .file_views import download_file, upload_file
+from .budget_views import budget_status
 
 urlpatterns = [
+    path("budgets/", budget_status, name="budget-status"),
     path("api/v1/files/", upload_file, name="file-upload"),
     path("api/v1/files/<uuid:storage_id>/", download_file, name="file-download"),
     path("conversations/new/", start_conversation, name="conversation-start"),

@@ -1,4 +1,5 @@
 from unittest import TestCase
+from dataclasses import replace
 from uuid import uuid4
 from home.model_interface import (
     InvocationContext,
@@ -81,13 +82,34 @@ class AuthorizedToolBoundaryTests(TestCase):
     def test_denies_cross_user_malformed_and_unconfirmed_before_effect(self):
         for invocation in (
             self.invocation(actor_user_id=7, target_user_id=8),
+            self.invocation(actor_user_id=None, target_user_id=None),
+            self.invocation(actor_user_id=True, target_user_id=1),
             self.invocation(arguments={"unexpected": True}),
             self.invocation(confirmed=False),
+            self.invocation(confirmed="yes"),
         ):
             with self.subTest(invocation=invocation):
                 with self.assertRaises(ToolDenied):
                     self.executor.execute(invocation)
         self.assertEqual(self.calls, [])
+
+    def test_registry_rejects_unsupported_schema_constraints(self):
+        declaration = self.registry.get("owned.write")
+        for schema in (
+            {"type": "object", "properties": {}, "additionalProperties": False},
+            {"type": "object", "properties": {"value": {"type": "string", "maxLength": 1}}},
+            {"type": "object", "properties": {"value": {"type": "object", "properties": {}}}},
+        ):
+            with self.subTest(schema=schema), self.assertRaises(ValueError):
+                ToolRegistry((replace(declaration, schema=schema),))
+
+    def test_registry_rejects_untyped_authorization_fields(self):
+        declaration = self.registry.get("owned.write")
+        for changes in ({"required_role": "unknown"}, {"ownership": "unknown"},
+                        {"side_effect": "write"}, {"confirmation_required": "yes"},
+                        {"handler": None}):
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                ToolRegistry((replace(declaration, **changes),))
 
     def test_denies_arguments_over_execution_boundary_before_effect(self):
         oversized = "x" * MAX_ARGUMENT_BYTES

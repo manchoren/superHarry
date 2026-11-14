@@ -59,6 +59,10 @@ class ProviderOrderTests(TestCase):
 )
 class RoutedTurnTests(TestCase):
     def setUp(self):
+        from home.test_tokenizer_support import SyntheticCounter
+        counter = patch('home.free_provider_dispatch.local_tokenizer.build_counter', return_value=SyntheticCounter())
+        counter.start()
+        self.addCleanup(counter.stop)
         # These tests exercise routing after a hypothetical verified upstream.
         verified = patch('home.openrouter_transport.protected_context_delivery_verified', return_value=True)
         verified.start()
@@ -89,13 +93,11 @@ class RoutedTurnTests(TestCase):
         self.turn.refresh_from_db()
         return groq_factory.return_value.generate, or_factory.return_value.generate
 
-    def test_automatic_order_skips_openrouter_and_uses_groq(self):
+    def test_automatic_order_skips_routes_without_consent(self):
         groq_call, or_call = self._run(keys={'groq': 'k1', 'openrouter': 'k2'})
         or_call.assert_not_called()
-        groq_call.assert_called_once()
-        self.assertEqual(self.turn.state, 'completed')
-        selected = self.turn.events.get(event_type='model.selected').payload
-        self.assertEqual(selected, {'mode': 'automatic', 'provider': 'groq', 'model_id': GROQ_MODEL})
+        groq_call.assert_not_called()
+        self.assertEqual(self.turn.state, 'failed')
 
     def test_admin_flag_is_true_in_routing(self):
         from home.free_provider_eligibility import free_route_enabled
@@ -234,7 +236,7 @@ class RoutedTurnTests(TestCase):
         groq_call, or_call = self._run(
             keys={'groq': 'k1', 'openrouter': 'k2'}, groq=unavailable
         )
-        groq_call.assert_called_once()
+        groq_call.assert_not_called()
         or_call.assert_not_called()
         self.assertEqual(self.turn.state, 'failed')
 
@@ -247,7 +249,14 @@ class RoutedTurnTests(TestCase):
             from home.groq_transport import GroqRateLimitError
             raise GroqRateLimitError('groq_rate_limited')
 
-        groq_call, or_call = self._run(keys={'groq': 'k1', 'openrouter': 'k2'}, groq=rate_limited)
+        # Exercise the post-admission 429 contract under hypothetical Groq
+        # consent; production turns cannot currently record that consent.
+        from home.free_provider_dispatch import dispatch_free_provider
+        def admitted_dispatch(**kwargs):
+            kwargs['risk_accepted'] = True
+            return dispatch_free_provider(**kwargs)
+        with patch('home.gemini_chat.dispatch_free_provider', side_effect=admitted_dispatch):
+            groq_call, or_call = self._run(keys={'groq': 'k1', 'openrouter': 'k2'}, groq=rate_limited)
         groq_call.assert_called_once()
         or_call.assert_not_called()
         self.assertEqual(ProviderReservation.objects.filter(state='unknown').count(), 2)

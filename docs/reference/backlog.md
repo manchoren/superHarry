@@ -102,7 +102,6 @@ Accepted owner follow-up (2026-11-11): [benchmarks waived](owner-validation-deci
 
 The [review and acceptance records](spec-code-review-2026-11-11.md) define the evidence, dependencies and Given/When/Then criteria for T179-T240. Completed scope is recorded in history and does not imply a new validation result. All pending tasks are **Unassigned**; no active implementer/model was verified. T179 is Pending because no active owner is verified; work already recorded remains evidence, not completion.
 
-- [ ] **T226 - Reconcile constitution identity and context regression coverage** Status: Pending. Verify the updated constitution pin and context regression coverage under the current policy; independent acceptance is no longer a prerequisite.
 - [ ] **T227 - Harden and verify the gateway client contract** Status: Pending. Focused evidence and later full-suite results are recorded in the dated review. Verify contracts needed by enabled flows; broader provider acceptance is deferred to T241.
 - [ ] **T228 - Migrate model credentials and runtime configuration to omniroute** Status: Pending
 - [ ] **T229 - Connect durable chat and local inference to the gateway** Status: Pending. Bounded gateway routing, credential resolution and fail-closed cancellation evidence is recorded in the dated review; real gateway, VM and release acceptance remain open.
@@ -113,11 +112,15 @@ The [review and acceptance records](spec-code-review-2026-11-11.md) define the e
 - [ ] **T234 - Deliver memory controls, personality and fixed-directive administration** Status: Pending
 - [ ] **T235 - Deliver the local-only guest session and chat flow** Status: Pending
 - [ ] **T236 - Deliver persisted accessible light, dark and system themes** Status: Pending
-- [ ] **T237 - Restore reproducible security, quality and VM evaluation fixtures** Status: Pending. Synthetic manifest and validator fixtures are present; useful feature-specific local cases and the threat model remain in scope. Broader evaluation is deferred to T244.
-  - Bounded fixture slice: [T237 evaluation fixtures](t237-evaluation-fixtures.md), including the synthetic-only manifest and mocked/contract/live-provider/VM separation. This does not itself close the current local scope.
 - [ ] **T238 - Implement shared channel identity and attachment contracts** Status: Pending
 - [ ] **T239 - Implement storage-pressure cleanup across persisted user data** Status: Pending
 - [ ] **T240 - Implement capability degradation and external-only task recovery** Status: Pending
+
+Local overseer work on T179-T181, T183, T187, T227-T233, T236 and T240 is
+recorded in [product-first validation evidence](evidence/overseer-product-first-2026-11-14.md)
+and [test discovery evidence](evidence/t237-test-discovery-2026-11-14.md).
+These are bounded implementation slices; the tasks remain open pending their
+remaining scope and integrated validation.
 
 ### Reconciliation note (2026-11-14)
 

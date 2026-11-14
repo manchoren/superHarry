@@ -166,7 +166,26 @@ def validate_fixture_payloads(manifest: dict) -> list[str]:
             errors.append(f"recovery fixture must preserve unknown state: {item['id']}")
         if item["id"] == "ocr-bilingual":
             errors.extend(_validate_ocr_fixture(fixture))
+        if item["id"] == "spanish-voseo":
+            errors.extend(_validate_voseo_fixture(fixture))
     return errors
+
+
+def _validate_voseo_fixture(fixture: dict) -> list[str]:
+    """Validate fixed input contracts; this does not evaluate model output."""
+    cases = fixture.get("cases")
+    if not isinstance(cases, list) or not cases:
+        return ["voseo fixture must contain cases"]
+    ids = [case.get("id") for case in cases if isinstance(case, dict)]
+    if (len(ids) != len(cases) or any(not isinstance(item, str) or not item for item in ids)
+            or len(set(ids)) != len(ids)):
+        return ["voseo cases must have unique non-empty ids"]
+    if any(not isinstance(case.get("text"), str) or not case["text"]
+           or case.get("expected") != "preserve-text" for case in cases):
+        return ["voseo cases must contain text with the preserve-text contract"]
+    if not any("vos" in case["text"].casefold() for case in cases):
+        return ["voseo fixture must include vos"]
+    return []
 
 
 def _validate_ocr_fixture(fixture: dict) -> list[str]:

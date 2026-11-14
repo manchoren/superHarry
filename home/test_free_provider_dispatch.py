@@ -23,6 +23,10 @@ def _ok_response(model=MODEL):
                    SUPERHARRY_LOCAL_TOKENIZER_APPROVED_MODELS=(MODEL,))
 class FreeProviderDispatchTests(TestCase):
     def setUp(self):
+        from home.test_tokenizer_support import SyntheticCounter
+        counter = patch('home.free_provider_dispatch.local_tokenizer.build_counter', return_value=SyntheticCounter())
+        counter.start()
+        self.addCleanup(counter.stop)
         create_application_budgets('synthetic-user')
         ProviderQuota.objects.create(group='groq-development', limit=5)
         ProviderQuota.objects.create(group='groq-development:tokens', limit=10_000_000)
@@ -33,16 +37,26 @@ class FreeProviderDispatchTests(TestCase):
     def _dispatch(self, operation_id='turn-1', authorize=lambda: True, cancelled=lambda: False):
         return dispatch_free_provider(route=self.route, transport=self.transport, user_request='hello',
                                       authorize=authorize, cancelled=cancelled, operation_id=operation_id,
-                                      budget_user_key='synthetic-user')
+                                      risk_accepted=True, budget_user_key='synthetic-user')
 
     def test_missing_or_invalid_budget_identity_rejects_before_dispatch(self):
         for identity in (None, '', ' ', 1):
             with self.subTest(identity=identity), self.assertRaises(NotDispatched):
                 dispatch_free_provider(route=self.route, transport=self.transport, user_request='hello',
                                        authorize=lambda: True, cancelled=lambda: False,
-                                       operation_id='missing-identity', budget_user_key=identity)
+                                       operation_id='missing-identity', risk_accepted=True, budget_user_key=identity)
         self.transport.generate.assert_not_called()
         self.assertFalse(ProviderReservation.objects.exists())
+
+    @override_settings(SUPERHARRY_APPROVED_FREE_MODELS=(MODEL,))
+    def test_omitted_risk_acceptance_rejects_before_reserving_or_sending(self):
+        with self.assertRaisesRegex(NotDispatched, 'disclosure_not_accepted'):
+            dispatch_free_provider(route=self.route, transport=self.transport, user_request='hello',
+                                   authorize=lambda: True, cancelled=lambda: False,
+                                   operation_id='no-consent', budget_user_key='synthetic-user')
+        self.transport.generate.assert_not_called()
+        self.assertFalse(ProviderReservation.objects.exists())
+        self.assertFalse(ApplicationBudgetReservation.objects.exists())
 
     def test_missing_global_budget_rejects_before_dispatch(self):
         ApplicationBudget.objects.filter(scope='global', period='daily').delete()

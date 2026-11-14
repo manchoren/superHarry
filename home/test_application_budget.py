@@ -82,6 +82,33 @@ class ApplicationBudgetTests(TestCase):
         budget = ApplicationBudget.objects.get(scope='global', scope_key='global', period='daily')
         self.assertEqual((budget.reserved, budget.used), (0, 12))
 
+    def test_verified_overage_sets_warning_and_blocks_further_admission(self):
+        reservation = reserve('overage-warning', 20, user_key='user-1', at=self.at)
+        self.assertFalse(ApplicationBudget.objects.filter(warning_emitted=True).exists())
+        settle(reservation.pk, 101, allow_overage=True)
+        settle(reservation.pk, 101, allow_overage=True)
+        for budget in reservation.budgets.all():
+            self.assertEqual((budget.used, budget.reserved, budget.warning_emitted), (101, 0, True))
+        with self.assertRaises(ApplicationBudgetError):
+            reserve('after-overage', 1, user_key='user-1', at=self.at)
+
+    def test_settlement_warns_at_eighty_not_below_and_keeps_single_flag(self):
+        first = reserve('below-warning', 10, user_key='user-1', at=self.at)
+        settle(first.pk, 79, allow_overage=True)
+        self.assertFalse(ApplicationBudget.objects.filter(warning_emitted=True).exists())
+        second = reserve('at-warning', 1, user_key='user-1', at=self.at)
+        self.assertEqual(ApplicationBudget.objects.filter(warning_emitted=True).count(), 4)
+        settle(second.pk, 1)
+        settle(second.pk, 1)
+        self.assertEqual(ApplicationBudget.objects.filter(warning_emitted=True).count(), 4)
+        self.assertEqual(set(ApplicationBudget.objects.values_list('used', flat=True)), {80})
+
+    def test_settlement_overage_reaches_warning_threshold_exactly(self):
+        reservation = reserve('settlement-exact-warning', 10, user_key='user-1', at=self.at)
+        settle(reservation.pk, 80, allow_overage=True)
+        self.assertEqual(ApplicationBudget.objects.filter(warning_emitted=True).count(), 4)
+        self.assertEqual(set(ApplicationBudget.objects.values_list('used', flat=True)), {80})
+
     def test_settlement_rejects_malformed_reservation_id(self):
         for reservation_id in (None, True, 0, -1, '1'):
             with self.subTest(reservation_id=reservation_id), self.assertRaises(ApplicationBudgetError):

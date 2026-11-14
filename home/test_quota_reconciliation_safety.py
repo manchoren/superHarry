@@ -12,6 +12,10 @@ from home.test_budget_support import create_application_budgets
 
 class QuotaReconciliationSafetyTests(TestCase):
     def setUp(self):
+        from home.test_tokenizer_support import SyntheticCounter
+        counter = patch('home.free_provider_dispatch.local_tokenizer.build_counter', return_value=SyntheticCounter())
+        counter.start()
+        self.addCleanup(counter.stop)
         admission = patch('home.gemini_dispatch._require_gemini_count_admission')
         admission.start()
         self.addCleanup(admission.stop)
@@ -41,7 +45,7 @@ class QuotaReconciliationSafetyTests(TestCase):
                 authorize=lambda: True,
                 cancelled=lambda: False,
                 operation_id=operation,
-                budget_user_key='synthetic-user',
+                risk_accepted=True, budget_user_key='synthetic-user',
             )
         transport.generate.assert_called_once()
         self.assertEqual(ProviderReservation.objects.filter(state='unknown').count(), 2)

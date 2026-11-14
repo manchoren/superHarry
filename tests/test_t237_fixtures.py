@@ -11,10 +11,33 @@ from scripts.validate_t237_fixtures import (
     validate_fixture_payloads,
     validate_manifest,
     _validate_ocr_fixture,
+    _validate_voseo_fixture,
 )
 
 
 class T237FixtureManifestTests(unittest.TestCase):
+    def test_spanish_voseo_fixture_is_explicit_fixed_input_not_model_evidence(self):
+        scenario = next(item for item in load_manifest()["scenarios"] if item["id"] == "spanish-voseo")
+        self.assertEqual(scenario["source"], "contract")
+        fixture = json_fixture(scenario)
+        self.assertEqual(_validate_voseo_fixture(fixture), [])
+        self.assertIn("¿Vos podés", fixture["cases"][0]["text"])
+        self.assertIn("Guardá", fixture["cases"][1]["text"])
+        self.assertTrue(all(case["expected"] == "preserve-text" for case in fixture["cases"]))
+
+    def test_spanish_voseo_contract_rejects_missing_and_ambiguous_cases(self):
+        self.assertTrue(_validate_voseo_fixture({"cases": []}))
+        self.assertTrue(_validate_voseo_fixture({"cases": [
+            {"id": "a", "text": "Vos", "expected": "preserve-text"},
+            {"id": "a", "text": "Vos", "expected": "preserve-text"},
+        ]}))
+        self.assertTrue(_validate_voseo_fixture({"cases": [
+            {"id": "a", "text": "Hola", "expected": "preserve-text"},
+        ]}))
+        self.assertTrue(_validate_voseo_fixture({"cases": [
+            {"id": "a", "text": "Vos", "expected": "model-pass"},
+        ]}))
+
     def test_fixture_digest_detects_modified_bytes_even_when_json_is_valid(self):
         manifest = load_manifest()
         scenario = next(item for item in manifest["scenarios"] if item.get("fixture"))

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "scenario": "spanish-voseo",
+  "network_policy": "deny",
+  "credential_policy": "synthetic-only",
+  "cases": [
+    {"id": "request", "text": "¿Vos podés revisar la nota?", "expected": "preserve-text"},
+    {"id": "imperative", "text": "Guardá el archivo para mañana.", "expected": "preserve-text"},
+    {"id": "negation", "text": "No cambies la configuración sin confirmar.", "expected": "preserve-text"}
+  ]
+}

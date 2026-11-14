@@ -135,7 +135,8 @@ class Conversation(models.Model):
 class MemoryRecordQuerySet(models.QuerySet):
     def visible_to(self, user):
         """Return active records visible to one authenticated principal."""
-        if user is None or not getattr(user, "is_authenticated", False):
+        if (user is None or not getattr(user, "is_authenticated", False)
+                or not getattr(user, "is_active", False) or getattr(user, "pk", None) is None):
             return self.none()
         return self.filter(deleted_at__isnull=True).filter(
             models.Q(scope=MemoryRecord.Scope.GLOBAL)

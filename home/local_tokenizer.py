@@ -1,33 +1,8 @@
-"""Exact local tokenizer used for pre-dispatch token counting.
+"""Tokenization helpers; no external chat framing is currently verified.
 
-T179-B. Provides the ``home.TokenCounter`` protocol implementation consumed by
-``home.constitution_context.PreparedContext`` to compute the exact
-``input_token_upper_bound`` admitted at dispatch time, replacing the
-provisional UTF-8-byte surrogate in ``home/free_provider_dispatch.py``.
-
-Design
-------
-Exact path
-    The pinned official tokenizer (tiktoken). Model id and revision are pinned by
-    settings :pydata:`SUPERHARRY_LOCAL_TOKENIZER_MODEL_ID` and
-    :pydata:`SUPERHARRY_LOCAL_TOKENIZER_REVISION` and are recorded in every
-    durable :pyclass:`home.constitution_context.ContextProfile` as the
-    ``counter_id`` / ``counter_revision`` fields.
-
-Documented conservative fallback
-    When the pinned tokenizer is unavailable, ``count_upper_bound`` returns a
-    documented overestimate derived from the whitespace structure and byte
-    length of the serialized input. It is a bound, never an exact count.
-
-Fail-closed
-    If the pinned tokenizer is requested but unavailable, ``count_upper_bound``
-    raises :pyexc:`TokenizationUnavailableError`; dispatch must fail closed and
-    must not proceed on an approximate count. No byte surrogate is admitted.
-
-Pin and version attestation
-    The pin is written to the :pyclass:`ContextProfile` ``counter_id`` and
-    ``counter_revision`` fields, which are baked into every durable
-    context bundle digest.
+Counting message content alone is not a bound for a provider's framed chat
+request. External dispatch must remain unavailable until a counter proves the
+exact model identity, tokenizer and complete upstream framing.
 """
 
 from __future__ import annotations
@@ -71,20 +46,13 @@ def _is_pin_approved(model_id: str) -> bool:
 
 
 def build_counter(model_id: str) -> "TokenizerTokenCounter":
-    """Build a :pyclass:`TokenizerTokenCounter` pinned to the pinned tokenizer."""
+    """Fail closed until a complete provider-specific chat bound is verified."""
     if not isinstance(model_id, str) or not model_id.strip():
         raise TokenizationError("model_id_invalid")
     model_id = model_id.strip()
     if not _is_pin_approved(model_id):
         raise TokenizationUnavailableError("tokenizer_model_not_approved")
-    try:
-        import tiktoken  # exact OpenAI-official tokenizer
-    except Exception as exc:  # pragma: no cover - requires tiktoken
-        raise TokenizationUnavailableError("tokenizer_import_failed") from exc
-    encoder = _build_encoder(tiktoken, _get_tokenizer_model_id())
-    if encoder is None:
-        raise TokenizationUnavailableError("tokenizer_encoder_unavailable")
-    return TokenizerTokenCounter(model_id=model_id, revision=_get_tokenizer_revision(), encoder=encoder)
+    raise TokenizationUnavailableError("tokenizer_chat_framing_unverified")
 
 
 def _build_encoder(tiktoken, model_id: str):
@@ -97,7 +65,7 @@ def _build_encoder(tiktoken, model_id: str):
 
 
 class TokenizerTokenCounter:
-    """Exact token counter with a documented conservative fallback."""
+    """Content-only helper; its count is not a framed provider request bound."""
 
     def __init__(self, *, model_id: str, revision: str, encoder) -> None:
         self.model_id = model_id

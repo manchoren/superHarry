@@ -103,6 +103,12 @@ class ToolRegistry:
             raise ValueError("Tool names must be non-empty and unique.")
         if not declaration.audit_event:
             raise ValueError("Tools must declare an audit event.")
+        if (declaration.required_role not in tuple(ToolRole)
+                or declaration.ownership not in tuple(Ownership)
+                or not isinstance(declaration.side_effect, SideEffect)
+                or type(declaration.confirmation_required) is not bool
+                or not callable(declaration.handler)):
+            raise ValueError("Tool declaration authorization fields are malformed.")
         _validate_schema_definition(declaration.schema)
         self._declarations[declaration.name] = declaration
 
@@ -206,26 +212,35 @@ class AuthorizedToolExecutor:
         for key, value in invocation.arguments.items():
             if not _matches_schema_type(value, properties[key].get("type")):
                 raise ToolDenied("Tool argument has the wrong type.")
-        if declaration.ownership == Ownership.ACTOR and invocation.actor_user_id is None:
+        if declaration.ownership == Ownership.ACTOR and (
+            type(invocation.actor_user_id) is not int or invocation.actor_user_id <= 0
+        ):
             raise ToolDenied("An actor-owned tool requires an authenticated owner.")
-        if declaration.ownership == Ownership.TARGET and invocation.actor_user_id != invocation.target_user_id:
+        if declaration.ownership == Ownership.TARGET and (
+            type(invocation.actor_user_id) is not int or invocation.actor_user_id <= 0
+            or type(invocation.target_user_id) is not int
+            or invocation.actor_user_id != invocation.target_user_id
+        ):
             raise ToolDenied("Cross-user tool access is denied.")
-        if declaration.confirmation_required and not invocation.confirmed:
+        if declaration.confirmation_required and invocation.confirmed is not True:
             raise ToolDenied("Tool confirmation is required.")
 
 
 def _validate_schema_definition(schema: Mapping[str, Any]) -> None:
     if not isinstance(schema, Mapping) or schema.get("type") != "object":
         raise ValueError("Tool schemas must describe an object.")
+    if set(schema) - {"type", "properties", "required"}:
+        raise ValueError("Tool schema contains unsupported constraints.")
     properties = schema.get("properties", {})
     required = schema.get("required", ())
     if not isinstance(properties, Mapping) or not isinstance(required, (list, tuple)):
         raise ValueError("Tool schema properties and required fields are malformed.")
     if any(not isinstance(name, str) or name not in properties for name in required):
         raise ValueError("Tool schema required fields are malformed.")
-    if any(not isinstance(value, Mapping) or value.get("type") not in {
+    if any(not isinstance(name, str) or not isinstance(value, Mapping)
+           or set(value) != {"type"} or value.get("type") not in {
         "array", "boolean", "integer", "null", "number", "object", "string"
-    } for value in properties.values()):
+    } for name, value in properties.items()):
         raise ValueError("Tool schema contains an unsupported property type.")
 
 

@@ -1,5 +1,5 @@
 :root {
-    color-scheme: light dark;
+    color-scheme: light;
     font-family: system-ui, sans-serif;
     color: #202a35;
     background: #f4f6f8;
@@ -16,6 +16,11 @@
 :root[data-theme="dark"] .message-composer select,
 :root[data-theme="dark"] .message-composer textarea { color: #e7edf5; background: #293747; }
 :root[data-theme="dark"] .navigation-link[aria-current="page"] { color: #d6e7ff; background: #294b73; }
+:root[data-theme="dark"] .navigation-link:hover,
+:root[data-theme="dark"] .account-action:hover { color: #e7edf5; background: #394858; }
+:root[data-theme="dark"] :focus-visible { outline-color: #9bc2ff; }
+:root[data-theme="dark"] .message-composer button:disabled,
+:root[data-theme="dark"] .message-composer textarea:disabled { color: #e7edf5; opacity: 1; }
 :root[data-theme="dark"] .chat-header p,
 :root[data-theme="dark"] .empty-state p,
 :root[data-theme="dark"] .message-composer p,

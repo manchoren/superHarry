@@ -49,6 +49,15 @@ class ToolGrantPolicyTests(TransactionTestCase):
         with self.assertRaises(ToolDenied):
             self.policy.provision(self.auth, principal="7", declaration=consequential, arguments={}, max_uses=1, expires_at=timezone.now() + timedelta(hours=1), policy_revision="p1")
 
+    def test_denied_invocation_preserves_failure_audit(self):
+        invocation = ToolInvocation("safe.read", {"item": "missing"}, 7, 7, ToolRole.USER)
+        with self.assertRaises(ToolDenied):
+            self.policy.consume(invocation, self.declaration, policy_revision="p1")
+        self.assertTrue(AuditEvent.objects.filter(
+            event_type=AuditEvent.EventType.TOOL_GRANT_DENIED,
+            outcome=AuditEvent.Outcome.FAILURE,
+        ).exists())
+
     def test_revocation_and_audit_failure_roll_back(self):
         grant = self.issue()
         self.policy.revoke(self.auth, grant.pk)

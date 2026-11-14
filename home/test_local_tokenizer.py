@@ -1,4 +1,3 @@
-import json
 from unittest.mock import patch
 
 from django.test import SimpleTestCase, override_settings
@@ -21,12 +20,9 @@ class LocalTokenizerTests(SimpleTestCase):
 
     @override_settings(SUPERHARRY_LOCAL_TOKENIZER_APPROVED_MODELS=('approved-model',),
                        SUPERHARRY_LOCAL_TOKENIZER_MODEL_ID='gpt2')
-    def test_exact_count_matches_tiktoken(self):
-        import tiktoken
-        counter = build_counter('approved-model')
-        payload = json.dumps({'messages': [{'role': 'user', 'content': 'Hello, señor.'}]}).encode()
-        expected = len(tiktoken.get_encoding('gpt2').encode('Hello, señor.'))
-        self.assertEqual(counter.count_upper_bound(payload), expected)
+    def test_approval_and_encoder_pin_cannot_prove_model_framing(self):
+        with self.assertRaisesRegex(TokenizationUnavailableError, 'tokenizer_chat_framing_unverified'):
+            build_counter('approved-model')
 
     @override_settings(SUPERHARRY_LOCAL_TOKENIZER_APPROVED_MODELS=('approved-model',))
     def test_missing_encoder_fails_closed(self):

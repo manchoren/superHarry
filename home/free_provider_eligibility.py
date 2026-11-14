@@ -70,7 +70,7 @@ def verify_free_route_eligibility(*, provider: str, model_id: str,
     if provider not in ("groq", "openrouter"):
         return "route_provider_invalid"
 
-    if not admin_enabled:
+    if admin_enabled is not True:
         return "admin_free_route_not_enabled"
 
     if _free_plan != "free":
@@ -99,4 +99,4 @@ def verify_free_route_eligibility(*, provider: str, model_id: str,
 
 def free_route_enabled() -> bool:
     """Admin enablement: must be True before any free-provider dispatch."""
-    return bool(getattr(settings, "SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED", False))
+    return getattr(settings, "SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED", False) is True

@@ -23,7 +23,7 @@ def evidence(**changes):
         typosquatting_passed=True, namespace_confusion_passed=True,
         malicious_pattern_passed=True, downloads_per_month=100001, age_days=731,
         security_patch_within_days=180, advisories=(), blocklist_checked=True,
-        blocklisted=False, collected_at=NOW - timedelta(hours=1),
+        blocklisted=False, advisories_checked=True, collected_at=NOW - timedelta(hours=1),
         expires_at=NOW + timedelta(hours=23), evidence_source="synthetic-fixture")
     values.update(changes)
     return PackageEvidence(**values)
@@ -88,11 +88,9 @@ def test_valid_but_low_score_reports_threshold_reason():
     score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(
         downloads_per_month=0, age_days=0, security_patch_within_days=999,
         signature_verified=False, slsa_verified=False, signed_artifact_verified=False,
-        signature_artifact_sha256="0" * 64, provenance_artifact_sha256="0" * 64,
-        typosquatting_passed=False, namespace_confusion_passed=False,
-        malicious_pattern_passed=False), now=NOW)
+        signature_artifact_sha256="0" * 64, provenance_artifact_sha256="0" * 64), now=NOW)
     assert score.evidence_valid and not score.blocked
-    assert score.total == 25
+    assert score.total == 45
     assert score.authorization is PackageAuthorization.DENIED
     assert score.reason == "score_below_threshold"
 
@@ -178,6 +176,7 @@ def test_hash_signature_and_provenance_mismatches_fail_closed():
 def test_unchecked_or_unknown_evidence_fails_closed():
     for changes in (
         {"blocklist_checked": False},
+        {"advisories_checked": False},
         {"typosquatting_passed": None},
         {"namespace_confusion_passed": None},
         {"malicious_pattern_passed": None},
@@ -195,6 +194,7 @@ def test_malformed_booleans_and_negative_metrics_never_score_as_valid():
         {"signature_verified": "False"},
         {"typosquatting_passed": "False"},
         {"blocklist_checked": 1},
+        {"advisories_checked": 1},
         {"slsa_verified": 1},
         {"downloads_per_month": True},
         {"age_days": -1},
@@ -376,6 +376,18 @@ def test_advisory_alias_deduplication_is_independent_of_order_and_transitive():
 def test_package_name_normalization_accepts_underscore():
     score = PackageGuard().evaluate("safe_package", "1.2.3", evidence=evidence(), now=NOW)
     assert score.evidence_valid and not score.blocked
+
+
+def test_package_name_normalization_collapses_pypi_separators():
+    score = PackageGuard().evaluate("Safe...__--Package", "1.2.3", evidence=evidence(), now=NOW)
+    assert score.evidence_valid and not score.blocked
+
+
+def test_failed_mandatory_static_checks_block_even_at_a_passing_score():
+    for field in ("typosquatting_passed", "namespace_confusion_passed", "malicious_pattern_passed"):
+        score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(**{field: False}), now=NOW)
+        assert score.blocked and score.reason == "mandatory_static_check_failed"
+        assert not score.can_authorize_scoped_installation()
 
 
 def test_evaluation_exception_fails_closed(monkeypatch):

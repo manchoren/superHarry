@@ -127,7 +127,7 @@ def _verify_pre_dispatch_admission(*, route: FreeProviderRoute, risk_accepted: b
         raise NotDispatched('dispatch_disclosure:' + reason)
 
 
-def dispatch_free_provider(*, route, transport, user_request, authorize, cancelled, operation_id, history=(), risk_accepted: bool = True, budget_user_key=None):
+def dispatch_free_provider(*, route, transport, user_request, authorize, cancelled, operation_id, history=(), risk_accepted: bool = False, budget_user_key=None):
     """Return (text, (input_tokens, output_tokens)) after one bounded request."""
     if (not isinstance(route, FreeProviderRoute) or not callable(getattr(transport, 'generate', None))
             or not callable(authorize) or not callable(cancelled)

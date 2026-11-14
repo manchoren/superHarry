@@ -57,6 +57,7 @@ class RealGPGBridgeTests(unittest.TestCase):
                     malicious_pattern_passed=True, downloads_per_month=100001,
                     age_days=731, security_patch_within_days=1, advisories=(),
                     blocklist_checked=True, blocklisted=False,
+                    advisories_checked=True,
                     collected_at=now, expires_at=now + timedelta(hours=1),
                     evidence_source="isolated synthetic fixture",
                 )

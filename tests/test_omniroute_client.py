@@ -300,6 +300,7 @@ def test_chat_completion_stream(mock_post, client):
     mock_response.iter_content.return_value = map(lambda line: line + b'\n', [
         b'data: {"id":"resp-1","model":"example/model","choices":[{"delta":{"content":"Hola"}}]}',
         b'data: {"id":"resp-1","model":"example/model","choices":[{"delta":{"content":" mundo"}}]}',
+        b'data: {"id":"resp-1","model":"example/model","choices":[{"delta":{},"finish_reason":"stop"}]}\n'
         b'data: {"id":"resp-1","model":"example/model","choices":[],"usage":{"prompt_tokens":2,"completion_tokens":1,"total_tokens":3}}',
         b'data: [DONE]'
     ])
@@ -319,6 +320,7 @@ def test_chat_completion_stream_accepts_final_usage_only_chunk(mock_post, client
     response = Mock(status_code=200)
     response.iter_content.return_value = map(lambda line: line + b'\n', [
         b'data: {"id":"resp-1","model":"example/model","choices":[{"delta":{"content":"ok"}}]}',
+        b'data: {"id":"resp-1","model":"example/model","choices":[{"delta":{},"finish_reason":"stop"}]}\n'
         b'data: {"id":"resp-1","model":"example/model","choices":[],"usage":{"prompt_tokens":2,"completion_tokens":1,"total_tokens":3}}',
         b'data: [DONE]',
     ])
@@ -351,6 +353,23 @@ def test_stream_rejects_uncorrelated_usage(client, final_identity):
     response.close.assert_called_once_with()
 
 
+@pytest.mark.parametrize('finish_reason', [None, 'length', 'tool_calls', 'content_filter'])
+def test_stream_requires_normal_finish_even_with_usage_and_done(client, finish_reason):
+    chunk = {"id": "resp-1", "model": "example/model", "choices": [
+        {"delta": {"content": "partial"}, "finish_reason": finish_reason}
+    ]}
+    usage = {"id": "resp-1", "model": "example/model", "choices": [],
+             "usage": {"prompt_tokens": 2, "completion_tokens": 1, "total_tokens": 3}}
+    response = Mock(status_code=200)
+    response.iter_content.return_value = [
+        ("data: " + json.dumps(chunk) + "\n" + "data: " + json.dumps(usage) + "\ndata: [DONE]\n").encode()
+    ]
+    with patch('home.omniroute_client.requests.Session.post', return_value=response):
+        with pytest.raises(OutcomeUnknown, match='stream_invalid'):
+            list(client.chat_completion_stream([{'role': 'user', 'content': 'Test'}]))
+    response.close.assert_called_once_with()
+
+
 @patch('home.omniroute_client.requests.Session.post')
 def test_chat_completion_stream_rejects_oversized_total_stream(mock_post, client):
     response = Mock(status_code=200)
@@ -366,7 +385,8 @@ def test_chat_completion_stream_rejects_oversized_total_stream(mock_post, client
 @patch('home.omniroute_client.requests.Session.get')
 def test_health_check_success(mock_get, client, mock_health_response):
     """Test: health_check retorna status."""
-    mock_get.return_value.json.return_value = mock_health_response
+    mock_get.return_value.headers = {}
+    mock_get.return_value.iter_content.return_value = [json.dumps(mock_health_response).encode()]
     mock_get.return_value.raise_for_status = Mock()
     mock_get.return_value.status_code = 200
     
@@ -400,7 +420,8 @@ def test_get_usage_stats_success(mock_get, client):
         }
     }
     
-    mock_get.return_value.json.return_value = mock_stats
+    mock_get.return_value.headers = {}
+    mock_get.return_value.iter_content.return_value = [json.dumps(mock_stats).encode()]
     mock_get.return_value.raise_for_status = Mock()
     mock_get.return_value.status_code = 200
     
@@ -550,6 +571,7 @@ def test_sse_os_error_during_read_is_unknown_and_closes_session(client):
 def test_stream_payload_cannot_be_disabled_by_kwargs(client):
     response = Mock(status_code=200)
     response.iter_content.return_value = [
+        b'data: {"id":"r","model":"m","choices":[{"delta":{},"finish_reason":"stop"}]}\n'
         b'data: {"id":"r","model":"m","choices":[],'
         b'"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}\n'
         b'data: [DONE]\n'
@@ -562,7 +584,8 @@ def test_stream_payload_cannot_be_disabled_by_kwargs(client):
 def test_sse_many_blank_lines_are_accepted_before_valid_result(client):
     response = Mock(status_code=200)
     response.iter_content.return_value = [
-        b"\n" * 20000 + b'data: {"id":"r","model":"m","choices":[],'
+        b"\n" * 20000 + b'data: {"id":"r","model":"m","choices":[{"delta":{},"finish_reason":"stop"}]}\n'
+        b'data: {"id":"r","model":"m","choices":[],'
         b'"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}\n'
         b'data: [DONE]\n'
     ]
@@ -600,7 +623,8 @@ def test_sse_enforces_bounds_before_newline(client, line_limit, total_limit):
 @pytest.mark.parametrize("delimiter", [b"\n", b"\r\n", b"\r"])
 def test_sse_accepts_fragmented_lines_and_standard_delimiters(client, delimiter):
     response = Mock(status_code=200)
-    payload = (b'data: {"id":"r","model":"m","choices":[],'
+    payload = (b'data: {"id":"r","model":"m","choices":[{"delta":{},"finish_reason":"stop"}]}\n'
+        b'data: {"id":"r","model":"m","choices":[],'
                b'"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}'
                + delimiter + b'data: [DONE]' + delimiter)
     response.iter_content.return_value = [payload[:11], payload[11:37], payload[37:-1], payload[-1:]]
@@ -644,10 +668,23 @@ def test_client_resolves_environment_configuration_at_request_time():
 @patch("home.omniroute_client.requests.Session.get")
 def test_health_check_uses_configured_timeout(mock_get, client):
     mock_get.return_value.status_code = 200
-    mock_get.return_value.json.return_value = {"status": "ok"}
+    mock_get.return_value.headers = {}
+    mock_get.return_value.iter_content.return_value = [b'{"status":"ok"}']
     client.timeout = 7
     client.health_check()
     assert mock_get.call_args.kwargs["timeout"] == 7
+
+
+@pytest.mark.parametrize("body", [b"{bad secret", b"x" * (2 * 1024 * 1024 + 1)])
+def test_health_check_rejects_invalid_or_oversized_body_without_leaking(client, body):
+    response = Mock(status_code=200, headers={})
+    response.iter_content.return_value = [body]
+    with patch("home.omniroute_client.requests.Session.get", return_value=response) as get:
+        with pytest.raises(OmnirouteError) as error:
+            client.health_check()
+    assert "secret" not in str(error.value)
+    assert get.call_args.kwargs["stream"] is True
+    response.close.assert_called_once_with()
 
 
 @patch("home.omniroute_client.requests.Session.post")
@@ -712,6 +749,7 @@ def test_successful_stream_closes_response_and_session(mock_post, client):
     response = Mock(status_code=200)
     response.iter_content.return_value = map(lambda line: line + b'\n', [
         b'data: {"id":"resp-1","model":"example/model","choices": [{"delta": {"content": "ok"}}]}',
+        b'data: {"id":"resp-1","model":"example/model","choices":[{"delta":{},"finish_reason":"stop"}]}\n'
         b'data: {"id":"resp-1","model":"example/model","choices":[],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}',
         b"data: [DONE]",
     ])

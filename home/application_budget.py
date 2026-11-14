@@ -87,7 +87,13 @@ def settle(reservation_id, actual, *, allow_overage=False):
             for budget in budgets:
                 budget.reserved -= reservation.amount
                 budget.used += actual
-                budget.save(update_fields=['reserved', 'used'])
+                # A verified overage may cross the warning threshold even
+                # when the original reservation was below it.
+                if not budget.warning_emitted and (budget.used + budget.reserved) * 100 >= budget.hard_limit * 80:
+                    budget.warning_emitted = True
+                    budget.save(update_fields=['reserved', 'used', 'warning_emitted'])
+                else:
+                    budget.save(update_fields=['reserved', 'used'])
             reservation.state, reservation.actual = 'settled', actual
             reservation.save(update_fields=['state', 'actual'])
     except DatabaseError:

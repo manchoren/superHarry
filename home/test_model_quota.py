@@ -181,6 +181,10 @@ class ModelQuotaConcurrencyTests(TransactionTestCase):
                        'openai/gpt-oss-20b', 'liquid/lfm-2.5-2.6b:free'))
 class ModelQuotaDispatchTests(TestCase):
     def setUp(self):
+        from home.test_tokenizer_support import SyntheticCounter
+        counter = patch('home.free_provider_dispatch.local_tokenizer.build_counter', return_value=SyntheticCounter())
+        counter.start()
+        self.addCleanup(counter.stop)
         admission = patch('home.gemini_dispatch._require_gemini_count_admission')
         admission.start()
         self.addCleanup(admission.stop)
@@ -211,7 +215,7 @@ class ModelQuotaDispatchTests(TestCase):
 
     def dispatch(self, operation='op'):
         return dispatch_free_provider(route=self.route, transport=self.transport, user_request='synthetic',
-                                      authorize=lambda: True, cancelled=lambda: False, budget_user_key='synthetic-user', operation_id=operation)
+                                      authorize=lambda: True, cancelled=lambda: False, risk_accepted=True, budget_user_key='synthetic-user', operation_id=operation)
 
     @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True,
                        SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED=True)
@@ -230,7 +234,7 @@ class ModelQuotaDispatchTests(TestCase):
                         dispatch_free_provider(
                             route=route, transport=self.transport, user_request='synthetic',
                             authorize=lambda: True, cancelled=lambda: False,
-                            budget_user_key='synthetic-user', operation_id='unverified',
+                            risk_accepted=True, budget_user_key='synthetic-user', operation_id='unverified',
                         )
         self.transport.generate.assert_not_called()
         self.assertFalse(ProviderReservation.objects.exists())
@@ -310,7 +314,7 @@ class ModelQuotaDispatchTests(TestCase):
         self.transport.generate.return_value = response
         result = dispatch_free_provider(
             route=route, transport=self.transport, user_request='synthetic',
-            authorize=lambda: True, cancelled=lambda: False, budget_user_key='synthetic-user', operation_id='router-op')
+            authorize=lambda: True, cancelled=lambda: False, risk_accepted=True, budget_user_key='synthetic-user', operation_id='router-op')
         self.assertEqual(result, ('ok', (10, 2)))
         self.assertEqual(ProviderModelQuota.objects.get(quota=request_quota).used, 1)
         self.request_quota.refresh_from_db()
@@ -330,7 +334,7 @@ class ModelQuotaDispatchTests(TestCase):
         self.transport.generate.return_value = response
         self.assertEqual(dispatch_free_provider(
             route=route, transport=self.transport, user_request='synthetic',
-            authorize=lambda: True, cancelled=lambda: False, budget_user_key='synthetic-user', operation_id='overage'),
+            authorize=lambda: True, cancelled=lambda: False, risk_accepted=True, budget_user_key='synthetic-user', operation_id='overage'),
             ('ok', (100000, 1)))
         token_quota.refresh_from_db()
         model_quota = ProviderModelQuota.objects.get(quota=token_quota)
@@ -355,7 +359,7 @@ class ModelQuotaDispatchTests(TestCase):
         }
         with self.assertRaises(OutcomeUnknown):
             dispatch_free_provider(route=route, transport=self.transport, user_request='synthetic',
-                                   authorize=lambda: True, cancelled=lambda: False, budget_user_key='synthetic-user', operation_id='bad-answer')
+                                   authorize=lambda: True, cancelled=lambda: False, risk_accepted=True, budget_user_key='synthetic-user', operation_id='bad-answer')
         token_quota.refresh_from_db()
         self.assertEqual(token_quota.used, 0)
         self.assertGreater(token_quota.reserved, 0)
@@ -367,7 +371,7 @@ class ModelQuotaDispatchTests(TestCase):
         route = build_openrouter_route('liquid/lfm-2.5-2.6b:free', 'liquid/fp8')
         with self.assertRaises(NotDispatched):
             dispatch_free_provider(route=route, transport=self.transport, user_request='synthetic',
-                                   authorize=lambda: True, cancelled=lambda: False, budget_user_key='synthetic-user', operation_id='disabled')
+                                   authorize=lambda: True, cancelled=lambda: False, risk_accepted=True, budget_user_key='synthetic-user', operation_id='disabled')
         self.transport.generate.assert_not_called()
         self.assertFalse(ProviderReservation.objects.exists())
 
@@ -384,7 +388,7 @@ class ModelQuotaDispatchTests(TestCase):
             usage={'prompt_tokens': 10 ** 100, 'completion_tokens': 1, 'total_tokens': 10 ** 100 + 1})
         with self.assertRaises(OutcomeUnknown):
             dispatch_free_provider(route=route, transport=self.transport, user_request='synthetic',
-                                   authorize=lambda: True, cancelled=lambda: False, budget_user_key='synthetic-user', operation_id='huge')
+                                   authorize=lambda: True, cancelled=lambda: False, risk_accepted=True, budget_user_key='synthetic-user', operation_id='huge')
         self.assertEqual(ProviderReservation.objects.filter(state='unknown').count(), 2)
         token_quota.refresh_from_db()
         self.assertEqual(token_quota.used, 0)
@@ -400,7 +404,7 @@ class ModelQuotaDispatchTests(TestCase):
         self.transport.generate.side_effect = OpenRouterRouteError('synthetic_context_rejected')
         with self.assertRaises(OutcomeUnknown):
             dispatch_free_provider(route=route, transport=self.transport, user_request='synthetic',
-                                   authorize=lambda: True, cancelled=lambda: False, budget_user_key='synthetic-user', operation_id='context-error')
+                                   authorize=lambda: True, cancelled=lambda: False, risk_accepted=True, budget_user_key='synthetic-user', operation_id='context-error')
         self.assertEqual(ProviderReservation.objects.filter(state='unknown').count(), 2)
 
     @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True, SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED=True)
@@ -411,7 +415,7 @@ class ModelQuotaDispatchTests(TestCase):
                                    build_body=lambda *args: b'{"model":"other"}')
         with self.assertRaises(NotDispatched):
             dispatch_free_provider(route=forged, transport=self.transport, user_request='synthetic',
-                                   authorize=lambda: True, cancelled=lambda: False, budget_user_key='synthetic-user', operation_id='forged')
+                                   authorize=lambda: True, cancelled=lambda: False, risk_accepted=True, budget_user_key='synthetic-user', operation_id='forged')
         self.transport.generate.assert_not_called()
         self.assertFalse(ProviderReservation.objects.exists())
 
@@ -428,7 +432,7 @@ class ModelQuotaDispatchTests(TestCase):
                                    context_capacity=route.context_capacity, build_body=altered)
         with self.assertRaises(NotDispatched):
             dispatch_free_provider(route=forged, transport=self.transport, user_request='synthetic',
-                                   authorize=lambda: True, cancelled=lambda: False, budget_user_key='synthetic-user', operation_id='compression')
+                                   authorize=lambda: True, cancelled=lambda: False, risk_accepted=True, budget_user_key='synthetic-user', operation_id='compression')
         self.transport.generate.assert_not_called()
         self.assertFalse(ProviderReservation.objects.exists())
 

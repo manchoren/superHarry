@@ -99,6 +99,23 @@ def _iter_bounded_sse_lines(response):
         yield bytes(pending)
 
 
+def _read_bounded_json(response):
+    length = response.headers.get("Content-Length", "")
+    if isinstance(length, str) and length.isdigit() and int(length) > MAX_RESPONSE_BYTES:
+        raise OmnirouteError("gateway_response_too_large")
+    body = bytearray()
+    for chunk in response.iter_content(chunk_size=64 * 1024):
+        if not isinstance(chunk, bytes):
+            raise OmnirouteError("gateway_response_invalid")
+        if len(chunk) > MAX_RESPONSE_BYTES - len(body):
+            raise OmnirouteError("gateway_response_too_large")
+        body.extend(chunk)
+    try:
+        return json.loads(body)
+    except (ValueError, UnicodeDecodeError, RecursionError) as exc:
+        raise OmnirouteError("gateway_response_invalid") from exc
+
+
 class OmnirouteClient:
     def __init__(self, endpoint: Optional[str] = None, api_key: Optional[str] = None, timeout: int = 60):
         if endpoint is not None:
@@ -219,6 +236,7 @@ class OmnirouteClient:
             event_count = 0
             completed = False
             usage_seen = False
+            finish_seen = False
             response_id = None
             response_model = None
             for raw_line in _iter_bounded_sse_lines(response):
@@ -235,6 +253,8 @@ class OmnirouteClient:
                     completed = True
                     if not usage_seen:
                         raise OmnirouteUsageError("gateway_usage_missing")
+                    if not finish_seen:
+                        raise OmnirouteError("gateway_finish_missing")
                     yield OmnirouteStreamEvent("done")
                     return
                 try: data = json.loads(value)
@@ -267,6 +287,12 @@ class OmnirouteClient:
                 if (not isinstance(delta, dict) or not isinstance(delta.get("content", ""), str)
                         or (choice.get("finish_reason") is not None and not isinstance(choice.get("finish_reason"), str))):
                     raise OmnirouteError("gateway_sse_schema_invalid")
+                if finish_seen:
+                    raise OmnirouteError("gateway_sse_after_finish")
+                if choice.get("finish_reason") is not None:
+                    if choice["finish_reason"] != "stop":
+                        raise OmnirouteError("gateway_finish_incomplete")
+                    finish_seen = True
                 usage = OmnirouteUsage.from_dict(data["usage"]) if "usage" in data else None
                 if usage is not None:
                     if usage_seen:
@@ -287,9 +313,9 @@ class OmnirouteClient:
         session = self._session_for_request()
         try:
             response = session.get(f"{self.endpoint.removesuffix('/v1')}/{path}", timeout=self.timeout,
-                                   allow_redirects=False)
+                                   allow_redirects=False, stream=True)
             if missing_ok and response.status_code == 404: return {}
-            self._raise_http(response, path); data = response.json()
+            self._raise_http(response, path); data = _read_bounded_json(response)
             if not isinstance(data, dict): raise OmnirouteError("gateway_response_invalid")
             return data
         except requests.RequestException as exc: raise OutcomeUnknown(f"omniroute_{path}_failure") from exc

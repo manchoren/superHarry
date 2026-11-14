@@ -72,6 +72,11 @@ class ProviderCredentialsTests(TestCase):
         with self.assertRaises(CredentialConfigError):
             load_omniroute_endpoint({'OMNIROUTE_ENDPOINT': 'http://gateway/v1?token=secret'})
 
+    def test_endpoint_rejects_missing_hostname_and_control_characters(self):
+        for endpoint in ('http://:80/v1', 'http://gateway\x00/v1', '\x01http://gateway/v1'):
+            with self.subTest(endpoint=repr(endpoint)), self.assertRaises(CredentialConfigError):
+                load_omniroute_endpoint({'OMNIROUTE_ENDPOINT': endpoint})
+
     def test_gateway_models_are_configurable_without_direct_provider_names(self):
         environ = {
             'OMNIROUTE_EXTERNAL_MODEL': 'nous-ai/solar-mini-4',

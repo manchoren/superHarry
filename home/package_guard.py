@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from enum import Enum
 import hashlib
 import logging
+import re
 from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
@@ -71,6 +72,8 @@ class PackageEvidence:
     # absence. False means the mandatory evidence was unavailable.
     signature_evidence_available: bool = True
     provenance_evidence_available: bool = True
+    # An empty result is authoritative only after a completed advisory lookup.
+    advisories_checked: bool = False
 
     @property
     def artifact_sha256(self) -> str:
@@ -83,6 +86,7 @@ class PackageEvidence:
             self.typosquatting_passed, self.namespace_confusion_passed,
             self.malicious_pattern_passed, self.blocklist_checked, self.blocklisted,
             self.signature_evidence_available, self.provenance_evidence_available,
+            self.advisories_checked,
         )
         if any(type(value) is not bool for value in boolean_fields):
             return False
@@ -107,6 +111,7 @@ class PackageEvidence:
             self.registry == "pypi", bool(self.normalized_name), bool(self.version),
             bool(self.evidence_source.strip()),
             self.hash_verified, self.blocklist_checked,
+            self.advisories_checked,
             self.signature_evidence_available, self.provenance_evidence_available,
             self.typosquatting_passed is not None,
             self.namespace_confusion_passed is not None,
@@ -226,7 +231,7 @@ class PackageGuard:
     def evaluate(self, package_name: str, version: str, registry: str = "pypi",
                  evidence: Optional[PackageEvidence] = None,
                  now: Optional[datetime] = None) -> PackageScore:
-        normalized = package_name.strip().lower().replace("_", "-")
+        normalized = re.sub(r"[-_.]+", "-", package_name.strip()).lower()
         if evidence is None:
             return PackageScore(package_name, version, registry, blocked=True,
                                 reason="mandatory_evidence_unavailable")
@@ -268,7 +273,7 @@ class PackageGuard:
                     reason = "evidence_stale"
                 elif not evidence.evidence_source.strip():
                     reason = "evidence_source_unavailable"
-                elif not evidence.blocklist_checked or any(value is None for value in (
+                elif not evidence.blocklist_checked or not evidence.advisories_checked or any(value is None for value in (
                     evidence.typosquatting_passed, evidence.namespace_confusion_passed,
                     evidence.malicious_pattern_passed, evidence.downloads_per_month,
                     evidence.age_days, evidence.security_patch_within_days)):
@@ -290,6 +295,11 @@ class PackageGuard:
                     reason = "mandatory_evidence_unavailable"
                 return PackageScore(package_name, version, registry, blocked=True,
                                     reason=reason, artifact_sha256=evidence.artifact_sha256)
+            if not all((evidence.typosquatting_passed, evidence.namespace_confusion_passed,
+                        evidence.malicious_pattern_passed)):
+                return PackageScore(package_name, version, registry, blocked=True,
+                                    reason="mandatory_static_check_failed",
+                                    artifact_sha256=evidence.artifact_sha256)
             integrity = 20 + (15 if evidence.signature_verified else 0) + (5 if evidence.publisher_verified else 0)
             reputation = (10 if evidence.downloads_per_month > 100_000 else 0)
             reputation += (10 if evidence.age_days > 730 else 0)

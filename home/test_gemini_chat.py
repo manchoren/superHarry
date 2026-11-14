@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
-from home.gemini_chat import OmnirouteError, RoutingExhausted, _attempt_gemini, _require_gateway_admission, _run_routing, run_gemini_turn
+from home.gemini_chat import OmnirouteError, RoutingExhausted, _attempt_free_route, _attempt_gemini, _require_gateway_admission, _run_routing, run_gemini_turn
 from home.local_model_adapter import LocalInferenceError
 from home.models import ApplicationBudget, ApplicationBudgetReservation, ChatTurn, Conversation, Message, ProviderQuota
 from home.provider_outcomes import NotDispatched, OutcomeUnknown
@@ -29,6 +29,29 @@ class GeminiChatTests(TestCase):
             idempotency_key=uuid.uuid4(), request_digest='0' * 64, model_mode='automatic')
         ProviderQuota.objects.create(group='gemini-development', limit=2)
         ProviderQuota.objects.create(group='gemini-development:tokens', limit=1000)
+
+    @override_settings(GROQ_MODEL='openai/gpt-oss-20b')
+    @patch('home.gemini_chat.dispatch_free_provider', return_value=('ok', (1, 1)))
+    def test_openrouter_consent_does_not_authorize_groq(self, dispatch):
+        self.turn.openrouter_risk_accepted = True
+        _attempt_free_route(provider='groq', key='synthetic-key', turn=self.turn,
+                            authorized=lambda: True, cancelled=lambda: False, history=())
+        self.assertIs(dispatch.call_args.kwargs['risk_accepted'], False)
+
+    @override_settings(SUPERHARRY_LOCAL_INFERENCE_ENABLED=True,
+                       SUPERHARRY_ENABLED_FREE_PROVIDERS=('gemini',),
+                       SUPERHARRY_FREE_PROVIDER_ORDER='gemini')
+    @patch('home.gemini_chat._run_local_fallback')
+    @patch('home.gemini_chat.load_provider_key', return_value=None)
+    @patch('home.gemini_chat._gateway_configured', return_value=False)
+    def test_explicit_provider_without_credentials_does_not_fall_back(self, gateway, key, local):
+        from home.gemini_context import MODEL_ID
+        self.turn.requested_provider = 'gemini'
+        self.turn.requested_model = MODEL_ID
+        with self.assertRaises(RoutingExhausted):
+            _run_routing(turn=self.turn, history=(), authorized=lambda: True,
+                         cancelled=lambda: False)
+        local.assert_not_called()
 
     @patch('home.gemini_chat.load_provider_key', return_value='synthetic-key')
     @patch('home.gemini_chat.dispatch_gemini_with_quota', return_value=('Hello', (2, 1)))

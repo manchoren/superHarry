@@ -273,7 +273,9 @@ def _attempt_free_route(*, provider, key, turn, authorized, cancelled, history):
         authorize=authorized, cancelled=cancelled, operation_id=f'{provider}:{turn.pk}',
         history=tuple(history),
         budget_user_key=str(turn.conversation.owner_id),
-        risk_accepted=(turn.openrouter_risk_accepted if provider == 'openrouter' else True))
+        # OpenRouter consent is provider-specific; the current turn contract
+        # does not record consent for Groq.
+        risk_accepted=(turn.openrouter_risk_accepted if provider == 'openrouter' else False))
     model = {'mode': 'automatic', 'provider': provider, 'model_id': route.model_id}
     return answer, model, {'input_tokens': input_tokens, 'capacity': route.context_capacity}
 
@@ -515,6 +517,11 @@ def _run_routing(*, turn, history, authorized, cancelled, governor=None, adapter
             if explicit:
                 raise RoutingExhausted() from None
             continue
+
+    if explicit:
+        # A missing credential or unavailable selected route must not turn an
+        # explicit provider choice into a different local request.
+        raise RoutingExhausted()
 
     # Fallback: T047 local inference after free-provider exhaustion. The
     # governor's heavy-job seat is held for the duration of the adapter's

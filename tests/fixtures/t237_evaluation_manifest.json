@@ -63,6 +63,14 @@
       "sha256": "a13ad689277c8ab2f263603b14d1d737a5420b01c3cb9fc84eaf3165ece87d7d"
     },
     {
+      "id": "spanish-voseo",
+      "category": "functional",
+      "source": "contract",
+      "fixture": "spanish_voseo",
+      "required": true,
+      "sha256": "4348856bb2833fd09e4011af83afb3710eff1f8305b526e917c16cc21bbf7593"
+    },
+    {
       "id": "provider-live-check",
       "category": "external",
       "source": "live-provider",

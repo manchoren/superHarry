@@ -301,3 +301,42 @@ msgid ""
 msgstr ""
 "Your current message and prior messages and responses in this conversation "
 "may be sent to OpenRouter."
+
+msgid "Token budgets"
+msgstr "Token budgets"
+
+msgid "Back to chat"
+msgstr "Back to chat"
+
+msgid "Global"
+msgstr "Global"
+
+msgid "Your budget"
+msgstr "Your budget"
+
+msgid "Daily"
+msgstr "Daily"
+
+msgid "Monthly"
+msgstr "Monthly"
+
+msgid "Resets at"
+msgstr "Resets at"
+
+msgid "Used"
+msgstr "Used"
+
+msgid "Reserved"
+msgstr "Reserved"
+
+msgid "Limit"
+msgstr "Limit"
+
+msgid "The 80% warning threshold was reached in this period."
+msgstr "The 80% warning threshold was reached in this period."
+
+msgid "Budget is not configured."
+msgstr "Budget is not configured."
+
+msgid "Tokens with an unknown outcome"
+msgstr "Tokens with an unknown outcome"

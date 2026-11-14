@@ -178,7 +178,7 @@ class PackageGuardSettingsAdmin(admin.ModelAdmin):
     fields = ("minimum_score", "blocked_packages")
 
     def has_add_permission(self, request):
-        return not PackageGuardSettings.objects.exists()
+        return super().has_add_permission(request) and not PackageGuardSettings.objects.exists()
 
     def has_delete_permission(self, request, obj=None):
         return False

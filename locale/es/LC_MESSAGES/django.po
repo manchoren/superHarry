@@ -303,3 +303,42 @@ msgid ""
 msgstr ""
 "Tu mensaje actual y los mensajes y respuestas anteriores de esta "
 "conversación pueden enviarse a OpenRouter."
+
+msgid "Token budgets"
+msgstr "Presupuestos de tokens"
+
+msgid "Back to chat"
+msgstr "Volver al chat"
+
+msgid "Global"
+msgstr "Global"
+
+msgid "Your budget"
+msgstr "Tu presupuesto"
+
+msgid "Daily"
+msgstr "Diario"
+
+msgid "Monthly"
+msgstr "Mensual"
+
+msgid "Resets at"
+msgstr "Se reinicia a las"
+
+msgid "Used"
+msgstr "Usado"
+
+msgid "Reserved"
+msgstr "Reservado"
+
+msgid "Limit"
+msgstr "L?mite"
+
+msgid "The 80% warning threshold was reached in this period."
+msgstr "Se alcanz? el umbral de advertencia del 80 % en este per?odo."
+
+msgid "Budget is not configured."
+msgstr "El presupuesto no est? configurado."
+
+msgid "Tokens with an unknown outcome"
+msgstr "Tokens con resultado desconocido"

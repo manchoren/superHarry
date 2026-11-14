@@ -5,6 +5,9 @@ does not claim product, provider or VM acceptance.
 
 ## Threat model inventory
 
+The [sandbox and skills threat model](sandbox-skills-threat-model.md) records
+trust boundaries, required controls and owning tasks for the planned features.
+
 | Asset | Threat | Fixture expectation |
 |---|---|---|
 | User data and memory | Cross-user disclosure | Synthetic identity mismatch is denied. |
@@ -48,10 +51,10 @@ remain labeled unavailable rather than reported as passes. OCR and STT/TTS
 fixtures assert functional shape and language coverage only; they do not assert
 CER/WER, RTF, latency, RAM, throughput or candidate ranking.
 
-This bounded slice remains dependent on T225. Fresh-context audit, independent
-acceptance, live-provider checks, artifact/model review and target-VM checks
-remain open gates. T237 remains Pending; no provider, credential, installation,
-deployment or VM evidence is created by these local fixtures.
+T225 is complete. The current [product-first policy](product-first-validation.md)
+defers broader evaluation to T244. T237's local fixture scope is complete;
+these fixtures create no provider, installation, deployment
+or VM evidence.
 
 ## Validation record - 2026-11-13
 

@@ -89,11 +89,15 @@ class ToolGrantPolicy:
                 uses_remaining__gt=0, policy_revision=policy_revision,
             ).first()
             if grant is None or grant.argument_scope != invocation.arguments:
-                self._audit(AuditEvent.EventType.TOOL_GRANT_DENIED, str(invocation.actor_user_id), None, invocation.request_id)
-                raise ToolDenied("No exact active grant authorizes this invocation.")
-            grant.uses_remaining -= 1
-            grant.save(update_fields=["uses_remaining"])
-            self._audit(AuditEvent.EventType.TOOL_GRANT_CONSUMED, grant.principal, grant, invocation.request_id)
+                grant = None
+            else:
+                grant.uses_remaining -= 1
+                grant.save(update_fields=["uses_remaining"])
+                self._audit(AuditEvent.EventType.TOOL_GRANT_CONSUMED, grant.principal, grant, invocation.request_id)
+        if grant is None:
+            # Raising inside the atomic block would roll back the denial audit.
+            self._audit(AuditEvent.EventType.TOOL_GRANT_DENIED, str(invocation.actor_user_id), None, invocation.request_id)
+            raise ToolDenied("No exact active grant authorizes this invocation.")
         return grant
 
     @staticmethod

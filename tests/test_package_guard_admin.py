@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase, override_settings
+from unittest.mock import patch
 
 from home.models import AuditEvent, PackageGuardEvaluation, PackageGuardSettings
 
@@ -34,6 +35,27 @@ class PackageGuardAdminTests(TestCase):
     def test_invalid_threshold_is_rejected(self):
         with self.assertRaises(ValidationError):
             PackageGuardSettings(minimum_score=101).save()
+
+    def test_staff_without_add_permission_cannot_create_settings(self):
+        staff = get_user_model().objects.create_user(username="other-staff", password="synthetic", is_staff=True)
+        self.client.force_login(staff)
+        response = self.client.post(
+            "/admin/home/packageguardsettings/add/",
+            {"minimum_score": "0", "blocked_packages": ""},
+            secure=True, HTTP_ORIGIN="https://testserver",
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(PackageGuardSettings.objects.exists())
+
+    def test_audit_failure_rolls_back_configuration(self):
+        with patch("home.admin.record_event", side_effect=RuntimeError("audit unavailable")):
+            with self.assertRaises(RuntimeError):
+                self.client.post(
+                    "/admin/home/packageguardsettings/add/",
+                    {"minimum_score": "80", "blocked_packages": ""},
+                    secure=True, HTTP_ORIGIN="https://testserver",
+                )
+        self.assertFalse(PackageGuardSettings.objects.exists())
 
     def test_evaluations_are_visible_but_not_editable(self):
         evaluation = PackageGuardEvaluation.objects.create(

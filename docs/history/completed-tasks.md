@@ -3,7 +3,7 @@
 Completed task records moved from the active backlog. Each entry preserves its task ID,
 title and completion status for release-scope tracking.
 
-**Last updated:** 2026-11-11
+**Last updated:** 2026-11-14
 
 ## Cancelled and superseded tasks
 
@@ -45,3 +45,19 @@ title and completion status for release-scope tracking.
 ## Phase 4: Persistence and administration
 
 - [x] **T174 - Durable storage and operational boundaries** Status: Completed
+- [x] **T226 - Reconcile constitution identity and context regression coverage** Status: Completed
+
+Completed 2026-11-14 for the current local scope. The raw constitution hash
+matches the runtime pin; local and gateway dispatch reject changed or missing
+constitution bytes before a model request. The memory-agent path remains
+disabled pending T184 and generic memory-context rejection is tested. Local
+validation and limitations are recorded in [overseer evidence](../reference/evidence/overseer-product-first-2026-11-14.md).
+This completion does not establish VM deployment or provider acceptance.
+
+- [x] **T237 - Restore reproducible security, quality and VM evaluation fixtures** Status: Completed
+  - Scope: local synthetic fixture manifest, consumer cases, test discovery and
+    sandbox/skills threat model under the product-first policy. Feature-specific
+    model consumers remain with their owning tasks; broader evaluation is T244.
+  - Evidence: [fixture record](../reference/t237-evaluation-fixtures.md) and
+    [overseer validation](../reference/evidence/overseer-product-first-2026-11-14.md).
+    No live-provider or release acceptance is implied.

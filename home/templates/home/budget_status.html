@@ -1,0 +1,21 @@
+{% load i18n %}
+<!doctype html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% translate "Token budgets" %}</title></head>
+<body>
+<main>
+<h1>{% translate "Token budgets" %}</h1>
+<p><a href="{% url 'home' %}">{% translate "Back to chat" %}</a></p>
+{% for row in rows %}
+<section>
+<h2>{% if row.scope == 'global' %}{% translate "Global" %}{% else %}{% translate "Your budget" %}{% endif %} — {% if row.period == 'daily' %}{% translate "Daily" %}{% else %}{% translate "Monthly" %}{% endif %}</h2>
+<p>{% translate "Resets at" %}: {{ row.reset }}</p>
+{% if row.budget %}
+<p>{% translate "Used" %}: {{ row.budget.used }} · {% translate "Reserved" %}: {{ row.budget.reserved }} · {% translate "Limit" %}: {{ row.budget.hard_limit }}</p>
+{% if row.budget.warning_emitted %}<p role="status">{% translate "The 80% warning threshold was reached in this period." %}</p>{% endif %}
+{% else %}<p>{% translate "Budget is not configured." %}</p>{% endif %}
+<p>{% translate "Tokens with an unknown outcome" %}: {{ row.unknown }}</p>
+</section>
+{% endfor %}
+</main>
+</body></html>

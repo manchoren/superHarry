@@ -178,6 +178,15 @@ class MemoryRecordSchemaTests(TestCase):
         self.assertFalse(MemoryRecord.objects.visible_to(self.user_a).exists())
         self.assertFalse(MemoryRecord.objects.visible_to(AnonymousUser()).exists())
 
+    def test_unsaved_or_inactive_principals_cannot_read_global_memory(self):
+        MemoryRecord.objects.create(scope=MemoryRecord.Scope.GLOBAL, content="shared")
+        unsaved = get_user_model()(username="unsaved")
+        self.assertTrue(unsaved.is_authenticated)
+        self.assertFalse(MemoryRecord.objects.visible_to(unsaved).exists())
+        self.user_a.is_active = False
+        self.assertFalse(MemoryRecord.objects.visible_to(self.user_a).exists())
+        self.assertTrue(MemoryRecord.objects.visible_to(self.user_b).exists())
+
 class ConversationAuthorizationTests(TestCase):
     @classmethod
     def setUpTestData(cls):
