@@ -1,5 +1,7 @@
 # Outstanding implementation roadmap
 
+The [product-first validation policy](reference/product-first-validation.md) governs current sequencing and defers broader validation to T241-T245.
+
 **Last reviewed:** 2026-11-12 (bounded implementation reconciliation).
 
 The [delivery queue](../tasks.md), [backlog](reference/backlog.md) and

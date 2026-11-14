@@ -8,7 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SUPERHARRY_FILE_STORE_ROOT = Path(os.environ.get("SUPERHARRY_FILE_STORE_ROOT", BASE_DIR / "var" / "files")).resolve()
 SUPERHARRY_FILE_MAX_BYTES = int(os.environ.get("SUPERHARRY_FILE_MAX_BYTES", str(25 * 1024 * 1024)))
 SUPERHARRY_CONSTITUTION_SHA256 = (
-    "640c85a00d537e01fe446ac4516cb09cb53df2acdac493615fb5e72bdd792e64"
+    "24ec1c0bb6156a64612a89f40ffb0011820cd02e7b6336b6923b25dc83a384cd"
 )
 
 debug_value = os.environ.get("DJANGO_DEBUG", "1").strip().lower()

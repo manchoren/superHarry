@@ -5,6 +5,8 @@ Full task inventory tracking release scope and evidence. Completed records move 
 
 Apply the [documentation ownership, update triggers and closure rules](../../CONTRIBUTING.md#documentation-ownership-and-synchronization) whenever requirements, implementation, assignment, evidence or task status changes. This backlog owns active status; linked task records own detailed scope and evidence.
 
+The owner-approved [product-first validation policy](product-first-validation.md) governs current scope and supersedes conflicting historical validation gates. Deferred follow-ups T241-T245 do not block the current product milestone.
+
 **Last updated:** 2026-11-11
 
 ---
@@ -33,7 +35,7 @@ Apply the [documentation ownership, update triggers and closure rules](../../CON
 - [ ] **T182 - Memory encryption and recovery (SQLCipher)** Status: Pending
   - [R1 custody/recovery proposal](recovery-admin-proposals.md#r1---t182-memory-encryption-and-key-custody) accepted by owner on 2026-11-11; implementation pending prerequisites.
   - [Binding comparison and isolated-test proposal](t182-sqlcipher-binding-review.md), 2026-11-11: D3 approved and isolated ARM64 binding experiment passed; production integration and dependencies T183/T225 remain open.
-- [ ] **T183 - Memory model and schema (global and user scopes)** Status: Pending. Bounded schema slice and tests are recorded in [T183 memory schema evidence](t183-memory-schema-evidence.md); independent audit and acceptance gates remain open.
+- [ ] **T183 - Memory model and schema (global and user scopes)** Status: Pending. Bounded schema slice and tests are recorded in [T183 memory schema evidence](t183-memory-schema-evidence.md); remaining implementation is subject to the current product-first policy.
 - [ ] **T184 - Memory-agent retrieval (pre-main-agent, non-reasoning)** Status: Pending
 - [ ] **T185 - recall_memory tool with bounded re-invocation** Status: Pending
 - [ ] **T186 - Semantic search with keyword fallback** Status: Pending
@@ -87,7 +89,6 @@ Apply the [documentation ownership, update triggers and closure rules](../../CON
 - [ ] **T215 - Voice notes (STT and TTS pipeline)** Status: Pending
 - [ ] **T216 - Web push-to-talk** Status: Pending
 - [ ] **T217 - WhatsApp channel adapter (deferred pending terms review)** Status: Deferred
-- [ ] **T218 - External services audit (Gmail, voice models, weather)** Status: Pending
 - [ ] **T219 - Resource limits and concurrency validation** Status: Pending
 
 Accepted owner follow-up (2026-11-11): [benchmarks waived](owner-validation-decisions.md#benchmark-waiver---2026-11-11); functional/security/resource-enforcement/recovery checks remain required. No task closure inferred.
@@ -111,25 +112,35 @@ Accepted owner follow-up (2026-11-11): [benchmarks waived](owner-validation-deci
 
 The [review and acceptance records](spec-code-review-2026-11-11.md) define the evidence, dependencies and Given/When/Then criteria for T179-T240. Existing completion markers are historical scope claims, not a new validation result. All pending tasks are **Unassigned**; no active implementer/model was verified. T179 retains its recorded In progress status, with current gateway acceptance still outstanding.
 
-- [ ] **T226 - Reconcile constitution identity and context regression coverage** Status: Pending. Exact hash pin and context regression coverage remain valid; the portable `manage.py` entrypoint is now present. Historical `475 passed, 10 skipped` evidence is retained in the dated review; independent audit/acceptance blockers remain open.
-- [ ] **T227 - Harden and verify the gateway client contract** Status: Pending. Gateway focused evidence and later full-suite results are recorded in the dated review; historical counts remain labeled by date. Real gateway/provider/VM acceptance and fresh-audit/contract blockers remain open.
+- [ ] **T226 - Reconcile constitution identity and context regression coverage** Status: Pending. Verify the updated constitution pin and context regression coverage under the current policy; independent acceptance is no longer a prerequisite.
+- [ ] **T227 - Harden and verify the gateway client contract** Status: Pending. Focused evidence and later full-suite results are recorded in the dated review. Verify contracts needed by enabled flows; broader provider acceptance is deferred to T241.
 - [ ] **T228 - Migrate model credentials and runtime configuration to omniroute** Status: Pending
 - [ ] **T229 - Connect durable chat and local inference to the gateway** Status: Pending. Bounded gateway routing, credential resolution and fail-closed cancellation evidence is recorded in the dated review; real gateway, VM and release acceptance remain open.
 - [ ] **T230 - Enforce application budgets across gateway fallback and memory calls** Status: Pending
-- [ ] **T231 - Correct package guard scoring and evidence validation** Status: Pending. The bounded evaluator and contract-first tests are implemented; verifier integration, installation integration and independent acceptance remain open.
-- [ ] **T232 - Implement the common authorized tool execution boundary** Status: Pending. A bounded registry/executor slice now adapts existing `ModelToolCallProposal` and `InvocationContext` contracts; persistent grants, real handlers and independent acceptance remain open. Evidence: [T232 boundary evidence](t232-tool-boundary-evidence.md).
+- [ ] **T231 - Correct package guard scoring and evidence validation** Status: Pending. The bounded evaluator and contract-first tests are implemented; broader verifier and installation evidence is deferred to T242. Keep autonomous installation disabled until its required controls work.
+- [ ] **T232 - Implement the common authorized tool execution boundary** Status: Pending. A bounded registry/executor slice now adapts existing `ModelToolCallProposal` and `InvocationContext` contracts; persistent grants and real handlers remain open. Evidence: [T232 boundary evidence](t232-tool-boundary-evidence.md).
 - [ ] **T233 - Implement the authorized file store and upload/download boundary** Status: Pending
 - [ ] **T234 - Deliver memory controls, personality and fixed-directive administration** Status: Pending
 - [ ] **T235 - Deliver the local-only guest session and chat flow** Status: Pending
 - [ ] **T236 - Deliver persisted accessible light, dark and system themes** Status: Pending
-- [ ] **T237 - Restore reproducible security, quality and VM evaluation fixtures** Status: Pending. Synthetic manifest and validator fixtures are present; feature-specific cases, live-provider/VM validation and independent acceptance remain open.
-  - Bounded fixture slice: [T237 evaluation fixtures](t237-evaluation-fixtures.md), including the synthetic-only manifest and mocked/contract/live-provider/VM separation. This does not close T237; audit, independent acceptance and live/VM gates remain open.
+- [ ] **T237 - Restore reproducible security, quality and VM evaluation fixtures** Status: Pending. Synthetic manifest and validator fixtures are present; useful feature-specific local cases and the threat model remain in scope. Broader evaluation is deferred to T244.
+  - Bounded fixture slice: [T237 evaluation fixtures](t237-evaluation-fixtures.md), including the synthetic-only manifest and mocked/contract/live-provider/VM separation. This does not itself close the current local scope.
 - [ ] **T238 - Implement shared channel identity and attachment contracts** Status: Pending
 - [ ] **T239 - Implement storage-pressure cleanup across persisted user data** Status: Pending
 - [ ] **T240 - Implement capability degradation and external-only task recovery** Status: Pending
 
 ### Reconciliation note (2026-11-12)
 
-T225 is represented exactly once in this active backlog and exactly once in the delivery queue; its authoritative status is `Pending` and its current owner is `Unassigned`. `tasks.md` supplies ordering only and does not repeat mutable status or ownership. The dated specification review is the linked T225 scope/evidence record. Historical completion records and preparation documents remain evidence of their own bounded work; they do not duplicate, reopen or complete T225 unless this backlog entry and its linked record are updated together under the synchronization rules.
+T225 was closed by the owner on 2026-11-13 and is recorded in completed history. Earlier notes saying it remained pending are superseded. Its historical evidence remains bounded to its accepted scope.
 
 T187 extends existing conversation persistence with history management and deletion. T191 flags stale memory and consolidates it; T239 owns storage-pressure deletion. T179 owns pre-dispatch admission; T227-T230 own gateway contracts, credential migration, dispatch integration and accounting. T180 owns grants; T232 owns the common tool boundary. Optional Pi tasks T169/T175/T176 remain deferred.
+
+## Post-product validation (deferred)
+
+Scope, dependencies and acceptance are defined in the [product-first policy](product-first-validation.md#deferred-task-acceptance). These tasks are not prerequisites for the product milestone.
+
+- [ ] **T241 - External provider and gateway acceptance** Status: Deferred
+- [ ] **T242 - Third-party package verification and supply chain** Status: Deferred
+- [ ] **T243 - External services and artifacts review** Status: Deferred
+- [ ] **T244 - Broader product evaluation and release evidence** Status: Deferred
+- [ ] **T245 - Operational hardening and release recovery** Status: Deferred

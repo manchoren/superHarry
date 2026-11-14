@@ -1,5 +1,9 @@
 # Owner validation decisions
 
+## Product-first validation - 2026-11-14
+
+The owner approved the product-first reorganization and constitution amendment. The controlling scope, exceptions and deferred replacements are in [product-first validation policy](product-first-validation.md). This supersedes conflicting earlier requirements to collect external evidence or perform independent audits before completing current implementation work. The benchmark waiver remains effective; enabled features still require applicable functional, security and recovery controls and proportionate checks.
+
 ## Benchmark waiver - 2026-11-11
 
 Status: Accepted by explicit owner instruction: "quiero omitir los benchmarks". Applies prospectively to project performance/load and comparative model-quality benchmarks, including embedding, OCR, STT/TTS and release benchmark gates. Supersedes conflicting benchmark prerequisites in Q-23/Q-26/Q-29/Q-53, P-48/P-53, T186/T207/T215/T219/T237/T222 and derived proposals. Historical D3/D4 measurements and failures remain evidence; do not erase or rerun them as a prerequisite.

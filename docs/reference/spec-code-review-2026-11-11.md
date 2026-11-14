@@ -1,5 +1,7 @@
 # Specification and implementation reconciliation
 
+**Current scope:** The owner-approved [product-first validation policy](product-first-validation.md) supersedes conflicting independent-audit, external-evidence and release prerequisites below. This dated record retains historical findings; current task status is in the backlog.
+
 **Date:** 2026-11-11. **Method:** static inspection of the current working tree.
 **Constitution SHA-256:** `640c85a00d537e01fe446ac4516cb09cb53df2acdac493615fb5e72bdd792e64`.
 

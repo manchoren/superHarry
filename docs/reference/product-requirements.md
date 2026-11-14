@@ -1,5 +1,7 @@
 # superHarry - Project Plan
 
+The owner-approved [product-first validation policy](product-first-validation.md) supersedes conflicting validation timing and evidence prerequisites in this historical decision record. Enabled functionality retains its applicable security and authorization controls.
+
 This is the working plan and detailed decision record for superHarry. The [constitution](../../constitution.md) defines binding principles and security boundaries; this plan records accepted product decisions, proposed implementation details, outstanding design work and the roadmap. If they conflict, the constitution prevails.
 
 Status markers describe current decisions: accepted, proposed and open. Partially accepted items bind only their accepted parts. This consolidated edition integrates owner decisions through 2026-11-11.

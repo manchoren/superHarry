@@ -1,5 +1,7 @@
 # Tasks requiring owner attention
 
+**Current policy:** The owner approved [product-first validation](reference/product-first-validation.md) on 2026-11-14. Its scope and deferred tasks supersede conflicting evidence and independent-audit prerequisites in the historical checklist below. Required approval for actual dependency changes, external data access and deployment remains applicable; do not prepare exhaustive artifact reviews merely for a deferred gate.
+
 Reviewed: 2026-11-11. The checklist itself grants no approval and does not change task status; explicit owner decisions are recorded below. Existing scoped approvals remain valid.
 
 | When | Tasks | Required attention |

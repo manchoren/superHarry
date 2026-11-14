@@ -11,6 +11,13 @@ policies must implement these principles without adding blanket prohibitions
 where informed approval is sufficient. 
 Always use english for code, responses or documentation.
 
+The owner approved the product-first validation policy on 2026-11-14. Build
+and verify the intended product on the existing VM first. Defer external
+acceptance, broad third-party evidence collection and optional operating-system
+hardening to the post-product tasks. Historical evidence remains historical;
+deferred checks are not passes. Do not enable a capability whose required
+security controls are absent.
+
 ## 1. Always do
 
 - Protect safety, privacy and user control. Apply this priority: safety and
@@ -83,7 +90,8 @@ Always use english for code, responses or documentation.
   directives may be changed only by an administrator through the interface,
   with explicit confirmation and an audit record.
 - Obtain approval before adding, removing or major-upgrading application or
-  system dependencies. Task sandbox packages follow the validated package
+  system dependencies. Do not install a dependency solely for a deferred gate.
+  Task sandbox packages follow the validated package
   policy. Every skill installation needs administrator approval, integrity
   verification and reapproval after modification.
 - Obtain approval before changing authentication, permissions, cryptography,

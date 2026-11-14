@@ -5,6 +5,10 @@ title and completion status for release-scope tracking.
 
 **Last updated:** 2026-11-11
 
+## Cancelled and superseded tasks
+
+- **T218 - External services audit (Gmail, voice models, weather)** Status: Cancelled on 2026-11-14 by the owner-approved [product-first policy](../reference/product-first-validation.md). Its [existing audit](../reference/t218-external-services-audit.md) remains historical evidence, not acceptance. Broader review is deferred to T243; selected integrations remain in their respective tasks. No missing evidence was marked as passed.
+
 ## Phase 10: Portable delivery and validation contracts
 
 - [x] **T225 - Restore portable delivery and validation contracts** Status: Completed

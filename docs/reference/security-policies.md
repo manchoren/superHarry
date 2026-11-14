@@ -4,6 +4,8 @@
 
 This document consolidates security policies referenced throughout the project specifications.
 
+The [product-first validation policy](product-first-validation.md) governs validation timing and supersedes conflicting evidence-collection prerequisites. The sandbox package-installation guard remains fail-closed: do not enable autonomous installation until its required controls are implemented and verified.
+
 ---
 
 ## 1. File Permissions for Sensitive Data

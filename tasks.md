@@ -14,7 +14,9 @@ Maintain this queue using [documentation ownership, update triggers and closure 
 
 ## Review scope
 
-[Static review, evidence, dependencies and acceptance criteria](docs/reference/spec-code-review-2026-11-11.md). This queue orders delivery; prerequisites in the review govern readiness. T220 decisions must be resolved when their affected task requires them, regardless of queue position. No task implementation or VM acceptance is claimed by this review. All pending work is Unassigned; T179 keeps its previously recorded In progress status without a verified current owner. T217 and the optional Pi tasks remain deferred.
+[Static review and historical evidence](docs/reference/spec-code-review-2026-11-11.md). This queue orders delivery; use current criteria under the product-first policy. T220 decisions must be resolved when their affected task requires them, regardless of queue position. No task implementation or VM acceptance is claimed by this review. All pending work is Unassigned; T179 keeps its previously recorded In progress status without a verified current owner. T217 and the optional Pi tasks remain deferred.
+
+The [product-first policy](docs/reference/product-first-validation.md) supersedes conflicting historical validation prerequisites; T241-T245 are deferred until after a product exists.
 
 ## Delivery Queue
 
@@ -70,7 +72,6 @@ Maintain this queue using [documentation ownership, update triggers and closure 
 | 49 | T209 | Optional guest graphical display |
 | 50 | T210 | Brave session isolation and authorized browser control |
 | 51 | T238 | Implement shared channel identity and attachment contracts |
-| 52 | T218 | External services audit (Gmail, voice models, weather) |
 | 53 | T213 | Telegram channel adapter |
 | 54 | T214 | Email channel adapter (dedicated mailbox, SPF/DKIM/DMARC) |
 | 55 | T215 | Voice notes (STT and TTS pipeline) |
@@ -84,3 +85,8 @@ Maintain this queue using [documentation ownership, update triggers and closure 
 | 63 | T169 | Pi OS device builds (deferred) |
 | 64 | T175 | Pi physical HDMI and Wi-Fi validation (deferred) |
 | 65 | T176 | Pi microSD, power and thermal behavior validation (deferred) |
+| 66 | T241 | External provider and gateway acceptance (deferred) |
+| 67 | T242 | Third-party package verification and supply chain (deferred) |
+| 68 | T243 | External services and artifacts review (deferred) |
+| 69 | T244 | Broader product evaluation and release evidence (deferred) |
+| 70 | T245 | Operational hardening and release recovery (deferred) |

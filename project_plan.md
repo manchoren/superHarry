@@ -1,5 +1,7 @@
 # superHarry - Project plan
 
+The [product-first validation policy](docs/reference/product-first-validation.md) prioritizes the product on the current VM and defers broader validation to T241-T245.
+
 The [constitution](constitution.md) governs policy and development authorization. This file summarizes scope and sequencing; [detailed requirements and the Q/P decision register](docs/reference/product-requirements.md) preserve exact criteria and accepted/proposed/open distinctions. Consult relevant sections, not the entire history, for each task. Routine implementation details are autonomous under standing authorization.
 
 ## Product and architecture

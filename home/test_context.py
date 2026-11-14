@@ -111,7 +111,7 @@ class ConstitutionContextTests(TestCase):
 
         self.assertEqual(
             hashlib.sha256(raw).hexdigest(),
-            "640c85a00d537e01fe446ac4516cb09cb53df2acdac493615fb5e72bdd792e64",
+            "24ec1c0bb6156a64612a89f40ffb0011820cd02e7b6336b6923b25dc83a384cd",
         )
         self.assertEqual(settings.SUPERHARRY_CONSTITUTION_SHA256, hashlib.sha256(raw).hexdigest())
 
