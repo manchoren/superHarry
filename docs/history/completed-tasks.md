@@ -38,6 +38,12 @@ title and completion status for release-scope tracking.
 
 ## Phase 3: Agent and model routing
 
+- [x] **T228 - Migrate model credentials and runtime configuration to omniroute** Status: Completed
+  - Completed 2026-11-14 for local configuration and credential custody. [Evidence and migration/rollback procedure](../reference/evidence/t228-credentials-2026-11-14.md) record validation and limits. Gateway dispatch remains T229; broader gateway and operational acceptance remain T241 and T245.
+
+- [x] **T227 - Harden and verify the gateway client contract** Status: Completed
+  - Completed 2026-11-14 for the local client contract. [Evidence and limits](../reference/evidence/t227-gateway-contract-2026-11-14.md) record focused and full-suite validation. Live streaming compatibility remains to be verified when gateway dispatch is enabled under T179/T229; broader acceptance is T241.
+
 - [x] **T047 - Local inference fallback after free-provider exhaustion** Status: Completed
 - [x] **T050 - Heavy-job governor (single-slot scheduler)** Status: Completed
 - [x] **T086 - Package guard evidence scoring primitives** Status: Completed

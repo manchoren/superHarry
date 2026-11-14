@@ -25,8 +25,28 @@ class T179AdminEnablementTests(TestCase):
         with self.settings(SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED=True):
             self.assertTrue(free_route_enabled())
 
+    def test_account_and_model_configuration_must_be_explicit(self):
+        base = dict(provider='groq', model_id=MODEL, risk_accepted=True, admin_enabled=True)
+        cases = (
+            ('', (), (MODEL,), 'account_not_free_plan'),
+            ('free', None, (MODEL,), 'account_billing_unknown'),
+            ('free', 'invalid', (MODEL,), 'account_billing_unknown'),
+            ('free', ('',), (MODEL,), 'account_billing_unknown'),
+            ('free', ('card',), (MODEL,), 'account_has_payment_method'),
+            ('free', (), (), 'model_not_approved_zero_cost'),
+            ('free', (), (MODEL,), ''),
+        )
+        for plan, billing, models, expected in cases:
+            with self.subTest(plan=plan, billing=billing, models=models), self.settings(
+                SUPERHARRY_FREE_PLAN=plan, SUPERHARRY_BILLING_METHODS=billing,
+                SUPERHARRY_APPROVED_FREE_MODELS=models,
+            ):
+                self.assertEqual(verify_free_route_eligibility(**base), expected)
+
 
 @override_settings(SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED=True,
+                   SUPERHARRY_FREE_PLAN='free', SUPERHARRY_BILLING_METHODS=(),
+                   SUPERHARRY_APPROVED_FREE_MODELS=(MODEL,),
                    SUPERHARRY_LOCAL_TOKENIZER_APPROVED_MODELS=(MODEL,))
 class T179BTokenizerGateTests(TestCase):
     def setUp(self):
@@ -47,6 +67,16 @@ class T179BTokenizerGateTests(TestCase):
                 self._dispatch()
         self.transport.generate.assert_not_called()
         self.assertFalse(ProviderReservation.objects.exists())
+
+    @override_settings(SUPERHARRY_BILLING_METHODS=None)
+    def test_unknown_billing_blocks_before_token_count_reservation_or_send(self):
+        with patch('home.free_provider_dispatch.local_tokenizer.build_counter') as counter:
+            with self.assertRaisesRegex(NotDispatched, 'account_billing_unknown'):
+                self._dispatch()
+        counter.assert_not_called()
+        self.transport.generate.assert_not_called()
+        self.assertFalse(ProviderReservation.objects.exists())
+        self.assertFalse(ApplicationBudgetReservation.objects.exists())
 
     def test_tokenizer_unavailable_has_specific_reason(self):
         from home.local_tokenizer import TokenizationUnavailableError

@@ -313,6 +313,7 @@ def test_chat_completion_stream(mock_post, client):
     
     assert [chunk.content for chunk in chunks if chunk.event == "delta" and chunk.content] == ["Hola", " mundo"]
     assert chunks[-1] == OmnirouteStreamEvent("done")
+    assert mock_post.call_args.kwargs["json"]["stream_options"] == {"include_usage": True}
 
 
 @patch('home.omniroute_client.requests.Session.post')
@@ -577,8 +578,10 @@ def test_stream_payload_cannot_be_disabled_by_kwargs(client):
         b'data: [DONE]\n'
     ]
     with patch("home.omniroute_client.requests.Session.post", return_value=response) as post:
-        list(client.chat_completion_stream([{"role": "user", "content": "Test"}], stream=False))
+        list(client.chat_completion_stream([{"role": "user", "content": "Test"}], stream=False,
+                                           stream_options={"include_usage": False}))
     assert post.call_args.kwargs["json"]["stream"] is True
+    assert post.call_args.kwargs["json"]["stream_options"] == {"include_usage": True}
 
 
 def test_sse_many_blank_lines_are_accepted_before_valid_result(client):

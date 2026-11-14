@@ -12,6 +12,7 @@ from home.provider_outcomes import NotDispatched
 from home.openrouter_transport import build_route_body
 
 
+@override_settings(SUPERHARRY_FREE_PLAN='free', SUPERHARRY_BILLING_METHODS=())
 class OpenRouterEstimateTests(SimpleTestCase):
     def setUp(self):
         from home.openrouter_catalog import CatalogModel

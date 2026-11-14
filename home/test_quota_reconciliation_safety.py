@@ -10,6 +10,8 @@ from home.provider_outcomes import OutcomeUnknown
 from home.test_budget_support import create_application_budgets
 
 
+@override_settings(SUPERHARRY_FREE_PLAN='free', SUPERHARRY_BILLING_METHODS=(),
+                   SUPERHARRY_APPROVED_FREE_MODELS=('openai/gpt-oss-20b',))
 class QuotaReconciliationSafetyTests(TestCase):
     def setUp(self):
         from home.test_tokenizer_support import SyntheticCounter

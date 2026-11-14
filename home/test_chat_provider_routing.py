@@ -49,6 +49,7 @@ class ProviderOrderTests(TestCase):
 
 
 @override_settings(
+    SUPERHARRY_FREE_PLAN='free', SUPERHARRY_BILLING_METHODS=(),
     SUPERHARRY_FREE_PROVIDER_ORDER='openrouter,groq',
     SUPERHARRY_ENABLED_FREE_PROVIDERS=('openrouter', 'groq'),
     SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True,

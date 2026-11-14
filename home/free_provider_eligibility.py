@@ -1,9 +1,9 @@
-"""Exact zero-total-cost eligibility for free-provider dispatch.
+"""Configuration checks for free-provider dispatch.
 
 T179-B. Gate applied before any pre-dispatch request so that no request is
 sent for a route that does not satisfy the exact zero-total-cost contract.
 
-Eligibility is decomposed into four exact checks plus two gate checks:
+Eligibility is decomposed into configuration checks plus two gate checks:
 
 * Account level   - the configured plan is the documented free plan and no
                     payment method or other billing mechanism is on record.
@@ -13,8 +13,9 @@ Eligibility is decomposed into four exact checks plus two gate checks:
                     disclosure on this turn.
 * Admin enablement- an administrator has explicitly enabled the free route.
 
-Every check is exact and deterministic. Failure returns a reason string that is
-rendered to the principal as the disclosure; it is never a silent fallback.
+These settings are administrative declarations, not independent proof of an
+account's billing state, upstream routing, privacy terms, or total cost. The
+separate tokenizer and gateway gates remain closed without verified evidence.
 """
 
 from __future__ import annotations
@@ -28,30 +29,12 @@ from home.openrouter_transport import is_approved_route
 
 logger = logging.getLogger(__name__)
 
-_free_plan = None
-_billing_methods = None
-
-
 class FreeRouteError(RuntimeError):
     """A free-route eligibility check failed."""
 
 
-def _freeze() -> None:
-    global _free_plan, _billing_methods
-    _free_plan = getattr(settings, "SUPERHARRY_FREE_PLAN", "free")
-    _billing_methods = getattr(settings, "SUPERHARRY_BILLING_METHODS", [])
-    if not isinstance(_billing_methods, list):
-        _billing_methods = list(_billing_methods)
-
-
-def _billing_has_method() -> bool:
-    _freeze()
-    return any(str(method).strip() for method in _billing_methods)
-
-
 def _approved_model_zero_cost(model_id: str) -> bool:
     """Require explicit application approval; public catalog metadata is discovery only."""
-    _freeze()
     allowed = getattr(settings, 'SUPERHARRY_APPROVED_FREE_MODELS', None)
     return isinstance(allowed, (list, tuple, set, frozenset)) and model_id in allowed
 
@@ -60,23 +43,26 @@ def verify_free_route_eligibility(*, provider: str, model_id: str,
                                   upstream_id: str | None = None,
                                   risk_accepted: bool = False,
                                   admin_enabled: bool = False) -> str:
-    """Return the empty string when the route is exactly zero-cost eligible.
+    """Return the empty string when configured eligibility checks pass.
 
     Returns a human-readable reason (the disclosure) on the first failed check.
-    Yes is authoritative; a single failed check blocks dispatch and never falls
-    back to a secondary route.
+    A successful result does not prove the account or upstream configuration.
     """
-    _freeze()
     if provider not in ("groq", "openrouter"):
         return "route_provider_invalid"
 
     if admin_enabled is not True:
         return "admin_free_route_not_enabled"
 
-    if _free_plan != "free":
+    if getattr(settings, "SUPERHARRY_FREE_PLAN", None) != "free":
         return "account_not_free_plan"
 
-    if _billing_has_method():
+    billing = getattr(settings, "SUPERHARRY_BILLING_METHODS", None)
+    if not isinstance(billing, (list, tuple)) or any(
+        not isinstance(method, str) or not method.strip() for method in billing
+    ):
+        return "account_billing_unknown"
+    if billing:
         return "account_has_payment_method"
 
     if not isinstance(model_id, str) or not model_id:

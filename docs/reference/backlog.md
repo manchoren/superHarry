@@ -16,7 +16,7 @@ The owner-approved [product-first validation policy](product-first-validation.md
 
 ## Phase 3: Agent and model routing
 
-- [ ] **T179 - Free-provider pre-dispatch admission gates and exact tokenizer bound** Status: Pending
+- [ ] **T179 - Free-provider pre-dispatch admission gates and exact tokenizer bound** Status: Pending. Configuration defaults now fail closed; actual gateway admission and model-specific framing remain open. [Evidence](evidence/t179-admission-2026-11-14.md).
 
 ## Phase 4: Persistence and administration
 
@@ -102,8 +102,6 @@ Accepted owner follow-up (2026-11-11): [benchmarks waived](owner-validation-deci
 
 The [review and acceptance records](spec-code-review-2026-11-11.md) define the evidence, dependencies and Given/When/Then criteria for T179-T240. Completed scope is recorded in history and does not imply a new validation result. All pending tasks are **Unassigned**; no active implementer/model was verified. T179 is Pending because no active owner is verified; work already recorded remains evidence, not completion.
 
-- [ ] **T227 - Harden and verify the gateway client contract** Status: Pending. Focused evidence and later full-suite results are recorded in the dated review. Verify contracts needed by enabled flows; broader provider acceptance is deferred to T241.
-- [ ] **T228 - Migrate model credentials and runtime configuration to omniroute** Status: Pending
 - [ ] **T229 - Connect durable chat and local inference to the gateway** Status: Pending. Bounded gateway routing, credential resolution and fail-closed cancellation evidence is recorded in the dated review; real gateway, VM and release acceptance remain open.
 - [ ] **T230 - Enforce application budgets across gateway fallback and memory calls** Status: Pending
 - [ ] **T231 - Correct package guard scoring and evidence validation** Status: Pending. The bounded evaluator and contract-first tests are implemented; broader verifier and installation evidence is deferred to T242. Keep autonomous installation disabled until its required controls work.
@@ -116,7 +114,7 @@ The [review and acceptance records](spec-code-review-2026-11-11.md) define the e
 - [ ] **T239 - Implement storage-pressure cleanup across persisted user data** Status: Pending
 - [ ] **T240 - Implement capability degradation and external-only task recovery** Status: Pending
 
-Local overseer work on T179-T181, T183, T187, T227-T233, T236 and T240 is
+Local overseer work on T179-T181, T183, T187, T229-T233, T236 and T240 is
 recorded in [product-first validation evidence](evidence/overseer-product-first-2026-11-14.md)
 and [test discovery evidence](evidence/t237-test-discovery-2026-11-14.md).
 These are bounded implementation slices; the tasks remain open pending their

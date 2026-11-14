@@ -20,6 +20,8 @@ def _ok_response(model=MODEL):
 
 
 @override_settings(SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED=True,
+                   SUPERHARRY_FREE_PLAN='free', SUPERHARRY_BILLING_METHODS=(),
+                   SUPERHARRY_APPROVED_FREE_MODELS=(MODEL,),
                    SUPERHARRY_LOCAL_TOKENIZER_APPROVED_MODELS=(MODEL,))
 class FreeProviderDispatchTests(TestCase):
     def setUp(self):

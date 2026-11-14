@@ -229,7 +229,8 @@ class OmnirouteClient:
         finally: response.close(); self.close()
     def chat_completion_stream(self, messages: List[Dict[str, str]], model="nous-ai/solar-mini-4", temperature=0.7, max_tokens=None, **kwargs) -> Iterator[OmnirouteStreamEvent]:
         self._validate_chat_request(messages, model, temperature, max_tokens)
-        payload = {"model": model, "messages": messages, "temperature": temperature, **kwargs, "stream": True}
+        payload = {"model": model, "messages": messages, "temperature": temperature, **kwargs,
+                   "stream": True, "stream_options": {"include_usage": True}}
         if max_tokens is not None: payload["max_tokens"] = max_tokens
         response = self._post(payload, stream=True)
         try:

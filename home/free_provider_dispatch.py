@@ -105,10 +105,10 @@ def _release(reservations):
 def _verify_pre_dispatch_admission(*, route: FreeProviderRoute, risk_accepted: bool) -> None:
     """Fail closed before any request, token count, or reservation.
 
-    Re-implements the exact zero-total-cost contract at the one-shot dispatch
+    Checks configured eligibility at the one-shot dispatch
     boundary so a private, under-qualified, or non-approved route never sends a
     request. ``risk_accepted`` is the per-turn disclosure the caller must have
-    captured; account, model, and upstream checks are exact and deterministic.
+    captured; configuration alone does not establish real account eligibility.
     """
     admin_enabled = free_route_enabled()
     if not admin_enabled:

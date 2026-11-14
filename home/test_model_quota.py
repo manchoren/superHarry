@@ -175,6 +175,7 @@ class ModelQuotaConcurrencyTests(TransactionTestCase):
 
 
 @override_settings(SUPERHARRY_REQUIRE_MODEL_QUOTAS=True,
+                   SUPERHARRY_FREE_PLAN='free', SUPERHARRY_BILLING_METHODS=(),
                    SUPERHARRY_APPROVED_FREE_MODELS=(
                        'openai/gpt-oss-20b', 'liquid/lfm-2.5-2.6b:free'),
                    SUPERHARRY_LOCAL_TOKENIZER_APPROVED_MODELS=(
