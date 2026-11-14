@@ -37,25 +37,24 @@ def reserve(operation_id, amount, *, user_key=None, at=None):
                         scope=scope, scope_key=key, period=period, period_start=start).first())
                     if budget is None:
                         raise ApplicationBudgetError('budget_exhausted')
-                    # Unknown reservations are not linked to the newly-created
-                    # period budget.  Find prior unknown reservations by the
-                    # same scope instead of requiring an M2M link to `budget`.
-                    unknown = ApplicationBudgetReservation.objects.filter(
-                        state='unknown',
+                    # A crash can leave a reservation in either state. Both
+                    # remain encumbered until settlement, even across a reset.
+                    outstanding = ApplicationBudgetReservation.objects.filter(
+                        state__in=('reserved', 'unknown'),
                         budgets__scope=scope,
                         budgets__scope_key=key,
                         budgets__period=period,
                         budgets__period_start__lt=start,
                     ).distinct()
-                    encumbrance = sum(item.amount for item in unknown)
+                    encumbrance = sum(item.amount for item in outstanding)
                     if budget.hard_limit - budget.used - budget.reserved - encumbrance < amount:
                         raise ApplicationBudgetError('budget_exhausted')
-                    budgets.append(budget)
+                    budgets.append((budget, encumbrance))
             reservation = ApplicationBudgetReservation.objects.create(operation_id=operation_id, amount=amount, state='reserved')
-            reservation.budgets.set(budgets)
-            for budget in budgets:
+            reservation.budgets.set([budget for budget, _ in budgets])
+            for budget, encumbrance in budgets:
                 budget.reserved += amount
-                warning = (budget.used + budget.reserved) * 100 >= budget.hard_limit * 80
+                warning = (budget.used + budget.reserved + encumbrance) * 100 >= budget.hard_limit * 80
                 if warning and not budget.warning_emitted:
                     budget.warning_emitted = True
                     budget.save(update_fields=['reserved', 'warning_emitted'])

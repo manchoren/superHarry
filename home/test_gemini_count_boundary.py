@@ -6,7 +6,16 @@ from home.gemini_transport import GeminiTransport
 
 
 class GeminiCountBoundaryTests(TestCase):
-    def test_count_rejection_prevents_generation(self):
+    def test_unverified_count_admission_blocks_all_provider_requests(self):
+        transport = MagicMock()
+        with self.assertRaises(GeminiDispatchError):
+            dispatch_gemini(user_request='synthetic', principal_id='synthetic-user',
+                            transport=transport, authorize=lambda: True, cancelled=lambda: False)
+        transport.count.assert_not_called()
+        transport.generate.assert_not_called()
+
+    @patch('home.gemini_dispatch._require_gemini_count_admission')
+    def test_count_rejection_prevents_generation(self, _admission):
         connection = MagicMock()
         connection.getresponse.return_value.status = 404
         transport = GeminiTransport('synthetic-key', timeout=3)

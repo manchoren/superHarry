@@ -1,5 +1,9 @@
 # omniroute - Quick Start Guide
 
+> Historical setup notes: provider routing and generation are not accepted by
+> this guide. Follow the current [closure plan](plans/t179-t226-t231-t237-closure.md)
+> before using external models or claiming release readiness.
+
 **Updated:** 2026-11-11  
 **For:** Target VM validation
 
@@ -97,56 +101,20 @@ LOCAL_MODEL_NAME=qwen3.5:4b
 
 ## ✅ Quick Validation
 
-### Python Validation Script (recommended)
+### Read-only Python validation
+
+Set `OMNIROUTE_ENDPOINT` to the loopback gateway URL and provide
+`OMNIROUTE_API_KEY` through the environment without printing it. Then run:
 
 ```bash
-# Activate superHarry virtual environment
-source .venv/bin/activate  # On Linux/Mac
-# Or on Windows: .venv\Scripts\activate
-
-# Configure environment variables
-export OMNIROUTE_ENDPOINT="http://localhost:20128"
-export OMNIROUTE_API_KEY="your-api-key-here"
-# Or on Windows:
-# set OMNIROUTE_ENDPOINT=http://localhost:20128
-# set OMNIROUTE_API_KEY=your-api-key-here
-
-# Run complete validation
 python scripts/validate_omniroute.py
 ```
 
-**Expected result:**
-```
-🚀 Starting omniroute validation...
-======================================================================
-
-📡 Level 1: Basic Connectivity
-   ✅ T1.1 Health Check (234ms)
-   ✅ T1.2 Dashboard Access (123ms)
-
-🔐 Level 2: Authentication
-   ✅ T2.1 Valid API Key (1456ms)
-   ✅ T2.2 Invalid API Key (89ms)
-
-🎯 Level 3: Model Routing
-   ✅ T3.1 External Model (Nous Portal) (2134ms)
-   ✅ T3.2 Local Model (Ollama) (3421ms)
-   ✅ T3.3 Non-existent Model (67ms)
-
-⚡ Level 4: Advanced Features
-   ✅ T4.1 Streaming SSE (2567ms)
-   ✅ T4.2 Token Tracking (1876ms)
-
-📊 Level 5: Monitoring and Stats
-   ✅ T5.1 Usage Stats (145ms)
-
-======================================================================
-
-📊 Summary: 10/10 tests passed (100.0%)
-✅ ALL TESTS PASSED
-
-📄 Report saved to: omniroute-validation-report.md
-```
+The script checks only `/api/health` and unauthenticated and authenticated
+`/v1/models`. It prints a report to standard output, does not generate text,
+and does not establish provider eligibility, accounting, or release acceptance.
+It accepts only a loopback HTTP endpoint and does not follow redirects or use
+proxy settings. No report file is created automatically.
 
 ---
 

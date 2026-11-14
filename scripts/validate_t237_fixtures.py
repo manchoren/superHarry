@@ -1,7 +1,9 @@
 """Validate the local T237 evaluation manifest without network or credentials."""
 
+import hashlib
 import json
 from pathlib import Path
+import re
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,6 +30,12 @@ def load_manifest() -> dict:
         return json.load(stream)
 
 
+def _fixture_path(name):
+    if not isinstance(name, str) or not re.fullmatch(r"[a-z0-9_]+", name):
+        return None
+    return FIXTURE_ROOT / "t237" / f"{name}.json"
+
+
 def validate_manifest(manifest: dict) -> list[str]:
     errors: list[str] = []
     if manifest.get("schema_version") != 1:
@@ -43,6 +51,7 @@ def validate_manifest(manifest: dict) -> list[str]:
         errors.append("scenario IDs must be unique")
     categories = {item.get("category") for item in scenarios if item.get("required")}
     errors.extend(f"missing required category: {category}" for category in REQUIRED_CATEGORIES - categories)
+    local_names = set()
     for item in scenarios:
         if not isinstance(item, dict) or not item.get("id"):
             errors.append("each scenario must be an object with an id")
@@ -53,14 +62,23 @@ def validate_manifest(manifest: dict) -> list[str]:
             errors.append(f"local scenario lacks fixture: {item.get('id')}")
         if item.get("source") in {"mocked", "contract"}:
             fixture_name = item.get("fixture")
-            fixture_path = FIXTURE_ROOT / "t237" / f"{fixture_name}.json"
-            if not fixture_name or not fixture_path.is_file():
+            fixture_path = _fixture_path(fixture_name)
+            if fixture_path is not None:
+                if fixture_name in local_names:
+                    errors.append(f"duplicate local fixture: {fixture_name}")
+                local_names.add(fixture_name)
+            digest = item.get("sha256")
+            if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+                errors.append(f"local fixture has invalid sha256: {item.get('id')}")
+            if fixture_path is None or not fixture_path.is_file():
                 errors.append(f"local fixture file is missing: {item.get('id')}")
             else:
                 try:
-                    with fixture_path.open(encoding="utf-8") as stream:
-                        fixture = json.load(stream)
-                except (OSError, json.JSONDecodeError) as exc:
+                    payload = fixture_path.read_bytes()
+                    if isinstance(digest, str) and hashlib.sha256(payload).hexdigest() != digest:
+                        errors.append(f"local fixture sha256 mismatch: {item.get('id')}")
+                    fixture = json.loads(payload.decode("utf-8"))
+                except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
                     errors.append(f"local fixture is unreadable: {item.get('id')}: {exc}")
                 else:
                     if not isinstance(fixture, dict):
@@ -78,6 +96,12 @@ def validate_manifest(manifest: dict) -> list[str]:
             errors.append(f"externally controlled scenario cannot be required: {item.get('id')}")
         if item.get("source") in {"live-provider", "vm"} and item.get("fixture") is not None:
             errors.append(f"external scenario cannot carry a local fixture: {item.get('id')}")
+        if item.get("source") in {"live-provider", "vm"} and item.get("sha256") is not None:
+            errors.append(f"external scenario cannot carry a fixture sha256: {item.get('id')}")
+    fixture_directory = FIXTURE_ROOT / "t237"
+    for path in fixture_directory.glob("*.json"):
+        if path.stem not in local_names:
+            errors.append(f"unlisted local fixture: {path.name}")
     return errors
 
 
@@ -98,7 +122,10 @@ def validate_fixture_payloads(manifest: dict) -> list[str]:
     for item in manifest.get("scenarios", []):
         if item.get("source") not in {"mocked", "contract"}:
             continue
-        fixture_path = FIXTURE_ROOT / "t237" / f"{item['fixture']}.json"
+        fixture_path = _fixture_path(item.get("fixture"))
+        if fixture_path is None:
+            errors.append(f"cannot inspect fixture {item.get('id')}: invalid fixture name")
+            continue
         try:
             with fixture_path.open(encoding="utf-8") as stream:
                 fixture = json.load(stream)

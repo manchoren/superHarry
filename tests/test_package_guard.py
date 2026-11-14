@@ -5,7 +5,9 @@ import socket
 
 from home.package_guard import (
     CVE, CVESeverity, PackageAuthorization, PackageEvidence, PackageGuard, PackageScore,
+    bind_verifier_results, verify_and_bind_package_evidence,
 )
+from home.package_verifiers import VerificationResult
 
 NOW = datetime(2026, 11, 12, 12, tzinfo=timezone.utc)
 
@@ -188,6 +190,86 @@ def test_unchecked_or_unknown_evidence_fails_closed():
         assert score.blocked and not score.is_safe()
 
 
+def test_malformed_booleans_and_negative_metrics_never_score_as_valid():
+    for changes in (
+        {"signature_verified": "False"},
+        {"typosquatting_passed": "False"},
+        {"blocklist_checked": 1},
+        {"slsa_verified": 1},
+        {"downloads_per_month": True},
+        {"age_days": -1},
+        {"security_patch_within_days": -1},
+    ):
+        score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(**changes), now=NOW)
+        assert score.blocked and not score.can_authorize_scoped_installation()
+
+
+def test_signed_artifact_claim_is_bound_even_without_signature_points():
+    score = PackageGuard().evaluate(
+        "safe-package", "1.2.3",
+        evidence=evidence(signature_verified=False, signed_artifact_verified=True,
+                          signature_artifact_sha256="0" * 64), now=NOW,
+    )
+    assert score.blocked and not score.can_authorize_scoped_installation()
+
+
+def test_verifier_results_must_both_match_scored_artifact():
+    item = evidence(signature_verified=False, signed_artifact_verified=False, slsa_verified=False)
+    digest = item.artifact_sha256
+    gpg = VerificationResult(True, True, digest, "gpg", "verified")
+    slsa = VerificationResult(True, True, digest, "slsa-verifier", "verified")
+    bound = bind_verifier_results(item, gpg, slsa)
+    assert PackageGuard().evaluate("safe-package", "1.2.3", evidence=bound, now=NOW).evidence_valid
+    for bad in (
+        VerificationResult(True, True, "0" * 64, "gpg", "verified"),
+        VerificationResult(False, True, digest, "gpg", "invalid"),
+        VerificationResult(False, False, digest, "gpg", "missing"),
+        None,
+    ):
+        for signature, provenance in ((bad, slsa), (gpg, bad)):
+            result = bind_verifier_results(item, signature, provenance)
+            score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=result, now=NOW)
+            assert score.blocked and not score.can_authorize_scoped_installation()
+
+
+def test_collector_invokes_both_verifiers_and_fails_on_changed_bytes(tmp_path, monkeypatch):
+    import home.package_verifiers as verifiers
+
+    item = evidence()
+    artifact = tmp_path / "artifact.whl"
+    artifact.write_bytes(item.artifact_bytes)
+    calls = []
+
+    def gpg(path, signature, **kwargs):
+        calls.append("gpg")
+        artifact.write_bytes(b"different artifact")
+        return VerificationResult(True, True, item.artifact_sha256, "gpg", "verified")
+
+    def slsa(path, provenance, **kwargs):
+        calls.append("slsa")
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        return VerificationResult(True, True, digest, "slsa-verifier", "verified")
+
+    monkeypatch.setattr(verifiers, "verify_gpg_detached_signature", gpg)
+    monkeypatch.setattr(verifiers, "verify_slsa_provenance", slsa)
+    bound = verify_and_bind_package_evidence(
+        item, artifact, tmp_path / "signature", tmp_path / "provenance",
+        keyring=tmp_path / "keyring", trusted_fingerprint="A" * 40,
+        source_uri="https://example.invalid/repo",
+    )
+    score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=bound, now=NOW)
+    assert calls == ["gpg", "slsa"]
+    assert score.blocked and not score.can_authorize_scoped_installation()
+
+
+def test_low_advisory_does_not_reduce_d1_reputation():
+    score = PackageGuard().evaluate(
+        "safe-package", "1.2.3",
+        evidence=evidence(advisories=(make_advisory("CVE-low", CVESeverity.LOW),)), now=NOW,
+    )
+    assert score.evidence_valid and score.reputation == 30
+
+
 def test_unavailable_mandatory_evidence_is_distinguished_from_malformed_evidence():
     unavailable = PackageGuard().evaluate(
         "safe-package", "1.2.3", evidence=evidence(malicious_pattern_passed=None), now=NOW
@@ -251,6 +333,15 @@ def test_unknown_applicable_advisory_blocks_but_verified_non_applicability_does_
     assert not_applicable.evidence_valid
 
 
+def test_invalid_advisory_applicability_does_not_hide_finding():
+    for invalid in (None, 0, "", 1, "false"):
+        advisory = make_advisory("CVE-unknown", CVESeverity.UNKNOWN, applicable=invalid)
+        score = PackageGuard().evaluate(
+            "safe-package", "1.2.3", evidence=evidence(advisories=(advisory,)), now=NOW,
+        )
+        assert score.blocked and not score.can_authorize_scoped_installation()
+
+
 def test_advisory_without_source_or_freshness_evidence_fails_closed():
     incomplete = CVE("CVE-incomplete", CVESeverity.HIGH, NOW - timedelta(days=1))
     score = PackageGuard().evaluate(
@@ -268,6 +359,18 @@ def test_advisory_aliases_are_deduplicated():
         downloads_per_month=0, age_days=0, security_patch_within_days=999,
         advisories=advisories), now=NOW)
     assert score.reputation == 0
+
+
+def test_advisory_alias_deduplication_is_independent_of_order_and_transitive():
+    advisories = (
+        make_advisory("CVE-one", CVESeverity.HIGH),
+        make_advisory("GHSA-two", CVESeverity.MEDIUM, aliases=("CVE-two",)),
+        make_advisory("GHSA-bridge", CVESeverity.CRITICAL, aliases=("CVE-one", "CVE-two")),
+    )
+    for ordered in (advisories, tuple(reversed(advisories))):
+        score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=evidence(
+            advisories=ordered), now=NOW)
+        assert score.evidence_valid and score.reputation == 20
 
 
 def test_package_name_normalization_accepts_underscore():

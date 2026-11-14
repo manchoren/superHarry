@@ -3,7 +3,7 @@
 Evidence collection and GPG/SLSA verification are caller boundaries; this
 module validates their results and scores the exact artifact only.
 """
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 import hashlib
@@ -77,11 +77,24 @@ class PackageEvidence:
         return hashlib.sha256(self.artifact_bytes).hexdigest()
 
     def is_complete(self, now: datetime) -> bool:
+        boolean_fields = (
+            self.hash_verified, self.signature_verified, self.publisher_verified,
+            self.slsa_verified, self.signed_artifact_verified,
+            self.typosquatting_passed, self.namespace_confusion_passed,
+            self.malicious_pattern_passed, self.blocklist_checked, self.blocklisted,
+            self.signature_evidence_available, self.provenance_evidence_available,
+        )
+        if any(type(value) is not bool for value in boolean_fields):
+            return False
+        metrics = (self.downloads_per_month, self.age_days, self.security_patch_within_days)
+        if any(type(value) is not int or value < 0 for value in metrics):
+            return False
         aware = all(value.tzinfo is not None for value in (now, self.collected_at, self.expires_at))
         if not aware or self.expires_at < self.collected_at:
             return False
         advisory_evidence_complete = all(
-            advisory.evidence_source.strip()
+            type(advisory.applicable) is bool
+            and advisory.evidence_source.strip()
             and advisory.collected_at is not None
             and advisory.expires_at is not None
             and advisory.collected_at.tzinfo is not None
@@ -105,8 +118,61 @@ class PackageEvidence:
             advisory_evidence_complete,
             self.claimed_sha256 == self.artifact_sha256,
             (not self.signature_verified or self.signature_artifact_sha256 == self.artifact_sha256),
+            (not self.signed_artifact_verified or self.signature_artifact_sha256 == self.artifact_sha256),
             (not self.slsa_verified or self.provenance_artifact_sha256 == self.artifact_sha256),
         ))
+
+
+def bind_verifier_results(evidence: PackageEvidence, signature_result, provenance_result) -> PackageEvidence:
+    """Bind successful verifier output to the bytes scored by this guard.
+
+    A failed or unavailable verification is not proof that an artifact is
+    unsigned. It remains unavailable evidence; review and installation are
+    separate gates. The caller must obtain results from trusted verifier runs.
+    """
+    from home.package_verifiers import VerificationResult
+
+    digest = evidence.artifact_sha256
+
+    def matches(result):
+        return (isinstance(result, VerificationResult)
+                and result.available is True and result.verified is True
+                and result.artifact_sha256 == digest)
+
+    signature_valid = matches(signature_result)
+    provenance_valid = matches(provenance_result)
+    return replace(
+        evidence,
+        signature_verified=signature_valid,
+        signed_artifact_verified=signature_valid,
+        signature_evidence_available=signature_valid,
+        signature_artifact_sha256=digest if signature_valid else "",
+        slsa_verified=provenance_valid,
+        provenance_evidence_available=provenance_valid,
+        provenance_artifact_sha256=digest if provenance_valid else "",
+    )
+
+
+def verify_and_bind_package_evidence(
+    evidence: PackageEvidence, artifact, signature, provenance, *, keyring,
+    trusted_fingerprint: str, source_uri: str, gpg_verifier: str = "gpg",
+    slsa_verifier: str = "slsa-verifier",
+) -> PackageEvidence:
+    """Collect verifier evidence and bind both results to scored bytes.
+
+    Trusted signer/source selection and verifier provisioning are external
+    policy decisions. This function does not authorize or install artifacts.
+    """
+    from home.package_verifiers import verify_gpg_detached_signature, verify_slsa_provenance
+
+    signature_result = verify_gpg_detached_signature(
+        artifact, signature, keyring=keyring, trusted_fingerprint=trusted_fingerprint,
+        verifier=gpg_verifier,
+    )
+    provenance_result = verify_slsa_provenance(
+        artifact, provenance, source_uri=source_uri, verifier=slsa_verifier,
+    )
+    return bind_verifier_results(evidence, signature_result, provenance_result)
 
 
 @dataclass
@@ -228,7 +294,7 @@ class PackageGuard:
             reputation = (10 if evidence.downloads_per_month > 100_000 else 0)
             reputation += (10 if evidence.age_days > 730 else 0)
             reputation += (10 if evidence.security_patch_within_days <= 180 else 0)
-            seen_advisories = set()
+            advisory_groups = []
             for advisory in evidence.advisories:
                 if not advisory.applicable:
                     continue
@@ -236,13 +302,22 @@ class PackageGuard:
                     return PackageScore(package_name, version, registry, blocked=True,
                                         reason="advisory_severity_unknown",
                                         artifact_sha256=evidence.artifact_sha256)
-                if advisory.cve_id in seen_advisories:
-                    continue
-                seen_advisories.add(advisory.cve_id)
-                seen_advisories.update(advisory.aliases)
                 date = advisory.date if advisory.date.tzinfo else advisory.date.replace(tzinfo=timezone.utc)
-                if date >= current - timedelta(days=730):
-                    reputation -= advisory.severity.value
+                ids = {advisory.cve_id, *advisory.aliases}
+                deduction = (advisory.severity.value if advisory.severity is not CVESeverity.LOW
+                             and date >= current - timedelta(days=730) else 0)
+                # Aliases can join previously separate groups and arrive in
+                # either order. Count a finding once at its highest applicable
+                # deduction instead of allowing ordering to change the score.
+                matches = [group for group in advisory_groups if group[0] & ids]
+                while matches:
+                    for group in matches:
+                        ids.update(group[0])
+                        deduction = max(deduction, group[1])
+                        advisory_groups.remove(group)
+                    matches = [group for group in advisory_groups if group[0] & ids]
+                advisory_groups.append((ids, deduction))
+            reputation -= sum(group[1] for group in advisory_groups)
             reputation = max(0, reputation)
             static = (5 if evidence.typosquatting_passed else 0)
             static += (5 if evidence.namespace_confusion_passed else 0)

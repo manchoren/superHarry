@@ -1,5 +1,9 @@
 import json
 import unittest
+import tempfile
+import shutil
+from pathlib import Path
+from unittest.mock import patch
 
 from scripts.validate_t237_fixtures import (
     FIXTURE_ROOT,
@@ -11,6 +15,45 @@ from scripts.validate_t237_fixtures import (
 
 
 class T237FixtureManifestTests(unittest.TestCase):
+    def test_fixture_digest_detects_modified_bytes_even_when_json_is_valid(self):
+        manifest = load_manifest()
+        scenario = next(item for item in manifest["scenarios"] if item.get("fixture"))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            shutil.copytree(FIXTURE_ROOT / "t237", root / "t237")
+            path = root / "t237" / f"{scenario['fixture']}.json"
+            path.write_bytes(path.read_bytes() + b" ")
+            with patch("scripts.validate_t237_fixtures.FIXTURE_ROOT", root):
+                errors = validate_manifest(manifest)
+            self.assertIn(f"local fixture sha256 mismatch: {scenario['id']}", errors)
+
+    def test_missing_or_malformed_fixture_digest_is_rejected(self):
+        for digest in (None, "", "a" * 63, "G" * 64, "A" * 64):
+            with self.subTest(digest=digest):
+                manifest = load_manifest()
+                scenario = next(item for item in manifest["scenarios"] if item.get("fixture"))
+                scenario["sha256"] = digest
+                self.assertIn(f"local fixture has invalid sha256: {scenario['id']}", validate_manifest(manifest))
+
+    def test_external_digest_and_fixture_path_traversal_are_rejected(self):
+        manifest = load_manifest()
+        local = next(item for item in manifest["scenarios"] if item.get("fixture"))
+        external = next(item for item in manifest["scenarios"] if item["source"] == "vm")
+        local["fixture"] = "../outside"
+        external["sha256"] = "0" * 64
+        errors = validate_manifest(manifest)
+        self.assertIn(f"local fixture file is missing: {local['id']}", errors)
+        self.assertIn(f"external scenario cannot carry a fixture sha256: {external['id']}", errors)
+        self.assertIn(f"cannot inspect fixture {local['id']}: invalid fixture name", validate_fixture_payloads(manifest))
+
+    def test_unlisted_fixture_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            shutil.copytree(FIXTURE_ROOT / "t237", root / "t237")
+            (root / "t237" / "unlisted.json").write_text("{}", encoding="utf-8")
+            with patch("scripts.validate_t237_fixtures.FIXTURE_ROOT", root):
+                self.assertIn("unlisted local fixture: unlisted.json", validate_manifest(load_manifest()))
+
     def test_manifest_is_valid_and_keeps_external_evaluations_separate(self):
         manifest = load_manifest()
 

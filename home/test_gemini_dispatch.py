@@ -22,6 +22,9 @@ class FakeTransport:
 
 class GeminiDispatchTests(TestCase):
     def setUp(self):
+        admission = patch('home.gemini_dispatch._require_gemini_count_admission')
+        admission.start()
+        self.addCleanup(admission.stop)
         self.transport = FakeTransport()
         self.gate = lambda: True
         self.current = patch('home.gemini_dispatch.ensure_release_context_is_current')
@@ -96,10 +99,39 @@ class GeminiDispatchTests(TestCase):
 from django.test import TestCase as DatabaseTestCase
 from home.models import ProviderQuota, ProviderReservation
 from home.gemini_dispatch import dispatch_gemini_with_quota
+from home.test_budget_support import create_application_budgets
+
+
+class GeminiCountAdmissionTests(DatabaseTestCase):
+    def test_unverified_count_blocks_before_quota_or_provider(self):
+        ProviderQuota.objects.create(group='gemini-account', limit=1)
+        transport = FakeTransport()
+        with self.assertRaisesRegex(GeminiDispatchError, 'count_admission_unavailable'):
+            dispatch_gemini_with_quota(group='gemini-account', operation_id='blocked',
+                                       user_request='synthetic', principal_id='user',
+                                       transport=transport, authorize=lambda: True,
+                                       cancelled=lambda: False)
+        self.assertFalse(ProviderReservation.objects.exists())
+        self.assertEqual(transport.calls, [])
+
+    @patch('home.gemini_dispatch._require_gemini_count_admission')
+    def test_missing_principal_blocks_before_quota_or_provider(self, _admission):
+        ProviderQuota.objects.create(group='gemini-account', limit=1)
+        transport = FakeTransport()
+        for principal in (None, '', ' ', 'x' * 129):
+            with self.subTest(principal=principal), self.assertRaisesRegex(GeminiDispatchError, 'principal_invalid'):
+                dispatch_gemini_with_quota(group='gemini-account', operation_id='blocked',
+                                           principal_id=principal, transport=transport)
+        self.assertFalse(ProviderReservation.objects.exists())
+        self.assertEqual(transport.calls, [])
 
 
 class GeminiQuotaDispatchTests(DatabaseTestCase):
     def setUp(self):
+        admission = patch('home.gemini_dispatch._require_gemini_count_admission')
+        admission.start()
+        self.addCleanup(admission.stop)
+        create_application_budgets('synthetic-user')
         ProviderQuota.objects.create(group='gemini-account', limit=1)
         ProviderQuota.objects.create(group='gemini-account:tokens', limit=1000)
 
@@ -109,9 +141,9 @@ class GeminiQuotaDispatchTests(DatabaseTestCase):
             kwargs['on_usage'](4)
             return ('ok', (3, 1))
         with patch('home.gemini_dispatch.dispatch_gemini', side_effect=successful) as call:
-            self.assertEqual(dispatch_gemini_with_quota(group='gemini-account', operation_id='turn-1'), ('ok', (3, 1)))
+            self.assertEqual(dispatch_gemini_with_quota(group='gemini-account', operation_id='turn-1', principal_id='synthetic-user'), ('ok', (3, 1)))
             with self.assertRaises(GeminiDispatchError):
-                dispatch_gemini_with_quota(group='gemini-account', operation_id='turn-1')
+                dispatch_gemini_with_quota(group='gemini-account', operation_id='turn-1', principal_id='synthetic-user')
         self.assertEqual(call.call_count, 1)
         quota = ProviderQuota.objects.get(group='gemini-account')
         self.assertEqual((quota.reserved, quota.used), (0, 1))
@@ -119,8 +151,8 @@ class GeminiQuotaDispatchTests(DatabaseTestCase):
     def test_uncertain_failure_keeps_reservation_and_blocks_next_operation(self):
         with patch('home.gemini_dispatch.dispatch_gemini', side_effect=GeminiDispatchError('failure')) as call:
             with self.assertRaises(GeminiDispatchError):
-                dispatch_gemini_with_quota(group='gemini-account', operation_id='turn-1')
+                dispatch_gemini_with_quota(group='gemini-account', operation_id='turn-1', principal_id='synthetic-user')
             with self.assertRaises(GeminiDispatchError):
-                dispatch_gemini_with_quota(group='gemini-account', operation_id='turn-2')
+                dispatch_gemini_with_quota(group='gemini-account', operation_id='turn-2', principal_id='synthetic-user')
         self.assertEqual(call.call_count, 1)
         self.assertEqual(ProviderReservation.objects.get(operation_id='turn-1').state, 'unknown')

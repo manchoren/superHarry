@@ -764,12 +764,9 @@ class ProviderQuotaReconciliation(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                condition=models.Q(disposition='settle_verified', evidence_blob=''),
-                name='home_reconciliation_evidence_not_empty',
-            ),
-            models.CheckConstraint(
-                condition=models.Q(disposition='settle_zero', evidence_blob=''),
-                name='home_reconciliation_zero_evidence_empty',
+                condition=(models.Q(disposition='settle_zero', evidence_blob='')
+                           | (models.Q(disposition='settle_verified') & ~models.Q(evidence_blob=''))),
+                name='home_recon_evidence_valid',
             ),
         ]
         indexes = [

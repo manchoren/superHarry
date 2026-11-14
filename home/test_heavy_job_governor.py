@@ -4,11 +4,12 @@ import os
 import threading
 import time
 import uuid
+from unittest.mock import patch
 
 from django.db import OperationalError, close_old_connections, connection, connections
 from django.test import TransactionTestCase
 
-from home.heavy_job_governor import GovernorCancelled, GovernorFull, HeavyJobGovernor
+from home.heavy_job_governor import GovernorCancelled, GovernorFull, GovernorTimedOut, HeavyJobGovernor
 from home.models import HeavyJob
 
 
@@ -90,6 +91,132 @@ class HeavyJobGovernorSmokeTests(TransactionTestCase):
                 with self.g2.slot('stt', 'op-2', 'user-2'):
                     pass
 
+    def test_timed_out_waiter_is_not_promoted_after_release(self):
+        token, generation = self.g.acquire('local_inference', 'old', 'old-user')
+        with self.assertRaises(GovernorTimedOut):
+            self.g.acquire('local_inference', 'expired', 'new-user', timeout=0.1)
+        self.assertEqual(HeavyJob.objects.get(operation_id='expired').state, HeavyJob.State.RELEASED)
+        self.g.release(token, generation)
+        self.assertFalse(HeavyJob.objects.filter(state=HeavyJob.State.RUNNING).exists())
+
+    def test_interrupted_waiter_is_not_promoted_after_release(self):
+        token, generation = self.g.acquire('local_inference', 'old', 'old-user')
+        with patch('home.heavy_job_governor.time.sleep', side_effect=InterruptedError):
+            with self.assertRaises(InterruptedError):
+                self.g.acquire('local_inference', 'interrupted', 'new-user')
+        self.assertEqual(HeavyJob.objects.get(operation_id='interrupted').state, HeavyJob.State.RELEASED)
+        self.g.release(token, generation)
+        self.assertFalse(HeavyJob.objects.filter(state=HeavyJob.State.RUNNING).exists())
+
+    def test_outer_transition_failure_retires_waiter(self):
+        token, generation = self.g.acquire('local_inference', 'old', 'old-user')
+        serialize = self.g._serialize_transition
+        calls = []
+
+        def fail_reentry():
+            calls.append(1)
+            if len(calls) == 2:
+                raise RuntimeError('transition failed')
+            serialize()
+
+        def simulate_lost_seat(_interval):
+            HeavyJob.objects.filter(token=token).update(state=HeavyJob.State.RELEASED)
+
+        with patch.object(self.g, '_serialize_transition', side_effect=fail_reentry):
+            with patch('home.heavy_job_governor.time.sleep', side_effect=simulate_lost_seat):
+                with self.assertRaisesRegex(RuntimeError, 'transition failed'):
+                    self.g.acquire('local_inference', 'interrupted', 'new-user')
+        self.assertEqual(HeavyJob.objects.get(operation_id='interrupted').state, HeavyJob.State.RELEASED)
+
+    def test_cleanup_failure_preserves_unknown_waiter(self):
+        token, generation = self.g.acquire('local_inference', 'old', 'old-user')
+        with patch.object(self.g, '_abandon_waiter', side_effect=OperationalError('unavailable')):
+            with patch('home.heavy_job_governor.time.sleep', side_effect=InterruptedError):
+                with self.assertRaises(InterruptedError) as raised:
+                    self.g.acquire('local_inference', 'interrupted', 'new-user')
+        self.assertIn('reservation remains subject to recovery', ' '.join(raised.exception.__notes__))
+        self.assertEqual(HeavyJob.objects.get(operation_id='interrupted').state, HeavyJob.State.QUEUED)
+        self.assertEqual(HeavyJob.objects.get(token=token).state, HeavyJob.State.RUNNING)
+
+    def test_timeout_remains_visible_when_cleanup_fails(self):
+        self.g.acquire('local_inference', 'old', 'old-user')
+        with patch.object(self.g, '_abandon_waiter', side_effect=OperationalError('unavailable')) as cleanup:
+            with self.assertRaises(GovernorTimedOut) as raised:
+                self.g.acquire('local_inference', 'expired', 'new-user', timeout=0.1)
+        cleanup.assert_called_once()
+        self.assertIn('reservation remains subject to recovery', ' '.join(raised.exception.__notes__))
+        self.assertEqual(HeavyJob.objects.get(operation_id='expired').state, HeavyJob.State.QUEUED)
+
+    def test_existing_waiter_is_not_returned_as_new_callers_seat(self):
+        old_token = uuid.uuid4()
+        HeavyJob.objects.create(
+            kind='local_inference', operation_id='old', owner_id='old-user',
+            state=HeavyJob.State.QUEUED, token=old_token,
+            generation_id=uuid.uuid4(), worker_pid=123456,
+        )
+        results = []
+        errors = []
+
+        def acquire_new():
+            try:
+                results.append(self.g.acquire('local_inference', 'new', 'new-user'))
+            except BaseException as exc:
+                errors.append(exc)
+            finally:
+                connections.close_all()
+
+        worker = threading.Thread(target=acquire_new)
+        worker.start()
+        try:
+            self.assertTrue(self._wait_for_state('new', HeavyJob.State.QUEUED))
+            old = HeavyJob.objects.get(token=old_token)
+            self.assertEqual(old.state, HeavyJob.State.RUNNING)
+            self.assertEqual(old.worker_pid, 123456)
+            self.assertFalse(results)
+            self.g.release(old.token, old.generation_id)
+            worker.join(timeout=5.0)
+            self.assertFalse(worker.is_alive())
+            self.assertFalse(errors, errors)
+            self.assertEqual(len(results), 1)
+            token, generation = results[0]
+            self.assertNotEqual(token, old_token)
+            self.assertEqual(HeavyJob.objects.get(token=token).operation_id, 'new')
+            self.g.release(token, generation)
+        finally:
+            worker.join(timeout=6.0)
+
+    def test_waiter_recovers_when_running_seat_disappears(self):
+        token, generation = self.g.acquire('local_inference', 'old', 'old-user')
+        results = []
+        errors = []
+
+        def acquire_new():
+            try:
+                results.append(self.g.acquire('local_inference', 'new', 'new-user'))
+            except BaseException as exc:
+                errors.append(exc)
+            finally:
+                connections.close_all()
+
+        worker = threading.Thread(target=acquire_new)
+        worker.start()
+        try:
+            self.assertTrue(self._wait_for_state('new', HeavyJob.State.QUEUED))
+            with self.g._process_lock:
+                HeavyJob.objects.filter(token=token, generation_id=generation).update(
+                    state=HeavyJob.State.RELEASED,
+                )
+            worker.join(timeout=5.0)
+            self.assertFalse(worker.is_alive())
+            self.assertFalse(errors, errors)
+            self.assertEqual(len(results), 1)
+            new_token, new_generation = results[0]
+            self.assertEqual(HeavyJob.objects.get(token=new_token).operation_id, 'new')
+            self.assertEqual(HeavyJob.objects.filter(operation_id='new').count(), 1)
+            self.g.release(new_token, new_generation)
+        finally:
+            worker.join(timeout=6.0)
+
     def test_generation_id_stale_release_inert(self):
         from django.utils import timezone
 
@@ -119,6 +246,19 @@ class HeavyJobGovernorSmokeTests(TransactionTestCase):
             )
         finally:
             self.g.release(token, generation_id=generation_id)
+
+    def test_stale_age_does_not_release_unconfirmed_worker(self):
+        from django.utils import timezone
+
+        token, generation = self.g.acquire('local_inference', 'old', 'user')
+        HeavyJob.objects.filter(token=token).update(
+            started_at=timezone.now() - timezone.timedelta(minutes=5),
+        )
+        self.assertEqual(self.g.reconcile_stale(), 0)
+        self.assertEqual(HeavyJob.objects.get(token=token).state, HeavyJob.State.RUNNING)
+        self.g.confirm_stop(token, generation)
+        self.assertEqual(self.g.reconcile_stale(), 1)
+        self.assertEqual(HeavyJob.objects.get(token=token).state, HeavyJob.State.RELEASED)
 
     def test_queue_promotion_serial(self):
         # FIFO promotion: a holds, b queues behind a, c queues behind b.

@@ -1,5 +1,10 @@
 # omniroute Validation Plan for Target VM
 
+> Historical planning material: the generation and fallback examples below do
+> not establish admission or authorize execution. Use the current
+> [closure plan](plans/t179-t226-t231-t237-closure.md) and the read-only script
+> in section 8 for current validation boundaries.
+
 **Date:** 2026-11-11  
 **Objective:** Validate omniroute integration and operation on production target VM  
 **Status:** 🔄 In progress
@@ -567,272 +572,21 @@ ollama pull qwen3.5:4b
 
 ## 8. Scripts de Automatización
 
-### 8.1 Script de Validación Completa
+### 8.1 Read-only validation script
 
-Crear: `scripts/validate_omniroute.py`
-
-```python
-#!/usr/bin/env python3
-"""
-Script de validación automática de omniroute.
-Ejecuta todos los tests y genera reporte.
-"""
-
-import os
-import sys
-import json
-import requests
-from typing import Dict, List, Tuple
-from dataclasses import dataclass
-from datetime import datetime
-
-@dataclass
-class TestResult:
-    name: str
-    passed: bool
-    duration_ms: float
-    error: str = ""
-
-class OmnirouteValidator:
-    def __init__(self):
-        self.endpoint = os.getenv('OMNIROUTE_ENDPOINT', 'http://localhost:20128')
-        self.api_key = os.getenv('OMNIROUTE_API_KEY')
-        self.results: List[TestResult] = []
-        
-        if not self.api_key:
-            raise ValueError("OMNIROUTE_API_KEY no configurada")
-    
-    def run_all_tests(self) -> bool:
-        """Executes all tests and returns True if all pass."""
-        print("🚀 Starting omniroute validation...")
-        print(f"📍 Endpoint: {self.endpoint}\n")
-        
-        tests = [
-            ("Health Check", self.test_health),
-            ("Auth Válida", self.test_auth_valid),
-            ("Auth Inválida", self.test_auth_invalid),
-            ("Modelo Externo", self.test_external_model),
-            ("Modelo Local", self.test_local_model),
-            ("Streaming", self.test_streaming),
-            ("Usage Stats", self.test_usage_stats),
-        ]
-        
-        for name, test_func in tests:
-            result = self._run_test(name, test_func)
-            self.results.append(result)
-            
-            status = "✅ PASS" if result.passed else "❌ FAIL"
-            print(f"{status} {name} ({result.duration_ms:.0f}ms)")
-            if not result.passed:
-                print(f"   Error: {result.error}")
-        
-        return all(r.passed for r in self.results)
-    
-    def _run_test(self, name: str, test_func) -> TestResult:
-        """Ejecuta un test individual y captura excepciones."""
-        import time
-        start = time.time()
-        
-        try:
-            test_func()
-            duration_ms = (time.time() - start) * 1000
-            return TestResult(name, True, duration_ms)
-        except Exception as e:
-            duration_ms = (time.time() - start) * 1000
-            return TestResult(name, False, duration_ms, str(e))
-    
-    def test_health(self):
-        """Test: Health check endpoint."""
-        resp = requests.get(f"{self.endpoint}/health", timeout=10)
-        resp.raise_for_status()
-        
-        data = resp.json()
-        assert data.get('status') in ['ok', 'healthy'], "Health status inválido"
-    
-    def test_auth_valid(self):
-        """Test: Autenticación con API key válida."""
-        resp = requests.post(
-            f"{self.endpoint}/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "nous-ai/solar-mini-4",
-                "messages": [{"role": "user", "content": "Hi"}],
-                "max_tokens": 5
-            },
-            timeout=30
-        )
-        resp.raise_for_status()
-        
-        data = resp.json()
-        assert 'choices' in data, "Respuesta sin 'choices'"
-    
-    def test_auth_invalid(self):
-        """Test: Rechazo de API key inválida."""
-        resp = requests.post(
-            f"{self.endpoint}/v1/chat/completions",
-            headers={
-                "Authorization": "Bearer invalid-key-12345",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "nous-ai/solar-mini-4",
-                "messages": [{"role": "user", "content": "Test"}]
-            },
-            timeout=10
-        )
-        
-        assert resp.status_code == 401, f"Esperaba 401, obtuvo {resp.status_code}"
-    
-    def test_external_model(self):
-        """Test: Llamada a modelo externo."""
-        resp = requests.post(
-            f"{self.endpoint}/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "nous-ai/solar-mini-4",
-                "messages": [
-                    {"role": "user", "content": "¿Cuál es la capital de Chile?"}
-                ],
-                "max_tokens": 30
-            },
-            timeout=30
-        )
-        resp.raise_for_status()
-        
-        data = resp.json()
-        content = data['choices'][0]['message']['content'].lower()
-        assert 'santiago' in content, "Respuesta incorrecta"
-    
-    def test_local_model(self):
-        """Test: Llamada a modelo local."""
-        resp = requests.post(
-            f"{self.endpoint}/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "ollama/qwen3.5:4b",
-                "messages": [{"role": "user", "content": "Di 'ok'"}],
-                "max_tokens": 10
-            },
-            timeout=30
-        )
-        resp.raise_for_status()
-        
-        data = resp.json()
-        assert 'choices' in data, "Sin respuesta del modelo local"
-    
-    def test_streaming(self):
-        """Test: Streaming SSE."""
-        resp = requests.post(
-            f"{self.endpoint}/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "nous-ai/solar-mini-4",
-                "messages": [{"role": "user", "content": "Hola"}],
-                "stream": true,
-                "max_tokens": 20
-            },
-            stream=True,
-            timeout=30
-        )
-        resp.raise_for_status()
-        
-        # Leer al menos un chunk
-        chunks = 0
-        for line in resp.iter_lines():
-            if line:
-                chunks += 1
-                if chunks >= 2:  # Al menos 2 eventos
-                    break
-        
-        assert chunks >= 2, "No recibió eventos de streaming"
-    
-    def test_usage_stats(self):
-        """Test: Endpoint de usage stats."""
-        resp = requests.get(
-            f"{self.endpoint}/usage",
-            headers={"Authorization": f"Bearer {self.api_key}"},
-            timeout=10
-        )
-        resp.raise_for_status()
-        
-        data = resp.json()
-        # Estructura puede variar según omniroute
-        assert isinstance(data, dict), "Usage stats no es dict"
-    
-    def generate_report(self) -> str:
-        """Genera reporte markdown."""
-        passed = sum(1 for r in self.results if r.passed)
-        total = len(self.results)
-        
-        report = f"""
-# Reporte de Validación omniroute
-
-**Fecha:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  
-**Endpoint:** {self.endpoint}  
-**Resultado:** {'✅ TODOS PASARON' if passed == total else f'❌ {total - passed} FALLARON'}
-
-## Resumen
-
-- **Tests ejecutados:** {total}
-- **Exitosos:** {passed}
-- **Fallidos:** {total - passed}
-- **Tasa de éxito:** {(passed/total*100):.1f}%
-
-## Detalle de Tests
-
-"""
-        
-        for r in self.results:
-            status = "✅ PASS" if r.passed else "❌ FAIL"
-            report += f"- {status} **{r.name}** ({r.duration_ms:.0f}ms)\n"
-            if not r.passed:
-                report += f"  - Error: `{r.error}`\n"
-        
-        return report
-
-if __name__ == "__main__":
-    validator = OmnirouteValidator()
-    success = validator.run_all_tests()
-    
-    print("\n" + "="*60)
-    print(validator.generate_report())
-    
-    # Guardar reporte
-    with open("omniroute-validation-report.md", "w") as f:
-        f.write(validator.generate_report())
-    
-    print("📄 Reporte guardado en: omniroute-validation-report.md")
-    
-    sys.exit(0 if success else 1)
-```
-
-### 8.2 Script Usage
+`scripts/validate_omniroute.py` performs loopback-only GET checks for health
+and model endpoint authentication. Set `OMNIROUTE_ENDPOINT` and
+`OMNIROUTE_API_KEY` in the environment, then run:
 
 ```bash
-# Configure environment variables
-export OMNIROUTE_ENDPOINT="http://localhost:20128"
-export OMNIROUTE_API_KEY="your-api-key-here"
-
-# Run validation
 python scripts/validate_omniroute.py
-
-# View generated report
-cat omniroute-validation-report.md
 ```
 
----
+The report is printed to standard output. The script does not issue generation
+requests or validate provider admission, usage accounting, fallback, recovery,
+or release acceptance. It does not print credentials or follow redirects.
+The full release contract requires the separate authorized evidence described in
+[`plans/t179-t226-t231-t237-closure.md`](plans/t179-t226-t231-t237-closure.md).
 
 ## 9. References
 

@@ -9,6 +9,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 import re
+from pathlib import Path
+import subprocess
+from collections.abc import Callable
 
 
 @dataclass(frozen=True)
@@ -49,6 +52,19 @@ class GuardResult:
     score: int
     blockers: tuple[str, ...]
     accepted: bool
+
+
+def install_guarded_artifact(
+    evidence: PackageEvidence,
+    result: GuardResult,
+    artifact: Path,
+    *,
+    approved_by: str,
+    runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+) -> subprocess.CompletedProcess[str]:
+    """Reject installation until verified evidence and sandbox integration exist."""
+
+    raise PermissionError("verified_sandbox_installation_not_implemented")
 
 
 def evaluate_package(

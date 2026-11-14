@@ -150,7 +150,9 @@ class GeminiQueueAPITests(TestCase):
 
     @patch('home.gemini_chat.load_provider_key', return_value='synthetic-key')
     @patch('home.gemini_chat.GeminiTransport')
-    def test_http_enqueue_idempotency_and_persisted_worker(self, factory, key):
+    @patch('home.gemini_dispatch._require_gemini_count_admission')
+    def test_http_enqueue_idempotency_and_persisted_worker(self, _admission, factory, key):
+        # The provider transport and admission are synthetic in this queue test.
         transport = factory.return_value
         transport.count.return_value = {'totalTokens': 100}
         transport.generate.return_value = {'modelVersion': 'gemini-3.5-flash-lite', 'candidates': [
@@ -174,6 +176,28 @@ class GeminiQueueAPITests(TestCase):
         self.assertEqual(GeminiChatJob.objects.get(turn=turn).state, 'done')
         transport.generate.assert_called_once()
         self.assertFalse(run_one())
+
+    @override_settings(SUPERHARRY_FREE_PROVIDER_ORDER='gemini',
+                       SUPERHARRY_ENABLED_FREE_PROVIDERS=('gemini',),
+                       SUPERHARRY_LOCAL_INFERENCE_ENABLED=False)
+    @patch('home.gemini_chat._gateway_configured', return_value=False)
+    @patch('home.gemini_chat.load_provider_key', return_value='synthetic-key')
+    @patch('home.gemini_chat.GeminiTransport')
+    def test_worker_real_count_gate_denies_without_provider_io_or_replay(self, factory, _key, _gateway):
+        url = reverse('chat-turn-create', kwargs={'conversation_id': self.conversation.pk})
+        response = self.client.post(url, data='{"message":"hello"}', content_type='application/json',
+                                    HTTP_IDEMPOTENCY_KEY=str(uuid.uuid4()), secure=True,
+                                    HTTP_ORIGIN='https://testserver')
+        self.assertEqual(response.status_code, 202)
+        self.assertTrue(run_one())
+        turn = ChatTurn.objects.get(pk=response.json()['turn_id'])
+        self.assertEqual(turn.state, 'failed')
+        factory.return_value.count.assert_not_called()
+        factory.return_value.generate.assert_not_called()
+        self.assertFalse(ProviderReservation.objects.exists())
+        self.assertEqual(GeminiChatJob.objects.get(turn=turn).state, 'done')
+        self.assertFalse(run_one())
+
 class GeminiWorkerStartupTests(SimpleTestCase):
     @patch.dict('os.environ', {'SUPERHARRY_GEMINI_CHAT': '1'}, clear=True)
     @patch('home.gemini_queue.start_development_worker')

@@ -6,7 +6,7 @@ from django.test import TestCase, override_settings
 
 from home.chat_provider_routing import parse_provider_order, build_groq_route, build_openrouter_route
 from home.gemini_chat import run_gemini_turn
-from home.models import ChatTurn, Conversation, Message, ProviderQuota, ProviderReservation
+from home.models import ApplicationBudgetReservation, ChatTurn, Conversation, Message, ProviderQuota, ProviderReservation
 from home.openrouter_transport import OpenRouterRateLimitError
 from home.test_budget_support import create_application_budgets
 
@@ -59,6 +59,10 @@ class ProviderOrderTests(TestCase):
 )
 class RoutedTurnTests(TestCase):
     def setUp(self):
+        # These tests exercise routing after a hypothetical verified upstream.
+        verified = patch('home.openrouter_transport.protected_context_delivery_verified', return_value=True)
+        verified.start()
+        self.addCleanup(verified.stop)
         from home.openrouter_catalog import CatalogModel
         for target in ('home.openrouter_transport.catalog_models', 'home.chat_provider_routing.catalog_models'):
             catalog = patch(target, return_value=(CatalogModel(OR_MODEL, 65536),))
@@ -233,6 +237,23 @@ class RoutedTurnTests(TestCase):
         groq_call.assert_called_once()
         or_call.assert_not_called()
         self.assertEqual(self.turn.state, 'failed')
+
+    @override_settings(SUPERHARRY_FREE_PROVIDER_ORDER='groq,openrouter')
+    def test_groq_429_keeps_all_reservations_and_does_not_fall_back(self):
+        self.turn.openrouter_risk_accepted = True
+        self.turn.save(update_fields=['openrouter_risk_accepted'])
+
+        def rate_limited(_body):
+            from home.groq_transport import GroqRateLimitError
+            raise GroqRateLimitError('groq_rate_limited')
+
+        groq_call, or_call = self._run(keys={'groq': 'k1', 'openrouter': 'k2'}, groq=rate_limited)
+        groq_call.assert_called_once()
+        or_call.assert_not_called()
+        self.assertEqual(ProviderReservation.objects.filter(state='unknown').count(), 2)
+        hold = ApplicationBudgetReservation.objects.get(state='unknown')
+        self.assertGreater(hold.amount, 0)
+        self.assertEqual(set(hold.budgets.values_list('reserved', flat=True)), {hold.amount})
 
     def test_explicit_selection_is_revalidated_before_dispatch(self):
         self.turn.requested_provider = 'openrouter'

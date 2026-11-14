@@ -7,12 +7,18 @@ from home.free_provider_dispatch import dispatch_free_provider
 from home.gemini_dispatch import GeminiDispatchError, dispatch_gemini_with_quota
 from home.models import ProviderQuota, ProviderReservation
 from home.provider_outcomes import OutcomeUnknown
+from home.test_budget_support import create_application_budgets
 
 
 class QuotaReconciliationSafetyTests(TestCase):
+    def setUp(self):
+        admission = patch('home.gemini_dispatch._require_gemini_count_admission')
+        admission.start()
+        self.addCleanup(admission.stop)
     @override_settings(SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED=True,
                        SUPERHARRY_LOCAL_TOKENIZER_APPROVED_MODELS=('openai/gpt-oss-20b',))
     def test_free_provider_unknown_pair_exists_before_provider_returns(self):
+        create_application_budgets('synthetic-user')
         ProviderQuota.objects.create(group='groq-development', limit=5)
         ProviderQuota.objects.create(group='groq-development:tokens', limit=100000)
         operation = 'synthetic-reconciliation-operation-427'
@@ -35,11 +41,13 @@ class QuotaReconciliationSafetyTests(TestCase):
                 authorize=lambda: True,
                 cancelled=lambda: False,
                 operation_id=operation,
+                budget_user_key='synthetic-user',
             )
         transport.generate.assert_called_once()
         self.assertEqual(ProviderReservation.objects.filter(state='unknown').count(), 2)
 
     def test_gemini_unknown_pair_exists_before_dispatch_finishes(self):
+        create_application_budgets('synthetic-user')
         ProviderQuota.objects.create(group='synthetic-gemini', limit=5)
         ProviderQuota.objects.create(group='synthetic-gemini:tokens', limit=100000)
         operation = 'synthetic-gemini-operation-427'
@@ -57,5 +65,6 @@ class QuotaReconciliationSafetyTests(TestCase):
 
         with patch('home.gemini_dispatch.dispatch_gemini', side_effect=unfinished_dispatch):
             with self.assertRaises(GeminiDispatchError):
-                dispatch_gemini_with_quota(group='synthetic-gemini', operation_id=operation)
+                dispatch_gemini_with_quota(group='synthetic-gemini', operation_id=operation,
+                                           principal_id='synthetic-user')
         self.assertEqual(ProviderReservation.objects.filter(state='unknown').count(), 2)

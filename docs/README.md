@@ -14,8 +14,8 @@ docs/
 ??? models/             Providers, routing and inference
 ??? security/           Authentication, authorization and audit
 ??? dependencies/       Dependency and package reviews
-??? platform/
-?   ??? vm/             VM, QEMU and durable profile
+??? platform/           Platform architecture and operational boundaries
+??? runbooks/           Operator procedures, including the ARM64 VM runbook
 ?   ??? operations/     Deployment, backup, storage and recovery
 ??? project/            Project decisions, setup and evaluation
 ??? evidence/           Supporting evidence and verification tools
@@ -25,6 +25,7 @@ docs/
 ## Binding detail and delivery records
 
 - [backlog](reference/backlog.md)
+- [T179/T226–T231/T237 closure plan](plans/t179-t226-t231-t237-closure.md)
 - [product-requirements](reference/product-requirements.md)
 - [test-scoping](reference/test-scoping.md)
 - [agent chat](../agentchat.md): optional handoff channel for the overseer and subagents.

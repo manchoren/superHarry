@@ -11,49 +11,56 @@
       "category": "security",
       "source": "mocked",
       "fixture": "security_boundary",
-      "required": true
+      "required": true,
+      "sha256": "2c791ea4789161c852b851c883aad847d8ab9089280e8a2e680d9b87ae33a40d"
     },
     {
       "id": "gateway-schema",
       "category": "functional",
       "source": "contract",
       "fixture": "tool_call_contract",
-      "required": true
+      "required": true,
+      "sha256": "2634accc262d4ce44b71025dc6914cd5a101f556ba9d33e9a57a1db76d0dbdaf"
     },
     {
       "id": "resource-enforcement",
       "category": "resource",
       "source": "mocked",
       "fixture": "resource_enforcement",
-      "required": true
+      "required": true,
+      "sha256": "51322f96db455b7e638d70438070be586244d9ae0fe7d4f022407446c1fb2570"
     },
     {
       "id": "recovery-unknown-outcome",
       "category": "recovery",
       "source": "mocked",
       "fixture": "recovery_unknown_outcome",
-      "required": true
+      "required": true,
+      "sha256": "c30b93ff53e8b9ece3ac754737901c0dc4370faa42d7ff629cfb69c45bdd70e7"
     },
     {
       "id": "retrieval-bilingual",
       "category": "functional",
       "source": "mocked",
       "fixture": "retrieval_bilingual",
-      "required": true
+      "required": true,
+      "sha256": "01cca1d73c72bd3288a3e4351e6075b9bd26fa0a17df8a960480c26dbe439b0b"
     },
     {
       "id": "ocr-bilingual",
       "category": "functional",
       "source": "mocked",
       "fixture": "ocr_bilingual",
-      "required": true
+      "required": true,
+      "sha256": "e641beae5f409954ac9e51dc90bbf24092d18841dec2d6b12ac1c60796ac9ad1"
     },
     {
       "id": "stt-tts-local",
       "category": "functional",
       "source": "mocked",
       "fixture": "stt_tts_local",
-      "required": true
+      "required": true,
+      "sha256": "a13ad689277c8ab2f263603b14d1d737a5420b01c3cb9fc84eaf3165ece87d7d"
     },
     {
       "id": "provider-live-check",

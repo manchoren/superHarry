@@ -9,6 +9,11 @@ class GeminiDispatchError(RuntimeError):
     """A Gemini invocation could not be completed safely."""
 
 
+def _require_gemini_count_admission():
+    """Deny remote token counting until its complete budget bound is proven."""
+    raise GeminiDispatchError('gemini_count_admission_unavailable')
+
+
 def dispatch_gemini(*, user_request: str, principal_id: str, transport, authorize, cancelled, on_prepared=None, on_usage=None, history=()):
     """Perform one bounded request, without retry; not wired to application chat.
 
@@ -17,6 +22,7 @@ def dispatch_gemini(*, user_request: str, principal_id: str, transport, authoriz
     Usage returned here is untrusted provider data, not a settled ledger entry.
     """
     try:
+        _require_gemini_count_admission()
         if (not isinstance(principal_id, str) or not principal_id.strip()
                 or not callable(authorize) or not callable(cancelled)
                 or not callable(getattr(transport, 'count', None))
@@ -91,6 +97,13 @@ def dispatch_gemini_with_quota(*, group: str, operation_id: str, on_context=None
                                           reserve as reserve_budget,
                                           settle as settle_budget)
 
+    # Counting itself sends protected context. Until a conservative bound and
+    # applicable budgets are established first, deny before any quota write.
+    _require_gemini_count_admission()
+    principal_id = kwargs.get('principal_id')
+    if (not isinstance(principal_id, str) or not principal_id.strip()
+            or len(principal_id) > 128):
+        raise GeminiDispatchError('gemini_principal_invalid')
     token_reservation = None
     observed_usage = None
     application_reservation = None
@@ -101,10 +114,8 @@ def dispatch_gemini_with_quota(*, group: str, operation_id: str, on_context=None
 
     def reserve_tokens(amount):
         nonlocal token_reservation, application_reservation
-        principal_id = kwargs.get('principal_id')
-        if principal_id is not None:
-            application_reservation = reserve_budget(operation_id + ':application-tokens', amount,
-                                                     user_key=principal_id)
+        application_reservation = reserve_budget(operation_id + ':application-tokens', amount,
+                                                 user_key=principal_id)
         try:
             token_reservation = reserve(group + ':tokens', operation_id + ':tokens', amount, model_id=model_id)
         except Exception:

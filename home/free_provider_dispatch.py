@@ -2,9 +2,9 @@
 
 The caller chooses the route and provider order. This function never retries
 and never falls back. Only failures before any request is sent are reported as
-NotDispatched. Groq documents HTTP 429 as a rate-limit rejection; OpenRouter
-does not establish that every platform/upstream 429 precedes generation, so it
-remains OutcomeUnknown. Other failures after send also keep reservations held.
+NotDispatched. A provider HTTP 429 does not by itself establish that no
+upstream work consumed capacity, so it remains OutcomeUnknown. Other failures
+after send also keep reservations held.
 """
 
 from dataclasses import dataclass
@@ -30,7 +30,7 @@ from home.application_budget import (ApplicationBudgetError,
                                       mark_unknown as mark_budget_unknown,
                                       reserve as reserve_budget,
                                       settle as settle_budget)
-from home.provider_outcomes import NotDispatched, OutcomeUnknown, RateLimited
+from home.provider_outcomes import NotDispatched, OutcomeUnknown
 
 OUTPUT_LIMIT = 128
 logger = logging.getLogger(__name__)
@@ -131,6 +131,8 @@ def dispatch_free_provider(*, route, transport, user_request, authorize, cancell
     """Return (text, (input_tokens, output_tokens)) after one bounded request."""
     if (not isinstance(route, FreeProviderRoute) or not callable(getattr(transport, 'generate', None))
             or not callable(authorize) or not callable(cancelled)
+            or not isinstance(budget_user_key, str) or not budget_user_key.strip()
+            or len(budget_user_key) > 128
             or not isinstance(operation_id, str) or not operation_id.strip() or len(operation_id) > 100):
         raise NotDispatched('dispatch_invalid')
     if route.provider == 'openrouter':
@@ -140,6 +142,14 @@ def dispatch_free_provider(*, route, transport, user_request, authorize, cancell
                 or current is None or route.context_capacity != current.context_length
                 or route.quota_group != 'openrouter-development'):
             raise NotDispatched('dispatch_not_sent')
+        # Acceptance of personal data-sharing risk cannot establish that the
+        # upstream preserves protected policy context without modification.
+        try:
+            context_verified = openrouter_transport.protected_context_delivery_verified() is True
+        except Exception:
+            context_verified = False
+        if not context_verified:
+            raise NotDispatched('dispatch_protected_context_unverified')
     _verify_pre_dispatch_admission(route=route, risk_accepted=risk_accepted)
     reservations = []
     budget_reservation = None
@@ -163,9 +173,8 @@ def dispatch_free_provider(*, route, transport, user_request, authorize, cancell
         ):
             raise ValueError('route body mismatch')
         amount = prepared.input_token_upper_bound + prepared.output_reserve
-        if budget_user_key is not None:
-            budget_reservation = reserve_budget(operation_id + ':application-tokens', amount,
-                                                user_key=budget_user_key)
+        budget_reservation = reserve_budget(operation_id + ':application-tokens', amount,
+                                            user_key=budget_user_key)
         require_models = settings.SUPERHARRY_REQUIRE_MODEL_QUOTAS
         if type(require_models) is not bool:
             raise ValueError('model quota configuration invalid')
@@ -211,15 +220,9 @@ def dispatch_free_provider(*, route, transport, user_request, authorize, cancell
     try:
         response = transport.generate(prepared.serialized_input)
     except GroqRateLimitError:
-        if route.provider != 'groq':
-            raise OutcomeUnknown('dispatch_outcome_unknown') from None
-        try:
-            with transaction.atomic():
-                settle(request_reservation.pk, 1)
-                settle(token_reservation.pk, 0)
-        except Exception:
-            raise OutcomeUnknown('dispatch_settlement_failed') from None
-        raise RateLimited('provider_rate_limited') from None
+        # A 429 does not prove the remote outcome or token consumption. Keep
+        # all reservations unknown and do not authorize a replay/fallback.
+        raise OutcomeUnknown('dispatch_outcome_unknown') from None
     except Exception:
         raise OutcomeUnknown('dispatch_outcome_unknown') from None
 

@@ -62,9 +62,10 @@ class OpenRouterEstimateTests(SimpleTestCase):
 
         transport = Mock()
         transport.generate.side_effect = simulated_truncation
-        with self.assertRaises(NotDispatched):
+        with self.assertRaisesRegex(NotDispatched, 'dispatch_protected_context_unverified'):
             dispatch_free_provider(route=route, transport=transport, user_request='synthetic',
-                                   authorize=lambda: True, cancelled=lambda: False, operation_id='compression')
+                                   authorize=lambda: True, cancelled=lambda: False, operation_id='compression',
+                                   budget_user_key='synthetic-user')
         transport.generate.assert_not_called()
 
     @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True, SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED=True)
@@ -85,7 +86,8 @@ class OpenRouterEstimateTests(SimpleTestCase):
         transport = Mock()
         transport.generate.side_effect = simulated_forced_plugin
         route = build_openrouter_route('liquid/lfm-2.5-2.6b:free', 'liquid/fp8')
-        with self.assertRaises(NotDispatched):
+        with self.assertRaisesRegex(NotDispatched, 'dispatch_protected_context_unverified'):
             dispatch_free_provider(route=route, transport=transport, user_request='synthetic',
-                                   authorize=lambda: True, cancelled=lambda: False, operation_id='forced-plugin')
+                                   authorize=lambda: True, cancelled=lambda: False, operation_id='forced-plugin',
+                                   budget_user_key='synthetic-user')
         transport.generate.assert_not_called()

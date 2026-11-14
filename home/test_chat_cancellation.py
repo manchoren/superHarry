@@ -34,6 +34,10 @@ from home.test_budget_support import create_application_budgets
 
 
 class CancelledGeminiQuotaTests(DjangoTestCase):
+    def setUp(self):
+        admission = patch('home.gemini_dispatch._require_gemini_count_admission')
+        admission.start()
+        self.addCleanup(admission.stop)
     def test_cancel_during_generation_discards_response_and_retains_reservation(self):
         user = get_user_model().objects.create_user(username='synthetic-user')
         create_application_budgets(user.pk)

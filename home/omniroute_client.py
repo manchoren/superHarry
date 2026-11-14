@@ -1,5 +1,5 @@
 """Defensive OpenAI-compatible client for the local omniroute gateway."""
-import json, logging, os, uuid
+import json, logging, os, re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterator, List, Optional
@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 MAX_SSE_LINE_BYTES = 256 * 1024
 MAX_SSE_EVENTS = 4096
+_SSE_DELIMITER = re.compile(b"[\r\n]")
 
 class OmnirouteError(RuntimeError):
     """Gateway failure without credentials or response-body leakage."""
@@ -41,7 +42,9 @@ class OmnirouteResponse:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "OmnirouteResponse":
         if not isinstance(data, dict) or data.get("object") != "chat.completion": raise OmnirouteError("gateway_response_invalid")
-        if not isinstance(data.get("id"), str) or not isinstance(data.get("model"), str): raise OmnirouteError("gateway_response_invalid")
+        if (not isinstance(data.get("id"), str) or not data["id"].strip()
+                or not isinstance(data.get("model"), str) or not data["model"].strip()):
+            raise OmnirouteError("gateway_response_invalid")
         choices = data.get("choices")
         if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict): raise OmnirouteError("gateway_response_invalid")
         choice, message = choices[0], choices[0].get("message")
@@ -56,6 +59,45 @@ class OmnirouteResponse:
 @dataclass(frozen=True)
 class OmnirouteStreamEvent:
     event: str; content: str = ""; finish_reason: Optional[str] = None; usage: Optional[OmnirouteUsage] = None
+
+
+def _iter_bounded_sse_lines(response):
+    """Read bounded bytes before buffering a complete SSE line."""
+    pending = bytearray()
+    total = 0
+    skip_lf = False
+    for chunk in response.iter_content(chunk_size=64 * 1024):
+        if not isinstance(chunk, bytes):
+            raise OmnirouteError("gateway_sse_malformed")
+        total += len(chunk)
+        if total > MAX_RESPONSE_BYTES:
+            raise OmnirouteError("gateway_sse_too_large")
+        offset = 0
+        if skip_lf and chunk:
+            skip_lf = False
+            if chunk[0] == 10:
+                offset = 1
+        for match in _SSE_DELIMITER.finditer(chunk, offset):
+            end = match.start()
+            if end < offset:
+                continue
+            if end - offset > MAX_SSE_LINE_BYTES - len(pending):
+                raise OmnirouteError("gateway_sse_line_too_large")
+            pending.extend(chunk[offset:end])
+            yield bytes(pending)
+            pending.clear()
+            offset = end + 1
+            if chunk[end] == 13:
+                if offset == len(chunk):
+                    skip_lf = True
+                elif chunk[offset] == 10:
+                    offset += 1
+        if len(chunk) - offset > MAX_SSE_LINE_BYTES - len(pending):
+            raise OmnirouteError("gateway_sse_line_too_large")
+        pending.extend(chunk[offset:])
+    if pending:
+        yield bytes(pending)
+
 
 class OmnirouteClient:
     def __init__(self, endpoint: Optional[str] = None, api_key: Optional[str] = None, timeout: int = 60):
@@ -97,17 +139,25 @@ class OmnirouteClient:
         key = self.api_key
         if not key: raise NotDispatched("omniroute_credentials_missing")
         self._session = requests.Session()
+        # Do not route protected prompts or gateway credentials through a
+        # proxy selected implicitly from the process environment.
+        self._session.trust_env = False
         self._session.headers.update({"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
         return self._session
     @staticmethod
     def _raise_http(response, operation):
         if 200 <= response.status_code < 300: return
+        # A gateway error may be forwarded from an upstream provider after
+        # dispatch. The status alone does not prove that no usage occurred.
+        if operation == "chat":
+            raise OutcomeUnknown(f"omniroute_chat_failed_{response.status_code}")
         if response.status_code in (401, 403, 404, 409, 422, 429): raise NotDispatched(f"omniroute_{operation}_rejected_{response.status_code}")
         raise OmnirouteError(f"omniroute_{operation}_failed_{response.status_code}")
     def _post(self, payload, stream=False):
         session = self._session_for_request()
         try:
-            response = session.post(f"{self.endpoint}/chat/completions", json=payload, stream=stream, timeout=self.timeout)
+            response = session.post(f"{self.endpoint}/chat/completions", json=payload, stream=stream,
+                                    timeout=self.timeout, allow_redirects=False)
             try:
                 self._raise_http(response, "chat")
             except Exception:
@@ -141,29 +191,38 @@ class OmnirouteClient:
         if max_tokens is not None: payload["max_tokens"] = max_tokens
         if reasoning is not None: payload["reasoning"] = reasoning
         if tools is not None: payload["tools"] = tools
-        response = self._post(payload)
+        # Keep the response streamed even for the non-SSE API: Requests would
+        # otherwise buffer an unbounded body before we can enforce our limit.
+        response = self._post(payload, stream=True)
         try:
             length = response.headers.get("Content-Length", 0)
             if isinstance(length, str) and length.isdigit() and int(length) > MAX_RESPONSE_BYTES: raise OmnirouteError("gateway_response_too_large")
-            return OmnirouteResponse.from_dict(response.json())
-        except (ValueError, json.JSONDecodeError) as exc: raise OmnirouteError("gateway_response_invalid") from exc
+            body = bytearray()
+            for chunk in response.iter_content(chunk_size=64 * 1024):
+                if not isinstance(chunk, bytes):
+                    raise OmnirouteError("gateway_response_invalid")
+                if len(chunk) > MAX_RESPONSE_BYTES - len(body):
+                    raise OmnirouteError("gateway_response_too_large")
+                body.extend(chunk)
+            return OmnirouteResponse.from_dict(json.loads(body))
+        except (ValueError, OverflowError, OSError, RecursionError, OmnirouteError, requests.RequestException) as exc:
+            # The response was received after dispatch; parsing failure does
+            # not establish whether the upstream request consumed tokens.
+            raise OutcomeUnknown("omniroute_response_invalid") from exc
         finally: response.close(); self.close()
     def chat_completion_stream(self, messages: List[Dict[str, str]], model="nous-ai/solar-mini-4", temperature=0.7, max_tokens=None, **kwargs) -> Iterator[OmnirouteStreamEvent]:
         self._validate_chat_request(messages, model, temperature, max_tokens)
-        payload = {"model": model, "messages": messages, "temperature": temperature, "stream": True, **kwargs}
+        payload = {"model": model, "messages": messages, "temperature": temperature, **kwargs, "stream": True}
         if max_tokens is not None: payload["max_tokens"] = max_tokens
         response = self._post(payload, stream=True)
         try:
             event_count = 0
-            response_bytes = 0
             completed = False
             usage_seen = False
-            for raw_line in response.iter_lines():
+            response_id = None
+            response_model = None
+            for raw_line in _iter_bounded_sse_lines(response):
                 if not raw_line: continue
-                line_bytes = len(raw_line) if isinstance(raw_line, bytes) else len(raw_line.encode("utf-8"))
-                response_bytes += line_bytes
-                if line_bytes > MAX_SSE_LINE_BYTES: raise OmnirouteError("gateway_sse_line_too_large")
-                if response_bytes > MAX_RESPONSE_BYTES: raise OmnirouteError("gateway_sse_too_large")
                 event_count += 1
                 if event_count > MAX_SSE_EVENTS: raise OmnirouteError("gateway_sse_too_many_events")
                 try:
@@ -179,7 +238,17 @@ class OmnirouteClient:
                     yield OmnirouteStreamEvent("done")
                     return
                 try: data = json.loads(value)
-                except (TypeError, json.JSONDecodeError) as exc: raise OmnirouteError("gateway_sse_malformed") from exc
+                except (TypeError, ValueError, RecursionError) as exc: raise OmnirouteError("gateway_sse_malformed") from exc
+                if not isinstance(data, dict):
+                    raise OmnirouteError("gateway_sse_schema_invalid")
+                event_id, event_model = data.get("id"), data.get("model")
+                if (not isinstance(event_id, str) or not event_id.strip()
+                        or not isinstance(event_model, str) or not event_model.strip()):
+                    raise OmnirouteError("gateway_sse_identity_missing")
+                if response_id is None:
+                    response_id, response_model = event_id, event_model
+                elif event_id != response_id or event_model != response_model:
+                    raise OmnirouteError("gateway_sse_identity_changed")
                 choices = data.get("choices") if isinstance(data, dict) else None
                 if not isinstance(choices, list): raise OmnirouteError("gateway_sse_schema_invalid")
                 # OpenAI-compatible streams may send usage in a final chunk
@@ -187,6 +256,8 @@ class OmnirouteClient:
                 if not choices:
                     if not isinstance(data, dict) or "usage" not in data:
                         raise OmnirouteError("gateway_sse_schema_invalid")
+                    if usage_seen:
+                        raise OmnirouteUsageError("gateway_usage_duplicate")
                     usage = OmnirouteUsage.from_dict(data["usage"])
                     usage_seen = True
                     yield OmnirouteStreamEvent("delta", "", None, usage)
@@ -198,18 +269,25 @@ class OmnirouteClient:
                     raise OmnirouteError("gateway_sse_schema_invalid")
                 usage = OmnirouteUsage.from_dict(data["usage"]) if "usage" in data else None
                 if usage is not None:
+                    if usage_seen:
+                        raise OmnirouteUsageError("gateway_usage_duplicate")
                     usage_seen = True
                 yield OmnirouteStreamEvent("delta", delta.get("content", ""), choice.get("finish_reason"), usage)
             if not completed:
                 raise OmnirouteError("gateway_sse_truncated")
             if not usage_seen:
                 raise OmnirouteUsageError("gateway_usage_missing")
-        except (requests.Timeout, requests.RequestException) as exc: raise OutcomeUnknown("omniroute_stream_failure") from exc
+        except (OSError, requests.RequestException) as exc: raise OutcomeUnknown("omniroute_stream_failure") from exc
+        except OmnirouteError as exc:
+            # Parsing fails after the POST was accepted, even if no event was
+            # yielded. The upstream request may already have consumed tokens.
+            raise OutcomeUnknown("omniroute_stream_invalid") from exc
         finally: response.close(); self.close()
     def _get(self, path, missing_ok=False):
         session = self._session_for_request()
         try:
-            response = session.get(f"{self.endpoint.removesuffix('/v1')}/{path}", timeout=self.timeout)
+            response = session.get(f"{self.endpoint.removesuffix('/v1')}/{path}", timeout=self.timeout,
+                                   allow_redirects=False)
             if missing_ok and response.status_code == 404: return {}
             self._raise_http(response, path); data = response.json()
             if not isinstance(data, dict): raise OmnirouteError("gateway_response_invalid")
@@ -224,22 +302,16 @@ class OmnirouteClient:
         if self._session is not None: self._session.close(); self._session = None
 
 omniroute_client = OmnirouteClient()
-def chat_with_external_model(messages, **kwargs): return omniroute_client.chat_completion(messages=messages, model="nous-ai/solar-mini-4", **kwargs)
-def chat_with_local_model(messages, **kwargs): return omniroute_client.chat_completion(messages=messages, model="ollama/qwen3.5:4b", **kwargs)
+def chat_with_external_model(messages, **kwargs):
+    raise NotDispatched("gateway_admission_unavailable")
+
+
+def chat_with_local_model(messages, **kwargs):
+    # A gateway alias alone does not verify local execution.
+    raise NotDispatched("gateway_locality_unverified")
+
+
 def memory_agent_search(query, conversation_context=None, *, user_key=None, operation_id=None):
-    messages = list(conversation_context or []); messages.append({"role": "user", "content": query})
-    if user_key is None:
-        return omniroute_client.chat_completion(messages=messages, model="nous-ai/solar-mini-4", reasoning=False, temperature=0.3, max_tokens=500)
-    from home.application_budget import mark_unknown, reserve, settle
-    bound = sum(len(str(message.get("content", "")).encode("utf-8")) for message in messages) + 500
-    reservation = reserve(operation_id or f"memory-search:{uuid.uuid4()}:application-tokens", bound, user_key=str(user_key))
-    mark_unknown(reservation.pk)
-    try:
-        response = omniroute_client.chat_completion(messages=messages, model="nous-ai/solar-mini-4", reasoning=False, temperature=0.3, max_tokens=500)
-        settle(reservation.pk, response.usage.total_tokens, allow_overage=True)
-        return response
-    except NotDispatched:
-        settle(reservation.pk, 0)
-        raise
-    except Exception:
-        raise
+    # User identity alone does not establish permitted memory scope, consent,
+    # upstream eligibility or a valid token bound for the configured model.
+    raise NotDispatched("memory_gateway_admission_unavailable")

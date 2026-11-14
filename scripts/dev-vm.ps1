@@ -542,19 +542,17 @@ $runArguments = @(
     '-drive', "if=none,id=rootdisk,file=$overlay,format=qcow2",
     '-device', 'virtio-blk-device,drive=rootdisk',
     '-device', 'pcie-root-port,id=netrp,bus=pcie.0,addr=0x1,chassis=1,slot=1',
+    '-netdev', 'user,id=guestnet,hostfwd=tcp:127.0.0.1:2222-:22',
+    '-device', 'virtio-net-pci,bus=netrp,netdev=guestnet,id=guestnic',
     '-boot', 'order=c',
-    '-nic', 'none',
     '-display', 'none',
     '-serial', 'mon:stdio'
 )
 $qemuReturned = $false
 $qemuExitCode = $null
 try {
-    Write-Host 'Run mode: starts without a NIC or network backend. Log in to Debian first; only then switch to the QEMU monitor (Ctrl+A, C) and run:'
-    Write-Host '  netdev_add user,id=guestnet,hostfwd=tcp:127.0.0.1:2222-:22'
-    Write-Host '  device_add virtio-net-pci,bus=netrp,netdev=guestnet,id=guestnic'
-    Write-Host 'Use Ctrl+A, C to return to the guest serial console. Do not attach networking before login.'
-    Write-Host 'SSH forwarding is bound only to 127.0.0.1:2222; no LAN listener is configured.'
+    Write-Host 'Run mode: starts with user-mode NAT and SSH forwarding bound only to 127.0.0.1:2222.'
+    Write-Host 'No LAN listener is configured; no QEMU monitor networking command is required.'
     & $script:QemuPath @runArguments
     $qemuExitCode = $LASTEXITCODE
     $qemuReturned = $true

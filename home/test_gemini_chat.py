@@ -1,17 +1,26 @@
 import uuid
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
-from home.gemini_chat import OmnirouteError, RoutingExhausted, _run_routing, run_gemini_turn
+from home.gemini_chat import OmnirouteError, RoutingExhausted, _attempt_gemini, _require_gateway_admission, _run_routing, run_gemini_turn
 from home.local_model_adapter import LocalInferenceError
-from home.models import ChatTurn, Conversation, Message, ProviderQuota
+from home.models import ApplicationBudget, ApplicationBudgetReservation, ChatTurn, Conversation, Message, ProviderQuota
+from home.provider_outcomes import NotDispatched, OutcomeUnknown
 from home.provider_credentials import CredentialConfigError
 from home.test_budget_support import create_application_budgets
 
 
 class GeminiChatTests(TestCase):
     def setUp(self):
+        count_admission = patch('home.gemini_dispatch._require_gemini_count_admission')
+        count_admission.start()
+        self.addCleanup(count_admission.stop)
+        # Synthetic stream tests exercise behavior after admission; they do
+        # not establish that the installed gateway satisfies admission.
+        admission = patch('home.gemini_chat._require_gateway_admission', return_value=None)
+        admission.start()
+        self.addCleanup(admission.stop)
         self.user = get_user_model().objects.create_user(username='gemini-owner')
         create_application_budgets(self.user.pk)
         self.conversation = Conversation.objects.create(owner=self.user)
@@ -65,6 +74,28 @@ class GeminiChatTests(TestCase):
         self.turn.refresh_from_db()
         self.assertEqual(self.turn.state, 'failed')
         factory.return_value.count.assert_not_called()
+        factory.return_value.generate.assert_not_called()
+
+    @patch('home.gemini_chat.GeminiTransport')
+    def test_count_failure_is_unknown_after_sending_context(self, factory):
+        factory.return_value.count.side_effect = RuntimeError('ambiguous transport failure')
+        with self.assertRaises(OutcomeUnknown):
+            _attempt_gemini(turn=self.turn, key='synthetic-key', authorized=lambda: True,
+                            cancelled=lambda: False, history=[])
+        factory.return_value.count.assert_called_once()
+        factory.return_value.generate.assert_not_called()
+
+    @patch('home.gemini_chat.GeminiTransport')
+    def test_cancellation_after_count_started_keeps_outcome_unknown(self, factory):
+        cancelled = {'value': False}
+        def count_then_cancel(_body):
+            cancelled['value'] = True
+            raise RuntimeError('ambiguous count failure')
+        factory.return_value.count.side_effect = count_then_cancel
+        with self.assertRaises(OutcomeUnknown):
+            _attempt_gemini(turn=self.turn, key='synthetic-key', authorized=lambda: True,
+                            cancelled=lambda: cancelled['value'], history=[])
+        factory.return_value.count.assert_called_once()
         factory.return_value.generate.assert_not_called()
 
     @patch('home.gemini_chat.load_provider_key', return_value='synthetic-key')
@@ -142,21 +173,144 @@ class GeminiChatTests(TestCase):
         client.chat_completion_stream.assert_called_once()
 
     @patch.dict('os.environ', {'OMNIROUTE_API_KEY': 'synthetic-gateway-key'}, clear=False)
+    @patch('home.gemini_chat._run_local_fallback')
+    @patch('home.gemini_chat._attempt_free_route')
+    @patch('home.gemini_chat._attempt_gemini')
+    @patch('home.omniroute_client.requests.Session')
+    def test_ambiguous_gateway_failures_preserve_reservation_without_replay(
+            self, session_factory, gemini, free_route, local_fallback):
+        for status, lines in ((200, [b'data: {invalid-json']), (429, [])):
+            with self.subTest(status=status):
+                response = MagicMock(status_code=status)
+                response.iter_content.return_value = map(lambda line: line + b'\n', iter(lines))
+                session = session_factory.return_value
+                session.post.reset_mock()
+                session.post.return_value = response
+                with self.assertRaises(OutcomeUnknown):
+                    _run_routing(turn=self.turn, history=[], authorized=lambda: True,
+                                 cancelled=lambda: False)
+                session.post.assert_called_once()
+                response.close.assert_called_once()
+                hold = ApplicationBudgetReservation.objects.get(
+                    operation_id=f'gateway:{self.turn.pk}:application-tokens')
+                self.assertEqual(hold.state, 'unknown')
+                self.assertGreater(hold.amount, 0)
+                self.assertEqual(hold.budgets.count(), 4)
+                self.assertEqual(set(hold.budgets.values_list('reserved', flat=True)), {hold.amount})
+                self.assertFalse(ApplicationBudget.objects.filter(used__gt=0).exists())
+                hold.budgets.update(reserved=0)
+                hold.delete()
+        gemini.assert_not_called()
+        free_route.assert_not_called()
+        local_fallback.assert_not_called()
+
+    @patch.dict('os.environ', {'OMNIROUTE_API_KEY': 'synthetic-gateway-key'}, clear=False)
     @patch('home.gemini_chat.OmnirouteClient')
-    def test_local_mode_uses_gateway_local_model(self, client_factory):
+    def test_gateway_rechecks_authorization_before_dispatch_and_releases_hold(self, factory):
+        authorized = MagicMock(side_effect=[True, False])
+        with self.assertRaises(NotDispatched):
+            _run_routing(turn=self.turn, history=[], authorized=authorized, cancelled=lambda: False)
+        factory.return_value.chat_completion_stream.assert_not_called()
+        hold = ApplicationBudgetReservation.objects.get(
+            operation_id=f'gateway:{self.turn.pk}:application-tokens')
+        self.assertEqual((hold.state, hold.actual), ('settled', 0))
+        self.assertFalse(hold.budgets.filter(reserved__gt=0).exists())
+
+    @patch.dict('os.environ', {'OMNIROUTE_API_KEY': 'synthetic-gateway-key'}, clear=False)
+    @patch('home.gemini_chat.OmnirouteClient')
+    def test_gateway_denied_authorization_does_not_reserve_or_send(self, factory):
+        with self.assertRaises(NotDispatched):
+            _run_routing(turn=self.turn, history=[], authorized=lambda: False, cancelled=lambda: False)
+        factory.assert_not_called()
+        self.assertFalse(ApplicationBudgetReservation.objects.exists())
+
+    @patch.dict('os.environ', {'OMNIROUTE_API_KEY': 'synthetic-gateway-key'}, clear=False)
+    @patch('home.gemini_chat.OmnirouteClient')
+    def test_gateway_revocation_after_dispatch_keeps_unknown_hold(self, factory):
+        factory.return_value.chat_completion_stream.return_value = iter([
+            SimpleNamespace(event='delta', content='answer', usage=None),
+        ])
+        authorized = MagicMock(side_effect=[True, True, False])
+        with self.assertRaises(OutcomeUnknown):
+            _run_routing(turn=self.turn, history=[], authorized=authorized, cancelled=lambda: False)
+        hold = ApplicationBudgetReservation.objects.get(
+            operation_id=f'gateway:{self.turn.pk}:application-tokens')
+        self.assertEqual(hold.state, 'unknown')
+        self.assertEqual(set(hold.budgets.values_list('reserved', flat=True)), {hold.amount})
+
+    @patch.dict('os.environ', {'OMNIROUTE_API_KEY': 'synthetic-gateway-key'}, clear=False)
+    @patch('home.omniroute_client.requests.Session')
+    def test_gateway_revocation_closes_live_stream_response(self, session_factory):
+        response = MagicMock(status_code=200)
+        response.iter_content.return_value = map(lambda line: line + b'\n', iter([
+            b'data: {"id":"resp-1","model":"example/model","choices":[{"delta":{"content":"answer"}}]}',
+        ]))
+        session_factory.return_value.post.return_value = response
+        authorized = MagicMock(side_effect=[True, True, False])
+        with self.assertRaises(OutcomeUnknown):
+            _run_routing(turn=self.turn, history=[], authorized=authorized, cancelled=lambda: False)
+        response.close.assert_called_once()
+        session_factory.return_value.close.assert_called_once()
+
+    @patch.dict('os.environ', {'OMNIROUTE_API_KEY': 'synthetic-gateway-key'}, clear=False)
+    @patch('home.omniroute_client.requests.Session')
+    def test_gateway_duplicate_usage_retains_unknown_reservation(self, session_factory):
+        response = MagicMock(status_code=200)
+        response.iter_content.return_value = map(lambda line: line + b'\n', iter([
+            b'data: {"id":"resp-1","model":"example/model","choices":[{"delta":{"content":"answer"}}],"usage":{"prompt_tokens":5,"completion_tokens":2,"total_tokens":7}}',
+            b'data: {"id":"resp-1","model":"example/model","choices":[],"usage":{"prompt_tokens":50,"completion_tokens":20,"total_tokens":70}}',
+            b'data: [DONE]',
+        ]))
+        session_factory.return_value.post.return_value = response
+        with self.assertRaises(OutcomeUnknown):
+            _run_routing(turn=self.turn, history=[], authorized=lambda: True, cancelled=lambda: False)
+        hold = ApplicationBudgetReservation.objects.get(
+            operation_id=f'gateway:{self.turn.pk}:application-tokens')
+        self.assertEqual(hold.state, 'unknown')
+        self.assertEqual(set(hold.budgets.values_list('reserved', flat=True)), {hold.amount})
+        self.assertFalse(hold.budgets.filter(used__gt=0).exists())
+        response.close.assert_called_once()
+
+    @patch.dict('os.environ', {'OMNIROUTE_API_KEY': 'synthetic-gateway-key'}, clear=False)
+    @patch('home.omniroute_client.requests.Session')
+    def test_gateway_uncorrelated_usage_retains_unknown_reservation(self, session_factory):
+        response = MagicMock(status_code=200)
+        response.iter_content.return_value = map(lambda line: line + b'\n', iter([
+            b'data: {"id":"resp-1","model":"example/model","choices":[{"delta":{"content":"answer"}}]}',
+            b'data: {"id":"resp-2","model":"example/model","choices":[],"usage":{"prompt_tokens":5,"completion_tokens":2,"total_tokens":7}}',
+            b'data: [DONE]',
+        ]))
+        session_factory.return_value.post.return_value = response
+        with self.assertRaises(OutcomeUnknown):
+            _run_routing(turn=self.turn, history=[], authorized=lambda: True, cancelled=lambda: False)
+        hold = ApplicationBudgetReservation.objects.get(
+            operation_id=f'gateway:{self.turn.pk}:application-tokens')
+        self.assertEqual(hold.state, 'unknown')
+        self.assertEqual(set(hold.budgets.values_list('reserved', flat=True)), {hold.amount})
+        self.assertFalse(hold.budgets.filter(used__gt=0).exists())
+        session_factory.return_value.post.assert_called_once()
+        response.close.assert_called_once()
+
+    @patch.dict('os.environ', {'OMNIROUTE_API_KEY': 'synthetic-gateway-key'}, clear=False)
+    @patch('home.gemini_chat.OmnirouteClient')
+    @patch('home.gemini_chat._run_local_fallback')
+    @override_settings(SUPERHARRY_LOCAL_INFERENCE_ENABLED=True)
+    def test_local_mode_uses_local_adapter_with_gateway_configured(self, local_fallback, client_factory):
         self.turn.model_mode = 'local'
         self.turn.save(update_fields=['model_mode'])
-        client_factory.return_value.chat_completion_stream.return_value = iter([
-            SimpleNamespace(event='delta', content='local answer', usage=SimpleNamespace(
-                prompt_tokens=5, completion_tokens=2, total_tokens=7)),
-            SimpleNamespace(event='done', content='', usage=None),
-        ])
-        run_gemini_turn(self.turn.pk)
-        self.turn.refresh_from_db()
-        self.assertEqual(self.turn.state, 'completed')
-        self.assertEqual(self.turn.events.get(event_type='model.selected').payload['mode'], 'local')
-        self.assertEqual(client_factory.return_value.chat_completion_stream.call_args.kwargs['model'],
-                         'ollama/qwen3.5:4b')
+        local_fallback.return_value = ('local answer', {'mode': 'local'}, {})
+        self.assertEqual(_run_routing(turn=self.turn, history=[], authorized=lambda: True,
+                                      cancelled=lambda: False)[0], 'local answer')
+        client_factory.assert_not_called()
+
+    @patch.dict('os.environ', {'OMNIROUTE_API_KEY': 'synthetic-gateway-key'}, clear=False)
+    @patch('home.gemini_chat.OmnirouteClient')
+    def test_gateway_external_route_fails_closed_without_verified_admission(self, factory):
+        with patch('home.gemini_chat._require_gateway_admission', side_effect=_require_gateway_admission):
+            with self.assertRaisesRegex(NotDispatched, 'gateway_admission_unavailable'):
+                _run_routing(turn=self.turn, history=[], authorized=lambda: True, cancelled=lambda: False)
+        factory.assert_not_called()
+        self.assertFalse(ApplicationBudgetReservation.objects.exists())
 
     @patch.dict('os.environ', {'CREDENTIALS_DIRECTORY': '/run/credentials/superharry.service'}, clear=True)
     @patch('home.gemini_chat.load_omniroute_key', return_value='synthetic-systemd-key')
@@ -197,7 +351,7 @@ class GeminiChatTests(TestCase):
         )
 
         self.assertEqual(result, local_fallback.return_value)
-        gateway_configured.assert_called_once_with()
+        gateway_configured.assert_not_called()
         local_fallback.assert_called_once()
 
     @patch.dict('os.environ', {}, clear=True)

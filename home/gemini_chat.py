@@ -87,6 +87,10 @@ class RoutingExhausted(RuntimeError):
     """No configured provider could serve the turn without an unsafe failover."""
 
 
+class GatewayAdmissionUnavailable(NotDispatched):
+    """The gateway gate refused the request before any dispatch."""
+
+
 def _gateway_configured():
     """Return whether the application has an explicitly configured gateway."""
     try:
@@ -108,10 +112,26 @@ def _gateway_model(turn):
         raise OmnirouteError('omniroute_model_invalid') from exc
 
 
-def _attempt_gateway(*, turn, history, cancelled):
+def _require_gateway_admission():
+    """Deny opaque gateway routing until upstream admission is enforceable.
+
+    A gateway credential and a model alias do not establish the actual
+    provider, consent, zero cost, tokenizer bound, or provider quota.
+    """
+    raise GatewayAdmissionUnavailable("gateway_admission_unavailable")
+
+
+def _attempt_gateway(*, turn, history, authorized, cancelled):
     """Run one admitted turn through omniroute's bounded OpenAI-compatible SSE."""
-    if cancelled():
-        raise TurnCancelled()
+    _require_gateway_admission()
+    def admission_valid():
+        try:
+            return callable(authorized) and authorized() is True and cancelled() is False
+        except Exception:
+            return False
+
+    if not admission_valid():
+        raise NotDispatched("omniroute_admission_denied")
     try:
         constitution = load_verified_constitution(
             settings.BASE_DIR / "constitution.md",
@@ -138,17 +158,27 @@ def _attempt_gateway(*, turn, history, cancelled):
             user_key=str(turn.conversation.owner_id),
         )
         mark_budget_unknown(application_reservation.pk)
-        for event in client.chat_completion_stream(messages, model=model_id, temperature=0.7,
-                                                   max_tokens=2048):
-            dispatched = True
-            if cancelled():
-                raise OutcomeUnknown("omniroute_cancelled_after_dispatch")
-            if event.event == "delta":
-                chunks.append(event.content)
-                if event.usage is not None:
-                    usage = event.usage
-            elif event.event == "done":
-                break
+        # Recheck after the potentially slow preparation and reservation, but
+        # before entering the lazy iterator which performs the HTTP request.
+        if not admission_valid():
+            raise NotDispatched("omniroute_admission_revoked")
+        stream = client.chat_completion_stream(messages, model=model_id, temperature=0.7,
+                                               max_tokens=2048)
+        try:
+            for event in stream:
+                dispatched = True
+                if not admission_valid():
+                    raise OutcomeUnknown("omniroute_admission_revoked_after_dispatch")
+                if event.event == "delta":
+                    chunks.append(event.content)
+                    if event.usage is not None:
+                        usage = event.usage
+                elif event.event == "done":
+                    break
+        finally:
+            close_stream = getattr(stream, "close", None)
+            if callable(close_stream):
+                close_stream()
         if not chunks or usage is None:
             raise OmnirouteUsageError("gateway_usage_missing")
         settle_application_budget(application_reservation.pk, usage.total_tokens, allow_overage=True)
@@ -203,6 +233,10 @@ def _attempt_gemini(*, turn, key, authorized, cancelled, history):
 
         class _TrackedTransport:
             def count(self, body):
+                # Token counting sends the protected payload to the provider.
+                # A failure after this boundary must not permit a replay on a
+                # different provider merely because generation did not begin.
+                state['sent'] = True
                 return transport.count(body)
 
             def generate(self, body):
@@ -214,10 +248,10 @@ def _attempt_gemini(*, turn, key, authorized, cancelled, history):
             principal_id=str(turn.conversation.owner_id), transport=_TrackedTransport(),
             authorize=authorized, cancelled=cancelled, history=tuple(history), on_context=record_context)
     except Exception:
-        if cancelled():
-            raise TurnCancelled() from None
         if state['sent']:
             raise OutcomeUnknown() from None
+        if cancelled():
+            raise TurnCancelled() from None
         raise NotDispatched() from None
     return answer, {'mode': 'automatic', 'provider': 'gemini', 'model_id': MODEL_ID}, context_usage
 
@@ -327,6 +361,18 @@ def _build_local_invocation(request, turn):
 
 def _run_local_fallback(*, turn, history, authorized, cancelled, adapter):
     """Attempt local inference after free-provider exhaustion (T047)."""
+    def check_admission():
+        try:
+            if cancelled() is not False:
+                raise TurnCancelled()
+            if authorized() is not True:
+                raise LocalInferenceError("local_admission_denied")
+        except (TurnCancelled, LocalInferenceError):
+            raise
+        except Exception:
+            raise LocalInferenceError("local_admission_unavailable") from None
+
+    check_admission()
     try:
         prepared = prepare_release_context(user_request=turn.user_message.content, profile=_build_local_profile())
     except ContextPreparationError:
@@ -342,21 +388,32 @@ def _run_local_fallback(*, turn, history, authorized, cancelled, adapter):
     chunks = []
     output_bytes = 0
     completed = False
-    for event in iter_validated_model_events(adapter.stream(request, invocation), capability_report=report):
-        if isinstance(event, ModelTextDelta):
-            remaining = MAX_OUTPUT_CONTENT_BYTES - output_bytes
-            if len(event.text.encode("utf-8", errors="strict")) > remaining:
-                raise LocalInferenceError("local_inference_output_exceeded")
-            output_bytes += len(event.text.encode("utf-8", errors="strict"))
-            chunks.append(event.text)
-        elif isinstance(event, ModelCompleted):
-            completed = True
-        elif isinstance(event, ModelFailed):
-            raise LocalInferenceError(event.error.public_code)
-        elif isinstance(event, ModelCancelled):
-            raise LocalInferenceError("local_inference_cancelled")
-        elif not isinstance(event, (ModelStarted, ModelUsageUpdate)):
-            raise LocalInferenceError("local_inference_event_invalid")
+    check_admission()
+    source = adapter.stream(request, invocation)
+    stream = iter_validated_model_events(source, capability_report=report)
+    try:
+        for event in stream:
+            check_admission()
+            if isinstance(event, ModelTextDelta):
+                remaining = MAX_OUTPUT_CONTENT_BYTES - output_bytes
+                if len(event.text.encode("utf-8", errors="strict")) > remaining:
+                    raise LocalInferenceError("local_inference_output_exceeded")
+                output_bytes += len(event.text.encode("utf-8", errors="strict"))
+                chunks.append(event.text)
+            elif isinstance(event, ModelCompleted):
+                completed = True
+            elif isinstance(event, ModelFailed):
+                raise LocalInferenceError(event.error.public_code)
+            elif isinstance(event, ModelCancelled):
+                raise LocalInferenceError("local_inference_cancelled")
+            elif not isinstance(event, (ModelStarted, ModelUsageUpdate)):
+                raise LocalInferenceError("local_inference_event_invalid")
+    finally:
+        stream.close()
+        close_source = getattr(source, "close", None)
+        if callable(close_source):
+            close_source()
+    check_admission()
     if not completed or not chunks:
         raise LocalInferenceError("local_inference_no_output")
     return "".join(chunks), {"mode": "local", "provider": "local", "model_id": settings.LLAMA_CPP_MODEL_ID}, {"input_tokens": 0, "capacity": 65536}
@@ -364,15 +421,9 @@ def _run_local_fallback(*, turn, history, authorized, cancelled, adapter):
 
 def _run_routing(*, turn, history, authorized, cancelled, governor=None, adapter=None, contract=None):
     """Try providers in administrator order; fail over only before any request is sent."""
-    if _gateway_configured():
-        if contract is not None:
-            contract.before_dispatch("omniroute")
-        return _attempt_gateway(turn=turn, history=history, cancelled=cancelled)
-
     if turn.model_mode == ChatTurn.ModelMode.LOCAL:
-        # With no gateway credential, preserve the development/local adapter
-        # path instead of routing an explicit local selection through external
-        # providers or rejecting it before the existing fallback can run.
+        # An opaque gateway alias does not establish that a model is local.
+        # Use the existing local adapter rather than trusting that alias.
         if not settings.SUPERHARRY_LOCAL_INFERENCE_ENABLED:
             raise RoutingExhausted()
         governor = governor or HeavyJobGovernor(
@@ -388,6 +439,30 @@ def _run_routing(*, turn, history, authorized, cancelled, governor=None, adapter
         except LocalInferenceError:
             logger.info('gemini_chat_local_inference_failed')
             raise RoutingExhausted() from None
+
+    if _gateway_configured():
+        if contract is not None:
+            contract.before_dispatch("omniroute")
+        try:
+            return _attempt_gateway(turn=turn, history=history, authorized=authorized, cancelled=cancelled)
+        except GatewayAdmissionUnavailable:
+            if turn.requested_provider or turn.requested_model or not settings.SUPERHARRY_LOCAL_INFERENCE_ENABLED:
+                raise
+            if cancelled():
+                raise TurnCancelled() from None
+            if not callable(authorized) or authorized() is not True:
+                raise RoutingExhausted() from None
+            governor = governor or HeavyJobGovernor(
+                queue_capacity=settings.LLAMA_CPP_QUEUE_CAPACITY,
+                wait_timeout=settings.LLAMA_CPP_ACQUIRE_TIMEOUT,
+            )
+            adapter = adapter or LlamaCppModelAdapter(governor=governor)
+            try:
+                return _run_local_fallback(turn=turn, history=history, authorized=authorized,
+                                           cancelled=cancelled, adapter=adapter)
+            except LocalInferenceError:
+                logger.info('gemini_chat_local_inference_failed')
+                raise RoutingExhausted() from None
 
     configured_order = parse_provider_order(settings.SUPERHARRY_FREE_PROVIDER_ORDER)
     enabled = settings.SUPERHARRY_ENABLED_FREE_PROVIDERS

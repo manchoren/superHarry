@@ -61,6 +61,20 @@ class ApplicationBudgetTests(TestCase):
         with self.assertRaises(ApplicationBudgetError):
             reserve('blocked-after-month-rollover', 1, user_key='user-1', at=next_month)
 
+    def test_unsettled_reserved_hold_carries_across_day_and_month(self):
+        hold = reserve('interrupted-before-unknown', 90, user_key='user-1', at=self.at)
+        next_month = datetime(2026, 12, 1, 1, 0, tzinfo=timezone.utc)
+        for scope, key in (('global', 'global'), ('user', 'user-1')):
+            for period in ('daily', 'monthly'):
+                ApplicationBudget.objects.create(scope=scope, scope_key=key, period=period,
+                    period_start=period_start(next_month, period), hard_limit=100)
+        with self.assertRaises(ApplicationBudgetError):
+            reserve('blocked-after-crash', 11, user_key='user-1', at=next_month)
+        new_hold = reserve('allowed-at-bound', 10, user_key='user-1', at=next_month)
+        self.assertEqual(new_hold.budgets.filter(warning_emitted=True).count(), 4)
+        settle(hold.pk, 0)
+        reserve('capacity-after-settlement', 90, user_key='user-1', at=next_month)
+
     def test_openrouter_overage_is_recorded_once(self):
         reservation = reserve('known-overage', 10, user_key='user-1', at=self.at)
         settle(reservation.pk, 12, allow_overage=True)

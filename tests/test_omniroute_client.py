@@ -9,6 +9,7 @@ Para ejecutar con omniroute real (skip mocks):
 """
 
 import os
+import json
 import pytest
 import requests
 from unittest.mock import Mock, patch, MagicMock
@@ -25,6 +26,7 @@ from home.omniroute_client import (
     chat_with_local_model,
     memory_agent_search
 )
+from home.provider_outcomes import NotDispatched, OutcomeUnknown
 
 
 # Fixtures
@@ -162,7 +164,7 @@ def test_omniroute_response_from_dict(mock_response):
 @patch('home.omniroute_client.requests.Session.post')
 def test_chat_completion_success(mock_post, client, mock_response):
     """Test: chat_completion envía request correctamente."""
-    mock_post.return_value.json.return_value = mock_response
+    mock_post.return_value.iter_content.return_value = [json.dumps(mock_response).encode()]
     mock_post.return_value.raise_for_status = Mock()
     mock_post.return_value.status_code = 200
     
@@ -193,7 +195,7 @@ def test_chat_completion_success(mock_post, client, mock_response):
 @patch('home.omniroute_client.requests.Session.post')
 def test_chat_completion_with_reasoning_disabled(mock_post, client, mock_response):
     """Test: chat_completion puede deshabilitar reasoning."""
-    mock_post.return_value.json.return_value = mock_response
+    mock_post.return_value.iter_content.return_value = [json.dumps(mock_response).encode()]
     mock_post.return_value.raise_for_status = Mock()
     mock_post.return_value.status_code = 200
     
@@ -211,7 +213,7 @@ def test_chat_completion_with_reasoning_disabled(mock_post, client, mock_respons
 @patch('home.omniroute_client.requests.Session.post')
 def test_chat_completion_with_tools(mock_post, client, mock_response):
     """Test: chat_completion puede incluir tools."""
-    mock_post.return_value.json.return_value = mock_response
+    mock_post.return_value.iter_content.return_value = [json.dumps(mock_response).encode()]
     mock_post.return_value.raise_for_status = Mock()
     mock_post.return_value.status_code = 200
     
@@ -248,7 +250,7 @@ def test_chat_completion_http_error(mock_post, client):
     
     mock_post.return_value = mock_response
     
-    with pytest.raises(Exception, match="rejected_401"):
+    with pytest.raises(OutcomeUnknown, match="failed_401"):
         client.chat_completion(
             messages=[{"role": "user", "content": "Test"}]
         )
@@ -295,12 +297,12 @@ def test_chat_completion_stream(mock_post, client):
     mock_response = Mock()
     mock_response.raise_for_status = Mock()
     mock_response.status_code = 200
-    mock_response.iter_lines.return_value = [
-        b'data: {"choices":[{"delta":{"content":"Hola"}}]}',
-        b'data: {"choices":[{"delta":{"content":" mundo"}}]}',
-        b'data: {"choices":[],"usage":{"prompt_tokens":2,"completion_tokens":1,"total_tokens":3}}',
+    mock_response.iter_content.return_value = map(lambda line: line + b'\n', [
+        b'data: {"id":"resp-1","model":"example/model","choices":[{"delta":{"content":"Hola"}}]}',
+        b'data: {"id":"resp-1","model":"example/model","choices":[{"delta":{"content":" mundo"}}]}',
+        b'data: {"id":"resp-1","model":"example/model","choices":[],"usage":{"prompt_tokens":2,"completion_tokens":1,"total_tokens":3}}',
         b'data: [DONE]'
-    ]
+    ])
     
     mock_post.return_value = mock_response
     
@@ -315,23 +317,47 @@ def test_chat_completion_stream(mock_post, client):
 @patch('home.omniroute_client.requests.Session.post')
 def test_chat_completion_stream_accepts_final_usage_only_chunk(mock_post, client):
     response = Mock(status_code=200)
-    response.iter_lines.return_value = [
-        b'data: {"choices":[{"delta":{"content":"ok"}}]}',
-        b'data: {"choices":[],"usage":{"prompt_tokens":2,"completion_tokens":1,"total_tokens":3}}',
+    response.iter_content.return_value = map(lambda line: line + b'\n', [
+        b'data: {"id":"resp-1","model":"example/model","choices":[{"delta":{"content":"ok"}}]}',
+        b'data: {"id":"resp-1","model":"example/model","choices":[],"usage":{"prompt_tokens":2,"completion_tokens":1,"total_tokens":3}}',
         b'data: [DONE]',
-    ]
+    ])
     mock_post.return_value = response
     chunks = list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
     assert chunks[-2].usage == OmnirouteUsage(2, 1, 3)
 
 
+@pytest.mark.parametrize("final_identity", [
+    {"id": "different", "model": "example/model"},
+    {"id": "resp-1", "model": "other/model"},
+    {"model": "example/model"},
+    {"id": "resp-1"},
+    {"id": "", "model": "example/model"},
+])
+def test_stream_rejects_uncorrelated_usage(client, final_identity):
+    import json
+
+    first = {"id": "resp-1", "model": "example/model", "choices": [{"delta": {"content": "ok"}}]}
+    final = {**final_identity, "choices": [], "usage": {"prompt_tokens": 2, "completion_tokens": 1, "total_tokens": 3}}
+    response = Mock(status_code=200)
+    response.iter_content.return_value = map(lambda line: line + b'\n', [
+        ("data: " + json.dumps(first)).encode(),
+        ("data: " + json.dumps(final)).encode(),
+        b"data: [DONE]",
+    ])
+    with patch("home.omniroute_client.requests.Session.post", return_value=response):
+        with pytest.raises(OutcomeUnknown, match="stream_invalid"):
+            list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
+    response.close.assert_called_once_with()
+
+
 @patch('home.omniroute_client.requests.Session.post')
 def test_chat_completion_stream_rejects_oversized_total_stream(mock_post, client):
     response = Mock(status_code=200)
-    response.iter_lines.return_value = [b'data: {"choices":[{"delta":{"content":"x"}}]}'] * 20
+    response.iter_content.return_value = map(lambda line: line + b'\n', [b'data: {"id":"resp-1","model":"example/model","choices":[{"delta":{"content":"x"}}]}'] * 20)
     mock_post.return_value = response
     with patch('home.omniroute_client.MAX_RESPONSE_BYTES', 100):
-        with pytest.raises(OmnirouteError, match="sse_too_large"):
+        with pytest.raises(OutcomeUnknown, match="stream_invalid"):
             list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
 
 
@@ -398,62 +424,32 @@ def test_get_usage_stats_not_available(mock_get, client):
 
 @patch('home.omniroute_client.omniroute_client.chat_completion')
 def test_chat_with_external_model(mock_completion):
-    """Test: chat_with_external_model usa modelo correcto."""
-    mock_completion.return_value = Mock()
-    
-    messages = [{"role": "user", "content": "Test"}]
-    chat_with_external_model(messages, temperature=0.5)
-    
-    mock_completion.assert_called_once()
-    call_kwargs = mock_completion.call_args[1]
-    
-    assert call_kwargs['model'] == "nous-ai/solar-mini-4"
-    assert call_kwargs['temperature'] == 0.5
+    with pytest.raises(NotDispatched, match="admission_unavailable"):
+        chat_with_external_model([{"role": "user", "content": "Test"}])
+    mock_completion.assert_not_called()
 
 
 @patch('home.omniroute_client.omniroute_client.chat_completion')
 def test_chat_with_local_model(mock_completion):
-    """Test: chat_with_local_model usa Ollama."""
-    mock_completion.return_value = Mock()
-    
-    messages = [{"role": "user", "content": "Test"}]
-    chat_with_local_model(messages)
-    
-    mock_completion.assert_called_once()
-    call_kwargs = mock_completion.call_args[1]
-    
-    assert call_kwargs['model'] == "ollama/qwen3.5:4b"
+    with pytest.raises(NotDispatched, match="locality_unverified"):
+        chat_with_local_model([{"role": "user", "content": "Test"}])
+    mock_completion.assert_not_called()
 
 
 @patch('home.omniroute_client.omniroute_client.chat_completion')
 def test_memory_agent_search(mock_completion):
-    """Test: memory_agent_search configura correctamente."""
-    mock_completion.return_value = Mock()
-    
-    memory_agent_search(
-        query="Buscar recuerdos sobre Python",
-        conversation_context=[{"role": "system", "content": "Context"}]
-    )
-    
-    mock_completion.assert_called_once()
-    call_kwargs = mock_completion.call_args[1]
-    
-    # Verificar parámetros críticos
-    assert call_kwargs['model'] == "nous-ai/solar-mini-4"
-    assert call_kwargs['reasoning'] is False  # Crítico para memory agent
-    assert call_kwargs['temperature'] == 0.3
-    assert call_kwargs['max_tokens'] == 500
-    
-    # Verificar mensajes
-    messages = call_kwargs['messages']
-    assert len(messages) == 2  # Context + query
-    assert messages[-1]['content'] == "Buscar recuerdos sobre Python"
+    for user_key in (None, "user-1"):
+        with pytest.raises(NotDispatched, match="memory_gateway_admission_unavailable"):
+            memory_agent_search("query", [{"role": "system", "content": "Context"}], user_key=user_key)
+    mock_completion.assert_not_called()
 
 
 def test_memory_agent_does_not_mutate_caller_context(client):
     original = [{"role": "system", "content": "Context"}]
     with patch.object(omniroute_client, "chat_completion", return_value=Mock()) as completion:
-        memory_agent_search("query", original)
+        with pytest.raises(NotDispatched):
+            memory_agent_search("query", original)
+    completion.assert_not_called()
     assert original == [{"role": "system", "content": "Context"}]
 
 
@@ -468,29 +464,169 @@ def test_usage_total_must_match_components():
         OmnirouteUsage.from_dict({"prompt_tokens": 1, "completion_tokens": 2, "total_tokens": 99})
 
 
-def test_sse_malformed_json_is_rejected(client):
-    response = Mock(); response.status_code = 200; response.iter_lines.return_value = [b"data: {broken"]
+@pytest.mark.parametrize("payload", [{}, {"object": "chat.completion", "usage": None}])
+def test_invalid_non_stream_response_has_unknown_outcome(client, payload):
+    response = Mock(status_code=200, headers={})
+    response.iter_content.return_value = [json.dumps(payload).encode()]
     with patch("home.omniroute_client.requests.Session.post", return_value=response):
-        with pytest.raises(OmnirouteError, match="sse_malformed"):
+        with pytest.raises(OutcomeUnknown, match="response_invalid"):
+            client.chat_completion([{"role": "user", "content": "Test"}])
+    response.close.assert_called_once_with()
+
+
+@pytest.mark.parametrize("field,value", [("id", ""), ("model", "  "), ("created", 10**30)])
+def test_non_stream_invalid_identity_or_timestamp_is_unknown(client, mock_response, field, value):
+    mock_response[field] = value
+    response = Mock(status_code=200, headers={})
+    response.iter_content.return_value = [json.dumps(mock_response).encode()]
+    with patch("home.omniroute_client.requests.Session.post", return_value=response):
+        with pytest.raises(OutcomeUnknown, match="response_invalid"):
+            client.chat_completion([{"role": "user", "content": "Test"}])
+    response.close.assert_called_once_with()
+
+
+@pytest.mark.parametrize("headers", [{}, {"Content-Length": "1"}])
+def test_non_stream_response_enforces_actual_byte_limit(client, headers):
+    response = Mock(status_code=200, headers=headers)
+    response.iter_content.return_value = [b"12345", b"67890", b"excess"]
+    with patch("home.omniroute_client.MAX_RESPONSE_BYTES", 10), \
+            patch("home.omniroute_client.requests.Session.post", return_value=response) as post:
+        with pytest.raises(OutcomeUnknown, match="response_invalid"):
+            client.chat_completion([{"role": "user", "content": "Test"}])
+    assert post.call_args.kwargs["stream"] is True
+    response.close.assert_called_once_with()
+
+
+def test_non_stream_read_failure_is_unknown_and_closes_response(client):
+    response = Mock(status_code=200, headers={})
+    response.iter_content.side_effect = requests.exceptions.ChunkedEncodingError("synthetic")
+    with patch("home.omniroute_client.requests.Session.post", return_value=response):
+        with pytest.raises(OutcomeUnknown, match="response_invalid"):
+            client.chat_completion([{"role": "user", "content": "Test"}])
+    response.close.assert_called_once_with()
+
+
+@pytest.mark.parametrize("streaming", [False, True])
+def test_deeply_nested_response_is_unknown_and_closed(client, streaming):
+    response = Mock(status_code=200, headers={})
+    nested = b"[" * 2000 + b"0" + b"]" * 2000
+    response.iter_content.return_value = [b"data: " + nested + b"\n" if streaming else nested]
+    with patch("home.omniroute_client.requests.Session.post", return_value=response):
+        with pytest.raises(OutcomeUnknown):
+            if streaming:
+                list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
+            else:
+                client.chat_completion([{"role": "user", "content": "Test"}])
+    response.close.assert_called_once_with()
+
+
+def test_sse_excessively_long_integer_is_unknown_and_closed(client):
+    import sys
+
+    response = Mock(status_code=200)
+    response.iter_content.return_value = [b'data: {"value":' + b'1' * 5000 + b'}\n']
+    old_limit = sys.get_int_max_str_digits()
+    try:
+        sys.set_int_max_str_digits(4300)
+        with patch("home.omniroute_client.requests.Session.post", return_value=response):
+            with pytest.raises(OutcomeUnknown, match="stream_invalid"):
+                list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
+    finally:
+        sys.set_int_max_str_digits(old_limit)
+    response.close.assert_called_once_with()
+
+
+def test_sse_os_error_during_read_is_unknown_and_closes_session(client):
+    response = Mock(status_code=200)
+    response.iter_content.side_effect = OSError("synthetic")
+    with patch("home.omniroute_client.requests.Session.post", return_value=response):
+        with patch.object(client, "close", wraps=client.close) as close:
+            with pytest.raises(OutcomeUnknown, match="stream_failure"):
+                list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
+    response.close.assert_called_once_with()
+    close.assert_called_once_with()
+
+
+def test_stream_payload_cannot_be_disabled_by_kwargs(client):
+    response = Mock(status_code=200)
+    response.iter_content.return_value = [
+        b'data: {"id":"r","model":"m","choices":[],'
+        b'"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}\n'
+        b'data: [DONE]\n'
+    ]
+    with patch("home.omniroute_client.requests.Session.post", return_value=response) as post:
+        list(client.chat_completion_stream([{"role": "user", "content": "Test"}], stream=False))
+    assert post.call_args.kwargs["json"]["stream"] is True
+
+
+def test_sse_many_blank_lines_are_accepted_before_valid_result(client):
+    response = Mock(status_code=200)
+    response.iter_content.return_value = [
+        b"\n" * 20000 + b'data: {"id":"r","model":"m","choices":[],'
+        b'"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}\n'
+        b'data: [DONE]\n'
+    ]
+    with patch("home.omniroute_client.requests.Session.post", return_value=response):
+        events = list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
+    assert events[-1].event == "done"
+    response.close.assert_called_once_with()
+
+
+def test_sse_malformed_json_is_rejected(client):
+    response = Mock(); response.status_code = 200; response.iter_content.return_value = map(lambda line: line + b'\n', [b"data: {broken"])
+    with patch("home.omniroute_client.requests.Session.post", return_value=response):
+        with pytest.raises(OutcomeUnknown, match="stream_invalid"):
             list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
+
+
+@pytest.mark.parametrize("line_limit,total_limit", [(12, 100), (100, 12)])
+def test_sse_enforces_bounds_before_newline(client, line_limit, total_limit):
+    response = Mock(status_code=200)
+    consumed = []
+    def chunks():
+        for chunk in (b"data:", b" 1234", b" 5678", b"should not be consumed"):
+            consumed.append(chunk)
+            yield chunk
+    response.iter_content.return_value = chunks()
+    with patch("home.omniroute_client.MAX_SSE_LINE_BYTES", line_limit), \
+            patch("home.omniroute_client.MAX_RESPONSE_BYTES", total_limit), \
+            patch("home.omniroute_client.requests.Session.post", return_value=response):
+        with pytest.raises(OutcomeUnknown, match="stream_invalid"):
+            list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
+    assert len(consumed) == 3
+    response.close.assert_called_once_with()
+
+
+@pytest.mark.parametrize("delimiter", [b"\n", b"\r\n", b"\r"])
+def test_sse_accepts_fragmented_lines_and_standard_delimiters(client, delimiter):
+    response = Mock(status_code=200)
+    payload = (b'data: {"id":"r","model":"m","choices":[],'
+               b'"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}'
+               + delimiter + b'data: [DONE]' + delimiter)
+    response.iter_content.return_value = [payload[:11], payload[11:37], payload[37:-1], payload[-1:]]
+    with patch("home.omniroute_client.requests.Session.post", return_value=response):
+        events = list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
+    assert events[-2].usage == OmnirouteUsage(1, 1, 2)
+    assert events[-1].event == "done"
+    response.close.assert_called_once_with()
 
 
 def test_sse_without_done_marker_is_rejected(client):
     response = Mock(); response.status_code = 200
-    response.iter_lines.return_value = [b'data: {"choices":[{"delta":{"content":"partial"}}]}']
+    response.iter_content.return_value = map(lambda line: line + b'\n', [b'data: {"id":"resp-1","model":"example/model","choices":[{"delta":{"content":"partial"}}]}'])
     with patch("home.omniroute_client.requests.Session.post", return_value=response):
-        with pytest.raises(OmnirouteError, match="sse_truncated"):
+        with pytest.raises(OutcomeUnknown, match="stream_invalid"):
             list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
 
 
 def test_sse_without_usage_is_rejected(client):
     response = Mock(); response.status_code = 200
-    response.iter_lines.return_value = [
-        b'data: {"choices":[{"delta":{"content":"partial"}}]}',
+    response.iter_content.return_value = map(lambda line: line + b'\n', [
+        b'data: {"id":"resp-1","model":"example/model","choices":[{"delta":{"content":"partial"}}]}',
         b"data: [DONE]",
-    ]
+    ])
     with patch("home.omniroute_client.requests.Session.post", return_value=response):
-        with pytest.raises(OmnirouteError, match="usage_missing"):
+        with pytest.raises(OutcomeUnknown, match="stream_invalid"):
             list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
 
 
@@ -518,7 +654,7 @@ def test_health_check_uses_configured_timeout(mock_get, client):
 def test_http_rejection_closes_response_without_leaking_body(mock_post, client):
     response = Mock(status_code=401, text="secret response body")
     mock_post.return_value = response
-    with pytest.raises(Exception, match="rejected_401") as error:
+    with pytest.raises(OutcomeUnknown, match="failed_401") as error:
         client.chat_completion([{"role": "user", "content": "Test"}])
     response.close.assert_called_once_with()
     assert "secret response body" not in str(error.value)
@@ -529,9 +665,18 @@ def test_http_rejection_closes_session(mock_post, client):
     response = Mock(status_code=401, text="secret response body")
     mock_post.return_value = response
     with patch.object(client, "close", wraps=client.close) as close:
-        with pytest.raises(Exception, match="rejected_401"):
+        with pytest.raises(OutcomeUnknown, match="failed_401"):
             client.chat_completion([{"role": "user", "content": "Test"}])
     close.assert_called_once_with()
+
+
+@pytest.mark.parametrize("status", [401, 403, 404, 409, 422, 429, 500, 503])
+def test_chat_http_error_does_not_prove_upstream_was_not_dispatched(client, status):
+    response = Mock(status_code=status)
+    with patch("home.omniroute_client.requests.Session.post", return_value=response):
+        with pytest.raises(OutcomeUnknown, match=f"failed_{status}"):
+            client.chat_completion([{"role": "user", "content": "Test"}])
+    response.close.assert_called_once_with()
 
 
 @patch("home.omniroute_client.requests.Session.post", side_effect=requests.ConnectionError("connection failed"))
@@ -565,11 +710,11 @@ def test_health_check_rejection_closes_response_and_session(mock_get, client):
 @patch("home.omniroute_client.requests.Session.post")
 def test_successful_stream_closes_response_and_session(mock_post, client):
     response = Mock(status_code=200)
-    response.iter_lines.return_value = [
-        b'data: {"choices": [{"delta": {"content": "ok"}}]}',
-        b'data: {"choices":[],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}',
+    response.iter_content.return_value = map(lambda line: line + b'\n', [
+        b'data: {"id":"resp-1","model":"example/model","choices": [{"delta": {"content": "ok"}}]}',
+        b'data: {"id":"resp-1","model":"example/model","choices":[],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}',
         b"data: [DONE]",
-    ]
+    ])
     mock_post.return_value = response
     with patch.object(client, "close", wraps=client.close) as close:
         list(client.chat_completion_stream([{"role": "user", "content": "Test"}]))
@@ -637,6 +782,34 @@ def test_real_omniroute_local_model():
     
     assert response.content
     assert 'ollama' in response.model.lower() or 'qwen' in response.model.lower()
+
+
+def test_gateway_post_disables_implicit_proxy_and_redirects(client):
+    session = MagicMock()
+    response = MagicMock(status_code=307)
+    session.post.return_value = response
+    with patch("home.omniroute_client.requests.Session", return_value=session):
+        with pytest.raises(OutcomeUnknown, match="failed_307"):
+            client.chat_completion([{"role": "user", "content": "synthetic"}])
+    assert session.trust_env is False
+    assert session.post.call_count == 1
+    assert session.post.call_args.kwargs["allow_redirects"] is False
+    response.close.assert_called_once_with()
+    session.close.assert_called_once_with()
+
+
+def test_gateway_get_disables_implicit_proxy_and_redirects(client):
+    session = MagicMock()
+    response = MagicMock(status_code=302)
+    session.get.return_value = response
+    with patch("home.omniroute_client.requests.Session", return_value=session):
+        with pytest.raises(OmnirouteError, match="health_failed_302"):
+            client.health_check()
+    assert session.trust_env is False
+    assert session.get.call_count == 1
+    assert session.get.call_args.kwargs["allow_redirects"] is False
+    response.close.assert_called_once_with()
+    session.close.assert_called_once_with()
 
 
 if __name__ == "__main__":

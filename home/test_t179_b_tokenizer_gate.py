@@ -23,7 +23,8 @@ class T179BTokenizerGateTests(TestCase):
     def _dispatch(self):
         return dispatch_free_provider(route=self.route, transport=self.transport,
                                       user_request='hello', authorize=lambda: True,
-                                      cancelled=lambda: False, operation_id='t179-b')
+                                      cancelled=lambda: False, operation_id='t179-b',
+                                      budget_user_key='synthetic-user')
 
     def test_unavailable_tokenizer_does_not_reserve_or_send(self):
         with patch('home.free_provider_dispatch.local_tokenizer.build_counter', side_effect=Exception('missing')):

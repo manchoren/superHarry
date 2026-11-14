@@ -1,14 +1,19 @@
-# QEMU ARM64 VM runbook
+# ARM64 VM runbook
 
-This runbook starts an isolated Debian ARM64 session. The lifecycle
-implementation is `scripts/dev-vm.ps1`; do not duplicate its QEMU arguments.
+This runbook starts an isolated Debian ARM64 session for development and
+validation. The lifecycle implementation is `scripts/dev-vm.ps1`; do not copy
+QEMU arguments into other documents or scripts.
 
 ## Safety boundary
 
 Use `Run` mode for validation and development. It verifies pinned QEMU and
 firmware artifacts, creates a disposable QCOW2 overlay and UEFI VARS copy, and
-starts without networking. The base disk is a test artifact and may be
-reconstructed; the overlay remains the guest's disposable write target.
+never writes the base disk.
+
+The VM uses QEMU user-mode NAT from boot. SSH is forwarded only from the host
+loopback address `127.0.0.1:2222` to guest port 22. The VM is not exposed to
+the LAN. The network is available before login so the operator does not need
+to enter the QEMU monitor.
 
 Do not use this runbook to provision credentials, modify production services,
 convert production databases, or claim release acceptance. Use synthetic
@@ -16,35 +21,25 @@ fixtures and an isolated checkout for target-VM evidence.
 
 ## Preconditions
 
-Verify QEMU under `C:\\Program Files\\qemu`, the bundled firmware files, a valid
-`C:\\superHarry-vm\\debian-13.7-arm64-base.qcow2`, sufficient host disk space,
+Verify QEMU under `C:\Program Files\qemu`, the bundled firmware files, a valid
+`C:\superHarry-vm\debian-13.7-arm64-base.qcow2`, sufficient host disk space,
 and an available `127.0.0.1:2222` port.
 
-Run the non-mutating preflight. Firmware paths and hashes are optional because
-the script defaults the paths and validates the files against its internal
-owner-selected firmware pins. It also prints the calculated hashes for the
-evidence record:
+Run the non-mutating preflight:
 
 ```powershell
-.\\scripts\\dev-vm.ps1 -Mode Validate
+.\scripts\dev-vm.ps1 -Mode Validate
 ```
 
-## Start an isolated session
+## Start the VM
 
 ```powershell
-.\\scripts\\dev-vm.ps1 -Mode Run
+.\scripts\dev-vm.ps1 -Mode Run
 ```
 
-The guest starts without a NIC. Log in through the serial console first. In
-the QEMU monitor (`Ctrl+A`, then `C`), attach loopback-only networking:
-
-```text
-netdev_add user,id=guestnet,hostfwd=tcp:127.0.0.1:2222-:22
-device_add virtio-net-pci,bus=netrp,netdev=guestnet,id=guestnic
-```
-
-Return to the serial console with `Ctrl+A`, then `C`. No LAN listener is
-configured.
+The script creates the disposable overlay, starts Debian with loopback-only
+NAT and forwards `127.0.0.1:2222` to the guest SSH service. No QEMU monitor
+commands are required.
 
 The VM operator account for SSH validation is `copilot`. Do not substitute the
 host account name. Verify passwordless sudo before running privileged checks:
@@ -62,8 +57,8 @@ The command must exit successfully and `id` must show membership in `sudo`.
 Inside the guest, use a fresh checkout:
 
 ```bash
-git clone <repository-url> /tmp/superharry-t225
-cd /tmp/superharry-t225
+git clone <repository-url> /tmp/superharry-vm-validation
+cd /tmp/superharry-vm-validation
 test -z "$(git status --porcelain)"
 python3 -m venv .venv
 . .venv/bin/activate
