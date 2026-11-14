@@ -2,7 +2,7 @@
 
 Current validation policy (owner, 2026-11-11): [future benchmarks waived](owner-validation-decisions.md#benchmark-waiver---2026-11-11). Numerical/comparative benchmark gates below are superseded; historical results remain evidence. Functional, security, resource-enforcement, language/format smoke checks and recovery tests remain required. No package or deployment approval is implied.
 
-Status: Selected by the owner on 2026-11-11: whisper.cpp 1.9.5 with multilingual small for asynchronous notes and base for short commands; Piper 1.8.0 with Daniela preferred and Ald as fallback. If target-VM problems arise, revisit the selection later. Selection is not approval to download, install, run on the VM, deploy, or distribute. T215 remains pending; T218, T233, T237 and T238 remain prerequisites. Recheck upstream metadata and complete the artifact manifest before requesting scoped installation approval.
+Status: Selected by the owner on 2026-11-11: whisper.cpp 1.9.5 with multilingual small for asynchronous notes and base for short commands; Piper 1.8.0 with Daniela preferred and Ald as fallback. If target-VM problems arise, revisit the selection later. Selection is not approval to download, install, run on the VM, deploy, or distribute. T215 remains pending; T233, T237 and T238 remain implementation dependencies as applicable; T218 was cancelled and broader artifact review is deferred to T243 under the [product-first policy](product-first-validation.md). Recheck upstream metadata and complete the artifact manifest before requesting scoped installation approval.
 
 ## Selected components
 

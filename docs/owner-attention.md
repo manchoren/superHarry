@@ -10,10 +10,10 @@ Reviewed: 2026-11-11. The checklist itself grants no approval and does not chang
 | Before budget-policy changes | T220 / T230 | D2 accepted on 2026-11-11: initial limits and gateway-wide accounting resolved below. Implementation remains T230; no new provider/data-sharing consent. |
 | Before new dependency or model installation | T182, T186, T192, T195, T207, T215 | Approve concrete package/model selections where pending; component selections are recorded below; exact artifacts/installation approvals remain where pending. Benchmarks waived; functional/security/recovery checks retained. |
 | Before protected recovery/admin choices | T220 / T182 / T188 / T189 / T234 | R1/R2/R3 accepted on 2026-11-11 for key custody, data backup/restore and staged updates; fixed-directive versioning remains separate. |
-| Before external-service activation | T218 / T214 | Dedicated Gmail account chosen and saved in local .env; G1 OAuth read-only/local drafts design accepted; actual Google consent, credential provisioning and activation remain pending. Human sending of email drafts is already accepted. |
+| Before external-service activation | T214 / T243 | Dedicated Gmail account chosen and saved in local .env; G1 OAuth read-only/local drafts design accepted; actual Google consent, credential provisioning and activation remain pending. Human sending of email drafts is already accepted. |
 | Before deployment changes | T221 | Approve concrete service, network, TLS and shared-configuration changes outside existing authorization. |
 | Before release acceptance | T237 / T222 | Review evaluation cases/results and confirm the enabled release scope against target-VM evidence. |
-| After Telegram and email | T217 / T218 | Review WhatsApp integration options and terms before selecting or enabling an adapter. Deferred. |
+| After Telegram and email | T217 / T243 | Review WhatsApp integration options and terms before selecting or enabling an adapter. Deferred. |
 
 Resolve T220 choices before each affected task, regardless of queue position. Routine implementation details do not require a new owner decision. Benchmarks are waived under the owner follow-up. Technical API verification and required functional/security/recovery checks are implementation work; bring only protected decisions with concrete proposals for review.
 
@@ -156,7 +156,7 @@ Given a candidate dependency or model, when preparing owner review, then record 
 
 Given an approved isolated installation, when running required functional/security/recovery checks, then use an isolated test workspace/environment and synthetic fixtures, preserve production services/data and record actual results. Model download and temporary installation still need scoped approval; approving tests does not activate a production feature. Skipped benchmarks are not passing results; missing required functional/security/recovery checks remain explicit.
 
-Preparation priority: T225 restores the approved dependency/validation baseline; T182 binding research is complete and R1 addresses key custody. T237 supplies required functional/security/recovery fixtures; comparative benchmarks are waived; the implementation dependencies in each task record remain binding. Do not mark any task completed from this preparation plan.
+Preparation priority: T225 restored the approved dependency/validation baseline within its accepted closed scope; T182 binding research is complete and R1 addresses key custody. T237 supplies required functional/security/recovery fixtures; comparative benchmarks are waived; the implementation dependencies in each task record remain binding. Do not mark any task completed from this preparation plan.
 
 Evidence: 2026-11-11 static inspection of current task acceptance and product requirements (Q-09, Q-14, Q-23/Q-26, Q-29, memory encryption baseline, P-43/P-44/P-48). T215 upstream metadata was reviewed as documented in the selection; its artifact manifest remains incomplete. This preparation inventory does not claim additional downloads, installations or VM measurements; dated D3/D4 results remain authoritative. Future benchmarks waived as recorded below. No constitution amendment required.
 

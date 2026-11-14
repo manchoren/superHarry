@@ -1,6 +1,6 @@
 # T218 - External services audit (bounded local evidence)
 
-Date: 2026-11-12. Status: Partial local/documentary evidence; T218 remains Pending.
+Date: 2026-11-12. Historical partial local/documentary evidence. T218 was cancelled on 2026-11-14; [T243 and selected integration tasks](product-first-validation.md) own follow-up scope.
 
 This record audits the currently documented boundaries without contacting Gmail,
 voice providers, weather services, or reading local secrets.

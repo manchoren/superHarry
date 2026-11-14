@@ -7,34 +7,24 @@ Apply the [documentation ownership, update triggers and closure rules](../../CON
 
 The owner-approved [product-first validation policy](product-first-validation.md) governs current scope and supersedes conflicting historical validation gates. Deferred follow-ups T241-T245 do not block the current product milestone.
 
-**Last updated:** 2026-11-11
+**Last updated:** 2026-11-14
 
 ---
 
 ## Phase 0-2: Foundations, VM environment, secure access and chat
 
-- [x] **T001 - Project requirements and constitution record** Status: Completed
-- [x] **T013 - Contributor guidance and ADR conventions** Status: Completed
-- [x] **T027 - Argon2id password hashing profile** Status: Completed
-- [x] **T171 - Audit readiness delivery slice** Status: Completed
-- [x] **T172 - Runnable local text chat slice** Status: Completed
-- [x] **T173 - Protected fake-model dispatch slice** Status: Completed
 
 ## Phase 3: Agent and model routing
 
-- [x] **T047 - Local inference fallback after free-provider exhaustion** Status: Completed
-- [x] **T050 - Heavy-job governor (single-slot scheduler)** Status: Completed
-- [x] **T086 - Package guard evidence scoring primitives** Status: Completed
-- [ ] **T179 - Free-provider pre-dispatch admission gates and exact tokenizer bound** Status: In progress
+- [ ] **T179 - Free-provider pre-dispatch admission gates and exact tokenizer bound** Status: Pending
 
 ## Phase 4: Persistence and administration
 
-- [x] **T174 - Durable storage and operational boundaries** Status: Completed
 - [ ] **T180 - Tool confirmation policy (operator-configured grants)** Status: Pending
 - [ ] **T181 - Package guard Django admin UI integration** Status: Pending
 - [ ] **T182 - Memory encryption and recovery (SQLCipher)** Status: Pending
   - [R1 custody/recovery proposal](recovery-admin-proposals.md#r1---t182-memory-encryption-and-key-custody) accepted by owner on 2026-11-11; implementation pending prerequisites.
-  - [Binding comparison and isolated-test proposal](t182-sqlcipher-binding-review.md), 2026-11-11: D3 approved and isolated ARM64 binding experiment passed; production integration and dependencies T183/T225 remain open.
+  - [Binding comparison and isolated-test proposal](t182-sqlcipher-binding-review.md), 2026-11-11: D3 approved and isolated ARM64 binding experiment passed; production integration and dependency T183 remain open; T225 is completed.
 - [ ] **T183 - Memory model and schema (global and user scopes)** Status: Pending. Bounded schema slice and tests are recorded in [T183 memory schema evidence](t183-memory-schema-evidence.md); remaining implementation is subject to the current product-first policy.
 - [ ] **T184 - Memory-agent retrieval (pre-main-agent, non-reasoning)** Status: Pending
 - [ ] **T185 - recall_memory tool with bounded re-invocation** Status: Pending
@@ -110,7 +100,7 @@ Accepted owner follow-up (2026-11-11): [benchmarks waived](owner-validation-deci
 
 ## Specification-to-code reconciliation (2026-11-11)
 
-The [review and acceptance records](spec-code-review-2026-11-11.md) define the evidence, dependencies and Given/When/Then criteria for T179-T240. Existing completion markers are historical scope claims, not a new validation result. All pending tasks are **Unassigned**; no active implementer/model was verified. T179 retains its recorded In progress status, with current gateway acceptance still outstanding.
+The [review and acceptance records](spec-code-review-2026-11-11.md) define the evidence, dependencies and Given/When/Then criteria for T179-T240. Completed scope is recorded in history and does not imply a new validation result. All pending tasks are **Unassigned**; no active implementer/model was verified. T179 is Pending because no active owner is verified; work already recorded remains evidence, not completion.
 
 - [ ] **T226 - Reconcile constitution identity and context regression coverage** Status: Pending. Verify the updated constitution pin and context regression coverage under the current policy; independent acceptance is no longer a prerequisite.
 - [ ] **T227 - Harden and verify the gateway client contract** Status: Pending. Focused evidence and later full-suite results are recorded in the dated review. Verify contracts needed by enabled flows; broader provider acceptance is deferred to T241.
@@ -129,7 +119,7 @@ The [review and acceptance records](spec-code-review-2026-11-11.md) define the e
 - [ ] **T239 - Implement storage-pressure cleanup across persisted user data** Status: Pending
 - [ ] **T240 - Implement capability degradation and external-only task recovery** Status: Pending
 
-### Reconciliation note (2026-11-12)
+### Reconciliation note (2026-11-14)
 
 T225 was closed by the owner on 2026-11-13 and is recorded in completed history. Earlier notes saying it remained pending are superseded. Its historical evidence remains bounded to its accepted scope.
 

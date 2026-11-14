@@ -5,18 +5,43 @@
 **Date:** 2026-11-11. **Method:** static inspection of the current working tree.
 **Constitution SHA-256:** `640c85a00d537e01fe446ac4516cb09cb53df2acdac493615fb5e72bdd792e64`.
 
+## Documentation reconciliation - 2026-11-14
+
+The owner requested repair of the truncated constitution and reconciliation of
+active project records. Git history showed the truncated sentence in `40e2d7f`
+and a duplicate in `b7fec4d`; the repaired sentence restores the earlier
+prohibition on weakening audit, privacy or permissions. The constitution SHA-256
+is `59b3e1cc1f504f5dc510a7257a20a7d9e558b5b52033a7fc28831b62b3e92d8a`;
+the settings pin and context test match it.
+
+The backlog and queue now agree on 68 unique open IDs. T179 is Pending because
+no current owner is verified; its earlier work remains evidence. Completed entries
+are maintained in history, T225 remains closed within its accepted scope, and
+deferred tasks follow active tasks. The older closure plan is historical under
+the product-first policy; the roadmap and affected decision/task records reflect
+T183's bounded slice and T218's cancellation. No deferred gate is claimed passed.
+
+Validation on the local Windows checkout: `python manage.py test home.test_context`
+passed 14 tests; `python manage.py test` passed 606 tests with 11 skipped;
+`python scripts/project_progress.py` reported 11/79 and T226 first; a static
+inventory found no duplicate or mismatched active IDs or overlap with the 11
+completed IDs, and checked modified Markdown relative link targets existed.
+`git diff --check` passed. These checks do not establish target-VM, provider,
+deployment or release acceptance. Link anchors and the complete dependency graph
+were not exhaustively verified; dated evidence retains its original context.
+
 ## Owner follow-up - 2026-11-11
 
 The [accepted benchmark waiver](owner-validation-decisions.md#benchmark-waiver---2026-11-11) supersedes performance/load and comparative model-quality benchmark prerequisites in these task criteria. T219 now verifies resource enforcement and serialization without requiring a throughput/latency/load campaign. T237/T222 still require functional/security/recovery acceptance; do not claim skipped benchmarks passed. DOCX-to-PDF and XLSX-to-PDF are required for T195. Dedicated mailbox configuration is selected; G1 read-only OAuth/local-draft design accepted; actual Google consent/activation remain pending. [R1/R2/R3](recovery-admin-proposals.md) are accepted T182/T188/T189 design contracts (owner, 2026-11-11), not implemented behavior.
 
-## Current documentation reconciliation - 2026-11-12
+## Historical documentation reconciliation - 2026-11-12
 
 The dated evidence below preserves the state inspected on 2026-11-11. Since
 then, the portable `manage.py` entrypoint was restored and bounded slices for
-T229, T231, T232 and T237 were implemented. The current local validation
-baseline is `manage.py check`, migration checks, `17 passed` package-guard
+T229, T231, T232 and T237 were implemented. The local validation
+baseline recorded at that time was `manage.py check`, migration checks, `17 passed` package-guard
 pytest tests and `488 passed, 10 skipped` for the Django suite. These results
-are current local evidence only; they do not establish independent audit,
+are historical local evidence only; they do not establish independent audit,
 gateway/provider, target-VM, deployment or production acceptance.
 
 Active backlog summaries were synchronized to distinguish historical counts

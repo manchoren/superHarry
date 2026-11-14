@@ -16,7 +16,7 @@ Given revoked/expired credentials, when Gmail access fails, then show the integr
 
 ## Owner acceptance
 
-Owner accepted OAuth read-only access and local drafts with human sending. Native Gmail drafts are outside this accepted scope and require a separate broader-scope decision. Approval selects the authentication/data-access design; actual Google account consent, client setup, credential provisioning, dependency review and integration/deployment checks remain concrete follow-up actions under T214/T218/T238.
+Owner accepted OAuth read-only access and local drafts with human sending. Native Gmail drafts are outside this accepted scope and require a separate broader-scope decision. Approval selects the authentication/data-access design; actual Google account consent, client setup, credential provisioning, dependency review and integration/deployment checks remain concrete follow-up actions under T214/T238, with broader review deferred to T243 under the [product-first policy](product-first-validation.md).
 
 Sources checked 2026-11-11: [official Gmail scopes](https://developers.google.com/workspace/gmail/api/auth/scopes), [desktop OAuth flow](https://developers.google.com/identity/protocols/oauth2/native-app), [OAuth token expiration](https://developers.google.com/identity/protocols/oauth2#expiration). No Gmail message, account state, token or credential was accessed for this preparation.
 

@@ -142,7 +142,5 @@ policy requires additional review.
 - Never use the retired `.dev-vm` as an execution target. Preserve or migrate
   its protected CA keys, configuration and database backups before deleting
   those artifacts; remove the directory only when empty.
-- Never conceal failures, alter action logs, fabricate APIs or results, weaken
-- Never repeat an action with an unknown outcome when repetition could
-  duplicate effects.
-- Never conceal failures, alter action logs, fabricate APIs or results, weaken
+- Never conceal failures, alter action logs, fabricate APIs or results, or weaken
+  audit, privacy or permissions.

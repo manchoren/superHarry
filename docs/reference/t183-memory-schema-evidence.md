@@ -33,6 +33,8 @@ memory UI, live providers, VM deployment, or production acceptance.
 
 ## Gates and limitations
 
+The following paragraph describes the policy at the time of the slice. The [product-first policy](product-first-validation.md) supersedes its independent acceptance prerequisite; T183 remains pending for its remaining implementation and applicable checks.
+
 The independent fresh-context audit required by the test-scoping policy was not
 available in this session. Comparative and numerical benchmarks remain waived;
 functional, security, resource, recovery, migration, and independent acceptance
