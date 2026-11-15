@@ -30,7 +30,7 @@ The owner-approved [product-first validation policy](product-first-validation.md
 - [ ] **T185 - recall_memory tool with bounded re-invocation** Status: Pending
 - [ ] **T186 - Semantic search with keyword fallback** Status: Pending
   - [Candidate review and diagnostic benchmark](t186-semantic-retrieval-review.md), 2026-11-11: D4 approved and exercised on an isolated ARM64 VM copy: MiniLM diagnostic passed and owner selected its tested ARM64 qint8 baseline; E5 incomplete with unverified termination cause. Production location/activation and implementation dependencies T183/T237 remain open.
-- [ ] **T187 - Per-user chat history persistence** Status: Pending
+- [ ] **T187 - Per-user chat history persistence** Status: Pending. Confirmed deletion for completed, resolved conversations is recorded in [T187 deletion evidence](t187-conversation-deletion-evidence.md); active and unresolved worker handling remains open.
 - [ ] **T188 - Admin downloadable backups and restore** Status: Pending
   - [R2 proposal](recovery-admin-proposals.md#r2---t188-downloadable-data-backups-and-staged-restore) accepted by owner on 2026-11-11; implementation pending prerequisites; no live restore authorized.
 - [ ] **T189 - Application update from admin interface** Status: Pending
@@ -103,7 +103,7 @@ Accepted owner follow-up (2026-11-11): [benchmarks waived](owner-validation-deci
 The [review and acceptance records](spec-code-review-2026-11-11.md) define the evidence, dependencies and Given/When/Then criteria for T179-T240. Completed scope is recorded in history and does not imply a new validation result. All pending tasks are **Unassigned**; no active implementer/model was verified. T179 is Pending because no active owner is verified; work already recorded remains evidence, not completion.
 
 - [ ] **T229 - Connect durable chat and local inference to the gateway** Status: Pending. Bounded gateway routing, credential resolution and fail-closed cancellation evidence is recorded in the dated review; real gateway, VM and release acceptance remain open.
-- [ ] **T230 - Enforce application budgets across gateway fallback and memory calls** Status: Pending
+- [ ] **T230 - Enforce application budgets across gateway fallback and memory calls** Status: Pending. [Budget visibility evidence](t230-budget-visibility-evidence.md) records carried reservations and the missing durable configuration/rollover implementation.
 - [ ] **T231 - Correct package guard scoring and evidence validation** Status: Pending. The bounded evaluator and contract-first tests are implemented; broader verifier and installation evidence is deferred to T242. Keep autonomous installation disabled until its required controls work.
 - [ ] **T232 - Implement the common authorized tool execution boundary** Status: Pending. A bounded registry/executor slice now adapts existing `ModelToolCallProposal` and `InvocationContext` contracts; persistent grants and real handlers remain open. Evidence: [T232 boundary evidence](t232-tool-boundary-evidence.md).
 - [ ] **T233 - Implement the authorized file store and upload/download boundary** Status: Pending

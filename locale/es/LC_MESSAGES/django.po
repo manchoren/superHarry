@@ -342,3 +342,32 @@ msgstr "El presupuesto no est? configurado."
 
 msgid "Tokens with an unknown outcome"
 msgstr "Tokens con resultado desconocido"
+
+msgid "Save"
+msgstr "Guardar"
+
+msgid "Delete conversation"
+msgstr "Eliminar conversación"
+
+
+msgid "Delete this conversation and its messages? This cannot be undone."
+msgstr ""
+"¿Eliminar esta conversación y sus mensajes? Esta acción no se puede "
+"deshacer."
+
+
+msgid ""
+"This conversation has active or unresolved work and cannot be deleted yet."
+msgstr ""
+"Esta conversación tiene trabajo activo o sin resolver y aún no se puede "
+"eliminar."
+
+
+msgid "Deletion is unavailable. Please try again."
+msgstr "No se puede eliminar en este momento. Inténtalo de nuevo."
+
+msgid "Available tokens"
+msgstr "Tokens disponibles"
+
+msgid "Unresolved reservations from earlier periods"
+msgstr "Reservas sin resolver de períodos anteriores"

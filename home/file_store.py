@@ -7,7 +7,8 @@ import uuid
 from pathlib import Path
 
 from django.conf import settings
-from django.db import transaction
+from django.contrib.auth import get_user_model
+from django.db import DatabaseError, transaction
 from django.utils import timezone
 
 from home.audit import record_event
@@ -16,6 +17,38 @@ from home.models import AuditEvent, StoredFile
 
 class FileStoreError(ValueError):
     pass
+
+
+def _require_active_user(user, *, lock=False):
+    if (not getattr(user, 'is_authenticated', False) or not getattr(user, 'is_active', False)
+            or getattr(user, 'pk', None) is None
+            or getattr(getattr(user, '_state', None), 'adding', True)):
+        raise FileStoreError('File is unavailable.')
+    try:
+        users = get_user_model()._default_manager
+        if lock:
+            users = users.select_for_update()
+        if not users.filter(pk=user.pk, is_active=True).exists():
+            raise FileStoreError('File is unavailable.')
+    except DatabaseError:
+        raise FileStoreError('File is unavailable.') from None
+
+
+def detect_content_type(prefix):
+    """Classify a few unambiguous signatures; this does not validate a file."""
+    if not isinstance(prefix, bytes):
+        raise FileStoreError("File signature is invalid.")
+    if prefix.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if prefix.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if prefix.startswith((b"GIF87a", b"GIF89a")):
+        return "image/gif"
+    if len(prefix) >= 12 and prefix[:4] == b"RIFF" and prefix[8:12] == b"WEBP":
+        return "image/webp"
+    if prefix.startswith(b"%PDF-"):
+        return "application/pdf"
+    return "application/octet-stream"
 
 
 def _root():
@@ -73,31 +106,43 @@ def _open_stored_file(record):
 
 
 def upload(*, user, uploaded_file, request_id=None):
-    if not getattr(user, "is_authenticated", False):
-        raise FileStoreError("Authentication required.")
+    _require_active_user(user)
     limit = int(settings.SUPERHARRY_FILE_MAX_BYTES)
     if not isinstance(getattr(uploaded_file, "size", None), int) or uploaded_file.size > limit:
         raise FileStoreError("File exceeds the configured size limit.")
     storage_id = uuid.uuid4()
     destination = _root() / str(storage_id)
-    digest, total = hashlib.sha256(), 0
+    digest, total, prefix = hashlib.sha256(), 0, b""
     created_info = None
     try:
-        with destination.open("xb") as output:
-            created_info = os.fstat(output.fileno())
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+        descriptor = os.open(destination, flags, stat.S_IRUSR | stat.S_IWUSR)
+        try:
+            created_info = os.fstat(descriptor)
+            output = os.fdopen(descriptor, "wb")
+        except Exception:
+            os.close(descriptor)
+            raise
+        with output:
             for chunk in uploaded_file.chunks(1024 * 1024):
                 total += len(chunk)
                 if total > limit:
                     raise FileStoreError("File exceeds the configured size limit.")
+                if len(prefix) < 16:
+                    prefix += chunk[:16 - len(prefix)]
                 digest.update(chunk)
                 output.write(chunk)
-        os.chmod(destination, stat.S_IRUSR | stat.S_IWUSR)
+        current = destination.lstat()
+        if (not stat.S_ISREG(current.st_mode)
+                or not os.path.samestat(created_info, current)):
+            raise FileStoreError("Stored path changed during upload.")
         with transaction.atomic():
+            _require_active_user(user, lock=True)
             record = StoredFile.objects.create(
                 owner=user, storage_id=storage_id,
                 original_name=Path(str(getattr(uploaded_file, "name", "upload"))).name[:255],
                 size=total, sha256=digest.hexdigest(),
-                content_type=str(getattr(uploaded_file, "content_type", ""))[:128],
+                content_type=detect_content_type(prefix),
             )
             record_event(event_type=AuditEvent.EventType.FILE_UPLOADED,
                          outcome=AuditEvent.Outcome.SUCCESS,
@@ -116,27 +161,9 @@ def upload(*, user, uploaded_file, request_id=None):
         raise
 
 
-def open_for_download(*, user, storage_id, request_id=None):
-    if not getattr(user, "is_authenticated", False):
-        raise FileStoreError("Authentication required.")
-    try:
-        record = StoredFile.objects.get(storage_id=_storage_uuid(storage_id), owner=user)
-        path = _stored_path(record)
-    except (StoredFile.DoesNotExist, ValueError, TypeError, OSError):
-        raise FileStoreError("File is unavailable.")
-    StoredFile.objects.filter(pk=record.pk).update(last_accessed_at=timezone.now())
-    record_event(event_type=AuditEvent.EventType.FILE_DOWNLOADED,
-                 outcome=AuditEvent.Outcome.SUCCESS,
-                 actor_kind=AuditEvent.ActorKind.USER,
-                 actor_user_id=user.pk, target_user_id=user.pk,
-                 request_id=request_id)
-    return record, path
-
-
 def open_download_stream(*, user, storage_id, request_id=None):
     """Return a bounded, digest-verified snapshot for an authorized download."""
-    if not getattr(user, "is_authenticated", False):
-        raise FileStoreError("Authentication required.")
+    _require_active_user(user)
     snapshot = None
     try:
         record = StoredFile.objects.get(storage_id=_storage_uuid(storage_id), owner=user)
@@ -156,7 +183,10 @@ def open_download_stream(*, user, storage_id, request_id=None):
             raise FileStoreError("Stored file changed during download.")
         snapshot.seek(0)
         with transaction.atomic():
-            StoredFile.objects.filter(pk=record.pk).update(last_accessed_at=timezone.now())
+            if not StoredFile.objects.filter(pk=record.pk, storage_id=record.storage_id,
+                                             owner_id=user.pk, owner__is_active=True).update(
+                                                 last_accessed_at=timezone.now()):
+                raise FileStoreError('File is unavailable.')
             record_event(event_type=AuditEvent.EventType.FILE_DOWNLOADED,
                          outcome=AuditEvent.Outcome.SUCCESS,
                          actor_kind=AuditEvent.ActorKind.USER,
@@ -173,8 +203,7 @@ def open_download_stream(*, user, storage_id, request_id=None):
 
 def stage_for_authorized_job(*, user, storage_id, destination_dir, request_id=None):
     """Stage one owned file into an already-authorized job directory."""
-    if not getattr(user, "is_authenticated", False):
-        raise FileStoreError("Authentication required.")
+    _require_active_user(user)
     try:
         record = StoredFile.objects.get(storage_id=_storage_uuid(storage_id), owner=user)
         _stored_path(record)
@@ -190,28 +219,38 @@ def stage_for_authorized_job(*, user, storage_id, destination_dir, request_id=No
     try:
         copied = 0
         digest = hashlib.sha256()
-        with _open_stored_file(record) as source_handle, target.open("xb") as target_handle:
-            created_info = os.fstat(target_handle.fileno())
-            while chunk := source_handle.read(1024 * 1024):
-                copied += len(chunk)
-                if copied > record.size:
-                    raise FileStoreError("Stored file changed during staging.")
-                digest.update(chunk)
-                target_handle.write(chunk)
-            if hasattr(os, "fchmod"):
-                os.fchmod(target_handle.fileno(), stat.S_IRUSR | stat.S_IWUSR)
+        with _open_stored_file(record) as source_handle:
+            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+            descriptor = os.open(target, flags, stat.S_IRUSR | stat.S_IWUSR)
+            try:
+                created_info = os.fstat(descriptor)
+                target_handle = os.fdopen(descriptor, "wb")
+            except Exception:
+                os.close(descriptor)
+                raise
+            with target_handle:
+                while chunk := source_handle.read(1024 * 1024):
+                    copied += len(chunk)
+                    if copied > record.size:
+                        raise FileStoreError("Stored file changed during staging.")
+                    digest.update(chunk)
+                    target_handle.write(chunk)
         if copied != record.size or digest.hexdigest() != record.sha256:
             raise FileStoreError("Stored file changed during staging.")
         target_info = target.lstat()
         if stat.S_ISLNK(target_info.st_mode) or not os.path.samestat(created_info, target_info):
             raise FileStoreError("Staging target changed during staging.")
-        if not hasattr(os, "fchmod"):
-            os.chmod(target, stat.S_IRUSR | stat.S_IWUSR)
-        record_event(event_type=AuditEvent.EventType.FILE_STAGED,
-                     outcome=AuditEvent.Outcome.SUCCESS,
-                     actor_kind=AuditEvent.ActorKind.USER,
-                     actor_user_id=user.pk, target_user_id=user.pk,
-                     request_id=request_id)
+        with transaction.atomic():
+            _require_active_user(user, lock=True)
+            if not StoredFile.objects.select_for_update().filter(
+                pk=record.pk, storage_id=record.storage_id, owner_id=user.pk,
+            ).exists():
+                raise FileStoreError('File is unavailable.')
+            record_event(event_type=AuditEvent.EventType.FILE_STAGED,
+                         outcome=AuditEvent.Outcome.SUCCESS,
+                         actor_kind=AuditEvent.ActorKind.USER,
+                         actor_user_id=user.pk, target_user_id=user.pk,
+                         request_id=request_id)
     except Exception:
         if created_info is not None:
             try:

@@ -20,7 +20,7 @@ from django.contrib.auth.models import AnonymousUser, Group, Permission
 from django.contrib.sessions.models import Session
 from django.core.management import call_command
 from django.core.exceptions import ValidationError
-from django.db import OperationalError, close_old_connections, transaction
+from django.db import IntegrityError, OperationalError, close_old_connections, transaction
 from django.http import Http404, HttpResponse
 from django.middleware.csrf import CSRF_SESSION_KEY
 from django.test import (
@@ -186,6 +186,44 @@ class MemoryRecordSchemaTests(TestCase):
         self.user_a.is_active = False
         self.assertFalse(MemoryRecord.objects.visible_to(self.user_a).exists())
         self.assertTrue(MemoryRecord.objects.visible_to(self.user_b).exists())
+
+    def test_deactivation_after_query_construction_denies_memory(self):
+        MemoryRecord.objects.create(scope=MemoryRecord.Scope.GLOBAL, content="shared")
+        MemoryRecord.objects.create(scope=MemoryRecord.Scope.USER, owner=self.user_a, content="private")
+        pending = MemoryRecord.objects.visible_to(self.user_a)
+        get_user_model().objects.filter(pk=self.user_a.pk).update(is_active=False)
+        self.assertTrue(self.user_a.is_active)
+        self.assertFalse(pending.exists())
+        self.assertFalse(MemoryRecord.objects.visible_to(self.user_a).exists())
+
+    def test_unsaved_instance_with_existing_primary_key_is_not_a_principal(self):
+        MemoryRecord.objects.create(scope=MemoryRecord.Scope.USER, owner=self.user_a, content="private")
+        forged = get_user_model()(pk=self.user_a.pk, username="unsaved")
+        self.assertFalse(MemoryRecord.objects.visible_to(forged).exists())
+
+    def test_deleted_confirmer_preserves_retained_global_and_other_user_memories(self):
+        confirmed = timezone.now()
+        shared = MemoryRecord.objects.create(scope=MemoryRecord.Scope.GLOBAL,
+            content='shared', confirmed_at=confirmed, confirmed_by=self.user_a)
+        owned = MemoryRecord.objects.create(scope=MemoryRecord.Scope.USER, owner=self.user_b,
+            content='private', confirmed_at=confirmed, confirmed_by=self.user_a)
+        self.user_a.delete()
+        for record in (shared, owned):
+            record.refresh_from_db()
+            self.assertIsNone(record.confirmed_by_id)
+            self.assertEqual(record.confirmed_at, confirmed)
+            record.full_clean()
+        shared.confirmed_at = confirmed + timedelta(seconds=1)
+        with self.assertRaises(ValidationError):
+            shared.full_clean()
+        self.assertEqual(set(MemoryRecord.objects.visible_to(self.user_b)), {shared, owned})
+
+    def test_confirmer_without_timestamp_is_invalid(self):
+        record = MemoryRecord(scope=MemoryRecord.Scope.GLOBAL, content='invalid', confirmed_by=self.user_a)
+        with self.assertRaises(ValidationError):
+            record.full_clean()
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            record.save()
 
 class ConversationAuthorizationTests(TestCase):
     @classmethod

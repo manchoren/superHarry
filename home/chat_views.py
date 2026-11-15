@@ -262,7 +262,10 @@ def create_turn(request, conversation_id):
         return response
     if not _authenticated(request):
         return _error(request, "UNAUTHENTICATED", 401)
-    conversation = _owned_conversation(request, conversation_id)
+    try:
+        conversation = _owned_conversation(request, conversation_id)
+    except DatabaseError:
+        return _error(request, "UNAVAILABLE", 503)
     if conversation is None:
         return _error(request, "NOT_FOUND", 404)
     try:
@@ -292,10 +295,12 @@ def create_turn(request, conversation_id):
     request_id = _request_id(request)
     try:
         with transaction.atomic():
-            locked_conversation = Conversation.objects.select_for_update().get(
+            locked_conversation = Conversation.objects.select_for_update().filter(
                 pk=conversation.pk,
                 owner_id=request.user.pk,
-            )
+            ).first()
+            if locked_conversation is None:
+                return _error(request, "NOT_FOUND", 404)
             existing = ChatTurn.objects.filter(
                 conversation=locked_conversation,
                 idempotency_key=idempotency_key,

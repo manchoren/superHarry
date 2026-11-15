@@ -373,6 +373,36 @@ def test_advisory_alias_deduplication_is_independent_of_order_and_transitive():
         assert score.evidence_valid and score.reputation == 20
 
 
+def test_empty_or_malformed_alias_cannot_merge_unrelated_advisories():
+    for alias in ('', ' ', 'bad\nidentifier', None, 7):
+        advisories = (make_advisory('CVE-one', CVESeverity.CRITICAL, aliases=(alias,)),
+                      make_advisory('CVE-two', CVESeverity.CRITICAL, aliases=(alias,)))
+        score = PackageGuard().evaluate('safe-package', '1.2.3',
+            evidence=evidence(advisories=advisories), now=NOW)
+        assert score.blocked and score.reason == 'advisory_identity_invalid'
+        assert not score.can_authorize_scoped_installation()
+    for cve_id, aliases in (('', ()), ('CVE-valid', ['GHSA-invalid-container'])):
+        score = PackageGuard().evaluate('safe-package', '1.2.3',
+            evidence=evidence(advisories=(make_advisory(cve_id, CVESeverity.HIGH, aliases=aliases),)), now=NOW)
+        assert score.blocked and score.reason == 'advisory_identity_invalid'
+
+
+def test_advisory_identity_comparison_ignores_case():
+    advisories = (make_advisory('GHSA-test', CVESeverity.HIGH, aliases=('CVE-EXAMPLE',)),
+                  make_advisory('cve-example', CVESeverity.HIGH))
+    score = PackageGuard().evaluate('safe-package', '1.2.3',
+        evidence=evidence(advisories=advisories), now=NOW)
+    assert score.evidence_valid and score.reputation == 25
+
+
+def test_future_advisory_date_is_not_accepted_as_current_evidence():
+    advisory = make_advisory('CVE-future', CVESeverity.HIGH)
+    advisory.date = NOW + timedelta(days=1)
+    score = PackageGuard().evaluate('safe-package', '1.2.3',
+        evidence=evidence(advisories=(advisory,)), now=NOW)
+    assert score.blocked and score.reason == 'advisory_date_invalid'
+
+
 def test_package_name_normalization_accepts_underscore():
     score = PackageGuard().evaluate("safe_package", "1.2.3", evidence=evidence(), now=NOW)
     assert score.evidence_valid and not score.blocked

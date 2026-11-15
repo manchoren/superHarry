@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import FileResponse, JsonResponse
 from django.views.decorators.http import require_GET, require_POST
 
-from home.file_store import FileStoreError, open_download_stream, upload
+from home.file_store import FileStoreError, detect_content_type, open_download_stream, upload
 
 
 @login_required
@@ -27,5 +27,9 @@ def download_file(request, storage_id: uuid.UUID):
         record, stream = open_download_stream(user=request.user, storage_id=storage_id)
     except (FileStoreError, OSError, ValueError):
         return JsonResponse({"error": "FILE_UNAVAILABLE"}, status=404)
-    return FileResponse(stream, as_attachment=True, filename=record.original_name,
-                        content_type=record.content_type or "application/octet-stream")
+    content_type = detect_content_type(stream.read(16))
+    stream.seek(0)
+    response = FileResponse(stream, as_attachment=True, filename=record.original_name,
+                            content_type=content_type)
+    response["X-Content-Type-Options"] = "nosniff"
+    return response

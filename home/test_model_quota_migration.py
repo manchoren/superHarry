@@ -8,6 +8,15 @@ class ModelQuotaMigrationTests(TransactionTestCase):
     migrate_to = ('home', '0009_providermodelquota_providerreservation_model_quota_and_more')
     latest = ('home', '0010_remove_providermodelquota_home_model_quota_bounded_and_more')
 
+    def setUp(self):
+        super().setUp()
+        self.addCleanup(self.restore_current_schema)
+
+    @staticmethod
+    def restore_current_schema():
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+
     def test_legacy_reservation_survives_apply_rollback_and_reapply(self):
         executor = MigrationExecutor(connection)
         executor.migrate([self.migrate_from])

@@ -340,3 +340,29 @@ msgstr "Budget is not configured."
 
 msgid "Tokens with an unknown outcome"
 msgstr "Tokens with an unknown outcome"
+
+msgid "Save"
+msgstr "Save"
+
+msgid "Delete conversation"
+msgstr "Delete conversation"
+
+
+msgid "Delete this conversation and its messages? This cannot be undone."
+msgstr "Delete this conversation and its messages? This cannot be undone."
+
+
+msgid ""
+"This conversation has active or unresolved work and cannot be deleted yet."
+msgstr ""
+"This conversation has active or unresolved work and cannot be deleted yet."
+
+
+msgid "Deletion is unavailable. Please try again."
+msgstr "Deletion is unavailable. Please try again."
+
+msgid "Available tokens"
+msgstr "Available tokens"
+
+msgid "Unresolved reservations from earlier periods"
+msgstr "Unresolved reservations from earlier periods"

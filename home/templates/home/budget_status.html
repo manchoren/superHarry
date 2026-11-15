@@ -1,7 +1,7 @@
-{% load i18n %}
+{% load i18n static %}
 <!doctype html>
-<html lang="{{ LANGUAGE_CODE }}">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% translate "Token budgets" %}</title></head>
+<html lang="{{ LANGUAGE_CODE }}"{% if user.is_authenticated %} data-account-theme="{{ account_theme }}"{% endif %}>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="{% static 'home/chat.css' %}"><script src="{% static 'home/theme.js' %}"></script><title>{% translate "Token budgets" %}</title></head>
 <body>
 <main>
 <h1>{% translate "Token budgets" %}</h1>
@@ -12,8 +12,10 @@
 <p>{% translate "Resets at" %}: {{ row.reset }}</p>
 {% if row.budget %}
 <p>{% translate "Used" %}: {{ row.budget.used }} · {% translate "Reserved" %}: {{ row.budget.reserved }} · {% translate "Limit" %}: {{ row.budget.hard_limit }}</p>
-{% if row.budget.warning_emitted %}<p role="status">{% translate "The 80% warning threshold was reached in this period." %}</p>{% endif %}
+<p>{% translate "Available tokens" %}: {{ row.remaining }}</p>
+{% if row.warning %}<p role="status">{% translate "The 80% warning threshold was reached in this period." %}</p>{% endif %}
 {% else %}<p>{% translate "Budget is not configured." %}</p>{% endif %}
+<p>{% translate "Unresolved reservations from earlier periods" %}: {{ row.carried }}</p>
 <p>{% translate "Tokens with an unknown outcome" %}: {{ row.unknown }}</p>
 </section>
 {% endfor %}

@@ -18,9 +18,69 @@ memory UI, live providers, VM deployment, or production acceptance.
   `MemoryRecord.objects.visible_to(...)`.
 - `visible_to(user)` returns only active global records and active records owned
   by that authenticated user. Anonymous principals receive an empty queryset.
+  This is a retrieval-scope filter, not a grant to expose global-memory
+  administration to ordinary users.
 - Database constraints and model validation reject invalid scope/owner and
-  partial confirmation combinations. No secret-bearing field or credential
-  loader was added.
+  a confirmer without a timestamp. Model validation requires a confirmer for a
+  new or changed timestamp, while preserving an unchanged timestamp when its
+  confirming account was deleted. No secret-bearing field or credential loader
+  was added.
+
+## Confirmation retention follow-up - 2026-11-14
+
+Deleting a confirming account previously failed when a retained global memory
+or another user's memory referenced it: `SET_NULL` violated the old paired
+constraint. Migration 0030 permits the missing account reference while retaining
+the timestamp; model validation rejects a new or changed unattributed
+confirmation. A reverse migration refuses to restore the old constraint while
+such retained confirmations exist. Direct database writes bypass model
+validation and must not be treated as an authorized confirmation workflow.
+
+On the Windows checkout, `python manage.py test
+home.tests.MemoryRecordSchemaTests home.test_t234_controls` passed nine tests.
+An isolated temporary SQLite database exercised migration 0029 to 0030,
+account deletion with a retained confirmation, guarded reversal, and reversal
+and reapplication after resolving the incompatible synthetic record. No VM or
+production database was changed. The first full-suite run exposed an existing
+new-confirmation validation expectation; the model validation was adjusted and
+the focused regression passed. This slice does not implement memory retrieval,
+encryption or confirmation controls, and T183 remains pending. The subsequent
+full `python manage.py test` run passed 645 tests with 11 skipped.
+
+## Active-principal follow-up - 2026-11-14
+
+The retrieval-scope queryset now checks persisted account activity when the
+query executes, so an unevaluated queryset does not expose records after the
+account is deactivated even if its in-memory user object is stale. Unsaved user
+objects, including one with a manually assigned existing primary key, are
+rejected. As with Django querysets generally, callers must not reuse already
+evaluated results as a fresh authorization decision. Retrieval, write controls,
+user-facing global-memory administration, and SQLCipher remain separate work.
+
+On Windows, `python manage.py test home.tests.MemoryRecordSchemaTests
+home.test_t234_controls home.test_t237_consumers` passed 18 tests, the full
+`python manage.py test` suite passed 656 tests with 11 skipped, and
+`manage.py makemigrations --check --dry-run` found no changes. No VM or live
+memory-agent validation was performed.
+
+## Retrieval access accounting follow-up - 2026-11-14
+
+`home.memory_access.read_records_for_retrieval` is an internal, bounded
+storage primitive for future retrieval integration. It checks current account
+and record scope in the database, records one access per returned record, and
+preserves confirmation metadata. It rejects duplicate, invalid, missing,
+foreign, deleted or over-limit IDs as one unavailable result; the transaction
+rolls back partial access updates. Counters use atomic increments, reject
+overflow and keep access timestamps monotonic. A concurrent SQLite test checks
+that counters match successful reads. Callers must still enforce invocation
+role and memory policy; this function is not exposed as a UI or model tool and
+does not establish guest isolation for a future integration.
+
+On Windows, `python manage.py test home.test_memory_access
+home.tests.MemoryRecordSchemaTests home.test_t237_consumers` passed 20 tests.
+The full `python manage.py test` suite passed 664 tests with 11 skipped. No
+target-VM, semantic search, SQLCipher, memory-agent or production validation
+was performed. T183 and its dependent tasks remain pending.
 
 ## Validation
 

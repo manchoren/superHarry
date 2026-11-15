@@ -61,6 +61,40 @@ deployment or release acceptance.
   preference/system-change tests. `node --test tests/test_theme_client.cjs
   tests/test_chat_client.cjs` passed 18 tests. Visual and keyboard checks in a
   browser were not performed.
+- T236 follow-up: the budget page loads the shared theme assets and system
+  changes are observed even on pages without a theme selector. On Windows,
+  `node --test tests/test_theme_client.cjs tests/test_chat_client.cjs` passed
+  19 tests and `.venv\Scripts\python.exe manage.py test home.test_theme
+  home.test_budget_views` passed five tests. Account-backed preference across
+  devices, remaining application pages, and browser accessibility checks remain
+  open; this is not task completion.
+- T236 account-preference follow-up: `UserThemePreference` stores each signed-in
+  user's choice; the CSRF-protected form updates only that user, and chat and
+  budget pages render the account choice before the theme script runs. Guest
+  choices remain device-local. A database constraint rejects invalid values,
+  and migration 0029 refuses a lossy reversal while preferences exist.
+  On Windows, `.venv\Scripts\python.exe manage.py test home.test_theme
+  home.test_budget_views` passed eight tests, `node --test
+  tests/test_theme_client.cjs tests/test_chat_client.cjs` passed 20, and
+  `.venv\Scripts\python.exe manage.py test` passed 641 with 11 skipped.
+  `manage.py check` and the migration dry-run passed. An isolated temporary
+  SQLite database was migrated forward, tested for guarded reversal with a
+  saved preference, reversed after removal and migrated forward again. The
+  first isolated attempt failed because it migrated only the home dependency
+  subset, leaving the auth schema incomplete; the successful repeat applied
+  all migrations before the reversal exercise. No production database or VM
+  was changed. Other application/admin pages and browser visual, keyboard and
+  mobile checks remain open; T236 is not complete.
+- T236 page coverage follow-up: audit and password-reset templates load the
+  shared theme. Django admin templates use the same account or device choice
+  with Django's own dark-mode stylesheet; its separate local-only toggle is
+  removed, and the chat account panel remains the preference control. Windows
+  checks: `manage.py test home.test_theme home.test_budget_views` passed 10;
+  `node --test tests/test_theme_client.cjs tests/test_chat_client.cjs` passed 21;
+  `manage.py test` passed 643 with 11 skipped. This includes rendered admin
+  index and user-list tests but not browser-based visual, keyboard, mobile, or
+  complete contrast verification. T236 remains open for those checks and for
+  interfaces introduced by other unfinished tasks.
 - T229: `python manage.py test home.test_t229_recovery home.test_gemini_queue`
   passed 18 tests, including stale cancellation without replay and retention
   of unknown budget holds. Claim-age recovery lacks a worker heartbeat and can
@@ -92,9 +126,57 @@ deployment or release acceptance.
   Linux-specific behavior was not tested.
   Upload failure cleanup also preserves pre-existing or replaced targets;
   the focused file suite passed 17 tests with one skipped.
+- T233 content-type follow-up: upload metadata now comes from a bounded byte
+  signature rather than the uploader's MIME claim; unknown formats and ZIP
+  containers remain `application/octet-stream`. Download reclassifies the
+  verified snapshot, including legacy rows with untrusted stored types, and
+  sets `X-Content-Type-Options: nosniff`. Signature recognition is not file
+  validation, safe parsing, or T206 image hygiene. On Windows,
+  `.venv\Scripts\python.exe manage.py test home.test_file_store` passed 20
+  tests with one symlink test skipped; the full `manage.py test` suite passed
+  667 tests with 11 skipped. Parent-directory and cleanup races, actual
+  job-boundary authorization, and target-VM validation remain open.
+- T233 file-creation follow-up: upload and staging create exclusive files with
+  mode `0600` requested at open instead of changing a path after writing.
+  Upload checks the directory entry against the created file before persisting
+  metadata. Tests cover collision, replacement, cleanup and the creation mode.
+  Windows `.venv\Scripts\python.exe manage.py test home.test_file_store` passed
+  22 tests with one symlink test skipped; the full suite passed 669 with 11
+  skipped. On the running Debian ARM64 VM, an isolated temporary source copy
+  and test database used `/tmp/superharry-release-shadow/venv/bin/python
+  manage.py test home.test_file_store`: 22 passed, including the POSIX mode and
+  symlink checks. The temporary copy was removed; no installed service or
+  production database was changed. Directory replacement and cleanup races,
+  actual job authorization and broader VM integration remain open.
+- T233 account-revocation follow-up: removed the unused internal download
+  helper that returned an unchecked filesystem path. Upload, verified download
+  and staging now reject unsaved or inactive principals using persisted account
+  state; upload and staging recheck before committing metadata/audit, and
+  download conditionally updates only the still-owned file of an active user.
+  Tests cover deactivation during each operation, snapshot closure, cleanup and
+  audit denial. On Windows, `manage.py test home.test_file_store` passed 26
+  tests with one symlink test skipped; `manage.py test` passed 673 with 11
+  skipped. The same 26 file-store tests passed without skips on the running
+  Debian ARM64 VM using a temporary source copy and isolated test database;
+  the transferred archive SHA-256 was
+  `730cc12d887b0be6db02794516d5c2e59736412dfa7e326ab7880d7aac81b824`.
+  The temporary copy was removed; no installed service or production database
+  was changed. Directory-entry/cleanup races and authorization of the actual
+  destination job remain open; local cancellation of a file operation does not
+  imply cleanup of externally copied data.
 - T231 follow-up: an empty advisory result requires an explicitly completed
   lookup. Package guard/verifier/install-gate tests passed 46 with one skipped;
   per-finding provenance and blocklist-change invalidation remain open.
+- T231 advisory identity follow-up: malformed or empty advisory identifiers or
+  aliases and future-dated findings now deny scoring; identifiers are compared
+  case-insensitively during transitive deduplication. This prevents a shared
+  empty alias from collapsing unrelated findings and reducing deductions.
+  On Windows, `.venv\Scripts\python.exe -m pytest -q
+  tests/test_package_guard.py tests/test_package_verifiers.py
+  tests/test_package_install_gate.py tests/test_package_guard_real_gpg.py`
+  passed 49 tests with one skipped. The full `manage.py test` suite passed 664
+  with 11 skipped. No actual package was installed; per-finding provenance,
+  policy integration, blocklist invalidation and T242 evidence remain open.
 
 `python manage.py check` passed and `python manage.py makemigrations --check
 --dry-run` reported no changes. A separate `python manage.py test tests` run

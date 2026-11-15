@@ -12,6 +12,7 @@ import re
 from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
+_ADVISORY_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 
 
 class CVESeverity(Enum):
@@ -306,14 +307,30 @@ class PackageGuard:
             reputation += (10 if evidence.security_patch_within_days <= 180 else 0)
             advisory_groups = []
             for advisory in evidence.advisories:
+                if (not isinstance(advisory.cve_id, str)
+                        or not _ADVISORY_ID.fullmatch(advisory.cve_id)
+                        or not isinstance(advisory.aliases, tuple)
+                        or any(not isinstance(alias, str) or not _ADVISORY_ID.fullmatch(alias)
+                               for alias in advisory.aliases)):
+                    return PackageScore(package_name, version, registry, blocked=True,
+                                        reason="advisory_identity_invalid",
+                                        artifact_sha256=evidence.artifact_sha256)
+                if not isinstance(advisory.date, datetime):
+                    return PackageScore(package_name, version, registry, blocked=True,
+                                        reason="advisory_date_invalid",
+                                        artifact_sha256=evidence.artifact_sha256)
+                date = advisory.date if advisory.date.tzinfo else advisory.date.replace(tzinfo=timezone.utc)
+                if date > current:
+                    return PackageScore(package_name, version, registry, blocked=True,
+                                        reason="advisory_date_invalid",
+                                        artifact_sha256=evidence.artifact_sha256)
                 if not advisory.applicable:
                     continue
                 if advisory.severity is CVESeverity.UNKNOWN:
                     return PackageScore(package_name, version, registry, blocked=True,
                                         reason="advisory_severity_unknown",
                                         artifact_sha256=evidence.artifact_sha256)
-                date = advisory.date if advisory.date.tzinfo else advisory.date.replace(tzinfo=timezone.utc)
-                ids = {advisory.cve_id, *advisory.aliases}
+                ids = {value.casefold() for value in (advisory.cve_id, *advisory.aliases)}
                 deduction = (advisory.severity.value if advisory.severity is not CVESeverity.LOW
                              and date >= current - timedelta(days=730) else 0)
                 # Aliases can join previously separate groups and arrive in

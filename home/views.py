@@ -3,16 +3,19 @@ import os
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db import transaction
-from django.db.models import Q
-from django.http import Http404
-from django.shortcuts import redirect, render
+from django.db import DatabaseError, transaction
+from django.db.models import F, Q
+from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseNotAllowed
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.translation import gettext as _
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 
 from home.authorization import owned_conversations
 from home.gemini_context import MODEL_ID as GEMINI_MODEL_ID
-from home.models import ChatTurn, Conversation
+from home.audit import AuditUnavailable, record_event
+from home.models import AuditEvent, ChatTurn, Conversation, GeminiChatJob
 from home import openrouter_transport
 from home.provider_availability import configured_provider_ids
 
@@ -145,3 +148,42 @@ def _render_history(request, conversation_id=None):
 def start_conversation(request):
     conversation = Conversation.objects.create(owner=request.user)
     return redirect("conversation-detail", conversation_id=conversation.pk)
+
+
+@login_required
+@never_cache
+def delete_conversation(request, conversation_id):
+    if request.method not in ('GET', 'POST'):
+        return HttpResponseNotAllowed(['GET', 'POST'])
+    try:
+        conversation = get_object_or_404(owned_conversations(request.user), pk=conversation_id)
+    except DatabaseError:
+        return HttpResponse(_("Deletion is unavailable. Please try again."), status=503)
+    if request.method == 'GET':
+        return render(request, 'home/conversation_delete.html', {'conversation': conversation})
+    if request.POST.get('confirm') != 'delete':
+        return HttpResponseBadRequest('confirmation_required')
+    try:
+        with transaction.atomic():
+            # A write acquires SQLite's writer lock before checking for work;
+            # other databases also serialize on this conversation row.
+            if not owned_conversations(request.user).filter(pk=conversation_id).update(
+                last_accessed_at=F('last_accessed_at')
+            ):
+                raise Http404
+            active = ChatTurn.objects.filter(conversation_id=conversation_id, state__in=(
+                ChatTurn.State.QUEUED, ChatTurn.State.RUNNING, ChatTurn.State.CANCEL_REQUESTED,
+            )).exists()
+            uncertain = GeminiChatJob.objects.filter(turn__conversation_id=conversation_id,
+                state__in=(GeminiChatJob.State.CLAIMED, GeminiChatJob.State.INTERRUPTED)).exists()
+            if active or uncertain:
+                return render(request, 'home/conversation_delete.html',
+                              {'conversation': conversation, 'blocked': True}, status=409)
+            record_event(event_type=AuditEvent.EventType.CHAT_CONVERSATION_DELETED,
+                outcome=AuditEvent.Outcome.SUCCESS, actor_kind=AuditEvent.ActorKind.USER,
+                actor_user_id=request.user.pk, target_user_id=request.user.pk)
+            owned_conversations(request.user).filter(pk=conversation_id).delete()
+    except (AuditUnavailable, DatabaseError):
+        return render(request, 'home/conversation_delete.html',
+                      {'conversation': conversation, 'unavailable': True}, status=503)
+    return redirect('home')

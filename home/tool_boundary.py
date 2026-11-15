@@ -6,10 +6,10 @@ handler.
 """
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import StrEnum
 from typing import Any, Callable, Mapping, Protocol
-from uuid import UUID, uuid4
+from uuid import UUID, uuid4, uuid5
 
 from home.model_interface import (
     InvocationContext,
@@ -28,6 +28,24 @@ class ToolDenied(ToolBoundaryError):
 
 class UnknownEffect(ToolBoundaryError):
     """The handler may have performed an effect, but its result is unknown."""
+
+
+class ToolAuditUncertain(UnknownEffect):
+    """The outcome could not be audited after a potentially effective call."""
+
+    def __init__(self, request_id: UUID, operation_id: UUID | None = None):
+        super().__init__("Tool audit unavailable after dispatch; effect is unknown.")
+        self.request_id = request_id
+        self.operation_id = operation_id
+
+
+class ToolJournalUncertain(UnknownEffect):
+    """The local effect happened but its terminal state was not committed."""
+
+    def __init__(self, request_id: UUID, operation_id: UUID):
+        super().__init__("Tool journal unavailable after dispatch; effect is unknown.")
+        self.request_id = request_id
+        self.operation_id = operation_id
 
 
 class ToolRole(StrEnum):
@@ -49,6 +67,15 @@ class SideEffect(StrEnum):
 
 
 MAX_ARGUMENT_BYTES = 32 * 1024
+
+
+def _unique_json_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate JSON key")
+        result[key] = value
+    return result
 
 
 @dataclass(frozen=True)
@@ -73,6 +100,7 @@ class ToolInvocation:
     confirmed: bool = False
     request_id: UUID | None = None
     policy_revision: str | None = None
+    operation_id: UUID | None = None
 
 
 @dataclass(frozen=True)
@@ -82,6 +110,7 @@ class ToolOutcome:
     status: str
     value: Any = None
     error_code: str | None = None
+    operation_id: UUID | None = None
 
 
 AuditSink = Callable[[ToolInvocation, ToolOutcome, ToolDeclaration], None]
@@ -92,6 +121,11 @@ class GrantConsumer(Protocol):
         """Atomically consume an exact, active grant or raise ToolDenied."""
 
 
+class ToolJournal(Protocol):
+    def begin(self, invocation: ToolInvocation, declaration: ToolDeclaration) -> None: ...
+    def finish(self, operation_id: UUID, state: str) -> None: ...
+
+
 class ToolRegistry:
     def __init__(self, declarations: tuple[ToolDeclaration, ...] = ()) -> None:
         self._declarations: dict[str, ToolDeclaration] = {}
@@ -99,7 +133,8 @@ class ToolRegistry:
             self.register(declaration)
 
     def register(self, declaration: ToolDeclaration) -> None:
-        if not declaration.name or declaration.name in self._declarations:
+        if (not isinstance(declaration.name, str) or not declaration.name
+                or len(declaration.name) > 128 or declaration.name in self._declarations):
             raise ValueError("Tool names must be non-empty and unique.")
         if not declaration.audit_event:
             raise ValueError("Tools must declare an audit event.")
@@ -120,28 +155,74 @@ class ToolRegistry:
 
 
 class AuthorizedToolExecutor:
-    def __init__(self, registry: ToolRegistry, audit: AuditSink, grants: GrantConsumer | None = None) -> None:
+    def __init__(self, registry: ToolRegistry, audit: AuditSink, grants: GrantConsumer | None = None,
+                 journal: ToolJournal | None = None) -> None:
         self._registry = registry
         self._audit = audit
         self._grants = grants
+        self._journal = journal
 
     def execute(self, invocation: ToolInvocation) -> ToolOutcome:
+        if invocation.request_id is not None and not isinstance(invocation.request_id, UUID):
+            raise ToolDenied("Tool request identifier is invalid.")
         request_id = invocation.request_id or uuid4()
+        invocation = replace(invocation, request_id=request_id)
         declaration = self._registry.get(invocation.tool_name)
         self._validate(invocation, declaration)
+        consequential = declaration.side_effect is not SideEffect.READ
+        if consequential:
+            if not isinstance(invocation.operation_id, UUID) or self._journal is None:
+                raise ToolDenied("A durable tool operation journal is required.")
+            try:
+                self._journal.begin(invocation, declaration)
+            except ToolDenied:
+                raise
+            except Exception:
+                raise ToolDenied("Tool journal is unavailable.") from None
         if self._grants is not None and declaration.side_effect is SideEffect.READ and not declaration.confirmation_required:
             if not invocation.policy_revision:
                 raise ToolDenied("Tool policy revision is required.")
             self._grants.consume(invocation, declaration, policy_revision=invocation.policy_revision)
         try:
+            self._audit(invocation, ToolOutcome(request_id, declaration.name, "started",
+                                                operation_id=invocation.operation_id), declaration)
+        except Exception:
+            if consequential:
+                try:
+                    self._journal.finish(invocation.operation_id, 'not_dispatched')
+                except Exception:
+                    pass
+            raise ToolDenied("Tool audit is unavailable.") from None
+        try:
             value = declaration.handler(invocation.arguments)
         except UnknownEffect:
-            outcome = ToolOutcome(request_id, declaration.name, "unknown_effect", error_code="UNKNOWN_EFFECT")
+            outcome = ToolOutcome(request_id, declaration.name, "unknown_effect", error_code="UNKNOWN_EFFECT",
+                                  operation_id=invocation.operation_id)
         except Exception:
-            outcome = ToolOutcome(request_id, declaration.name, "failed", error_code="TOOL_FAILED")
+            if declaration.side_effect is SideEffect.READ:
+                outcome = ToolOutcome(request_id, declaration.name, "failed", error_code="TOOL_FAILED",
+                                      operation_id=invocation.operation_id)
+            else:
+                outcome = ToolOutcome(request_id, declaration.name, "unknown_effect", error_code="UNKNOWN_EFFECT",
+                                      operation_id=invocation.operation_id)
         else:
-            outcome = ToolOutcome(request_id, declaration.name, "succeeded", value=value)
-        self._audit(invocation, outcome, declaration)
+            outcome = ToolOutcome(request_id, declaration.name, "succeeded", value=value,
+                                  operation_id=invocation.operation_id)
+        try:
+            self._audit(invocation, outcome, declaration)
+        except Exception:
+            if consequential:
+                try:
+                    self._journal.finish(invocation.operation_id, 'unknown_effect')
+                except Exception:
+                    pass
+                raise ToolAuditUncertain(request_id, invocation.operation_id) from None
+            raise ToolDenied("Tool audit is unavailable.") from None
+        if consequential:
+            try:
+                self._journal.finish(invocation.operation_id, outcome.status)
+            except Exception:
+                raise ToolJournalUncertain(request_id, invocation.operation_id) from None
         return outcome
 
     def execute_proposal(
@@ -162,9 +243,13 @@ class AuthorizedToolExecutor:
         if not isinstance(proposal, ModelToolCallProposal) or not proposal.complete:
             raise ToolDenied("Tool proposal is incomplete.")
         try:
-            arguments = json.loads(proposal.arguments_fragment)
-        except (TypeError, json.JSONDecodeError) as exc:
-            raise ToolDenied("Tool proposal arguments must be valid JSON.") from exc
+            if (len(proposal.call_id.encode('utf-8')) > 256
+                    or not isinstance(proposal.arguments_fragment, str)
+                    or len(proposal.arguments_fragment.encode("utf-8")) > MAX_ARGUMENT_BYTES):
+                raise ValueError("tool proposal arguments exceed the boundary")
+            arguments = json.loads(proposal.arguments_fragment, object_pairs_hook=_unique_json_object)
+        except (TypeError, ValueError, UnicodeEncodeError, RecursionError):
+            raise ToolDenied("Tool proposal arguments must be valid JSON.") from None
         if not isinstance(arguments, Mapping):
             raise ToolDenied("Tool proposal arguments must be an object.")
         actor_user_id = _principal_user_id(context)
@@ -178,6 +263,7 @@ class AuthorizedToolExecutor:
             confirmed=confirmed,
             request_id=context.request_id,
             policy_revision=context.policy_revision,
+            operation_id=uuid5(context.operation_id, 'tool-call:' + proposal.call_id),
         ))
 
     @staticmethod
@@ -186,6 +272,10 @@ class AuthorizedToolExecutor:
             raise ToolDenied("Guests cannot invoke tools.")
         if invocation.role != declaration.required_role:
             raise ToolDenied("Role is not authorized for this tool.")
+        if invocation.role in (ToolRole.USER, ToolRole.ADMIN) and (
+            type(invocation.actor_user_id) is not int or invocation.actor_user_id <= 0
+        ):
+            raise ToolDenied("An authenticated actor is required.")
         if not isinstance(invocation.arguments, Mapping):
             raise ToolDenied("Tool arguments must be an object.")
         try:

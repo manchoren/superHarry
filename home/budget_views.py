@@ -37,6 +37,19 @@ def budget_status(request):
                 state='unknown', budgets__scope=scope, budgets__scope_key=key,
                 budgets__period=period, budgets__period_start__lte=start,
             ).distinct().aggregate(amount=Sum('amount'))['amount'] or 0
+            carried = ApplicationBudgetReservation.objects.filter(
+                state__in=('reserved', 'unknown'), budgets__scope=scope,
+                budgets__scope_key=key, budgets__period=period,
+                budgets__period_start__lt=start,
+            ).distinct().aggregate(amount=Sum('amount'))['amount'] or 0
+            remaining = None if budget is None else max(
+                0, budget.hard_limit - budget.used - budget.reserved - carried,
+            )
+            warning = bool(budget and (
+                budget.warning_emitted
+                or (budget.used + budget.reserved + carried) * 100 >= budget.hard_limit * 80
+            ))
             rows.append({'scope': scope, 'period': period, 'budget': budget,
-                         'unknown': unknown, 'reset': reset.strftime('%Y-%m-%d %H:%M UTC')})
+                         'unknown': unknown, 'carried': carried, 'remaining': remaining,
+                         'warning': warning, 'reset': reset.strftime('%Y-%m-%d %H:%M UTC')})
     return render(request, 'home/budget_status.html', {'rows': rows})

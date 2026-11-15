@@ -24,11 +24,12 @@ def wake_worker():
 
 def claim_next():
     """Claim one queued record atomically across processes."""
-    job_id = (GeminiChatJob.objects.filter(state=GeminiChatJob.State.QUEUED)
+    job_id = (GeminiChatJob.objects.filter(state=GeminiChatJob.State.QUEUED, worker_finished_at__isnull=True)
               .order_by('created_at', 'pk').values_list('pk', flat=True).first())
     if job_id is None:
         return None
-    claimed = GeminiChatJob.objects.filter(pk=job_id, state=GeminiChatJob.State.QUEUED).update(
+    claimed = GeminiChatJob.objects.filter(pk=job_id, state=GeminiChatJob.State.QUEUED,
+                                           worker_finished_at__isnull=True).update(
         state=GeminiChatJob.State.CLAIMED, claimed_at=timezone.now())
     if not claimed:
         return None
@@ -40,10 +41,18 @@ def run_one():
     if job is None:
         return False
     from home.gemini_chat import run_gemini_turn
-    run_gemini_turn(job.turn_id)
-    if ChatTurn.objects.filter(pk=job.turn_id, state__in=_TERMINAL).exists():
-        GeminiChatJob.objects.filter(pk=job.pk, state=GeminiChatJob.State.CLAIMED).update(
-            state=GeminiChatJob.State.DONE)
+    try:
+        run_gemini_turn(job.turn_id)
+    finally:
+        # Only the worker holding this non-replayable claim can attest that
+        # its local execution returned. This says nothing about remote work.
+        GeminiChatJob.objects.filter(pk=job.pk, state__in=(
+            GeminiChatJob.State.CLAIMED, GeminiChatJob.State.INTERRUPTED,
+        )).update(worker_finished_at=timezone.now())
+        if ChatTurn.objects.filter(pk=job.turn_id, state__in=_TERMINAL).exists():
+            GeminiChatJob.objects.filter(pk=job.pk, state__in=(
+                GeminiChatJob.State.CLAIMED, GeminiChatJob.State.INTERRUPTED,
+            )).update(state=GeminiChatJob.State.DONE)
     return True
 
 
@@ -62,7 +71,9 @@ def reconcile_stale(*, now=None):
             job = GeminiChatJob.objects.select_related('turn').get(pk=job_id)
             turn = ChatTurn.objects.select_for_update().get(pk=job.turn_id)
             if turn.state in _TERMINAL:
-                GeminiChatJob.objects.filter(pk=job.pk).update(state=GeminiChatJob.State.DONE)
+                # A terminal turn does not prove that the worker returned.
+                # Leave the claim interrupted until that worker reports exit.
+                pass
             elif turn.state == ChatTurn.State.CANCEL_REQUESTED:
                 append_chat_event(turn=turn, event_type=ChatEvent.EventType.TURN_CANCELLED, payload={'status': 'cancelled'})
             elif turn.state in (ChatTurn.State.QUEUED, ChatTurn.State.RUNNING):
@@ -76,6 +87,11 @@ def reconcile_stale(*, now=None):
                 logger.error('gemini_queue_unknown_turn_state', extra={
                     'job_id': str(job.pk), 'turn_id': str(turn.pk), 'state': turn.state,
                 })
+            if job.worker_finished_at is not None:
+                turn.refresh_from_db(fields=['state'])
+                if turn.state in _TERMINAL:
+                    GeminiChatJob.objects.filter(pk=job.pk, state=GeminiChatJob.State.INTERRUPTED).update(
+                        state=GeminiChatJob.State.DONE)
             reconciled += 1
     return reconciled
 

@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -33,6 +35,8 @@ class BudgetStatusTests(TestCase):
         self.assertContains(response, '80% warning threshold')
         self.assertContains(response, 'Tokens with an unknown outcome')
         self.assertContains(response, 'UTC')
+        self.assertContains(response, 'home/chat.css')
+        self.assertContains(response, 'home/theme.js')
         self.assertNotContains(response, '98765')
         self.assertNotContains(response, '54321')
         self.assertEqual(response.context['rows'][0]['unknown'], 7)
@@ -51,3 +55,37 @@ class BudgetStatusTests(TestCase):
             response = self.client.get(reverse('budget-status'), HTTP_ACCEPT_LANGUAGE='es')
         self.assertContains(response, 'Presupuestos de tokens')
         self.assertContains(response, 'Tokens con resultado desconocido')
+        self.assertContains(response, 'Tokens disponibles')
+        self.assertContains(response, 'Reservas sin resolver de períodos anteriores')
+
+    def test_prior_holds_reduce_available_capacity_without_double_counting(self):
+        self.mine.used = 5
+        self.mine.reserved = 10
+        self.mine.warning_emitted = False
+        self.mine.save(update_fields=['used', 'reserved', 'warning_emitted'])
+        previous = ApplicationBudget.objects.create(scope='user', scope_key=str(self.user.pk),
+            period='daily', period_start=self.mine.period_start - timedelta(days=1), hard_limit=100)
+        for operation, amount, state in [('prior-unknown', 20, 'unknown'), ('prior-reserved', 30, 'reserved')]:
+            hold = ApplicationBudgetReservation.objects.create(operation_id=operation, amount=amount, state=state)
+            hold.budgets.add(previous)
+        foreign = ApplicationBudgetReservation.objects.create(operation_id='foreign-hold', amount=900, state='unknown')
+        foreign.budgets.add(self.foreign)
+        self.client.force_login(self.user)
+        row = self.client.get(reverse('budget-status')).context['rows'][0]
+        self.assertEqual((row['unknown'], row['carried'], row['remaining']), (27, 50, 35))
+        self.assertFalse(row['warning'])
+
+    def test_carried_holds_can_trigger_warning_and_clamp_remaining(self):
+        self.mine.used = 0
+        self.mine.reserved = 10
+        self.mine.warning_emitted = False
+        self.mine.save(update_fields=['used', 'reserved', 'warning_emitted'])
+        previous = ApplicationBudget.objects.create(scope='user', scope_key=str(self.user.pk),
+            period='daily', period_start=self.mine.period_start - timedelta(days=1), hard_limit=100)
+        hold = ApplicationBudgetReservation.objects.create(operation_id='prior-large', amount=95, state='unknown')
+        hold.budgets.add(previous)
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('budget-status'))
+        row = response.context['rows'][0]
+        self.assertEqual((row['carried'], row['remaining'], row['warning']), (95, 0, True))
+        self.assertContains(response, 'The 80% warning threshold was reached')

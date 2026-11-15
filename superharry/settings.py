@@ -210,13 +210,14 @@ CSRF_FAILURE_VIEW = "home.api_errors.csrf_failure"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.request",
                 "django.template.context_processors.i18n",
                 "django.contrib.auth.context_processors.auth",
+                "home.theme_context.theme_preference",
                 "django.contrib.messages.context_processors.messages",
             ],
         },

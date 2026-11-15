@@ -1,6 +1,6 @@
 {% load i18n static %}
 <!doctype html>
-<html lang="{{ LANGUAGE_CODE }}">
+<html lang="{{ LANGUAGE_CODE }}"{% if user.is_authenticated %} data-account-theme="{{ account_theme }}"{% endif %}>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -45,7 +45,7 @@
                 </form>
                 <ul>
                     {% for item in conversation_page %}
-                    <li><a href="{% url 'conversation-detail' item.pk %}"{% if conversation and item.pk == conversation.pk %} aria-current="page"{% endif %}>{% translate "Conversation" %}: {{ item.created_at|date:"SHORT_DATETIME_FORMAT" }} ({{ item.pk|stringformat:"s"|slice:":8" }})</a></li>
+                    <li><a href="{% url 'conversation-detail' item.pk %}"{% if conversation and item.pk == conversation.pk %} aria-current="page"{% endif %}>{% translate "Conversation" %}: {{ item.created_at|date:"SHORT_DATETIME_FORMAT" }} ({{ item.pk|stringformat:"s"|slice:":8" }})</a> <a href="{% url 'conversation-delete' item.pk %}">{% translate "Delete conversation" %}</a></li>
                     {% endfor %}
                 </ul>
                 <nav aria-label="{% translate 'Conversation pages' %}">
@@ -55,14 +55,16 @@
             </section>
             {% endif %}
             <div class="account-panel">
+                {% if user.is_authenticated %}<form method="post" action="{% url 'theme-update' %}" id="theme-form">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">{% endif %}
                 <label class="theme-control" for="theme-select">
                     {% translate "Theme" context "chat.preferences.theme_label" %}
                     <select id="theme-select" name="theme">
-                        <option value="system">{% translate "System" context "chat.preferences.theme_system" %}</option>
-                        <option value="light">{% translate "Light" context "chat.preferences.theme_light" %}</option>
-                        <option value="dark">{% translate "Dark" context "chat.preferences.theme_dark" %}</option>
+                        <option value="system"{% if account_theme == 'system' %} selected{% endif %}>{% translate "System" context "chat.preferences.theme_system" %}</option>
+                        <option value="light"{% if account_theme == 'light' %} selected{% endif %}>{% translate "Light" context "chat.preferences.theme_light" %}</option>
+                        <option value="dark"{% if account_theme == 'dark' %} selected{% endif %}>{% translate "Dark" context "chat.preferences.theme_dark" %}</option>
                     </select>
                 </label>
+                {% if user.is_authenticated %}<button type="submit">{% translate "Save" %}</button></form>{% endif %}
                 {% if user.is_authenticated %}
                     <p class="account-name">
                         {% blocktranslate with username=user.get_username context "chat.account.signed_in_as" %}Signed in as {{ username }}{% endblocktranslate %}

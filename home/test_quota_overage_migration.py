@@ -7,6 +7,15 @@ class QuotaOverageMigrationTests(TransactionTestCase):
     previous = ('home', '0009_providermodelquota_providerreservation_model_quota_and_more')
     latest = ('home', '0010_remove_providermodelquota_home_model_quota_bounded_and_more')
 
+    def setUp(self):
+        super().setUp()
+        self.addCleanup(self.restore_current_schema)
+
+    @staticmethod
+    def restore_current_schema():
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+
     def test_apply_reverse_reapply_preserves_existing_data_and_blocks_excess_rollback(self):
         MigrationExecutor(connection).migrate([self.previous])
         apps = MigrationExecutor(connection).loader.project_state([self.previous]).apps

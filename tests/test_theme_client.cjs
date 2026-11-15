@@ -6,22 +6,23 @@ const { test } = require("node:test");
 
 const script = fs.readFileSync(path.join(__dirname, "../home/static/home/theme.js"), "utf8");
 
-function page(saved, systemDark = false) {
+function page(saved, systemDark = false, hasSelector = true, accountTheme = undefined, scriptTheme = undefined) {
     let stored = saved;
     let mediaChange;
     let ready;
     let selectChange;
     const media = { matches: systemDark, addEventListener: (_, fn) => { mediaChange = fn; } };
     const selector = { value: "", addEventListener: (_, fn) => { selectChange = fn; } };
-    const root = { dataset: {}, style: {} };
+    const root = { dataset: accountTheme === undefined ? {} : { accountTheme }, style: {} };
     const window = {
         localStorage: { getItem: () => stored, setItem: (_, value) => { stored = value; } },
         matchMedia: () => media,
     };
     const document = {
         documentElement: root,
+        currentScript: scriptTheme === undefined ? null : { dataset: { accountTheme: scriptTheme } },
         addEventListener: (_, fn) => { ready = fn; },
-        getElementById: () => selector,
+        getElementById: () => hasSelector ? selector : null,
     };
     vm.runInNewContext(script, { window, document });
     ready();
@@ -47,5 +48,31 @@ test("invalid stored preference falls back to system and tracks OS changes", () 
     assert.equal(view.root.dataset.theme, "light");
     view.media.matches = true;
     view.systemChange();
+    assert.equal(view.root.dataset.theme, "dark");
+});
+
+test("system preference follows OS changes on pages without a selector", () => {
+    const view = page("system", false, false);
+    assert.equal(view.root.dataset.theme, "light");
+    view.media.matches = true;
+    view.systemChange();
+    assert.equal(view.root.dataset.theme, "dark");
+});
+
+test("account preference takes precedence over device storage", () => {
+    const view = page("light", false, true, "dark");
+    assert.equal(view.root.dataset.theme, "dark");
+    assert.equal(view.selector.value, "dark");
+    view.selector.value = "system";
+    view.change();
+    assert.equal(view.stored(), "light");
+    view.media.matches = true;
+    view.systemChange();
+    assert.equal(view.root.dataset.theme, "dark");
+});
+
+test("admin script data applies account preference before page setup", () => {
+    const view = page("light", false, false, undefined, "dark");
+    assert.equal(view.root.dataset.accountTheme, "dark");
     assert.equal(view.root.dataset.theme, "dark");
 });

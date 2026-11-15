@@ -54,6 +54,7 @@ _EVENTS_REQUIRING_TARGET = {
     AuditEvent.EventType.TOTP_DEACTIVATED,
     AuditEvent.EventType.TOTP_RECOVERY_USED,
     AuditEvent.EventType.CHAT_TURN_CREATED,
+    AuditEvent.EventType.CHAT_CONVERSATION_DELETED,
     AuditEvent.EventType.CHAT_TURN_CANCEL_REQUESTED,
 }
 
@@ -104,6 +105,7 @@ def record_event(
             AuditEvent.EventType.SESSION_CREATED,
             AuditEvent.EventType.LOGOUT_SUCCEEDED,
             AuditEvent.EventType.CHAT_TURN_CREATED,
+            AuditEvent.EventType.CHAT_CONVERSATION_DELETED,
             AuditEvent.EventType.CHAT_TURN_CANCEL_REQUESTED,
         }
         and actor_user_id != target_user_id

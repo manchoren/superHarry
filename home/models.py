@@ -12,6 +12,57 @@ class AuditEventMutationError(RuntimeError):
     pass
 
 
+class ToolExecutionQuerySet(models.QuerySet):
+    def delete(self):
+        raise ValueError('Tool execution records cannot be deleted.')
+
+    def update(self, **kwargs):
+        raise ValueError('Tool execution records require a terminal transition.')
+
+    def _finish_started(self, state, finished_at):
+        if state not in ('succeeded', 'unknown_effect', 'not_dispatched'):
+            raise ValueError('Invalid tool execution transition.')
+        return models.QuerySet.update(self.filter(state='started'), state=state, finished_at=finished_at)
+
+
+class ToolExecution(models.Model):
+    """Minimal per-call journal; never store tool arguments or output."""
+
+    operation_id = models.UUIDField(primary_key=True, editable=False)
+    request_id = models.UUIDField()
+    tool_name = models.CharField(max_length=128)
+    actor_user_id = models.PositiveBigIntegerField(null=True)
+    state = models.CharField(max_length=24, choices=[
+        ('started', 'Started'), ('succeeded', 'Succeeded'),
+        ('unknown_effect', 'Unknown effect'), ('not_dispatched', 'Not dispatched'),
+    ], default='started')
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    finished_at = models.DateTimeField(null=True)
+    objects = ToolExecutionQuerySet.as_manager()
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValueError('Tool execution records cannot be edited directly.')
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError('Tool execution records cannot be deleted.')
+
+    class Meta:
+        constraints = [models.CheckConstraint(
+            condition=(models.Q(state='started', finished_at__isnull=True)
+                       | models.Q(state__in=('succeeded', 'unknown_effect', 'not_dispatched'), finished_at__isnull=False)),
+            name='home_tool_execution_state_ck')]
+
+
+class UserThemePreference(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='theme_preference')
+    theme = models.CharField(max_length=6, choices=[('system', 'System'), ('light', 'Light'), ('dark', 'Dark')], default='system')
+
+    class Meta:
+        constraints = [models.CheckConstraint(condition=models.Q(theme__in=('system', 'light', 'dark')), name='home_user_theme_valid')]
+
+
 class HeavyJob(models.Model):
     """Durable heavy-job seat used by the shared resource governor (T050)."""
 
@@ -134,11 +185,14 @@ class Conversation(models.Model):
 
 class MemoryRecordQuerySet(models.QuerySet):
     def visible_to(self, user):
-        """Return active records visible to one authenticated principal."""
+        """Return retrieval-scope records for an active authenticated principal."""
         if (user is None or not getattr(user, "is_authenticated", False)
-                or not getattr(user, "is_active", False) or getattr(user, "pk", None) is None):
+                or not getattr(user, "is_active", False) or getattr(user, "pk", None) is None
+                or getattr(getattr(user, "_state", None), "adding", True)):
             return self.none()
-        return self.filter(deleted_at__isnull=True).filter(
+        from django.contrib.auth import get_user_model
+        active_user = get_user_model()._default_manager.filter(pk=user.pk, is_active=True)
+        return self.filter(models.Exists(active_user), deleted_at__isnull=True).filter(
             models.Q(scope=MemoryRecord.Scope.GLOBAL)
             | models.Q(scope=MemoryRecord.Scope.USER, owner_id=user.pk)
         )
@@ -198,8 +252,8 @@ class MemoryRecord(models.Model):
             ),
             models.CheckConstraint(
                 condition=(
-                    models.Q(confirmed_at__isnull=True, confirmed_by__isnull=True)
-                    | models.Q(confirmed_at__isnull=False, confirmed_by__isnull=False)
+                    models.Q(confirmed_by__isnull=True)
+                    | models.Q(confirmed_at__isnull=False)
                 ),
                 name="home_memory_confirmation_pair_ck",
             ),
@@ -225,7 +279,14 @@ class MemoryRecord(models.Model):
         if self.scope == self.Scope.USER and self.owner_id is None:
             raise ValidationError("User memory records require an owner.")
         if (self.confirmed_at is None) != (self.confirmed_by_id is None):
-            raise ValidationError("Confirmation metadata must be provided together.")
+            retained_after_deletion = (
+                self.confirmed_at is not None and self.confirmed_by_id is None
+                and not self._state.adding
+                and type(self).objects.filter(pk=self.pk, confirmed_by__isnull=True,
+                                              confirmed_at=self.confirmed_at).exists()
+            )
+            if not retained_after_deletion:
+                raise ValidationError("Confirmation metadata must be provided together.")
 
 
 class Message(models.Model):
@@ -444,6 +505,7 @@ class AuditEvent(models.Model):
             "Diagnostic logging disabled",
         )
         CHAT_TURN_CREATED = "chat.turn_created", "Chat turn created"
+        CHAT_CONVERSATION_DELETED = "chat.conversation_deleted", "Conversation deleted"
         CHAT_TURN_CANCEL_REQUESTED = (
             "chat.turn_cancel_requested",
             "Chat turn cancellation requested",
@@ -848,3 +910,4 @@ class GeminiChatJob(models.Model):
     state = models.CharField(max_length=16, choices=State.choices, default=State.QUEUED, db_index=True)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     claimed_at = models.DateTimeField(null=True, blank=True)
+    worker_finished_at = models.DateTimeField(null=True, blank=True)

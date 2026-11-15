@@ -15,6 +15,7 @@ from home.tool_boundary import (
     Ownership,
     SideEffect,
     ToolDeclaration,
+    ToolAuditUncertain,
     ToolDenied,
     ToolInvocation,
     ToolRegistry,
@@ -23,10 +24,26 @@ from home.tool_boundary import (
 )
 
 
+class SyntheticJournal:
+    def __init__(self):
+        self.states = {}
+
+    def begin(self, invocation, declaration):
+        if invocation.operation_id in self.states:
+            raise ToolDenied('duplicate')
+        self.states[invocation.operation_id] = 'started'
+
+    def finish(self, operation_id, state):
+        if self.states.get(operation_id) != 'started':
+            raise ValueError('invalid state')
+        self.states[operation_id] = state
+
+
 class AuthorizedToolBoundaryTests(TestCase):
     def setUp(self):
         self.calls = []
         self.audit = []
+        self.journal = SyntheticJournal()
 
         def handler(arguments):
             self.calls.append(arguments)
@@ -45,14 +62,14 @@ class AuthorizedToolBoundaryTests(TestCase):
         self.executor = AuthorizedToolExecutor(
             self.registry, lambda invocation, outcome, declaration: self.audit.append(
                 (invocation, outcome, declaration)
-            )
+            ), journal=self.journal,
         )
 
     def invocation(self, **overrides):
         values = {
             "tool_name": "owned.write", "arguments": {"value": "synthetic"},
             "actor_user_id": 7, "target_user_id": 7, "role": ToolRole.USER,
-            "confirmed": True, "request_id": uuid4(),
+            "confirmed": True, "request_id": uuid4(), "operation_id": uuid4(),
         }
         values.update(overrides)
         return ToolInvocation(**values)
@@ -93,6 +110,13 @@ class AuthorizedToolBoundaryTests(TestCase):
                     self.executor.execute(invocation)
         self.assertEqual(self.calls, [])
 
+    def test_unowned_user_tool_still_requires_an_authenticated_actor(self):
+        declaration = replace(self.registry.get('owned.write'), name='unowned.write', ownership=Ownership.NONE)
+        executor = AuthorizedToolExecutor(ToolRegistry((declaration,)), lambda *_: None, journal=self.journal)
+        with self.assertRaises(ToolDenied):
+            executor.execute(self.invocation(tool_name='unowned.write', actor_user_id=None, target_user_id=None))
+        self.assertEqual(self.calls, [])
+
     def test_registry_rejects_unsupported_schema_constraints(self):
         declaration = self.registry.get("owned.write")
         for schema in (
@@ -129,7 +153,49 @@ class AuthorizedToolBoundaryTests(TestCase):
         outcome = self.executor.execute(invocation)
         self.assertEqual(outcome.status, "succeeded")
         self.assertEqual(outcome.request_id, invocation.request_id)
-        self.assertEqual(self.audit[0][1], outcome)
+        self.assertEqual([entry[1].status for entry in self.audit], ['started', 'succeeded'])
+        self.assertEqual(self.audit[1][1], outcome)
+
+    def test_audit_failure_before_execution_denies_without_calling_handler(self):
+        def broken_audit(*_args):
+            raise RuntimeError('private diagnostic')
+        executor = AuthorizedToolExecutor(self.registry, broken_audit, journal=self.journal)
+        with self.assertRaises(ToolDenied) as caught:
+            executor.execute(self.invocation())
+        self.assertNotIn('private diagnostic', str(caught.exception))
+        self.assertEqual(self.calls, [])
+
+    def test_audit_failure_after_write_reports_uncertain_effect(self):
+        audit_calls = []
+        def fail_on_outcome(_invocation, outcome, _declaration):
+            audit_calls.append(outcome.status)
+            if outcome.status != 'started':
+                raise RuntimeError('private diagnostic')
+        executor = AuthorizedToolExecutor(self.registry, fail_on_outcome, journal=self.journal)
+        invocation = self.invocation()
+        with self.assertRaises(ToolAuditUncertain) as caught:
+            executor.execute(invocation)
+        self.assertEqual(caught.exception.request_id, invocation.request_id)
+        self.assertNotIn('private diagnostic', str(caught.exception))
+        self.assertEqual(audit_calls, ['started', 'succeeded'])
+        self.assertEqual(len(self.calls), 1)
+
+    def test_unexpected_write_exception_has_unknown_effect(self):
+        declaration = self.registry.get('owned.write')
+        def partial_write(_arguments):
+            self.calls.append('effect')
+            raise RuntimeError('private diagnostic')
+        executor = AuthorizedToolExecutor(ToolRegistry((replace(declaration, handler=partial_write),)),
+            lambda invocation, outcome, declaration: self.audit.append(outcome), journal=self.journal)
+        outcome = executor.execute(self.invocation())
+        self.assertEqual((outcome.status, outcome.error_code), ('unknown_effect', 'UNKNOWN_EFFECT'))
+        self.assertEqual(self.calls, ['effect'])
+        self.assertEqual([entry.status for entry in self.audit], ['started', 'unknown_effect'])
+
+    def test_generated_request_id_is_shared_by_both_audit_records(self):
+        outcome = self.executor.execute(self.invocation(request_id=None))
+        self.assertTrue(all(item[0].request_id == outcome.request_id for item in self.audit))
+        self.assertTrue(all(item[1].request_id == outcome.request_id for item in self.audit))
 
     def test_unknown_effect_is_not_reported_as_success(self):
         self.registry.get("owned.write").handler  # declaration remains closed
@@ -140,7 +206,7 @@ class AuthorizedToolBoundaryTests(TestCase):
             handler=lambda _args: (_ for _ in ()).throw(UnknownEffect()),
         )
         self.registry.register(declaration)
-        outcome = self.executor.execute(ToolInvocation("uncertain", {}, 7, 7, ToolRole.USER))
+        outcome = self.executor.execute(ToolInvocation("uncertain", {}, 7, 7, ToolRole.USER, operation_id=uuid4()))
         self.assertEqual(outcome.status, "unknown_effect")
         self.assertEqual(outcome.error_code, "UNKNOWN_EFFECT")
 
@@ -151,11 +217,22 @@ class AuthorizedToolBoundaryTests(TestCase):
         self.assertEqual(outcome.request_id, context.request_id)
         self.assertEqual(self.calls, [{"value": "synthetic"}])
 
+    def test_proposal_call_identity_is_stable_within_operation(self):
+        context = self.context()
+        first = self.executor.execute_proposal(self.proposal(), context, confirmed=True)
+        with self.assertRaises(ToolDenied):
+            self.executor.execute_proposal(self.proposal(), context, confirmed=True)
+        second = self.executor.execute_proposal(self.proposal(call_id='call-2'), context, confirmed=True)
+        self.assertNotEqual(first.operation_id, second.operation_id)
+        self.assertEqual(len(self.calls), 2)
+
     def test_agent_proposal_denials_happen_before_handler(self):
         cases = (
             self.proposal(complete=False),
             self.proposal(arguments_fragment="[]"),
             self.proposal(arguments_fragment="not-json"),
+            self.proposal(arguments_fragment='{"value":"one","value":"two"}'),
+            self.proposal(arguments_fragment='{"value":"' + 'x' * MAX_ARGUMENT_BYTES + '"}'),
         )
         for proposal in cases:
             with self.subTest(proposal=proposal):
