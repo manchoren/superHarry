@@ -24,7 +24,9 @@ def wake_worker():
 
 def claim_next():
     """Claim one queued record atomically across processes."""
-    job_id = (GeminiChatJob.objects.filter(state=GeminiChatJob.State.QUEUED, worker_finished_at__isnull=True)
+    job_id = (GeminiChatJob.objects.filter(state=GeminiChatJob.State.QUEUED,
+                                           worker_finished_at__isnull=True,
+                                           capability_block_reason="")
               .order_by('created_at', 'pk').values_list('pk', flat=True).first())
     if job_id is None:
         return None
@@ -46,13 +48,16 @@ def run_one():
     finally:
         # Only the worker holding this non-replayable claim can attest that
         # its local execution returned. This says nothing about remote work.
-        GeminiChatJob.objects.filter(pk=job.pk, state__in=(
-            GeminiChatJob.State.CLAIMED, GeminiChatJob.State.INTERRUPTED,
-        )).update(worker_finished_at=timezone.now())
+        # Recovery fences the claim by moving it to INTERRUPTED.  A worker
+        # that returns after that CAS must not attest its exit or promote the
+        # recovered record; otherwise a late owner can overwrite recovery.
+        GeminiChatJob.objects.filter(
+            pk=job.pk, state=GeminiChatJob.State.CLAIMED,
+        ).update(worker_finished_at=timezone.now())
         if ChatTurn.objects.filter(pk=job.turn_id, state__in=_TERMINAL).exists():
-            GeminiChatJob.objects.filter(pk=job.pk, state__in=(
-                GeminiChatJob.State.CLAIMED, GeminiChatJob.State.INTERRUPTED,
-            )).update(state=GeminiChatJob.State.DONE)
+            GeminiChatJob.objects.filter(
+                pk=job.pk, state=GeminiChatJob.State.CLAIMED,
+            ).update(state=GeminiChatJob.State.DONE)
     return True
 
 
@@ -60,6 +65,7 @@ def reconcile_stale(*, now=None):
     """Close abandoned claims without redispatch or quota release."""
     now = now or timezone.now()
     ids = list(GeminiChatJob.objects.filter(state=GeminiChatJob.State.CLAIMED,
+        worker_finished_at__isnull=True,
         claimed_at__lte=now - _STALE_AFTER).order_by('claimed_at', 'pk').values_list('pk', flat=True)[:20])
     reconciled = 0
     for job_id in ids:

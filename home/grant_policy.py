@@ -43,12 +43,13 @@ class ToolGrantPolicy:
     def provision(self, authorization: OperatorGrantAuthorization, *, principal: str,
                   declaration: ToolDeclaration, arguments: Mapping[str, Any],
                   max_uses: int, expires_at: datetime, policy_revision: str) -> ToolGrant:
-        if not authorization.operator_id:
-            raise ToolDenied("Operator authorization is required.")
+        _require_operator_authorization(authorization)
         if declaration.side_effect is not SideEffect.READ or declaration.confirmation_required:
             raise ToolDenied("Grants are limited to reviewed non-consequential tools.")
         if not principal or not declaration.name or not policy_revision:
             raise ToolDenied("Grant identity is incomplete.")
+        if not isinstance(arguments, Mapping):
+            raise ToolDenied("Grant argument scope must be a JSON object.")
         now = timezone.now()
         if not 1 <= max_uses <= MAX_USES or not timezone.is_aware(expires_at) or expires_at <= now or expires_at > now + MAX_LIFETIME:
             raise ToolDenied("Grant lifetime or use limit exceeds policy.")
@@ -69,10 +70,12 @@ class ToolGrantPolicy:
         return grant
 
     def revoke(self, authorization: OperatorGrantAuthorization, grant_id: int) -> None:
-        if not authorization.operator_id:
-            raise ToolDenied("Operator authorization is required.")
+        _require_operator_authorization(authorization)
         with transaction.atomic():
-            grant = ToolGrant.objects.select_for_update().get(pk=grant_id)
+            try:
+                grant = ToolGrant.objects.select_for_update().get(pk=grant_id)
+            except (ToolGrant.DoesNotExist, ValueError, TypeError):
+                raise ToolDenied("The requested grant does not exist.") from None
             if grant.revoked_at is None:
                 grant.revoked_at = timezone.now()
                 grant.save(update_fields=["revoked_at"])
@@ -104,6 +107,26 @@ class ToolGrantPolicy:
     def _audit(event_type, principal: str, grant: ToolGrant | None, request_id: UUID | None = None) -> None:
         try:
             record_event(event_type=event_type, outcome=AuditEvent.Outcome.FAILURE if event_type == AuditEvent.EventType.TOOL_GRANT_DENIED else AuditEvent.Outcome.SUCCESS,
-                         actor_kind=AuditEvent.ActorKind.SERVICE, request_id=request_id)
+                         actor_kind=AuditEvent.ActorKind.SERVICE,
+                         target_user_id=_principal_target(principal), request_id=request_id)
         except Exception as exc:
             raise ToolDenied("Grant audit is unavailable.") from exc
+
+
+def _principal_target(principal: str) -> int | None:
+    """Return a user target for audit correlation without trusting arbitrary text."""
+    if not isinstance(principal, str) or not principal.isdecimal():
+        return None
+    try:
+        value = int(principal)
+    except ValueError:
+        return None
+    return value if value > 0 else None
+
+
+def _require_operator_authorization(authorization: OperatorGrantAuthorization) -> None:
+    """Accept only the explicit adapter contract, never a duck-typed claim."""
+    if (not isinstance(authorization, OperatorGrantAuthorization)
+            or not isinstance(authorization.operator_id, str)
+            or not authorization.operator_id.strip()):
+        raise ToolDenied("Operator authorization is required.")

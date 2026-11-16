@@ -229,7 +229,23 @@ def test_verifier_results_must_both_match_scored_artifact():
         for signature, provenance in ((bad, slsa), (gpg, bad)):
             result = bind_verifier_results(item, signature, provenance)
             score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=result, now=NOW)
-            assert score.blocked and not score.can_authorize_scoped_installation()
+            if bad is not None and bad.verified is False and bad.available is True:
+                assert score.evidence_valid
+            else:
+                assert score.blocked and not score.can_authorize_scoped_installation()
+
+
+def test_available_negative_verifier_result_is_verified_absence_not_unavailable():
+    item = evidence(signature_verified=False, signed_artifact_verified=False, slsa_verified=False)
+    digest = item.artifact_sha256
+    rejected_signature = VerificationResult(False, True, digest, "gpg", "signature_invalid")
+    rejected_provenance = VerificationResult(False, True, digest, "slsa-verifier", "provenance_invalid")
+
+    bound = bind_verifier_results(item, rejected_signature, rejected_provenance)
+    score = PackageGuard().evaluate("safe-package", "1.2.3", evidence=bound, now=NOW)
+
+    assert bound.signature_evidence_available and bound.provenance_evidence_available
+    assert score.evidence_valid and score.integrity == 25 and score.provenance == 0
 
 
 def test_collector_invokes_both_verifiers_and_fails_on_changed_bytes(tmp_path, monkeypatch):

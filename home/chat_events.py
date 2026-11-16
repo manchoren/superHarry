@@ -36,6 +36,7 @@ _EVENT_PAYLOAD_KEYS = {
     },
     ChatEvent.EventType.TURN_FAILED: {"error", "model", "reason"},
     ChatEvent.EventType.TURN_CANCELLED: {"status"},
+    ChatEvent.EventType.TURN_CAPABILITY_UNAVAILABLE: {"status", "reason"},
 }
 _TERMINAL_EVENT_TYPES = {
     ChatEvent.EventType.TURN_COMPLETED,
@@ -104,6 +105,13 @@ def _validate_payload(event_type: str, payload: Any) -> dict[str, Any]:
         )
     elif event_type == ChatEvent.EventType.TURN_CANCEL_REQUESTED:
         valid = payload["status"] == "cancel_requested"
+    elif event_type == ChatEvent.EventType.TURN_CAPABILITY_UNAVAILABLE:
+        valid = (
+            payload["status"] == "unavailable"
+            and isinstance(payload["reason"], str)
+            and 0 < len(payload["reason"]) <= 64
+            and payload["reason"].isprintable()
+        )
     elif event_type == ChatEvent.EventType.TURN_COMPLETED:
         assistant_message = payload["assistant_message"]
         model = payload["model"]
@@ -290,6 +298,9 @@ def append_chat_event(
         }[event_type]
         locked_turn.terminal_at = timezone.now()
         locked_turn.save(update_fields=["state", "terminal_at", "updated_at"])
+    elif event_type == ChatEvent.EventType.TURN_CAPABILITY_UNAVAILABLE:
+        if locked_turn.state != ChatTurn.State.QUEUED:
+            raise InvalidChatEvent("Capability availability can only change queued turns.")
     elif locked_turn.state != ChatTurn.State.RUNNING:
         raise InvalidChatEvent("Turn cannot emit this event from its current state.")
 

@@ -171,9 +171,9 @@ Evidence: 2026-11-11 static inspection of current task acceptance and product re
 ## D1 review evidence
 
 - Date/environment: 2026-11-11, Windows PowerShell, local checkout.
-- Constitution SHA-256: `640c85a00d537e01fe446ac4516cb09cb53df2acdac493615fb5e72bdd792e64`.
+- Constitution SHA-256 at the 2026-11-11 D1 review: `640c85a00d537e01fe446ac4516cb09cb53df2acdac493615fb5e72bdd792e64`. The current checkout hash is `59b3e1cc1f504f5dc510a7257a20a7d9e558b5b52033a7fc28831b62b3e92d8a`; the historical review hash is retained for provenance.
 - Inspected: constitution, contributing workflow, queue, linked task review, security policy section 6, product requirements and package guard scoring implementation.
 - Scope: D1 owner acceptance recorded and synchronized with security policy section 6, Q-12/P-12 and T220/T231 criteria. No application, provider, installation or target-VM validation was performed. T231 implementation and remaining T220 choices stay open.
-- Constitution review: no amendment required. D1 implements the existing validated-package-policy and mandatory-check principles; scoring details belong in security policies. Constitution bytes and its hash are unchanged; the pre-existing settings hash mismatch remains T226.
-- Validation: project progress command passed (10/75 completed, first open T225); git diff --check passed. Untracked owner-attention.md checked separately for whitespace and local links.
+- Constitution review: no amendment was required for D1. D1 implements the existing validated-package-policy and mandatory-check principles; scoring details belong in security policies. The historical review snapshot and the current constitution hash differ; this record does not treat that difference as evidence of an amendment or as closure of T226.
+- Validation at the D1 review: project progress command passed (10/75 completed, first open T225); git diff --check passed. Current checkout progress is recorded separately in the 2026-11-15 documentation audit. Untracked owner-attention.md was checked separately for whitespace and local links.
 - Existing prerequisite: `docs/reference/test-scoping.md` is restored by T225. This proposal does not use a scoped-test exception.

@@ -98,3 +98,28 @@ to this journal, audit sinks in these tests are synthetic, and crash recovery,
 cross-process operation identity and real side effects require integrated
 validation. A `started` or `unknown_effect` record is not evidence that a remote
 effect stopped; no automatic replay is authorized.
+
+## Proposal input hardening - 2026-11-15
+
+The proposal adapter now fails closed for non-string or empty proposal IDs and
+names before encoding, UUID derivation or registry lookup. Direct invocations
+with a non-string tool name are also denied as `ToolDenied` rather than leaking
+an internal mapping error. This keeps malformed model input inside the common
+boundary and does not add handlers, persistent grants or external effects.
+
+Focused validation: `python manage.py test home.test_tool_boundary
+home.test_tool_journal --verbosity 1` passed 24 tests. `git diff --check`
+passed. This remains synthetic local evidence only; T232 is still Pending.
+
+## Denial audit hardening - 2026-11-15
+
+Known-tool denials now emit a bounded `denied` outcome before returning
+`ToolDenied`. This covers guest, cross-user, malformed/canonical-JSON,
+confirmation, missing policy revision, and exact-grant denials. The denial
+audit receives an invocation with an empty argument object and never a handler
+result; audit failure remains fail-closed. Handlers are not called for these
+cases. Focused validation (`home.test_tool_boundary`,
+`home.test_tool_journal`, and `home.test_grant_policy`) passed 35 tests.
+Malformed proposals that cannot be associated with a registered declaration
+remain denied without a declaration-level audit record. This is synthetic
+local evidence only and T232 remains Pending.

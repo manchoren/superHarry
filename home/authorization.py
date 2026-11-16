@@ -13,7 +13,10 @@ def owned_conversations(
 ) -> QuerySet[Conversation]:
     if not user.is_authenticated:
         return Conversation.objects.none()
-    return Conversation.objects.filter(owner_id=user.pk)
+    # A session can outlive an administrative deactivation.  Re-check the
+    # persisted owner at the data boundary so history access and deletion do
+    # not continue through a stale authenticated session.
+    return Conversation.objects.filter(owner_id=user.pk, owner__is_active=True)
 
 
 def get_owned_conversation(

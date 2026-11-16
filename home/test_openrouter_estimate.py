@@ -7,7 +7,7 @@ from django.test import SimpleTestCase, override_settings
 from home.chat_provider_routing import build_openrouter_route
 from home.constitution_context import ContextPreparationError, ContextProfile, prepare_release_context
 from home.free_provider_dispatch import OUTPUT_LIMIT, _RouteSerializer, dispatch_free_provider
-from home.local_tokenizer import TokenizerTokenCounter
+from home.local_tokenizer import TokenizerTokenCounter, _extract_text_parts
 from home.provider_outcomes import NotDispatched
 from home.openrouter_transport import build_route_body
 
@@ -53,6 +53,20 @@ class OpenRouterEstimateTests(SimpleTestCase):
         for value in (b'', 'synthetic', None):
             with self.subTest(value=value), self.assertRaises(Exception):
                 counter.count_upper_bound(value)
+
+    def test_tokenizer_counts_nested_content_parts(self):
+        payload = {
+            'model': 'approved',
+            'messages': [{
+                'role': 'user',
+                'content': [
+                    {'type': 'text', 'text': 'constitution'},
+                    {'type': 'image_url', 'image_url': {'url': 'ignored'}},
+                    {'type': 'text', 'text': 'request'},
+                ],
+            }],
+        }
+        self.assertEqual(_extract_text_parts(payload), ['constitution', 'request'])
 
     @override_settings(SUPERHARRY_OPENROUTER_APPROXIMATE_QUOTA=True, SUPERHARRY_FREE_ROUTE_ADMIN_ENABLED=True)
     def test_simulated_compressor_cannot_be_reached_while_delivery_is_unverified(self):

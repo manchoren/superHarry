@@ -27,3 +27,38 @@ prior-period reserved and unknown holds, foreign-user isolation, threshold and
 zero-capacity cases, and Spanish labels. The full `manage.py test` run passed
 654 tests with 11 skipped; the additional Spanish assertions were added after
 that run and passed in the focused rerun.
+
+T230 follow-up (2026-11-15): `mark_unknown` now validates reservation IDs and
+performs the reserved-to-unknown transition under a row lock and transaction.
+Repeated recovery is idempotent, while missing, malformed, or already-settled
+reservations fail closed with the budget error contract. This protects the
+unknown reservation held across ambiguous gateway/fallback outcomes without
+changing provider routing or VM behavior. Focused validation is recorded in the
+handoff; no live provider, deployment, VM, or production gate is claimed.
+
+T230 local slice (2026-11-15): added durable per-scope daily/monthly limit
+configuration and an explicit, idempotent `provision_period_budgets` operation.
+It creates only the UTC period rows requested by the caller, preserves existing
+usage/reservations, and fails closed when configuration is missing or malformed.
+`reserve()` still does not auto-create rows, so a reset or deleted configuration
+cannot silently reopen external capacity. This is local contract evidence only;
+gateway/provider acceptance, VM rollover and production acceptance remain open.
+
+T230 administrative configuration slice (2026-11-15): registered
+`ApplicationBudgetConfiguration` in Django Admin with canonical scope-key
+validation, deletion disabled, and an append-only audit event for every
+persisted change. The save is transactional: if the audit writer is
+unavailable, the configuration write is rolled back and the admin request
+fails closed. This does not authorize paid routes, activate providers, or
+prove VM/release acceptance.
+
+Focused validation for the administrative slice: 25 tests passed across the
+admin, application-budget, and budget-status suites; `manage.py check`,
+`makemigrations --check --dry-run`, and `git diff --check` also passed.
+
+Validation of this slice: `manage.py check`, `makemigrations --check --dry-run`,
+the focused budget/view suite (21 tests), and a focused rerun of the unrelated
+storage-pressure test passed. The full suite reached 873 tests with 11 skips
+but had one order-sensitive failure in
+`PersistedCleanupInventoryTests.test_inventory_has_a_hard_candidate_limit`;
+that test passed when run alone. No T230-focused failure was observed.

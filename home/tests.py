@@ -165,6 +165,19 @@ class MemoryRecordSchemaTests(TestCase):
         with self.assertRaisesMessage(ValidationError, "User memory records require an owner."):
             MemoryRecord(scope=MemoryRecord.Scope.USER, content="invalid").full_clean()
 
+    def test_scope_and_content_contract_rejects_unknown_or_empty_values(self):
+        with self.assertRaises(ValidationError):
+            MemoryRecord(scope="unknown", content="fact").full_clean()
+
+        with self.assertRaises(ValidationError):
+            MemoryRecord(scope=MemoryRecord.Scope.GLOBAL, content="").full_clean()
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            MemoryRecord.objects.create(scope="unknown", content="fact")
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            MemoryRecord.objects.create(scope=MemoryRecord.Scope.GLOBAL, content="")
+
     def test_deleted_records_and_anonymous_users_are_not_visible(self):
         record = MemoryRecord.objects.create(
             scope=MemoryRecord.Scope.USER,
@@ -220,6 +233,20 @@ class MemoryRecordSchemaTests(TestCase):
 
     def test_confirmer_without_timestamp_is_invalid(self):
         record = MemoryRecord(scope=MemoryRecord.Scope.GLOBAL, content='invalid', confirmed_by=self.user_a)
+        with self.assertRaises(ValidationError):
+            record.full_clean()
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            record.save()
+
+    def test_deleted_at_cannot_precede_deletion_request(self):
+        requested = timezone.now()
+        record = MemoryRecord(
+            scope=MemoryRecord.Scope.USER,
+            owner=self.user_a,
+            content="invalid deletion order",
+            deletion_requested_at=requested,
+            deleted_at=requested - timedelta(seconds=1),
+        )
         with self.assertRaises(ValidationError):
             record.full_clean()
         with self.assertRaises(IntegrityError), transaction.atomic():
@@ -1479,7 +1506,10 @@ class AuditedAuthenticationLifecycleTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
 
-        unknown_failure = AuditEvent.objects.latest("occurred_at")
+        unknown_failure = AuditEvent.objects.filter(
+            event_type=AuditEvent.EventType.PASSWORD_VERIFICATION_FAILED,
+            target_user_id__isnull=True,
+        ).latest("occurred_at")
         self.assertEqual(
             unknown_failure.event_type,
             AuditEvent.EventType.PASSWORD_VERIFICATION_FAILED,

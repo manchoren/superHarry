@@ -1,6 +1,6 @@
 """Untrusted-input contracts shared by future channel adapters."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Protocol, runtime_checkable
@@ -9,6 +9,9 @@ from uuid import UUID
 
 class ChannelContractError(ValueError):
     pass
+
+
+MAX_CHANNEL_ATTACHMENT_BYTES = 25 * 1024 * 1024
 
 
 class ChannelPrivilege(str, Enum):
@@ -77,9 +80,14 @@ class ChannelLinkGrant:
     expires_at: datetime
     revoked: bool = False
     consumed: bool = False
+    # The grant must be bound to the authenticated local owner.  Keeping this
+    # keyword-only prevents adapters from accidentally treating external data
+    # as the local identity.
+    user_id: UUID = field(kw_only=True)
 
     def __post_init__(self):
         grant_id = _uuid(self.grant_id, field="grant_id")
+        user_id = _uuid(self.user_id, field="user_id")
         channel = _bounded_text(self.channel, field="channel", maximum=32).lower()
         external_id = _bounded_text(self.external_id, field="external_id", maximum=256)
         if not isinstance(self.expires_at, datetime) or self.expires_at.tzinfo is None:
@@ -91,6 +99,7 @@ class ChannelLinkGrant:
         if self.revoked and self.consumed:
             raise ChannelContractError("link_state_conflict")
         object.__setattr__(self, "grant_id", grant_id)
+        object.__setattr__(self, "user_id", user_id)
         object.__setattr__(self, "channel", channel)
         object.__setattr__(self, "external_id", external_id)
 
@@ -127,6 +136,7 @@ def consume_link_grant(grant: ChannelLinkGrant, *, now: datetime) -> ChannelLink
     return ChannelLinkGrant(
         grant.grant_id, grant.channel, grant.external_id, grant.expires_at,
         revoked=False, consumed=True,
+        user_id=grant.user_id,
     )
 
 
@@ -190,13 +200,41 @@ class ChannelAttachment:
     storage_id: UUID
     size: int
     sha256: str
+    content_type: str = "application/octet-stream"
 
     def __post_init__(self):
         storage_id = _uuid(self.storage_id, field="storage_id")
         if not isinstance(self.size, int) or isinstance(self.size, bool) or self.size <= 0:
             raise ChannelContractError("attachment_size_invalid")
+        if self.size > MAX_CHANNEL_ATTACHMENT_BYTES:
+            raise ChannelContractError("attachment_size_exceeds_limit")
         sha256 = _bounded_text(self.sha256, field="sha256", maximum=64).lower()
         if len(sha256) != 64 or any(char not in "0123456789abcdef" for char in sha256):
             raise ChannelContractError("attachment_digest_invalid")
+        content_type = _bounded_text(self.content_type, field="content_type", maximum=128)
+        if ";" in content_type or any(char.isspace() for char in content_type):
+            raise ChannelContractError("attachment_content_type_invalid")
         object.__setattr__(self, "storage_id", storage_id)
         object.__setattr__(self, "sha256", sha256)
+        object.__setattr__(self, "content_type", content_type.lower())
+
+
+def bind_channel_attachment(
+    attachment: ChannelAttachment,
+    *,
+    stored_size: int,
+    stored_sha256: str,
+    detected_content_type: str,
+) -> ChannelAttachment:
+    """Bind a channel reference to independently validated T233 metadata."""
+    if not isinstance(attachment, ChannelAttachment):
+        raise ChannelContractError("attachment_invalid")
+    if not isinstance(stored_size, int) or isinstance(stored_size, bool):
+        raise ChannelContractError("attachment_size_invalid")
+    if stored_size != attachment.size:
+        raise ChannelContractError("attachment_size_mismatch")
+    if not isinstance(stored_sha256, str) or stored_sha256.lower() != attachment.sha256:
+        raise ChannelContractError("attachment_digest_mismatch")
+    if not isinstance(detected_content_type, str) or detected_content_type.lower() != attachment.content_type:
+        raise ChannelContractError("attachment_content_type_mismatch")
+    return attachment

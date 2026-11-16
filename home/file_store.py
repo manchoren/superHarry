@@ -12,6 +12,7 @@ from django.db import DatabaseError, transaction
 from django.utils import timezone
 
 from home.audit import record_event
+from home.image_validation import ImageValidationError, validate_image_file
 from home.models import AuditEvent, StoredFile
 
 
@@ -136,6 +137,10 @@ def upload(*, user, uploaded_file, request_id=None):
         if (not stat.S_ISREG(current.st_mode)
                 or not os.path.samestat(created_info, current)):
             raise FileStoreError("Stored path changed during upload.")
+        try:
+            validate_image_file(destination, content_type=detect_content_type(prefix), size=total)
+        except (ImageValidationError, OSError) as exc:
+            raise FileStoreError("Image failed safe validation.") from exc
         with transaction.atomic():
             _require_active_user(user, lock=True)
             record = StoredFile.objects.create(
@@ -206,6 +211,8 @@ def stage_for_authorized_job(*, user, storage_id, destination_dir, request_id=No
     _require_active_user(user)
     try:
         record = StoredFile.objects.get(storage_id=_storage_uuid(storage_id), owner=user)
+        if record.size > int(settings.SUPERHARRY_FILE_MAX_BYTES):
+            raise FileStoreError("Stored file exceeds the configured size limit.")
         _stored_path(record)
     except (StoredFile.DoesNotExist, ValueError, TypeError, OSError):
         raise FileStoreError("File is unavailable.")

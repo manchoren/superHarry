@@ -114,6 +114,16 @@ if local_inference_enabled not in {"0", "1", "false", "true"}:
     raise ImproperlyConfigured("SUPERHARRY_LOCAL_INFERENCE_ENABLED must be 0, 1, false, or true.")
 SUPERHARRY_LOCAL_INFERENCE_ENABLED = local_inference_enabled in {"1", "true"}
 
+# T211 guest limits. Cache operations must be atomic on the deployment backend.
+GUEST_RATE_WINDOW_SECONDS = int(os.environ.get("SUPERHARRY_GUEST_RATE_WINDOW_SECONDS", "3600"))
+GUEST_SESSIONS_PER_ORIGIN = int(os.environ.get("SUPERHARRY_GUEST_SESSIONS_PER_ORIGIN", "3"))
+GUEST_QUESTIONS_PER_SESSION = int(os.environ.get("SUPERHARRY_GUEST_QUESTIONS_PER_SESSION", "10"))
+GUEST_SESSION_LIFETIME_SECONDS = int(os.environ.get("SUPERHARRY_GUEST_SESSION_LIFETIME_SECONDS", "86400"))
+GUEST_QUEUE_TIMEOUT_SECONDS = int(os.environ.get("SUPERHARRY_GUEST_QUEUE_TIMEOUT_SECONDS", "600"))
+if min(GUEST_RATE_WINDOW_SECONDS, GUEST_SESSIONS_PER_ORIGIN, GUEST_QUESTIONS_PER_SESSION,
+       GUEST_SESSION_LIFETIME_SECONDS, GUEST_QUEUE_TIMEOUT_SECONDS) <= 0:
+    raise ImproperlyConfigured("Guest limits must be positive.")
+
 # T050 heavy-job governor defaults for local inference (shared resource).
 # These must be finite positive numbers when local inference is enabled.
 LLAMA_CPP_QUEUE_CAPACITY = int(os.environ.get("LLAMA_CPP_QUEUE_CAPACITY", "1"))

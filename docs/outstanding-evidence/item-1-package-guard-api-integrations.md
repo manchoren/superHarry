@@ -19,6 +19,12 @@ Missing, unknown, malformed, stale, or unavailable mandatory evidence blocks
 the result. A valid score is not installation authorization; T193 owns that
 integration.
 
+The verifier binding now distinguishes a completed negative GPG/SLSA result
+(verified absence, zero points for that item) from an unavailable verifier
+(mandatory evidence unavailable, fail closed), while retaining exact digest
+binding for the staged artifact. This is a local T231 contract improvement;
+it does not install packages or authorize installation.
+
 ## Validation
 
 Using synthetic fixtures only, without network, credentials, installation,
@@ -26,7 +32,7 @@ deployment, VM, or provider access:
 
 ```text
 .\.venv\Scripts\python.exe -m pytest -q tests/test_package_guard.py
-17 passed in 0.07s
+41 passed in 0.15s
 ```
 
 The focused tests cover exact scoring and threshold behavior, normalization,

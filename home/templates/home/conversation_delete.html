@@ -1,6 +1,6 @@
 {% load i18n static %}
 <!doctype html>
-<html lang="{{ LANGUAGE_CODE }}" data-account-theme="{{ account_theme }}">
+<html lang="{{ LANGUAGE_CODE }}"{% if user.is_authenticated %} data-account-theme="{{ account_theme }}"{% endif %}>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

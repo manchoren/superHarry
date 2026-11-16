@@ -1,9 +1,6 @@
-"""Bounded internal memory reads with authorization and access accounting.
+"""Bounded internal memory reads with authorization and access accounting."""
 
-This is a storage primitive, not a user-facing memory view or a model tool.
-Callers must enforce invocation role and memory policy before using it.
-"""
-
+from dataclasses import dataclass
 from uuid import UUID
 
 from django.db import DatabaseError, transaction
@@ -20,8 +17,27 @@ class MemoryAccessUnavailable(Exception):
     """The requested access could not be authorized or accounted for."""
 
 
-def read_records_for_retrieval(user, record_ids):
+@dataclass(frozen=True)
+class MemoryRetrievalAuthorization:
+    """Server-created authorization for one non-reasoning memory invocation."""
+
+    user_id: int
+
+
+def authorize_memory_retrieval(user, *, route_authorized, reasoning_enabled):
+    """Bind retrieval to an active authenticated principal and approved route."""
+    if (not route_authorized or reasoning_enabled
+            or user is None or not getattr(user, 'is_authenticated', False)
+            or not getattr(user, 'is_active', False) or getattr(user, 'pk', None) is None
+            or getattr(getattr(user, '_state', None), 'adding', True)):
+        raise MemoryAccessUnavailable('memory_access_unavailable')
+    return MemoryRetrievalAuthorization(user_id=user.pk)
+
+
+def read_records_for_retrieval(authorization, record_ids):
     """Return all requested visible records or none, recording one access each."""
+    if not isinstance(authorization, MemoryRetrievalAuthorization):
+        raise MemoryAccessUnavailable('memory_access_unavailable')
     if (not isinstance(record_ids, (list, tuple)) or not record_ids
             or len(record_ids) > MAX_RECORDS_PER_ACCESS
             or any(not isinstance(record_id, UUID) for record_id in record_ids)
@@ -30,6 +46,12 @@ def read_records_for_retrieval(user, record_ids):
     now = timezone.now()
     try:
         with transaction.atomic():
+            from django.contrib.auth import get_user_model
+            user = get_user_model()._default_manager.filter(
+                pk=authorization.user_id, is_active=True,
+            ).first()
+            if user is None:
+                raise MemoryAccessUnavailable('memory_access_unavailable')
             scoped = MemoryRecord.objects.visible_to(user).filter(pk__in=record_ids)
             changed = scoped.filter(access_count__lt=MAX_ACCESS_COUNT).update(
                 access_count=F('access_count') + 1,

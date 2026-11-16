@@ -36,6 +36,10 @@ class PackageGuardAdminTests(TestCase):
         with self.assertRaises(ValidationError):
             PackageGuardSettings(minimum_score=101).save()
 
+    def test_invalid_blocklist_name_is_rejected(self):
+        with self.assertRaises(ValidationError):
+            PackageGuardSettings(blocked_packages="unsafe/package").save()
+
     def test_staff_without_add_permission_cannot_create_settings(self):
         staff = get_user_model().objects.create_user(username="other-staff", password="synthetic", is_staff=True)
         self.client.force_login(staff)
@@ -71,3 +75,15 @@ class PackageGuardAdminTests(TestCase):
             ).status_code,
             403,
         )
+
+    def test_evaluation_persistence_cannot_be_mutated_or_deleted(self):
+        evaluation = PackageGuardEvaluation.objects.create(
+            package_name="safe-package", version="1.0", registry="pypi",
+            artifact_sha256="b" * 64, score=80, blocked=False,
+            evidence_valid=True, evidence={"source": "synthetic"},
+        )
+        evaluation.score = 0
+        with self.assertRaises(ValueError):
+            evaluation.save()
+        with self.assertRaises(ValueError):
+            evaluation.delete()

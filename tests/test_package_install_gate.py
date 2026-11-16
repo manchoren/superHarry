@@ -3,7 +3,20 @@ import hashlib
 
 import pytest
 
-from scripts.package_guard import GuardResult, PackageEvidence, install_guarded_artifact
+from scripts.package_guard import (
+    GuardResult, PackageEvidence, install_guarded_artifact,
+    prepare_sandbox_installation,
+)
+from home.sandbox_planner import SandboxCapabilities, SandboxLimits, SandboxMount, SandboxPlan
+
+
+def _sandbox_plan() -> SandboxPlan:
+    return SandboxPlan(
+        ("worker",),
+        (SandboxMount("/srv/job/input", "/workspace/input", True),
+         SandboxMount("/srv/job/output", "/workspace/output", False)),
+        SandboxLimits(), SandboxCapabilities(True, True, True, True, True),
+    )
 
 
 def _evidence(digest: str) -> PackageEvidence:
@@ -33,6 +46,47 @@ def test_install_gate_never_runs_without_verified_sandbox_integration(tmp_path: 
     with pytest.raises(PermissionError, match="verified_sandbox_installation_not_implemented"):
         install_guarded_artifact(
             _evidence(digest), GuardResult("example", "1.0.0", 100, (), True),
-            artifact, approved_by=approved_by, runner=runner,
+            artifact, approved_by=approved_by, sandbox_plan=_sandbox_plan(), runner=runner,
         )
     assert calls == []
+
+
+def test_prepare_contract_requires_a_passing_evidence_bound_digest(tmp_path: Path):
+    artifact = tmp_path / "example.whl"
+    artifact.write_bytes(b"wheel")
+    digest = hashlib.sha256(b"wheel").hexdigest()
+    plan = prepare_sandbox_installation(
+        _evidence(digest),
+        GuardResult("example", "1.0.0", 100, (), True, True, digest),
+        artifact,
+        approved_by="owner",
+        sandbox_plan=_sandbox_plan(),
+    )
+    assert plan.artifact_digest == digest
+    assert plan.approved_by == "owner"
+
+
+@pytest.mark.parametrize("result", [
+    GuardResult("example", "1.0.0", 100, ("unknown",), False, False, ""),
+    GuardResult("example", "1.0.0", 100, ("denied",), False, True, ""),
+])
+def test_prepare_contract_rejects_unknown_or_denied_results(tmp_path: Path, result: GuardResult):
+    artifact = tmp_path / "example.whl"
+    artifact.write_bytes(b"wheel")
+    digest = hashlib.sha256(b"wheel").hexdigest()
+    with pytest.raises(PermissionError, match="package_guard"):
+        prepare_sandbox_installation(_evidence(digest), result, artifact, approved_by="owner", sandbox_plan=_sandbox_plan())
+
+
+def test_prepare_contract_rejects_digest_mismatch_without_runner(tmp_path: Path):
+    artifact = tmp_path / "example.whl"
+    artifact.write_bytes(b"wheel")
+    digest = hashlib.sha256(b"other").hexdigest()
+    with pytest.raises(PermissionError, match="digest_mismatch"):
+        prepare_sandbox_installation(
+            _evidence(digest),
+            GuardResult("example", "1.0.0", 100, (), True, True, digest),
+            artifact,
+            approved_by="owner",
+            sandbox_plan=_sandbox_plan(),
+        )

@@ -132,30 +132,39 @@ class PackageEvidence:
 def bind_verifier_results(evidence: PackageEvidence, signature_result, provenance_result) -> PackageEvidence:
     """Bind successful verifier output to the bytes scored by this guard.
 
-    A failed or unavailable verification is not proof that an artifact is
-    unsigned. It remains unavailable evidence; review and installation are
-    separate gates. The caller must obtain results from trusted verifier runs.
+    A completed verifier run that rejects an artifact is verified absence and
+    earns zero for that item under D1. An unavailable verifier remains
+    unavailable evidence and blocks evaluation. The caller must obtain
+    results from trusted verifier runs.
     """
     from home.package_verifiers import VerificationResult
 
     digest = evidence.artifact_sha256
 
-    def matches(result):
-        return (isinstance(result, VerificationResult)
-                and result.available is True and result.verified is True
-                and result.artifact_sha256 == digest)
+    def result_state(result):
+        valid = (isinstance(result, VerificationResult)
+                 and result.available is True
+                 and result.verified is True
+                 and result.artifact_sha256 == digest)
+        available = (isinstance(result, VerificationResult)
+                     and result.available is True)
+        result_digest = (result.artifact_sha256
+                         if isinstance(result, VerificationResult) else "")
+        return valid, available, result_digest
 
-    signature_valid = matches(signature_result)
-    provenance_valid = matches(provenance_result)
+    signature_valid, signature_available, signature_digest = result_state(signature_result)
+    provenance_valid, provenance_available, provenance_digest = result_state(provenance_result)
+    signature_digest_mismatch = signature_available and signature_digest != digest
+    provenance_digest_mismatch = provenance_available and provenance_digest != digest
     return replace(
         evidence,
-        signature_verified=signature_valid,
-        signed_artifact_verified=signature_valid,
-        signature_evidence_available=signature_valid,
-        signature_artifact_sha256=digest if signature_valid else "",
-        slsa_verified=provenance_valid,
-        provenance_evidence_available=provenance_valid,
-        provenance_artifact_sha256=digest if provenance_valid else "",
+        signature_verified=signature_valid or signature_digest_mismatch,
+        signed_artifact_verified=signature_valid or signature_digest_mismatch,
+        signature_evidence_available=signature_available,
+        signature_artifact_sha256=signature_digest,
+        slsa_verified=provenance_valid or provenance_digest_mismatch,
+        provenance_evidence_available=provenance_available,
+        provenance_artifact_sha256=provenance_digest,
     )
 
 

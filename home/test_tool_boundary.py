@@ -94,7 +94,7 @@ class AuthorizedToolBoundaryTests(TestCase):
         with self.assertRaises(ToolDenied):
             self.executor.execute(self.invocation(role="guest"))
         self.assertEqual(self.calls, [])
-        self.assertEqual(self.audit, [])
+        self.assertEqual([entry[1].status for entry in self.audit], ['denied'])
 
     def test_denies_cross_user_malformed_and_unconfirmed_before_effect(self):
         for invocation in (
@@ -109,6 +109,7 @@ class AuthorizedToolBoundaryTests(TestCase):
                 with self.assertRaises(ToolDenied):
                     self.executor.execute(invocation)
         self.assertEqual(self.calls, [])
+        self.assertEqual([entry[1].status for entry in self.audit], ['denied'] * 6)
 
     def test_unowned_user_tool_still_requires_an_authenticated_actor(self):
         declaration = replace(self.registry.get('owned.write'), name='unowned.write', ownership=Ownership.NONE)
@@ -140,13 +141,13 @@ class AuthorizedToolBoundaryTests(TestCase):
         with self.assertRaises(ToolDenied):
             self.executor.execute(self.invocation(arguments={"value": oversized}))
         self.assertEqual(self.calls, [])
-        self.assertEqual(self.audit, [])
+        self.assertEqual([entry[1].status for entry in self.audit], ['denied'])
 
     def test_denies_non_canonical_argument_values_before_effect(self):
         with self.assertRaises(ToolDenied):
             self.executor.execute(self.invocation(arguments={"value": float("nan")}))
         self.assertEqual(self.calls, [])
-        self.assertEqual(self.audit, [])
+        self.assertEqual([entry[1].status for entry in self.audit], ['denied'])
 
     def test_success_is_audited_with_correlation(self):
         invocation = self.invocation()
@@ -164,6 +165,14 @@ class AuthorizedToolBoundaryTests(TestCase):
             executor.execute(self.invocation())
         self.assertNotIn('private diagnostic', str(caught.exception))
         self.assertEqual(self.calls, [])
+
+    def test_denial_audit_contains_no_handler_result(self):
+        with self.assertRaises(ToolDenied):
+            self.executor.execute(self.invocation(confirmed=False))
+        self.assertEqual(len(self.audit), 1)
+        self.assertEqual(self.audit[0][1].status, 'denied')
+        self.assertEqual(self.audit[0][1].error_code, 'TOOL_DENIED')
+        self.assertIsNone(self.audit[0][1].value)
 
     def test_audit_failure_after_write_reports_uncertain_effect(self):
         audit_calls = []
@@ -244,4 +253,9 @@ class AuthorizedToolBoundaryTests(TestCase):
                                              principal_id=None, guest_session_ref=uuid4()),
                 confirmed=True,
             )
+        self.assertEqual(self.calls, [])
+
+    def test_non_string_invocation_tool_name_is_denied(self):
+        with self.assertRaises(ToolDenied):
+            self.executor.execute(self.invocation(tool_name=[]))
         self.assertEqual(self.calls, [])

@@ -11,12 +11,14 @@ function page(saved, systemDark = false, hasSelector = true, accountTheme = unde
     let mediaChange;
     let ready;
     let selectChange;
+    let storageChange;
     const media = { matches: systemDark, addEventListener: (_, fn) => { mediaChange = fn; } };
     const selector = { value: "", addEventListener: (_, fn) => { selectChange = fn; } };
     const root = { dataset: accountTheme === undefined ? {} : { accountTheme }, style: {} };
     const window = {
         localStorage: { getItem: () => stored, setItem: (_, value) => { stored = value; } },
         matchMedia: () => media,
+        addEventListener: (_, fn) => { storageChange = fn; },
     };
     const document = {
         documentElement: root,
@@ -26,7 +28,7 @@ function page(saved, systemDark = false, hasSelector = true, accountTheme = unde
     };
     vm.runInNewContext(script, { window, document });
     ready();
-    return { root, selector, media, change: () => selectChange(), systemChange: () => mediaChange(), stored: () => stored };
+    return { root, selector, media, change: () => selectChange(), systemChange: () => mediaChange(), storageChange: (event) => storageChange(event), stored: () => stored };
 }
 
 test("preference persists across page loads and explicit choice ignores system changes", () => {
@@ -75,4 +77,21 @@ test("admin script data applies account preference before page setup", () => {
     const view = page("light", false, false, undefined, "dark");
     assert.equal(view.root.dataset.accountTheme, "dark");
     assert.equal(view.root.dataset.theme, "dark");
+});
+
+test("device preference follows storage changes in another tab", () => {
+    const view = page("light");
+    assert.equal(view.root.dataset.theme, "light");
+    view.storageChange({ key: "superharry-theme", newValue: "dark" });
+    assert.equal(view.root.dataset.theme, "dark");
+    assert.equal(view.selector.value, "dark");
+    view.storageChange({ key: "other-key", newValue: "light" });
+    assert.equal(view.root.dataset.theme, "dark");
+});
+
+test("account preference ignores device storage changes", () => {
+    const view = page("light", false, true, "dark");
+    view.storageChange({ key: "superharry-theme", newValue: "light" });
+    assert.equal(view.root.dataset.theme, "dark");
+    assert.equal(view.selector.value, "dark");
 });

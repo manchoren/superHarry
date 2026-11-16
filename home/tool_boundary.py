@@ -148,6 +148,8 @@ class ToolRegistry:
         self._declarations[declaration.name] = declaration
 
     def get(self, name: str) -> ToolDeclaration:
+        if not isinstance(name, str):
+            raise ToolDenied("Tool name is invalid.")
         try:
             return self._declarations[name]
         except KeyError as exc:
@@ -168,7 +170,11 @@ class AuthorizedToolExecutor:
         request_id = invocation.request_id or uuid4()
         invocation = replace(invocation, request_id=request_id)
         declaration = self._registry.get(invocation.tool_name)
-        self._validate(invocation, declaration)
+        try:
+            self._validate(invocation, declaration)
+        except ToolDenied:
+            self._audit_denial(invocation, declaration)
+            raise
         consequential = declaration.side_effect is not SideEffect.READ
         if consequential:
             if not isinstance(invocation.operation_id, UUID) or self._journal is None:
@@ -181,8 +187,13 @@ class AuthorizedToolExecutor:
                 raise ToolDenied("Tool journal is unavailable.") from None
         if self._grants is not None and declaration.side_effect is SideEffect.READ and not declaration.confirmation_required:
             if not invocation.policy_revision:
+                self._audit_denial(invocation, declaration)
                 raise ToolDenied("Tool policy revision is required.")
-            self._grants.consume(invocation, declaration, policy_revision=invocation.policy_revision)
+            try:
+                self._grants.consume(invocation, declaration, policy_revision=invocation.policy_revision)
+            except ToolDenied:
+                self._audit_denial(invocation, declaration)
+                raise
         try:
             self._audit(invocation, ToolOutcome(request_id, declaration.name, "started",
                                                 operation_id=invocation.operation_id), declaration)
@@ -225,6 +236,18 @@ class AuthorizedToolExecutor:
                 raise ToolJournalUncertain(request_id, invocation.operation_id) from None
         return outcome
 
+    def _audit_denial(self, invocation: ToolInvocation, declaration: ToolDeclaration) -> None:
+        """Record a denied, non-dispatched call without exposing arguments."""
+        audit_invocation = replace(invocation, arguments={})
+        outcome = ToolOutcome(
+            audit_invocation.request_id or uuid4(), declaration.name, "denied",
+            error_code="TOOL_DENIED", operation_id=audit_invocation.operation_id,
+        )
+        try:
+            self._audit(audit_invocation, outcome, declaration)
+        except Exception:
+            raise ToolDenied("Tool audit is unavailable.") from None
+
     def execute_proposal(
         self,
         proposal: ModelToolCallProposal,
@@ -243,7 +266,9 @@ class AuthorizedToolExecutor:
         if not isinstance(proposal, ModelToolCallProposal) or not proposal.complete:
             raise ToolDenied("Tool proposal is incomplete.")
         try:
-            if (len(proposal.call_id.encode('utf-8')) > 256
+            if (not isinstance(proposal.call_id, str) or not proposal.call_id
+                    or len(proposal.call_id.encode('utf-8')) > 256
+                    or not isinstance(proposal.name, str) or not proposal.name
                     or not isinstance(proposal.arguments_fragment, str)
                     or len(proposal.arguments_fragment.encode("utf-8")) > MAX_ARGUMENT_BYTES):
                 raise ValueError("tool proposal arguments exceed the boundary")

@@ -91,6 +91,33 @@ was performed. T183 and its dependent tasks remain pending.
   tests with 10 skips but ended with 3 errors in concurrent T232/T231 migration
   and grant-policy work. Those failures were not changed for T183.
 
+## Schema contract hardening - 2026-11-15
+
+The T183 schema now enforces two persistence invariants for `MemoryRecord`:
+
+- `scope` must be one of the supported values (`global` or `user`), including
+  when records bypass model validation and are written directly to the database.
+- `content` must not be an empty string; `NULL` remains impossible because the
+  field is non-nullable.
+
+Migration `home.0035_memoryrecord_home_memory_scope_value_ck_and_more` adds
+these checks without changing ownership, confirmation, retention, deletion,
+encryption, retrieval, or any approved policy. The regression covers both
+`full_clean()` and database-level rejection. The pre-existing untracked
+`0034_memoryrecord_deletion_order.py` was not changed.
+
+Validation on the Windows checkout:
+
+- `python manage.py test home.tests.MemoryRecordSchemaTests home.test_memory_access`
+  — 15 tests passed.
+- `python manage.py check` — passed.
+- `python manage.py makemigrations --check --dry-run` — no changes detected.
+- `git diff --check` — passed.
+
+This remains a bounded schema-contract improvement. It does not establish
+SQLCipher, retrieval integration, memory-agent behavior, UI controls,
+consolidation, target-VM validation, deployment, or production acceptance.
+
 ## Gates and limitations
 
 The following paragraph describes the policy at the time of the slice. The [product-first policy](product-first-validation.md) supersedes its independent acceptance prerequisite; T183 remains pending for its remaining implementation and applicable checks.
@@ -99,3 +126,15 @@ The independent fresh-context audit required by the test-scoping policy was not
 available in this session. Comparative and numerical benchmarks remain waived;
 functional, security, resource, recovery, migration, and independent acceptance
 gates remain applicable. T183 therefore remains Pending.
+
+## Deletion timestamp ordering follow-up - 2026-11-15
+
+The schema now requires `deleted_at` to be absent or no earlier than
+`deletion_requested_at`. This prevents an impossible deletion lifecycle state
+at both model-validation and database-constraint boundaries. The change is
+limited to T183's persisted schema contract; it does not perform cleanup,
+retention, encryption, recovery, or user-facing deletion authorization.
+
+The focused T183 schema test covers model and SQLite constraint rejection for
+reversed deletion timestamps. Migration checks and `git diff --check` are also
+required evidence for this slice. T183 remains pending.

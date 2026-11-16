@@ -68,3 +68,33 @@ runtime change or schema migration is included in this investigation.
 - `python manage.py test home.test_t229_recovery`: two tests passed on the local
   Windows checkout. Tests use a disposable database and synthetic data.
 - No gateway, provider, deployment or VM acceptance was performed.
+
+## Local follow-up - 2026-11-15
+
+`reconcile_stale()` now excludes claimed jobs with non-null
+`worker_finished_at`. A worker's recorded local return is evidence that the
+local claim owner exited; age alone must not subsequently synthesize an
+`interrupted_unknown` failure. The existing no-replay behavior remains: the
+job is not queued again, and an already uncertain budget reservation is not
+released. Jobs without exit evidence still use the existing age-based
+interruption path, so this is not a complete lease/liveness solution.
+
+Validation: `.\\venv\\Scripts\\python.exe manage.py test home.test_t229_recovery`
+passed after the change. The test uses a disposable database and synthetic
+data. No gateway, provider, deployment or VM acceptance was performed.
+
+## Local follow-up - 2026-11-15: late-owner fencing
+
+The queue previously allowed `run_one()`'s `finally` block to update a job in
+either `CLAIMED` or `INTERRUPTED`. A worker returning after
+`reconcile_stale()` had interrupted its claim could therefore record
+`worker_finished_at` and promote the job to `DONE`, overwriting recovery.
+The local fix restricts both writes to `state=CLAIMED`; recovery now fences
+the late owner and preserves `INTERRUPTED`.
+
+Focused validation: `.\\venv\\Scripts\\python.exe manage.py test
+home.test_t229_recovery home.test_gemini_queue` passed 23 tests on the
+disposable local test database. This is only a local compare-and-swap
+state-transition correction. It does not provide a durable lease token,
+heartbeat, external dispatch fencing, gateway, VM, deployment or release
+acceptance; T229 remains `Pending`.

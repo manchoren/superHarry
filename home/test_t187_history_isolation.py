@@ -79,6 +79,25 @@ class HistoryIsolationTests(TestCase):
             secure=True, HTTP_ORIGIN='https://testserver').status_code, 403)
         self.assertEqual(Conversation.objects.filter(pk__in=[own.pk, foreign.pk]).count(), 2)
 
+    def test_deactivated_owner_cannot_use_a_stale_session_for_history_or_deletion(self):
+        user = get_user_model().objects.create_user(username='deactivated-history-owner')
+        conversation = Conversation.objects.create(owner=user)
+        Message.objects.create(conversation=conversation, role='user', content='private history')
+        self.client.force_login(user)
+        get_user_model().objects.filter(pk=user.pk).update(is_active=False)
+
+        detail = self.client.get(reverse('conversation-detail', args=[conversation.pk]), secure=True)
+        delete = self.client.get(reverse('conversation-delete', args=[conversation.pk]), secure=True)
+
+        self.assertIn(detail.status_code, (302, 404))
+        self.assertIn(delete.status_code, (302, 404))
+        self.assertNotIn(b'private history', detail.content)
+        self.assertTrue(Conversation.objects.filter(pk=conversation.pk).exists())
+        self.assertFalse(AuditEvent.objects.filter(
+            event_type=AuditEvent.EventType.CHAT_CONVERSATION_DELETED,
+            target_user_id=user.pk,
+        ).exists())
+
     def test_active_or_unresolved_work_blocks_deletion(self):
         user = get_user_model().objects.create_user(username='active-owner')
         conversation = Conversation.objects.create(owner=user)
@@ -96,6 +115,23 @@ class HistoryIsolationTests(TestCase):
                 response = self.client.post(url, {'confirm': 'delete'}, secure=True, HTTP_ORIGIN='https://testserver')
                 self.assertEqual(response.status_code, 409)
                 self.assertTrue(Conversation.objects.filter(pk=conversation.pk).exists())
+
+    def test_returned_interrupted_worker_can_be_deleted_after_terminal_turn(self):
+        user = get_user_model().objects.create_user(username='returned-worker-owner')
+        conversation = Conversation.objects.create(owner=user)
+        message = Message.objects.create(conversation=conversation, role='user', content='synthetic')
+        turn = ChatTurn.objects.create(conversation=conversation, user_message=message,
+            idempotency_key=uuid4(), request_digest='0' * 64, model_mode='automatic',
+            state=ChatTurn.State.FAILED)
+        job = GeminiChatJob.objects.create(turn=turn, state=GeminiChatJob.State.INTERRUPTED,
+            worker_finished_at=timezone.now())
+        self.client.force_login(user)
+
+        response = self.client.post(reverse('conversation-delete', args=[conversation.pk]),
+            {'confirm': 'delete'}, secure=True, HTTP_ORIGIN='https://testserver')
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Conversation.objects.filter(pk=conversation.pk).exists())
+        self.assertFalse(GeminiChatJob.objects.filter(pk=job.pk).exists())
 
     def test_audit_failure_rolls_back_deletion(self):
         user = get_user_model().objects.create_user(username='audit-delete-owner')

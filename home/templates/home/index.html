@@ -119,10 +119,14 @@
                         <label for="chat-message">{% translate "Message" context "chat.composer.message_label" %}</label>
                         <textarea id="chat-message" name="message" rows="3" required></textarea>
                         <button type="submit">{% translate "Send" context "chat.composer.send" %}</button>
+                        <button type="button" id="push-to-talk" data-url="{% url 'push-to-talk-start' %}" data-status-template="{% url 'push-to-talk-status' '00000000-0000-0000-0000-000000000000' %}" data-cancel-template="{% url 'push-to-talk-cancel' '00000000-0000-0000-0000-000000000000' %}">{% translate "Push to talk" %}</button>
+                        <button type="button" id="push-to-talk-cancel" disabled>{% translate "Cancel audio" %}</button>
+                        <p id="push-to-talk-status" role="status">{% translate "Audio stays on this server and local processing is unavailable until enabled." %}</p>
                         <button type="button" id="chat-cancel" disabled>{% translate "Cancel" %}</button>
                         <p id="composer-status" role="status"></p>
                     </form>
                     <script src="{% static 'home/chat.js' %}" defer></script>
+                    <script src="{% static 'home/push_to_talk.js' %}" defer></script>
                     {% else %}
                     <form action="{% url 'conversation-start' %}" method="post">
                         {% csrf_token %}<button type="submit">{% translate "Start a conversation" context "chat.empty_state.heading" %}</button>
@@ -130,12 +134,23 @@
                     {% endif %}
                 {% else %}
                     <h2>{% translate "Start a conversation" context "chat.empty_state.heading" %}</h2>
-                    <p>{% translate "Sign in to chat." %}</p>
-                    <div class="message-composer">
+                    <p>{% translate "Guest chat uses only the local model. Messages are kept only in this browser and guests have no tools, uploads, memory, or external integrations." %}</p>
+                    <form class="message-composer" id="guest-chat-form" data-url="{% url 'guest-chat' %}" data-error="{% translate 'Local guest chat is unavailable. Please try again later.' %}" data-working="{% translate 'Generating local response...' %}">
+                        {% csrf_token %}
                         <label for="chat-message">{% translate "Message" context "chat.composer.message_label" %}</label>
-                        <textarea id="chat-message" disabled></textarea>
-                        <button type="button" disabled>{% translate "Send" context "chat.composer.send" %}</button>
-                    </div>
+                        <textarea id="guest-chat-message" name="message" rows="3" required></textarea>
+                        <button type="submit">{% translate "Send" context "chat.composer.send" %}</button>
+                        <p id="guest-chat-status" role="status"></p>
+                        <div id="guest-chat-messages" aria-live="polite"></div>
+                    </form>
+                    <script src="{% static 'home/guest_chat.js' %}" defer></script>
+                    <noscript>
+                        <p>{% translate "Sign in to chat." %}</p>
+                        <div class="message-composer">
+                            <textarea disabled aria-label="{% translate 'Message' context 'chat.composer.message_label' %}"></textarea>
+                            <button type="button" disabled>{% translate "Send" context "chat.composer.send" %}</button>
+                        </div>
+                    </noscript>
                 {% endif %}
             </section>
         </main>

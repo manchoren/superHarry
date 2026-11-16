@@ -1,6 +1,9 @@
 import uuid
 import hashlib
 import json
+import re
+from datetime import timezone as datetime_timezone
+from .scheduler_timezone import ScheduleTimezoneError, normalize_schedule_timezone
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -244,6 +247,14 @@ class MemoryRecord(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(
+                condition=models.Q(scope__in=["global", "user"]),
+                name="home_memory_scope_value_ck",
+            ),
+            models.CheckConstraint(
+                condition=~models.Q(content=""),
+                name="home_memory_content_nonempty_ck",
+            ),
+            models.CheckConstraint(
                 condition=(
                     models.Q(scope="global", owner__isnull=True)
                     | models.Q(scope="user", owner__isnull=False)
@@ -265,6 +276,11 @@ class MemoryRecord(models.Model):
                 condition=models.Q(deleted_at__isnull=True)
                 | models.Q(deletion_requested_at__isnull=False),
                 name="home_memory_deleted_requested_ck",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(deleted_at__isnull=True)
+                | models.Q(deletion_requested_at__lte=models.F("deleted_at")),
+                name="home_memory_deletion_order_ck",
             ),
         ]
         indexes = [
@@ -411,6 +427,10 @@ class ChatEvent(models.Model):
         TURN_COMPLETED = "turn.completed", "Turn completed"
         TURN_FAILED = "turn.failed", "Turn failed"
         TURN_CANCELLED = "turn.cancelled", "Turn cancelled"
+        TURN_CAPABILITY_UNAVAILABLE = (
+            "turn.capability_unavailable",
+            "Capability unavailable",
+        )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     turn = models.ForeignKey(
@@ -528,6 +548,10 @@ class AuditEvent(models.Model):
         ADMIN_PACKAGE_GUARD_CHANGED = (
             "admin.package_guard_changed",
             "Package guard configuration changed",
+        )
+        ADMIN_APPLICATION_BUDGET_CHANGED = (
+            "admin.application_budget_changed",
+            "Application budget configuration changed",
         )
         TOOL_GRANT_CREATED = "tool.grant_created", "Tool grant created"
         TOOL_GRANT_REVOKED = "tool.grant_revoked", "Tool grant revoked"
@@ -712,8 +736,12 @@ class PackageGuardSettings(models.Model):
         if self.minimum_score > 100:
             raise ValidationError("Package guard threshold must be between 0 and 100.")
         names = [line.strip().lower().replace("_", "-") for line in self.blocked_packages.splitlines()]
-        if any(not name or any(char.isspace() for char in name) for name in names):
-            raise ValidationError("Blocklist entries must be non-empty package names.")
+        if any(
+            not re.fullmatch(r"[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?", name)
+            or len(name) > 128
+            for name in names
+        ):
+            raise ValidationError("Blocklist entries must be normalized package names.")
         self.blocked_packages = "\n".join(sorted(set(names)))
 
     def save(self, *args, **kwargs):
@@ -751,12 +779,17 @@ class PackageGuardEvaluation(models.Model):
     def clean(self):
         if self.score > 100:
             raise ValidationError("Package guard score must be between 0 and 100.")
-        if len(self.artifact_sha256) != 64:
+        if not re.fullmatch(r"[0-9a-f]{64}", self.artifact_sha256):
             raise ValidationError("Package guard evidence requires a SHA-256 digest.")
 
     def save(self, *args, **kwargs):
+        if self.pk is not None and type(self).objects.filter(pk=self.pk).exists():
+            raise ValueError("Package guard evaluations are immutable.")
         self.full_clean()
         return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError("Package guard evaluations cannot be deleted.")
 
 class ProviderQuota(models.Model):
     """Conservative, explicitly configured shared request allowance."""
@@ -869,6 +902,24 @@ class ApplicationBudget(models.Model):
         ]
 
 
+class ApplicationBudgetConfiguration(models.Model):
+    """Durable allowance configuration used only by explicit provisioning."""
+
+    scope = models.CharField(max_length=16, choices=[('global', 'Global'), ('user', 'User')])
+    scope_key = models.CharField(max_length=128)
+    daily_limit = models.PositiveBigIntegerField()
+    monthly_limit = models.PositiveBigIntegerField()
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=('scope', 'scope_key'), name='home_app_budget_config_scope_unique'),
+            models.CheckConstraint(condition=models.Q(daily_limit__gte=1), name='home_app_budget_config_daily_positive'),
+            models.CheckConstraint(condition=models.Q(monthly_limit__gte=1), name='home_app_budget_config_monthly_positive'),
+            models.CheckConstraint(condition=models.Q(scope='global', scope_key='global') | models.Q(scope='user'), name='home_app_budget_config_scope_key'),
+        ]
+
+
 class ApplicationBudgetReservation(models.Model):
     """One correlated reservation spanning all applicable application budgets."""
 
@@ -911,3 +962,190 @@ class GeminiChatJob(models.Model):
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     claimed_at = models.DateTimeField(null=True, blank=True)
     worker_finished_at = models.DateTimeField(null=True, blank=True)
+    capability_block_reason = models.CharField(max_length=64, blank=True, default="")
+
+
+class MaintenanceJob(models.Model):
+    """Durable contract for the two Phase 4 maintenance jobs.
+
+    This is only persistence and validation.  No signal, command, thread or
+    startup hook creates or runs these records; activation belongs to the
+    future T190 scheduler integration.
+    """
+
+    class TaskType(models.TextChoices):
+        STORAGE_CLEANUP = "storage_cleanup", "Storage cleanup"
+        MEMORY_CONSOLIDATION = "memory_consolidation", "Memory consolidation"
+        USER_TASK = "user_task", "User task"
+
+    class CreationRole(models.TextChoices):
+        SYSTEM = "system", "System"
+        USER = "user", "User"
+        ADMIN = "admin", "Admin"
+
+    class RunStatus(models.TextChoices):
+        PENDING = "pending", "Pending"
+        RUNNING = "running", "Running"
+        SUCCEEDED = "succeeded", "Succeeded"
+        FAILED = "failed", "Failed"
+
+    # Backward-compatible name used by the Phase 4 maintenance contract.
+    State = RunStatus
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="maintenance_jobs",
+    )
+    role_at_creation = models.CharField(
+        max_length=16,
+        choices=CreationRole.choices,
+        default=CreationRole.SYSTEM,
+    )
+    payload = models.JSONField(default=dict, blank=True)
+
+    task_type = models.CharField(max_length=32, choices=TaskType.choices)
+    schedule_timezone = models.CharField(max_length=64)
+    local_hour = models.PositiveSmallIntegerField(default=3)
+    enabled = models.BooleanField(default=False)
+    state = models.CharField(max_length=16, choices=RunStatus.choices, default=RunStatus.PENDING)
+    next_run_at = models.DateTimeField(null=True, blank=True)
+    last_run_at = models.DateTimeField(null=True, blank=True)
+    last_status = models.CharField(max_length=32, blank=True, default="")
+    claimed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("task_type",),
+                condition=models.Q(enabled=True),
+                name="home_maintenance_enabled_type_uniq",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(local_hour__gte=0, local_hour__lte=23),
+                name="home_maintenance_local_hour_ck",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(enabled=False)
+                    | models.Q(next_run_at__isnull=False)
+                ),
+                name="home_maintenance_enabled_next_run_ck",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    models.Q(owner__isnull=False, task_type="user_task"),
+                    models.Q(owner__isnull=True, task_type__in=("storage_cleanup", "memory_consolidation")),
+                    _connector="OR",
+                ),
+                name="home_maintenance_owner_task_type_ck",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    models.Q(task_type="user_task", role_at_creation__in=("user", "admin")),
+                    models.Q(task_type__in=("storage_cleanup", "memory_consolidation"), role_at_creation="system"),
+                    _connector="OR",
+                ),
+                name="home_maintenance_role_task_type_ck",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=("enabled", "state", "next_run_at"), name="home_maint_due_idx"),
+        ]
+
+    def clean(self):
+        super().clean()
+        try:
+            self.schedule_timezone = normalize_schedule_timezone(self.schedule_timezone)
+        except ScheduleTimezoneError:
+            raise ValidationError("Maintenance scheduler timezone is not configured.") from None
+        if self.enabled and self.next_run_at is None:
+            raise ValidationError("An enabled maintenance job requires next_run_at.")
+        temporal_fields = ("next_run_at", "last_run_at", "claimed_at")
+        temporal_errors = {}
+        for field_name in temporal_fields:
+            value = getattr(self, field_name)
+            if value is None:
+                continue
+            if timezone.is_naive(value):
+                temporal_errors[field_name] = "Maintenance timestamps must be timezone-aware."
+            else:
+                setattr(self, field_name, value.astimezone(datetime_timezone.utc))
+        if temporal_errors:
+            raise ValidationError(temporal_errors)
+        if self.task_type == self.TaskType.USER_TASK and self.owner_id is None:
+            raise ValidationError("A user task requires an owner.")
+        if self.task_type != self.TaskType.USER_TASK and self.owner_id is not None:
+            raise ValidationError("Maintenance jobs cannot have a user owner.")
+        if not isinstance(self.payload, dict):
+            raise ValidationError({"payload": "The task payload must be a JSON object."})
+        if self.task_type == self.TaskType.USER_TASK and self.role_at_creation not in {
+            self.CreationRole.USER,
+            self.CreationRole.ADMIN,
+        }:
+            raise ValidationError("A user task requires a captured user role.")
+
+
+class SkillProposal(models.Model):
+    """Immutable local review record for a T196 skill package.
+
+    This record is a proposal only.  Approval is performed by the T197
+    service, which requires a fresh, active staff user and never accepts an
+    agent or a non-staff user as the approving actor.
+    """
+
+    class State(models.TextChoices):
+        PROPOSED = "proposed", "Proposed"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+
+    class ProposerKind(models.TextChoices):
+        USER = "user", "User"
+        AGENT = "agent", "Agent"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=64)
+    version = models.CharField(max_length=64)
+    skill_md = models.TextField()
+    manifest_json = models.TextField()
+    content_diff = models.TextField(blank=True, default="")
+    proposal_digest = models.CharField(max_length=64, editable=False, default="")
+    proposer_kind = models.CharField(max_length=16, choices=ProposerKind.choices)
+    proposer_id = models.CharField(max_length=128)
+    state = models.CharField(max_length=16, choices=State.choices, default=State.PROPOSED)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="reviewed_skill_proposals",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    review_note = models.CharField(max_length=512, blank=True, default="")
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        ordering = ["-created_at", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(proposer_kind__in=("user", "agent")),
+                name="home_skillproposal_proposer_kind_ck",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(state="proposed", reviewed_by__isnull=True, reviewed_at__isnull=True)
+                | models.Q(state__in=("approved", "rejected"), reviewed_by__isnull=False, reviewed_at__isnull=False),
+                name="home_skillproposal_review_state_ck",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValueError("Skill proposals are immutable; use the review service.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError("Skill proposals cannot be deleted.")

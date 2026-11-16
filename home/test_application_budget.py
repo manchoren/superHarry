@@ -2,8 +2,9 @@ from datetime import datetime, timezone
 
 from django.test import TestCase
 
-from home.application_budget import ApplicationBudgetError, mark_unknown, period_start, reserve, settle
-from home.models import ApplicationBudget, ApplicationBudgetReservation
+from home.application_budget import (ApplicationBudgetError, mark_unknown, period_start,
+                                     provision_period_budgets, reserve, settle)
+from home.models import ApplicationBudget, ApplicationBudgetConfiguration, ApplicationBudgetReservation
 
 
 class ApplicationBudgetTests(TestCase):
@@ -14,6 +15,38 @@ class ApplicationBudgetTests(TestCase):
             for period in ('daily', 'monthly'):
                 ApplicationBudget.objects.create(scope=scope, scope_key=key, period=period,
                                                  period_start=period_start(self.at, period), hard_limit=100)
+
+    def test_explicit_provisioning_uses_durable_config_and_is_idempotent(self):
+        ApplicationBudget.objects.all().delete()
+        ApplicationBudgetConfiguration.objects.create(scope='global', scope_key='global',
+                                                       daily_limit=100, monthly_limit=200)
+        first = provision_period_budgets('global', 'global', at=self.at)
+        first[0].used = 7
+        first[0].reserved = 11
+        first[0].save(update_fields=['used', 'reserved'])
+        second = provision_period_budgets('global', 'global', at=self.at)
+        self.assertEqual([item.pk for item in first], [item.pk for item in second])
+        first[0].refresh_from_db()
+        self.assertEqual((first[0].hard_limit, first[0].used, first[0].reserved), (100, 7, 11))
+
+    def test_provisioning_missing_config_fails_closed(self):
+        with self.assertRaises(ApplicationBudgetError):
+            provision_period_budgets('global', 'global', at=self.at)
+
+    def test_explicit_rollover_keeps_prior_unknown_capacity_encumbered(self):
+        ApplicationBudget.objects.all().delete()
+        ApplicationBudgetConfiguration.objects.create(scope='global', scope_key='global',
+                                                       daily_limit=100, monthly_limit=100)
+        current = provision_period_budgets('global', 'global', at=self.at)[0]
+        hold = reserve('rollover-hold', 100, at=self.at)
+        mark_unknown(hold.pk)
+        next_day = datetime(2026, 11, 13, 1, 0, tzinfo=timezone.utc)
+        next_period = provision_period_budgets('global', 'global', at=next_day)[0]
+        self.assertNotEqual(current.pk, next_period.pk)
+        with self.assertRaises(ApplicationBudgetError):
+            reserve('rollover-blocked', 1, at=next_day)
+        next_period.refresh_from_db()
+        self.assertEqual((next_period.hard_limit, next_period.used, next_period.reserved), (100, 0, 0))
 
     def test_reserves_all_scopes_and_warns_once_at_eighty_percent(self):
         reservation = reserve('gateway-call', 80, user_key='user-1', at=self.at)
@@ -127,3 +160,16 @@ class ApplicationBudgetTests(TestCase):
         budget.refresh_from_db()
         self.assertEqual((reservation.state, reservation.actual), ('reserved', None))
         self.assertEqual((budget.reserved, budget.used), (0, 0))
+
+    def test_mark_unknown_is_idempotent_but_rejects_settled_or_invalid_ids(self):
+        reservation = reserve('recoverable-call', 10, user_key='user-1', at=self.at)
+        mark_unknown(reservation.pk)
+        mark_unknown(reservation.pk)
+        reservation.refresh_from_db()
+        self.assertEqual(reservation.state, 'unknown')
+
+        settled = reserve('settled-call', 10, user_key='user-1', at=self.at)
+        settle(settled.pk, 0)
+        for reservation_id in (settled.pk, 0, -1, True, '1', None):
+            with self.subTest(reservation_id=reservation_id), self.assertRaises(ApplicationBudgetError):
+                mark_unknown(reservation_id)

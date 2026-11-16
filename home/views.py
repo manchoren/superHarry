@@ -174,8 +174,24 @@ def delete_conversation(request, conversation_id):
             active = ChatTurn.objects.filter(conversation_id=conversation_id, state__in=(
                 ChatTurn.State.QUEUED, ChatTurn.State.RUNNING, ChatTurn.State.CANCEL_REQUESTED,
             )).exists()
-            uncertain = GeminiChatJob.objects.filter(turn__conversation_id=conversation_id,
-                state__in=(GeminiChatJob.State.CLAIMED, GeminiChatJob.State.INTERRUPTED)).exists()
+            # A claim remains unresolved until the worker has recorded its local
+            # return. Once that evidence exists, an interrupted job is safe to
+            # delete only when its turn is terminal; this does not prove remote
+            # provider termination.
+            uncertain = GeminiChatJob.objects.filter(
+                turn__conversation_id=conversation_id,
+            ).filter(
+                Q(state=GeminiChatJob.State.CLAIMED)
+                | Q(state=GeminiChatJob.State.INTERRUPTED,
+                    worker_finished_at__isnull=True)
+                | Q(state=GeminiChatJob.State.INTERRUPTED,
+                    worker_finished_at__isnull=False,
+                    turn__state__in=(
+                        ChatTurn.State.QUEUED,
+                        ChatTurn.State.RUNNING,
+                        ChatTurn.State.CANCEL_REQUESTED,
+                    ))
+            ).exists()
             if active or uncertain:
                 return render(request, 'home/conversation_delete.html',
                               {'conversation': conversation, 'blocked': True}, status=409)

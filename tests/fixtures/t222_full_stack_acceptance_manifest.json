@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "task": "T222",
+  "purpose": "Local acceptance contract for the explicitly enabled release scope",
+  "target_profile": "debian-arm64-vm-frozen-release",
+  "network_policy": "deny-unless-explicitly-enabled",
+  "credential_policy": "synthetic-or-provisioned-by-separate-approval",
+  "benchmark_policy": "comparative-and-numerical-benchmarks-waived",
+  "execution_policy": "target-vm-only-for-acceptance",
+  "enabled_features": [
+    {"id": "authenticated-chat", "tasks": ["T179", "T229", "T230"]},
+    {"id": "memory-and-retrieval", "tasks": ["T182", "T183", "T184", "T186"]},
+    {"id": "authorized-tools-and-files", "tasks": ["T180", "T232", "T233"]},
+    {"id": "scheduled-work", "tasks": ["T190", "T201", "T202", "T203", "T204", "T205"]},
+    {"id": "sandbox-and-documents", "tasks": ["T192", "T193", "T195", "T196", "T197", "T198", "T199", "T200"]},
+    {"id": "image-ocr", "tasks": ["T206", "T207"]},
+    {"id": "browser-display", "tasks": ["T208", "T209", "T210"]},
+    {"id": "guest-and-channels", "tasks": ["T211", "T212", "T213", "T214", "T216"]},
+    {"id": "voice", "tasks": ["T215"]},
+    {"id": "backup-and-update-recovery", "tasks": ["T188", "T189", "T223", "T224"]}
+  ],
+  "cases": [
+    {"id": "functional-enabled-flows", "category": "functional", "required": true, "status": "not_run", "evidence": null},
+    {"id": "security-authz-and-cross-user-denial", "category": "security", "required": true, "status": "not_run", "evidence": null},
+    {"id": "security-bounded-input-and-resource-enforcement", "category": "security", "required": true, "status": "not_run", "evidence": null},
+    {"id": "restart-service-and-state-continuity", "category": "restart", "required": true, "status": "not_run", "evidence": null},
+    {"id": "recovery-backup-restore-corruption-interruption", "category": "recovery", "required": true, "status": "not_run", "evidence": null},
+    {"id": "recovery-update-rollback", "category": "recovery", "required": true, "status": "not_run", "evidence": null}
+  ],
+  "explicit_exclusions": [
+    "throughput-and-load-benchmarking",
+    "latency-and-peak-resource-benchmarking",
+    "comparative-model-quality-scoring",
+    "live-provider-campaign-not-enabled-by-this-manifest",
+    "production-mutation-or-acceptance"
+  ]
+}

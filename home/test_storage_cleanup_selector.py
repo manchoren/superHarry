@@ -1,11 +1,16 @@
 from datetime import datetime, timezone
 
-from django.test import SimpleTestCase
+from django.contrib.auth import get_user_model
+from django.test import SimpleTestCase, TestCase
+from datetime import timezone
+
+from home.models import Conversation, MemoryRecord, StoredFile
 
 from home.storage_cleanup import (
     CleanupCandidate,
     StoragePressureError,
     build_cleanup_plan,
+    eligible_user_content_candidate,
     select_cleanup_candidates,
 )
 
@@ -126,6 +131,44 @@ class CleanupSelectorTests(SimpleTestCase):
         self.assertEqual(plan.excluded_count, 1)
         self.assertEqual(plan.skipped_for_budget, ())
 
+    def test_user_content_requires_explicit_pressure_gate_and_six_month_staleness(self):
+        now = datetime(2026, 11, 15, tzinfo=timezone.utc)
+        stale_before = datetime(2026, 5, 15, tzinfo=timezone.utc)
+        recent = CleanupCandidate("recent", 1, datetime(2026, 6, 1, tzinfo=timezone.utc))
+        old = CleanupCandidate("old", 1, datetime(2026, 1, 1, tzinfo=timezone.utc))
+
+        self.assertFalse(
+            eligible_user_content_candidate(
+                recent, now=now, stale_before=stale_before
+            ).eligible
+        )
+        self.assertTrue(
+            eligible_user_content_candidate(
+                old, now=now, stale_before=stale_before
+            ).eligible
+        )
+
+    def test_user_content_retention_overrides_staleness(self):
+        candidate = CleanupCandidate(
+            "memory", 1, datetime(2026, 1, 1, tzinfo=timezone.utc)
+        )
+        gated = eligible_user_content_candidate(
+            candidate,
+            now=datetime(2026, 11, 15, tzinfo=timezone.utc),
+            stale_before=datetime(2026, 5, 15, tzinfo=timezone.utc),
+            retain_until=datetime(2027, 1, 1, tzinfo=timezone.utc),
+        )
+        self.assertFalse(gated.eligible)
+
+    def test_privacy_gate_rejects_naive_timestamps(self):
+        candidate = CleanupCandidate("memory", 1, self.old)
+        with self.assertRaises(StoragePressureError):
+            eligible_user_content_candidate(
+                candidate,
+                now=datetime(2026, 11, 15),
+                stale_before=datetime(2026, 5, 15, tzinfo=timezone.utc),
+            )
+
 
 class FutureCleanupExecutorContractTests(SimpleTestCase):
     """Contract specification for a future authorized CleanupPlan executor.
@@ -168,3 +211,101 @@ class FutureCleanupExecutorContractTests(SimpleTestCase):
             audit.append({"selected_ids": plan.selected_ids, "outcome": "failed", "error": str(error)})
         self.assertEqual(attempted, [])
         self.assertEqual(audit[-1]["outcome"], "failed")
+
+
+class PersistedCleanupInventoryTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.owner = user_model.objects.create_user("cleanup-owner", password="x")
+        self.other = user_model.objects.create_user("cleanup-other", password="x")
+        self.now = datetime(2026, 11, 15, tzinfo=timezone.utc)
+        self.stale_before = datetime(2026, 5, 15, tzinfo=timezone.utc)
+
+    def test_inventory_is_owner_scoped_and_excludes_global_memory(self):
+        own_file = StoredFile.objects.create(
+            owner=self.owner, original_name="old.bin", size=12, sha256="a" * 64,
+        )
+        foreign_file = StoredFile.objects.create(
+            owner=self.other, original_name="foreign.bin", size=99, sha256="b" * 64,
+        )
+        Conversation.objects.create(owner=self.owner, last_accessed_at=datetime(2026, 1, 1, tzinfo=timezone.utc))
+        MemoryRecord.objects.create(
+            scope=MemoryRecord.Scope.USER, owner=self.owner, content="private",
+            last_accessed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        )
+        MemoryRecord.objects.create(scope=MemoryRecord.Scope.GLOBAL, content="global")
+        MemoryRecord.objects.create(
+            scope=MemoryRecord.Scope.USER, owner=self.other, content="foreign",
+            last_accessed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        )
+
+        from home.storage_cleanup import collect_persisted_user_candidates
+        candidates = collect_persisted_user_candidates(
+            self.owner, now=self.now, stale_before=self.stale_before,
+        )
+        ids = {candidate.identifier for candidate in candidates}
+        self.assertIn(f"file:{own_file.storage_id}", ids)
+        self.assertNotIn(f"file:{foreign_file.storage_id}", ids)
+        self.assertEqual(sum(candidate.kind == "memory" for candidate in candidates), 1)
+        self.assertEqual(sum(candidate.kind == "conversation" for candidate in candidates), 1)
+
+    def test_retained_memory_and_active_conversation_are_protected(self):
+        conversation = Conversation.objects.create(
+            owner=self.owner, last_accessed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        )
+        from home.models import ChatTurn, Message
+        message = Message.objects.create(conversation=conversation, role=Message.Role.USER, content="pending")
+        ChatTurn.objects.create(
+            conversation=conversation, user_message=message,
+            idempotency_key="00000000-0000-0000-0000-000000000001",
+            request_digest="a" * 64, model_mode=ChatTurn.ModelMode.LOCAL,
+            state=ChatTurn.State.RUNNING,
+        )
+        MemoryRecord.objects.create(
+            scope=MemoryRecord.Scope.USER, owner=self.owner, content="retained",
+            last_accessed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            retain_until=datetime(2027, 1, 1, tzinfo=timezone.utc),
+        )
+
+        from home.storage_cleanup import collect_persisted_user_candidates
+        candidates = collect_persisted_user_candidates(
+            self.owner, now=self.now, stale_before=self.stale_before,
+        )
+        by_kind = {candidate.kind: candidate for candidate in candidates}
+        self.assertTrue(by_kind["conversation"].protected)
+        self.assertFalse(by_kind["memory"].eligible)
+
+    def test_inventory_has_a_hard_candidate_limit(self):
+        Conversation.objects.create(owner=self.owner)
+        Conversation.objects.create(owner=self.owner)
+        from home.storage_cleanup import collect_persisted_user_candidates, StoragePressureError
+        with self.assertRaises(StoragePressureError):
+            collect_persisted_user_candidates(
+                self.owner, now=self.now, stale_before=self.stale_before, max_candidates=0,
+            )
+        with self.assertRaises(StoragePressureError):
+            collect_persisted_user_candidates(
+                self.owner, now=self.now, stale_before=self.stale_before, max_candidates=1,
+            )
+
+    def test_pressure_floor_prevents_inventory_and_plan_when_not_breached(self):
+        from home.storage_cleanup import build_persisted_user_cleanup_proposal
+        proposal = build_persisted_user_cleanup_proposal(
+            self.owner, total_bytes=100, free_bytes=20,
+            now=self.now, stale_before=self.stale_before,
+        )
+        self.assertFalse(proposal.pressure.pressured)
+        self.assertEqual(proposal.plan.selected_ids, ())
+        self.assertEqual(proposal.plan.byte_budget, 0)
+
+    def test_pressure_proposal_never_includes_another_users_rows(self):
+        StoredFile.objects.create(
+            owner=self.other, original_name="foreign.bin", size=10,
+            sha256="c" * 64, last_accessed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        )
+        from home.storage_cleanup import build_persisted_user_cleanup_proposal
+        proposal = build_persisted_user_cleanup_proposal(
+            self.owner, total_bytes=100, free_bytes=0,
+            now=self.now, stale_before=self.stale_before,
+        )
+        self.assertEqual(proposal.plan.selected_ids, ())

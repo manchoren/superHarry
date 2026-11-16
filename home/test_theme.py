@@ -29,6 +29,10 @@ class ThemePreferenceTests(SimpleTestCase):
             self.assertIn('value="dark"', template)
             self.assertIn('theme.js', template)
 
+    def test_signed_out_conversation_delete_keeps_device_theme_available(self):
+        template = (self.base_dir / "templates/home/conversation_delete.html").read_text(encoding="utf-8")
+        self.assertIn('{% if user.is_authenticated %} data-account-theme="{{ account_theme }}"{% endif %}', template)
+
 
 @override_settings(SUPERHARRY_HOSTNAME='testserver')
 class AccountThemeTests(TestCase):

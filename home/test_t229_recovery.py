@@ -17,8 +17,8 @@ from home.test_budget_support import create_application_budgets
 
 class CancelledClaimRecoveryTests(TestCase):
     @override_settings(DEBUG=True, ALLOWED_HOSTS=['testserver'], SUPERHARRY_HOSTNAME='testserver')
-    def test_age_alone_can_interrupt_a_claim_while_worker_is_still_running(self):
-        """Characterize the current limitation; this is not a liveness proof."""
+    def test_recovery_fences_a_worker_that_returns_after_claim_interruption(self):
+        """A recovered claim stays interrupted when its old worker returns."""
         user = get_user_model().objects.create_user(username="synthetic-live-claim")
         conversation = Conversation.objects.create(owner=user)
         message = Message.objects.create(conversation=conversation, role="user", content="synthetic")
@@ -46,13 +46,16 @@ class CancelledClaimRecoveryTests(TestCase):
             self.assertTrue(run_one())
         turn.refresh_from_db()
         job = GeminiChatJob.objects.get(turn=turn)
-        self.assertEqual(job.state, GeminiChatJob.State.DONE)
+        # Recovery won the claim while the worker was still inside the
+        # callback; the late worker must be fenced from promoting it to DONE.
+        self.assertEqual(job.state, GeminiChatJob.State.INTERRUPTED)
+        self.assertIsNone(job.worker_finished_at)
         self.assertEqual(turn.state, ChatTurn.State.FAILED)
         self.assertEqual(turn.events.get(event_type="turn.failed").payload["reason"], "interrupted_unknown")
         self.assertFalse(run_one())
         response = self.client.post(url, {'confirm': 'delete'}, secure=True,
                                     HTTP_ORIGIN='https://testserver')
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 409)
         hold.refresh_from_db()
         self.assertEqual(hold.state, 'unknown')
 
@@ -72,7 +75,7 @@ class CancelledClaimRecoveryTests(TestCase):
         self.assertFalse(run_one())
 
     @override_settings(DEBUG=True, ALLOWED_HOSTS=['testserver'], SUPERHARRY_HOSTNAME='testserver')
-    def test_return_before_recovery_records_exit_and_permits_deletion(self):
+    def test_return_before_recovery_records_exit_and_blocks_synthetic_recovery(self):
         user = get_user_model().objects.create_user(username='synthetic-returned-worker')
         create_application_budgets(user.pk)
         conversation = Conversation.objects.create(owner=user)
@@ -90,15 +93,15 @@ class CancelledClaimRecoveryTests(TestCase):
         self.assertFalse(run_one())
         now = timezone.now()
         GeminiChatJob.objects.filter(pk=job.pk).update(claimed_at=now - timedelta(minutes=6))
-        self.assertEqual(reconcile_stale(now=now), 1)
+        self.assertEqual(reconcile_stale(now=now), 0)
         job.refresh_from_db()
         turn.refresh_from_db()
-        self.assertEqual((job.state, turn.state), (GeminiChatJob.State.DONE, ChatTurn.State.FAILED))
-        self.assertEqual(turn.events.get(event_type='turn.failed').payload['reason'], 'interrupted_unknown')
+        self.assertEqual((job.state, turn.state), (GeminiChatJob.State.CLAIMED, ChatTurn.State.QUEUED))
+        self.assertFalse(turn.events.filter(event_type='turn.failed').exists())
         self.client.force_login(user)
         response = self.client.post(reverse('conversation-delete', args=[conversation.pk]),
             {'confirm': 'delete'}, secure=True, HTTP_ORIGIN='https://testserver')
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 409)
         hold.refresh_from_db()
         self.assertEqual(hold.state, 'unknown')
 

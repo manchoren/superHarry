@@ -8,6 +8,7 @@ exact model identity, tokenizer and complete upstream framing.
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from django.conf import settings
 
 _DEFAULT_TOKENIZER_MODEL_ID = "gpt2"
@@ -20,6 +21,39 @@ class TokenizationError(RuntimeError):
 
 class TokenizationUnavailableError(TokenizationError):
     """The pinned tokenizer is unavailable; fail closed."""
+
+
+@dataclass(frozen=True)
+class FramingContract:
+    """Local description of a serialized body; never an upstream guarantee.
+
+    ``upstream_verified`` is intentionally false for the current external
+    routes.  The contract records what the local serializer includes so a
+    future evidence package can be compared against it, but it cannot admit
+    a provider request or claim that the provider uses the same framing.
+    """
+
+    model_id: str
+    tokenizer_id: str
+    tokenizer_revision: str
+    framing_id: str = "openai-compatible-json-body-v1"
+    coverage: str = "local-serialized-json-body-message-text-only"
+    upstream_verified: bool = False
+
+    @property
+    def admissible_for_external_dispatch(self) -> bool:
+        return self.upstream_verified is True
+
+
+def describe_framing(model_id: str) -> FramingContract:
+    """Return the non-authoritative local framing contract for ``model_id``."""
+    if not isinstance(model_id, str) or not model_id.strip():
+        raise TokenizationError("model_id_invalid")
+    return FramingContract(
+        model_id=model_id.strip(),
+        tokenizer_id=_get_tokenizer_model_id(),
+        tokenizer_revision=_get_tokenizer_revision(),
+    )
 
 
 def _get_tokenizer_model_id() -> str:
@@ -47,12 +81,13 @@ def _is_pin_approved(model_id: str) -> bool:
 
 def build_counter(model_id: str) -> "TokenizerTokenCounter":
     """Fail closed until a complete provider-specific chat bound is verified."""
-    if not isinstance(model_id, str) or not model_id.strip():
-        raise TokenizationError("model_id_invalid")
-    model_id = model_id.strip()
+    model_id = describe_framing(model_id).model_id
     if not _is_pin_approved(model_id):
         raise TokenizationUnavailableError("tokenizer_model_not_approved")
-    raise TokenizationUnavailableError("tokenizer_chat_framing_unverified")
+    contract = describe_framing(model_id)
+    if not contract.admissible_for_external_dispatch:
+        raise TokenizationUnavailableError("tokenizer_chat_framing_unverified")
+    raise TokenizationUnavailableError("tokenizer_unavailable")
 
 
 def _build_encoder(tiktoken, model_id: str):
@@ -65,7 +100,7 @@ def _build_encoder(tiktoken, model_id: str):
 
 
 class TokenizerTokenCounter:
-    """Content-only helper; its count is not a framed provider request bound."""
+    """Local content counter; its result is not an upstream request bound."""
 
     def __init__(self, *, model_id: str, revision: str, encoder) -> None:
         self.model_id = model_id
@@ -104,6 +139,11 @@ def _extract_text_parts(payload: object) -> list[str]:
                 if key in ("content", "text"):
                     if isinstance(item, str):
                         found.append(item)
+                    else:
+                        # OpenAI-compatible content may be a list of typed
+                        # parts. Walk non-string values so nested text is not
+                        # silently omitted from the safety bound.
+                        walk(item)
                     continue
                 walk(item)
         elif isinstance(value, (list, tuple)):

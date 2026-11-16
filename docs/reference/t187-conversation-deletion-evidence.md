@@ -69,3 +69,17 @@ Windows validation:
   synthetic evidence was cleared. The first isolated attempt used the current
   ORM against the earlier schema and failed; the repeat used historical models.
   This records local execution return only, not remote provider termination.
+
+## 2026-11-15 local privacy follow-up
+
+Deletion now distinguishes an unresolved interrupted claim from an interrupted
+job whose worker has recorded local return. The latter remains deletable only
+when its `ChatTurn` is terminal; queued, running and cancel-requested turns
+continue to block deletion. This narrows retention of completed user history
+without treating local return as proof that a remote provider stopped.
+
+Validation: `home.test_t187_history_isolation` and `home.test_t187_concurrency`
+passed 8 tests, including the
+returned-worker deletion regression; `manage.py check`, migration dry-run and
+`git diff --check` passed. No T229 queue code, VM, provider or production data
+was changed. T187 remains pending integrated and operational acceptance.

@@ -1,5 +1,6 @@
 import os
 import stat
+import struct
 import tempfile
 import uuid
 from pathlib import Path
@@ -13,6 +14,7 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from home.file_store import FileStoreError, detect_content_type, open_download_stream, stage_for_authorized_job, upload
+from home.image_validation import ImageValidationError, validate_image_bytes, validate_image_file
 from home.models import AuditEvent
 
 
@@ -127,13 +129,16 @@ class AuthorizedFileStoreTests(TestCase):
     def test_detects_signature_from_stream_instead_of_uploader_claim(self):
         class SplitUpload:
             name = 'not-an-image.txt'
-            size = 8
+            size = 33
             content_type = 'text/html'
 
             def chunks(self, chunk_size):
-                return iter((b'\x89PN', b'G\r\n\x1a\n'))
+                payload = (b'\x89PNG\r\n\x1a\n' + struct.pack('>I', 13) + b'IHDR'
+                           + struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0) + b'\0\0\0\0')
+                return iter((payload[:3], payload[3:]))
 
-        record = upload(user=self.owner, uploaded_file=SplitUpload())
+        with override_settings(SUPERHARRY_FILE_MAX_BYTES=64):
+            record = upload(user=self.owner, uploaded_file=SplitUpload())
         self.assertEqual(record.content_type, 'image/png')
         unknown = upload(user=self.owner, uploaded_file=SimpleUploadedFile(
             'photo.png', b'<html>', content_type='image/png'))
@@ -147,6 +152,40 @@ class AuthorizedFileStoreTests(TestCase):
         for prefix, expected in cases:
             with self.subTest(prefix=prefix):
                 self.assertEqual(detect_content_type(prefix), expected)
+
+    def test_image_ingress_rejects_oversized_canvas_and_exif(self):
+        png = b'\x89PNG\r\n\x1a\n' + struct.pack('>I', 13) + b'IHDR' + struct.pack('>IIBBBBB', 10000, 10000, 8, 2, 0, 0, 0)
+        with self.assertRaises(ImageValidationError):
+            validate_image_bytes(png)
+        jpeg = b'\xff\xd8\xff\xe1' + struct.pack('>H', 14) + b'Exif\x00\x00metadata'
+        with self.assertRaises(ImageValidationError):
+            validate_image_bytes(jpeg)
+
+    def test_upload_rejects_image_hygiene_failure_before_record(self):
+        png = (b'\x89PNG\r\n\x1a\n' + struct.pack('>I', 13) + b'IHDR'
+               + struct.pack('>IIBBBBB', 10000, 10000, 8, 2, 0, 0, 0) + b'\0\0\0\0')
+        with override_settings(SUPERHARRY_FILE_MAX_BYTES=64), self.assertRaises(FileStoreError):
+            upload(user=self.owner, uploaded_file=SimpleUploadedFile('bomb.png', png))
+        self.assertFalse(self.owner.stored_files.exists())
+        self.assertEqual(list(Path(self.temp_dir.name, 'store').iterdir()), [])
+
+    def test_image_file_validation_rejects_metadata_after_old_header_window(self):
+        path = Path(self.temp_dir.name, "late-exif.png")
+        payload = (b'\x89PNG\r\n\x1a\n' + struct.pack('>I', 13) + b'IHDR'
+                   + struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0)
+                   + b'\0\0\0\0' + b'a' * (1024 * 1024) + b'eXIf')
+        path.write_bytes(payload)
+        with self.assertRaises(ImageValidationError):
+            validate_image_file(path, content_type='image/png', size=len(payload))
+
+    def test_image_file_validation_rejects_invalid_declared_size(self):
+        path = Path(self.temp_dir.name, "short.png")
+        payload = (b'\x89PNG\r\n\x1a\n' + struct.pack('>I', 13) + b'IHDR'
+                   + struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0) + b'\0\0\0\0')
+        path.write_bytes(payload)
+        for declared in (0, len(payload) - 1, len(payload) + 1, True):
+            with self.subTest(declared=declared), self.assertRaises(ImageValidationError):
+                validate_image_file(path, content_type='image/png', size=declared)
 
     def test_download_rechecks_legacy_mime_using_verified_bytes(self):
         record = upload(user=self.owner, uploaded_file=SimpleUploadedFile('file.html', b'<html>',
@@ -252,6 +291,16 @@ class AuthorizedFileStoreTests(TestCase):
             stage_for_authorized_job(user=self.owner, storage_id=record.storage_id, destination_dir=staging)
         self.assertFalse((staging / str(record.storage_id)).exists())
 
+    def test_staging_rejects_record_above_current_limit_before_copying(self):
+        record = upload(user=self.owner, uploaded_file=SimpleUploadedFile("x.txt", b"12345678"))
+        staging = Path(self.temp_dir.name, "job")
+        staging.mkdir()
+        with override_settings(SUPERHARRY_FILE_MAX_BYTES=7):
+            with self.assertRaises(FileStoreError):
+                stage_for_authorized_job(user=self.owner, storage_id=record.storage_id,
+                                         destination_dir=staging)
+        self.assertFalse((staging / str(record.storage_id)).exists())
+
     def test_staging_rejects_same_size_tampering_and_removes_output(self):
         record = upload(user=self.owner, uploaded_file=SimpleUploadedFile("x.txt", b"hello"))
         Path(self.temp_dir.name, "store", str(record.storage_id)).write_bytes(b"other")
@@ -355,6 +404,30 @@ class AuthorizedFileStoreTests(TestCase):
         body = b"".join(response.streaming_content)
         response.close()
         self.assertNotIn(str(self.temp_dir.name).encode(), body)
+
+    def test_http_boundary_correlates_file_audit_and_disables_caching(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(
+            reverse("file-upload"), {"file": SimpleUploadedFile("x.txt", b"hello")},
+            secure=True, HTTP_HOST="superharry.local", HTTP_ORIGIN="https://superharry.local",
+        )
+        self.assertEqual(response.status_code, 201)
+        request_id = response.json()["request_id"]
+        self.assertEqual(response["Cache-Control"], "no-store")
+        self.assertEqual(response["X-Content-Type-Options"], "nosniff")
+        self.assertEqual(
+            str(AuditEvent.objects.get(event_type=AuditEvent.EventType.FILE_UPLOADED).request_id),
+            request_id,
+        )
+        record = self.owner.stored_files.get()
+        response = self.client.get(reverse("file-download", args=[record.storage_id]), secure=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Cache-Control"], "no-store")
+        self.assertEqual(response["X-Content-Type-Options"], "nosniff")
+        self.assertEqual(response["X-Request-ID"], str(
+            AuditEvent.objects.get(event_type=AuditEvent.EventType.FILE_DOWNLOADED).request_id
+        ))
+        response.close()
 
     @skipUnless(hasattr(os, "symlink"), "symlink support is unavailable")
     def test_symlink_store_entry_is_denied(self):

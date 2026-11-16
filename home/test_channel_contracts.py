@@ -13,6 +13,8 @@ from home.channel_contracts import (
     ChannelPrivilege,
     ChannelAtomicStore,
     ChannelRepository,
+    MAX_CHANNEL_ATTACHMENT_BYTES,
+    bind_channel_attachment,
     consume_dedupe_receipt,
     consume_link_grant,
 )
@@ -37,6 +39,26 @@ class ChannelContractTests(SimpleTestCase):
             ChannelAttachment(uuid4(), 0, "a" * 64)
         with self.assertRaisesRegex(ChannelContractError, "attachment_digest_invalid"):
             ChannelAttachment(uuid4(), 3, "z" * 64)
+        with self.assertRaisesRegex(ChannelContractError, "attachment_size_exceeds_limit"):
+            ChannelAttachment(uuid4(), MAX_CHANNEL_ATTACHMENT_BYTES + 1, "a" * 64)
+        with self.assertRaisesRegex(ChannelContractError, "attachment_content_type_invalid"):
+            ChannelAttachment(uuid4(), 3, "a" * 64, "text/plain; charset=utf-8")
+
+    def test_attachment_binding_rejects_untrusted_metadata_mismatch(self):
+        attachment = ChannelAttachment(uuid4(), 3, "a" * 64, "application/octet-stream")
+        self.assertIs(bind_channel_attachment(
+            attachment, stored_size=3, stored_sha256="A" * 64,
+            detected_content_type="application/octet-stream"), attachment)
+        for kwargs, error in (
+            ({"stored_size": 4, "stored_sha256": "a" * 64,
+              "detected_content_type": "application/octet-stream"}, "attachment_size_mismatch"),
+            ({"stored_size": 3, "stored_sha256": "b" * 64,
+              "detected_content_type": "application/octet-stream"}, "attachment_digest_mismatch"),
+            ({"stored_size": 3, "stored_sha256": "a" * 64,
+              "detected_content_type": "text/plain"}, "attachment_content_type_mismatch"),
+        ):
+            with self.assertRaisesRegex(ChannelContractError, error):
+                bind_channel_attachment(attachment, **kwargs)
 
     def test_contracts_are_immutable_and_request_dedupe_key_is_required(self):
         identity = ChannelIdentity("email", "sender", uuid4())
@@ -48,12 +70,14 @@ class ChannelContractTests(SimpleTestCase):
 
     def test_link_grant_rejects_expired_replayed_or_conflicting_state(self):
         expiry = datetime.now(timezone.utc) + timedelta(minutes=10)
-        grant = ChannelLinkGrant(uuid4(), "telegram", "sender-1", expiry)
+        grant = ChannelLinkGrant(uuid4(), "telegram", "sender-1", expiry, user_id=uuid4())
         self.assertFalse(grant.consumed)
         with self.assertRaisesRegex(ChannelContractError, "link_expired"):
-            ChannelLinkGrant(uuid4(), "telegram", "sender-1", datetime.now(timezone.utc) - timedelta(seconds=1))
+            ChannelLinkGrant(uuid4(), "telegram", "sender-1", datetime.now(timezone.utc), user_id=uuid4())
         with self.assertRaisesRegex(ChannelContractError, "link_state_conflict"):
-            ChannelLinkGrant(uuid4(), "telegram", "sender-1", expiry, revoked=True, consumed=True)
+            ChannelLinkGrant(uuid4(), "telegram", "sender-1", expiry, revoked=True, consumed=True, user_id=uuid4())
+        with self.assertRaisesRegex(ChannelContractError, "user_id_invalid"):
+            ChannelLinkGrant(uuid4(), "telegram", "sender-1", expiry, user_id="not-a-uuid")
 
     def test_dedupe_receipt_binds_key_to_request_id(self):
         receipt = ChannelDedupeReceipt("message-1", uuid4(), consumed=True)
@@ -64,15 +88,16 @@ class ChannelContractTests(SimpleTestCase):
     def test_consumption_is_single_use_and_does_not_mutate_grant(self):
         now = datetime.now(timezone.utc)
         grant = ChannelLinkGrant(
-            uuid4(), "telegram", "sender-1", now + timedelta(minutes=10)
+            uuid4(), "telegram", "sender-1", now + timedelta(minutes=10), user_id=uuid4()
         )
         consumed = consume_link_grant(grant, now=now)
         self.assertFalse(grant.consumed)
         self.assertTrue(consumed.consumed)
+        self.assertEqual(consumed.user_id, grant.user_id)
         with self.assertRaisesRegex(ChannelContractError, "link_replayed"):
             consume_link_grant(consumed, now=now)
         revoked = ChannelLinkGrant(
-            uuid4(), "telegram", "sender-2", now + timedelta(minutes=10), revoked=True
+            uuid4(), "telegram", "sender-2", now + timedelta(minutes=10), revoked=True, user_id=uuid4()
         )
         with self.assertRaisesRegex(ChannelContractError, "link_revoked"):
             consume_link_grant(revoked, now=now)
@@ -102,7 +127,7 @@ class ChannelContractTests(SimpleTestCase):
 
     def test_expiry_boundary_and_naive_time_fail_closed_without_mutation(self):
         now = datetime.now(timezone.utc)
-        grant = ChannelLinkGrant(uuid4(), "email", "sender", now + timedelta(seconds=1))
+        grant = ChannelLinkGrant(uuid4(), "email", "sender", now + timedelta(seconds=1), user_id=uuid4())
         with self.assertRaisesRegex(ChannelContractError, "link_expired"):
             consume_link_grant(grant, now=grant.expires_at)
         self.assertFalse(grant.consumed)

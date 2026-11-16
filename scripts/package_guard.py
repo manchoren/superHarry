@@ -7,11 +7,14 @@ or authorize installation. The evidence producer and reviewer remain separate.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 import math
 import re
 from pathlib import Path
 import subprocess
 from collections.abc import Callable
+
+from home.sandbox_planner import SandboxPlan, SandboxPlanError, validate_sandbox_plan
 
 
 @dataclass(frozen=True)
@@ -52,6 +55,73 @@ class GuardResult:
     score: int
     blockers: tuple[str, ...]
     accepted: bool
+    # Kept true for compatibility with the historical four-field constructor;
+    # the boundary still validates the complete PackageEvidence and digest.
+    evidence_valid: bool = True
+    artifact_digest: str = ""
+
+
+@dataclass(frozen=True)
+class SandboxInstallationPlan:
+    """Validated intent for a future sandbox installer; it has no side effects."""
+
+    package: str
+    version: str
+    artifact: Path
+    artifact_digest: str
+    score: int
+    evidence_valid: bool
+    approved_by: str
+
+
+def prepare_sandbox_installation(
+    evidence: PackageEvidence,
+    result: GuardResult,
+    artifact: Path,
+    *,
+    approved_by: str,
+    sandbox_plan: SandboxPlan,
+    threshold: int = 80,
+) -> SandboxInstallationPlan:
+    """Validate the PackageGuard-to-sandbox boundary without installing or executing.
+
+    This function is intentionally a preparation contract. A caller must provide
+    a passing score, complete evidence, an exact artifact digest, and an explicit
+    approval identity. It never invokes a package manager or sandbox runner.
+    """
+    if not isinstance(artifact, Path) or not artifact.is_file():
+        raise PermissionError("sandbox_artifact_unavailable")
+    if not isinstance(approved_by, str):
+        raise PermissionError("sandbox_approval_malformed")
+    try:
+        validate_sandbox_plan(sandbox_plan)
+    except SandboxPlanError as exc:
+        raise PermissionError(f"sandbox_plan_invalid:{exc}") from exc
+    if not isinstance(threshold, int) or isinstance(threshold, bool) or not 0 <= threshold <= 100:
+        raise ValueError("threshold must be between 0 and 100")
+    if not isinstance(result, GuardResult) or not result.accepted:
+        raise PermissionError("package_guard_denied")
+    if result.score < threshold or not result.evidence_valid:
+        raise PermissionError("package_guard_evidence_or_score_invalid")
+    if not isinstance(evidence, PackageEvidence):
+        raise PermissionError("package_guard_evidence_unavailable")
+    digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
+    expected = evidence.digest
+    bound_digest = result.artifact_digest or expected
+    if (digest != expected or bound_digest != digest
+            or not re.fullmatch(r"[0-9a-f]{64}", digest)):
+        raise PermissionError("package_guard_digest_mismatch")
+    if result.package != evidence.name or result.version != evidence.version:
+        raise PermissionError("package_guard_identity_mismatch")
+    return SandboxInstallationPlan(
+        package=result.package,
+        version=result.version,
+        artifact=artifact,
+        artifact_digest=digest,
+        score=result.score,
+        evidence_valid=result.evidence_valid,
+        approved_by=approved_by.strip(),
+    )
 
 
 def install_guarded_artifact(
@@ -60,10 +130,17 @@ def install_guarded_artifact(
     artifact: Path,
     *,
     approved_by: str,
+    sandbox_plan: SandboxPlan,
     runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
 ) -> subprocess.CompletedProcess[str]:
     """Reject installation until verified evidence and sandbox integration exist."""
 
+    prepare_sandbox_installation(
+        evidence, result, artifact, approved_by=approved_by,
+        sandbox_plan=sandbox_plan,
+    )
+    # Keep the execution boundary closed until the sandbox implementation is
+    # independently verified. In particular, do not call runner here.
     raise PermissionError("verified_sandbox_installation_not_implemented")
 
 
@@ -152,6 +229,8 @@ def evaluate_package(
         int(score),
         tuple(blockers),
         not blockers,
+        evidence_valid=not blockers and score >= threshold,
+        artifact_digest=evidence.digest,
     )
 
 

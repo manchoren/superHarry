@@ -9,7 +9,7 @@ from unittest.mock import patch
 from django.db import OperationalError, close_old_connections, connection, connections
 from django.test import TransactionTestCase
 
-from home.heavy_job_governor import GovernorCancelled, GovernorFull, GovernorTimedOut, HeavyJobGovernor
+from home.heavy_job_governor import GovernorCancelled, GovernorError, GovernorFull, GovernorTimedOut, HeavyJobGovernor
 from home.models import HeavyJob
 
 
@@ -32,6 +32,39 @@ class HeavyJobGovernorSmokeTests(TransactionTestCase):
         self.assertEqual(
             HeavyJob.objects.get(token=token).state, HeavyJob.State.RELEASED
         )
+
+    def test_zero_timeout_admits_when_seat_is_free(self):
+        token, generation_id = self.g.acquire(
+            'local_inference', 'immediate', 'user-1', timeout=0
+        )
+        try:
+            self.assertEqual(
+                HeavyJob.objects.get(token=token).state, HeavyJob.State.RUNNING
+            )
+        finally:
+            self.g.release(token, generation_id)
+
+    def test_zero_timeout_rejects_busy_seat_and_retires_waiter(self):
+        token, generation_id = self.g.acquire(
+            'local_inference', 'held', 'user-1'
+        )
+        try:
+            with self.assertRaises(GovernorTimedOut):
+                self.g.acquire('local_inference', 'immediate', 'user-2', timeout=0)
+            waiter = HeavyJob.objects.get(operation_id='immediate')
+            self.assertEqual(waiter.state, HeavyJob.State.RELEASED)
+            self.assertEqual(
+                HeavyJob.objects.filter(state=HeavyJob.State.RUNNING).count(), 1
+            )
+        finally:
+            self.g.release(token, generation_id)
+
+    def test_invalid_per_call_timeout_fails_closed(self):
+        for timeout in (-1, float('inf'), float('nan'), True, '0'):
+            with self.subTest(timeout=timeout):
+                with self.assertRaisesRegex(GovernorError, 'timeout_invalid'):
+                    self.g.acquire('local_inference', 'invalid-timeout', 'user-1', timeout=timeout)
+        self.assertFalse(HeavyJob.objects.exists())
 
     def test_acquire_returns_running_seat_with_generation(self):
         token, generation_id = self.g.acquire('local_inference', 'op-1', 'user-1')

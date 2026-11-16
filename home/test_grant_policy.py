@@ -49,6 +49,10 @@ class ToolGrantPolicyTests(TransactionTestCase):
         with self.assertRaises(ToolDenied):
             self.policy.provision(self.auth, principal="7", declaration=consequential, arguments={}, max_uses=1, expires_at=timezone.now() + timedelta(hours=1), policy_revision="p1")
 
+    def test_provision_requires_an_exact_json_argument_object(self):
+        with self.assertRaisesMessage(ToolDenied, "argument scope must be a JSON object"):
+            self.issue(arguments=[("item", "one")])
+
     def test_denied_invocation_preserves_failure_audit(self):
         invocation = ToolInvocation("safe.read", {"item": "missing"}, 7, 7, ToolRole.USER)
         with self.assertRaises(ToolDenied):
@@ -56,7 +60,15 @@ class ToolGrantPolicyTests(TransactionTestCase):
         self.assertTrue(AuditEvent.objects.filter(
             event_type=AuditEvent.EventType.TOOL_GRANT_DENIED,
             outcome=AuditEvent.Outcome.FAILURE,
+            target_user_id=7,
         ).exists())
+
+    def test_grant_audit_correlates_numeric_principal_without_logging_scope(self):
+        grant = self.issue()
+        event = AuditEvent.objects.get(event_type=AuditEvent.EventType.TOOL_GRANT_CREATED)
+        self.assertEqual(event.target_user_id, 7)
+        self.assertIsNone(event.request_id)
+        self.assertFalse(hasattr(event, "argument_scope"))
 
     def test_revocation_and_audit_failure_roll_back(self):
         grant = self.issue()
@@ -68,11 +80,29 @@ class ToolGrantPolicyTests(TransactionTestCase):
                 self.issue()
         self.assertEqual(ToolGrant.objects.count(), 1)
 
+    def test_revocation_of_unknown_grant_fails_closed_with_contract_error(self):
+        with self.assertRaisesMessage(ToolDenied, "requested grant does not exist"):
+            self.policy.revoke(self.auth, 999999)
+
     def test_model_cannot_provision(self):
         with self.assertRaises(ToolDenied):
             self.policy.provision(OperatorGrantAuthorization(""), principal="7", declaration=self.declaration,
                                   arguments={"item": "one"}, max_uses=1,
                                   expires_at=timezone.now() + timedelta(hours=1), policy_revision="p1")
+
+    def test_malformed_operator_claim_is_denied_fail_closed(self):
+        class Lookalike:
+            operator_id = "operator-1"
+
+        with self.assertRaises(ToolDenied):
+            self.policy.provision(Lookalike(), principal="7", declaration=self.declaration,
+                                  arguments={"item": "one"}, max_uses=1,
+                                  expires_at=timezone.now() + timedelta(hours=1), policy_revision="p1")
+        with self.assertRaises(ToolDenied):
+            self.policy.provision(OperatorGrantAuthorization(" "), principal="7",
+                                  declaration=self.declaration, arguments={"item": "one"},
+                                  max_uses=1, expires_at=timezone.now() + timedelta(hours=1),
+                                  policy_revision="p1")
 
     def test_executor_consumes_grant_once_and_denies_after_expiry(self):
         calls = []

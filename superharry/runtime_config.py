@@ -6,7 +6,7 @@ from django.core.exceptions import ImproperlyConfigured
 
 
 _SYSTEMD_CREDENTIAL_NAMES = frozenset(
-    {"django-secret", "totp-aes256-key", "omniroute-api-key"}
+    {"django-secret", "totp-aes256-key", "omniroute-api-key", "superharry-memory-key"}
 )
 
 

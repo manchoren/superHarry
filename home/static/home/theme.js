@@ -29,6 +29,13 @@
     window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () {
         if (theme === "system") applyTheme(theme);
     });
+    window.addEventListener("storage", function (event) {
+        if (document.documentElement.dataset.accountTheme !== undefined || event.key !== STORAGE_KEY) return;
+        theme = normalizeTheme(event.newValue);
+        applyTheme(theme);
+        var selector = document.getElementById("theme-select");
+        if (selector) selector.value = theme;
+    });
     document.addEventListener("DOMContentLoaded", function () {
         var selector = document.getElementById("theme-select");
         if (!selector) return;

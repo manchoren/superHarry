@@ -130,15 +130,25 @@ class HeavyJobGovernor:
             raise GovernorError('owner_id_invalid')
         if timeout is None:
             timeout = self._wait_timeout
-        deadline = self._clock() + timeout if timeout > 0 else 0
+        if (
+            type(timeout) not in (int, float)
+            or not math.isfinite(timeout)
+            or timeout < 0
+        ):
+            raise GovernorError('timeout_invalid')
+        # A zero timeout means "try once without waiting", not "reject before
+        # checking the seat".  Keep a real deadline so a busy seat still
+        # expires immediately after the first admission attempt.
+        deadline = self._clock() + timeout
         generation_id = uuid.uuid4()
         worker_pid = os.getpid()
         queued = False
+        attempted = False
         debug = os.environ.get("GOV_DEBUG") == "1"
 
         while True:
             now = self._clock()
-            if now >= deadline:
+            if attempted and now >= deadline:
                 print(f"[gov:{os.getpid()}] TIMEOUT tid={threading.get_ident()} now={now:.4f} deadline={deadline:.4f}", flush=True)
                 raise GovernorTimedOut()
 
@@ -225,6 +235,8 @@ class HeavyJobGovernor:
                             held_at=None,
                             released_at=timezone.now(),
                         )
+
+            attempted = True
 
             while True:
                 now = self._clock()

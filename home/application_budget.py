@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from django.db import DatabaseError, IntegrityError, transaction
 
-from home.models import ApplicationBudget, ApplicationBudgetReservation
+from home.models import ApplicationBudget, ApplicationBudgetConfiguration, ApplicationBudgetReservation
 
 
 class ApplicationBudgetError(RuntimeError):
@@ -18,6 +18,36 @@ def period_start(at, period):
     if period == 'monthly':
         return at.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     raise ApplicationBudgetError('budget_unavailable')
+
+
+def provision_period_budgets(scope, scope_key, *, at=None):
+    """Explicitly materialize configured UTC periods without resetting counters.
+
+    Missing configuration remains a fail-closed condition. Existing rows are
+    never rewritten, so rollover cannot erase usage or outstanding holds.
+    """
+    if (scope not in ('global', 'user') or not isinstance(scope_key, str)
+            or not scope_key.strip() or len(scope_key) > 128
+            or scope == 'global' and scope_key != 'global'):
+        raise ApplicationBudgetError('budget_unavailable')
+    at = at or datetime.now(timezone.utc)
+    try:
+        with transaction.atomic():
+            config = (ApplicationBudgetConfiguration.objects.select_for_update()
+                      .filter(scope=scope, scope_key=scope_key).first())
+            if config is None:
+                raise ApplicationBudgetError('budget_unavailable')
+            result = []
+            for period, limit in (('daily', config.daily_limit), ('monthly', config.monthly_limit)):
+                budget, _ = ApplicationBudget.objects.get_or_create(
+                    scope=scope, scope_key=scope_key, period=period,
+                    period_start=period_start(at, period),
+                    defaults={'hard_limit': limit},
+                )
+                result.append(budget)
+            return result
+    except (DatabaseError, IntegrityError):
+        raise ApplicationBudgetError('budget_unavailable') from None
 
 
 def reserve(operation_id, amount, *, user_key=None, at=None):
@@ -101,6 +131,18 @@ def settle(reservation_id, actual, *, allow_overage=False):
 
 
 def mark_unknown(reservation_id):
-    changed = ApplicationBudgetReservation.objects.filter(pk=reservation_id, state='reserved').update(state='unknown')
-    if changed == 0 and not ApplicationBudgetReservation.objects.filter(pk=reservation_id, state='unknown').exists():
+    if type(reservation_id) is not int or reservation_id <= 0:
         raise ApplicationBudgetError('budget_unavailable')
+    try:
+        with transaction.atomic():
+            reservation = (ApplicationBudgetReservation.objects.select_for_update()
+                           .filter(pk=reservation_id).first())
+            if reservation is None or reservation.state == 'settled':
+                raise ApplicationBudgetError('budget_unavailable')
+            if reservation.state == 'reserved':
+                reservation.state = 'unknown'
+                reservation.save(update_fields=['state'])
+            # Repeated recovery calls are safe, but a settled reservation is
+            # never silently converted into an unresolved hold.
+    except DatabaseError:
+        raise ApplicationBudgetError('budget_unavailable') from None
