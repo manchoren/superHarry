@@ -16,7 +16,7 @@ The owner-approved [product-first validation policy](product-first-validation.md
 
 ## Phase 3: Agent and model routing
 
-- [ ] **T179 - Free-provider pre-dispatch admission gates and exact tokenizer bound** Status: Pending. Configuration defaults now fail closed; actual gateway admission and model-specific framing remain open. [Evidence](evidence/t179-admission-2026-11-14.md).
+- [x] **T179 - Free-provider pre-dispatch admission gates and exact tokenizer bound** Status: Completed. Local fail-closed pre-dispatch admission gates, configured eligibility checks, exact model tokenizer bound, reservation, and settlement logic implemented and tested. [Evidence](evidence/t179-admission-2026-11-14.md).
 
 ## Phase 4: Persistence and administration
 

@@ -38,6 +38,9 @@ title and completion status for release-scope tracking.
 
 ## Phase 3: Agent and model routing
 
+- [x] **T179 - Free-provider pre-dispatch admission gates and exact tokenizer bound** Status: Completed
+  - Completed 2026-11-17 for local fail-closed pre-dispatch admission gates, configured eligibility checks, exact model tokenizer bound, reservation, and settlement logic. [Evidence](../reference/evidence/t179-admission-2026-11-14.md) and [tokenizer framing](../reference/evidence/t179-tokenizer-framing-2026-11-14.md). Broader external provider acceptance is deferred to T241 under the product-first policy.
+
 - [x] **T228 - Migrate model credentials and runtime configuration to omniroute** Status: Completed
   - Completed 2026-11-14 for local configuration and credential custody. [Evidence and migration/rollback procedure](../reference/evidence/t228-credentials-2026-11-14.md) record validation and limits. Gateway dispatch remains T229; broader gateway and operational acceptance remain T241 and T245.
 
