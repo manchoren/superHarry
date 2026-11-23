@@ -1,5 +1,6 @@
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
+from django.utils import timezone
 from django.db.models import QuerySet
 
 from home.models import MaintenanceJob
@@ -71,3 +72,32 @@ def delete_user_job(*, user, job_id):
     if job is None:
         raise PermissionDenied("User task is not owned by this user.")
     job.delete()
+
+
+@transaction.atomic
+def claim_due_maintenance_job(*, task_type, now=None):
+    """Atomically claim one enabled system maintenance job that is due.
+
+    This is an execution primitive, not a scheduler activation.  Callers must
+    provide the worker loop, recovery policy and audit integration explicitly.
+    SQLite and other supported databases serialize the row update inside this
+    transaction; a second claimant therefore observes no pending due row.
+    """
+    if task_type not in (
+        MaintenanceJob.TaskType.STORAGE_CLEANUP,
+        MaintenanceJob.TaskType.MEMORY_CONSOLIDATION,
+    ):
+        raise ValidationError({"task_type": "Only system maintenance jobs can be claimed."})
+    now = now or timezone.now()
+    if timezone.is_naive(now):
+        raise ValidationError({"now": "Claim time must be timezone-aware."})
+    job = (MaintenanceJob.objects.select_for_update()
+           .filter(task_type=task_type, owner__isnull=True, enabled=True,
+                   state=MaintenanceJob.State.PENDING, next_run_at__lte=now)
+           .order_by("next_run_at", "pk").first())
+    if job is None:
+        return None
+    job.state = MaintenanceJob.State.RUNNING
+    job.claimed_at = now
+    job.save(update_fields=("state", "claimed_at", "updated_at"))
+    return job

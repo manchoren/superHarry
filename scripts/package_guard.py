@@ -91,7 +91,7 @@ def prepare_sandbox_installation(
     """
     if not isinstance(artifact, Path) or not artifact.is_file():
         raise PermissionError("sandbox_artifact_unavailable")
-    if not isinstance(approved_by, str):
+    if not isinstance(approved_by, str) or not approved_by.strip():
         raise PermissionError("sandbox_approval_malformed")
     try:
         validate_sandbox_plan(sandbox_plan)

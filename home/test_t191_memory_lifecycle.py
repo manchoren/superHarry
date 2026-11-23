@@ -4,7 +4,12 @@ from uuid import uuid4
 
 from django.test import SimpleTestCase
 
-from home.memory_lifecycle import MemoryLifecycleError, build_memory_lifecycle_plan
+from home.memory_lifecycle import (
+    MemoryLifecycleError, build_memory_lifecycle_plan, mark_stale_memory_records,
+)
+from django.contrib.auth import get_user_model
+from django.test import TestCase
+from home.models import MemoryRecord
 
 
 class T191MemoryLifecyclePlanTests(SimpleTestCase):
@@ -47,4 +52,26 @@ class T191MemoryLifecyclePlanTests(SimpleTestCase):
             build_memory_lifecycle_plan([], now=datetime(2026, 11, 15), stale_before=self.cutoff)
         with self.assertRaises(MemoryLifecycleError):
             build_memory_lifecycle_plan([], now=self.now, stale_before=self.now + timedelta(seconds=1))
+
+
+class T191MemoryLifecycleApplyTests(TestCase):
+    def test_apply_only_marks_active_records_in_the_supplied_plan(self):
+        now = datetime(2026, 11, 15, tzinfo=timezone.utc)
+        cutoff = now - timedelta(days=180)
+        user = get_user_model().objects.create_user("lifecycle-owner")
+        old = MemoryRecord.objects.create(
+            scope=MemoryRecord.Scope.USER, owner=user, content="old",
+            last_accessed_at=cutoff - timedelta(days=1),
+        )
+        recent = MemoryRecord.objects.create(
+            scope=MemoryRecord.Scope.USER, owner=user, content="recent",
+            last_accessed_at=now,
+        )
+        plan = build_memory_lifecycle_plan(
+            [old, recent], now=now, stale_before=cutoff,
+        )
+        self.assertEqual(mark_stale_memory_records(plan=plan, now=now), 1)
+        old.refresh_from_db(); recent.refresh_from_db()
+        self.assertEqual(old.deletion_requested_at, now)
+        self.assertIsNone(recent.deletion_requested_at)
 

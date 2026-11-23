@@ -1,6 +1,8 @@
 import json
 import time
 from datetime import datetime, timedelta, timezone
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 from unittest.mock import patch
 
 from django.conf import settings
@@ -50,6 +52,28 @@ class GuestLimitBoundaryTests(TestCase):
             admit_guest(request)
         self.assertEqual(cache.get(question_key), 1)
         release_guest(first)
+
+    def test_concurrent_admission_allows_only_one_pending_turn(self):
+        request = _guest_request()
+        initial = admit_guest(request)
+        release_guest(initial)
+        barrier = Barrier(2)
+
+        def attempt():
+            barrier.wait()
+            try:
+                admission = admit_guest(request)
+            except GuestLimitDenied as exc:
+                return str(exc)
+            return admission
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(lambda _unused: attempt(), (1, 2)))
+        admissions = [result for result in results if not isinstance(result, str)]
+        denied = [result for result in results if isinstance(result, str)]
+        self.assertEqual(len(admissions), 1)
+        self.assertEqual(denied, ["guest_request_pending"])
+        release_guest(admissions[0])
 
 
 @override_settings(SUPERHARRY_HOSTNAME="testserver", ALLOWED_HOSTS=["testserver"])

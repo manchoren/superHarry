@@ -11,6 +11,7 @@ from datetime import datetime
 from typing import Iterable
 
 from django.utils import timezone
+from django.db import transaction
 
 
 class MemoryLifecycleError(ValueError):
@@ -84,3 +85,24 @@ def build_memory_lifecycle_plan(
 def _require_aware(value: datetime, name: str) -> None:
     if not isinstance(value, datetime) or timezone.is_naive(value):
         raise MemoryLifecycleError(f"{name} must be timezone-aware.")
+
+
+@transaction.atomic
+def mark_stale_memory_records(*, plan: MemoryLifecyclePlan, now: datetime) -> int:
+    """Persist deletion requests for a previously built lifecycle plan.
+
+    The plan is intentionally required as input, so this function cannot
+    silently broaden its scope. It only marks still-active records and never
+    deletes or merges content; a later policy-controlled executor may do so.
+    """
+    _require_aware(now, "now")
+    if not isinstance(plan, MemoryLifecyclePlan):
+        raise MemoryLifecycleError("A MemoryLifecyclePlan is required.")
+    if not plan.stale_ids:
+        return 0
+    from home.models import MemoryRecord
+    updated = (MemoryRecord.objects
+               .filter(pk__in=plan.stale_ids, deleted_at__isnull=True,
+                       deletion_requested_at__isnull=True)
+               .update(deletion_requested_at=now))
+    return updated

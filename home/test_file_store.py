@@ -24,10 +24,12 @@ class AuthorizedFileStoreTests(TestCase):
         self.addCleanup(self.temp_dir.cleanup)
         self.settings = override_settings(
             SUPERHARRY_FILE_STORE_ROOT=Path(self.temp_dir.name) / "store",
+            SUPERHARRY_FILE_STAGING_ROOT=Path(self.temp_dir.name) / "staging-root",
             SUPERHARRY_FILE_MAX_BYTES=8,
         )
         self.settings.enable()
         self.addCleanup(self.settings.disable)
+        (Path(self.temp_dir.name) / "staging-root").mkdir()
         user_model = get_user_model()
         self.owner = user_model.objects.create_user(username="owner", password="synthetic")
         self.other = user_model.objects.create_user(username="other", password="synthetic")
@@ -50,6 +52,20 @@ class AuthorizedFileStoreTests(TestCase):
             upload(user=self.owner, uploaded_file=SimpleUploadedFile("large.txt", b"123456789"))
         self.assertEqual(len(list(Path(self.temp_dir.name, "store").iterdir())), 1)
 
+    def test_invalid_or_non_positive_limit_fails_closed_for_all_boundaries(self):
+        record = upload(user=self.owner, uploaded_file=SimpleUploadedFile("x.txt", b"hello"))
+        staging = Path(self.temp_dir.name, "staging-root", "job")
+        staging.mkdir(parents=True)
+        for invalid in (0, -1, "not-an-int"):
+            with self.subTest(invalid=invalid), override_settings(SUPERHARRY_FILE_MAX_BYTES=invalid):
+                with self.assertRaises(FileStoreError):
+                    upload(user=self.owner, uploaded_file=SimpleUploadedFile("new.txt", b"hello"))
+                with self.assertRaises(FileStoreError):
+                    open_download_stream(user=self.owner, storage_id=record.storage_id)
+                with self.assertRaises(FileStoreError):
+                    stage_for_authorized_job(user=self.owner, storage_id=record.storage_id,
+                                             destination_dir=staging)
+
     def test_stale_or_unsaved_principal_cannot_access_files(self):
         record = upload(user=self.owner, uploaded_file=SimpleUploadedFile('x.txt', b'hello'))
         get_user_model().objects.filter(pk=self.owner.pk).update(is_active=False)
@@ -58,7 +74,7 @@ class AuthorizedFileStoreTests(TestCase):
             open_download_stream(user=self.owner, storage_id=record.storage_id)
         with self.assertRaises(FileStoreError):
             upload(user=self.owner, uploaded_file=SimpleUploadedFile('x.txt', b'hello'))
-        staging = Path(self.temp_dir.name, 'job')
+        staging = Path(self.temp_dir.name, 'staging-root', 'job')
         staging.mkdir()
         with self.assertRaises(FileStoreError):
             stage_for_authorized_job(user=self.owner, storage_id=record.storage_id, destination_dir=staging)
@@ -109,7 +125,7 @@ class AuthorizedFileStoreTests(TestCase):
     def test_deactivation_before_staging_commit_removes_copy(self):
         from home.file_store import _require_active_user
         record = upload(user=self.owner, uploaded_file=SimpleUploadedFile('x.txt', b'hello'))
-        staging = Path(self.temp_dir.name, 'job')
+        staging = Path(self.temp_dir.name, 'staging-root', 'job')
         staging.mkdir()
         checks = []
 
@@ -207,7 +223,7 @@ class AuthorizedFileStoreTests(TestCase):
         self.assertEqual(Path(self.temp_dir.name, 'store', str(record.storage_id)).read_bytes(), b'hello')
 
     def test_upload_and_staging_request_private_mode_at_creation(self):
-        staging = Path(self.temp_dir.name, 'job')
+        staging = Path(self.temp_dir.name, 'staging-root', 'job')
         staging.mkdir()
         real_open = os.open
         with patch('home.file_store.os.open', wraps=real_open) as opened, \
@@ -270,16 +286,24 @@ class AuthorizedFileStoreTests(TestCase):
 
     def test_staging_requires_real_directory_and_owner(self):
         record = upload(user=self.owner, uploaded_file=SimpleUploadedFile("x.txt", b"hello"))
-        staging = Path(self.temp_dir.name, "job")
+        staging = Path(self.temp_dir.name, "staging-root", "job")
         staging.mkdir()
         target = stage_for_authorized_job(user=self.owner, storage_id=record.storage_id, destination_dir=staging)
         self.assertEqual(target.read_bytes(), b"hello")
         with self.assertRaises(FileStoreError):
             stage_for_authorized_job(user=self.other, storage_id=record.storage_id, destination_dir=staging)
 
+    def test_staging_rejects_directory_outside_authorized_root(self):
+        record = upload(user=self.owner, uploaded_file=SimpleUploadedFile("x.txt", b"hello"))
+        outside = Path(self.temp_dir.name, "outside-job")
+        outside.mkdir()
+        with self.assertRaises(FileStoreError):
+            stage_for_authorized_job(user=self.owner, storage_id=record.storage_id,
+                                     destination_dir=outside)
+
     def test_staging_requires_authentication_and_cleans_partial_output(self):
         record = upload(user=self.owner, uploaded_file=SimpleUploadedFile("x.txt", b"hello"))
-        staging = Path(self.temp_dir.name, "job")
+        staging = Path(self.temp_dir.name, "staging-root", "job")
         staging.mkdir()
         with self.assertRaises(FileStoreError):
             stage_for_authorized_job(user=AnonymousUser(), storage_id=record.storage_id,
@@ -293,7 +317,7 @@ class AuthorizedFileStoreTests(TestCase):
 
     def test_staging_rejects_record_above_current_limit_before_copying(self):
         record = upload(user=self.owner, uploaded_file=SimpleUploadedFile("x.txt", b"12345678"))
-        staging = Path(self.temp_dir.name, "job")
+        staging = Path(self.temp_dir.name, "staging-root", "job")
         staging.mkdir()
         with override_settings(SUPERHARRY_FILE_MAX_BYTES=7):
             with self.assertRaises(FileStoreError):
@@ -304,7 +328,7 @@ class AuthorizedFileStoreTests(TestCase):
     def test_staging_rejects_same_size_tampering_and_removes_output(self):
         record = upload(user=self.owner, uploaded_file=SimpleUploadedFile("x.txt", b"hello"))
         Path(self.temp_dir.name, "store", str(record.storage_id)).write_bytes(b"other")
-        staging = Path(self.temp_dir.name, "job")
+        staging = Path(self.temp_dir.name, "staging-root", "job")
         staging.mkdir()
         with self.assertRaises(FileStoreError):
             stage_for_authorized_job(user=self.owner, storage_id=record.storage_id, destination_dir=staging)
@@ -312,7 +336,7 @@ class AuthorizedFileStoreTests(TestCase):
 
     def test_staging_removes_output_when_audit_fails(self):
         record = upload(user=self.owner, uploaded_file=SimpleUploadedFile("x.txt", b"hello"))
-        staging = Path(self.temp_dir.name, "job")
+        staging = Path(self.temp_dir.name, "staging-root", "job")
         staging.mkdir()
         with patch("home.file_store.record_event", side_effect=RuntimeError("audit unavailable")):
             with self.assertRaises(RuntimeError):
@@ -321,7 +345,7 @@ class AuthorizedFileStoreTests(TestCase):
 
     def test_staging_does_not_remove_target_created_by_another_process(self):
         record = upload(user=self.owner, uploaded_file=SimpleUploadedFile("x.txt", b"hello"))
-        staging = Path(self.temp_dir.name, "job")
+        staging = Path(self.temp_dir.name, "staging-root", "job")
         staging.mkdir()
         target = staging / str(record.storage_id)
         real_open = os.open
@@ -339,7 +363,7 @@ class AuthorizedFileStoreTests(TestCase):
 
     def test_staging_failure_does_not_remove_replacement_target(self):
         record = upload(user=self.owner, uploaded_file=SimpleUploadedFile("x.txt", b"hello"))
-        staging = Path(self.temp_dir.name, "job")
+        staging = Path(self.temp_dir.name, "staging-root", "job")
         staging.mkdir()
         target = staging / str(record.storage_id)
         replacement = Path(self.temp_dir.name, "replacement")

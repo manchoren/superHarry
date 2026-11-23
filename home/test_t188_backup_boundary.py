@@ -31,24 +31,44 @@ class T188BackupBoundaryTests(SimpleTestCase):
                                        path=path, owner_id="user-7", length=3,
                                        sha256=self.entry.sha256, dataset="data")])
 
+    def test_empty_and_dot_path_components_are_rejected(self):
+        for path in (
+            "data//users/7/memory.json",
+            "data/./users/7/memory.json",
+            "./data/users/7/memory.json",
+        ):
+            with self.subTest(path=path), self.assertRaisesRegex(BackupBoundaryError, "path is unsafe"):
+                create_backup_plan(
+                    application_release="r1",
+                    schema_version="42",
+                    recovery_point_id="rp-1",
+                    entries=[self.entry.__class__(
+                        path=path,
+                        owner_id="user-7",
+                        length=3,
+                        sha256=self.entry.sha256,
+                        dataset="memory",
+                    )],
+                )
+
     def test_restore_requires_matching_recovery_point_and_confirmation(self):
         manifest = create_backup_plan(application_release="r1", schema_version="42",
                                       recovery_point_id="rp-1", entries=[self.entry]).manifest
         with self.assertRaises(BackupBoundaryError):
-            verify_restore_stage(manifest=manifest, recovery_point_id="rp-2",
+            verify_restore_stage(manifest=manifest, selected_archive_recovery_point_id="rp-2",
                                  reviewed_owner_ids=["user-7"], confirmed=True)
         with self.assertRaises(BackupBoundaryError):
-            verify_restore_stage(manifest=manifest, recovery_point_id="rp-1",
+            verify_restore_stage(manifest=manifest, selected_archive_recovery_point_id="rp-1",
                                  reviewed_owner_ids=["user-7"], confirmed=False)
 
     def test_restore_accepts_only_reviewed_known_owners(self):
         manifest = create_backup_plan(application_release="r1", schema_version="42",
                                       recovery_point_id="rp-1", entries=[self.entry]).manifest
-        staged = verify_restore_stage(manifest=manifest, recovery_point_id="rp-1",
+        staged = verify_restore_stage(manifest=manifest, selected_archive_recovery_point_id="rp-1",
                                       reviewed_owner_ids=["user-7"], confirmed=True)
         self.assertEqual(staged.reviewed_owner_ids, ("user-7",))
         with self.assertRaises(BackupBoundaryError):
-            verify_restore_stage(manifest=manifest, recovery_point_id="rp-1",
+            verify_restore_stage(manifest=manifest, selected_archive_recovery_point_id="rp-1",
                                  reviewed_owner_ids=["user-unknown"], confirmed=True)
 
     def test_manifest_tampering_is_rejected_before_staging(self):
@@ -59,7 +79,7 @@ class T188BackupBoundaryTests(SimpleTestCase):
             manifest.entries, "0" * 64, manifest.recovery_point_id,
         )
         with self.assertRaises(BackupBoundaryError):
-            verify_restore_stage(manifest=tampered, recovery_point_id="rp-1",
+            verify_restore_stage(manifest=tampered, selected_archive_recovery_point_id="rp-1",
                                  reviewed_owner_ids=["user-7"], confirmed=True)
 
     def test_manifest_identity_tampering_is_rejected_before_staging(self):
@@ -74,5 +94,5 @@ class T188BackupBoundaryTests(SimpleTestCase):
             values[field] = value
             tampered = manifest.__class__(**values)
             with self.subTest(field=field), self.assertRaises(BackupBoundaryError):
-                verify_restore_stage(manifest=tampered, recovery_point_id="rp-1",
+                verify_restore_stage(manifest=tampered, selected_archive_recovery_point_id="rp-1",
                                      reviewed_owner_ids=["user-7"], confirmed=True)

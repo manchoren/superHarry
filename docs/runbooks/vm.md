@@ -42,7 +42,26 @@ NAT and forwards `127.0.0.1:2222` to the guest SSH service. No QEMU monitor
 commands are required.
 
 The VM operator account for SSH validation is `copilot`. Do not substitute the
-host account name. Verify passwordless sudo before running privileged checks:
+host account name. Use the host-side provisioner to install the pinned runtime
+dependencies in one step. With an already-running VM:
+
+```powershell
+.\scripts\provision-vm-dependencies.ps1
+```
+
+To start the disposable VM in the background and provision it automatically:
+
+```powershell
+.\scripts\provision-vm-dependencies.ps1 -StartVm
+```
+
+The provisioner transfers only the requirements and SQLCipher verification
+harness, verifies the guest's SSH identity and passwordless sudo, and invokes
+the guest installer. It does not restart services, activate SQLCipher for
+application data, or change the database. The VM launcher remains available for
+interactive use through `scripts/dev-vm.ps1 -Mode Run`.
+
+The SSH validation command used by the provisioner is equivalent to:
 
 ```powershell
 ssh -i "$env:USERPROFILE\.ssh\id_ed25519" -p 2222 `
@@ -60,17 +79,17 @@ Inside the guest, use a fresh checkout:
 git clone <repository-url> /tmp/superharry-vm-validation
 cd /tmp/superharry-vm-validation
 test -z "$(git status --porcelain)"
-python3 -m venv .venv
-. .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-pip check
-python -m compileall -q scripts home superharry
-DJANGO_SETTINGS_MODULE=superharry.settings python -m django check
-DJANGO_SETTINGS_MODULE=superharry.settings python -m django makemigrations --check --dry-run
-DJANGO_SETTINGS_MODULE=superharry.settings python -m django test
-python scripts/project_progress.py
+INSTALL_TEST_DEPENDENCIES=1 scripts/install-vm-dependencies.sh
+.venv/bin/python -m compileall -q scripts home superharry
+DJANGO_SETTINGS_MODULE=superharry.settings .venv/bin/python manage.py check
+DJANGO_SETTINGS_MODULE=superharry.settings .venv/bin/python manage.py makemigrations --check --dry-run
+.venv/bin/python manage.py test
+.venv/bin/python scripts/project_progress.py
 ```
+
+The installer creates `.venv` when needed and installs the pinned runtime and
+test dependencies. It verifies SQLCipher's native linkage before running the
+synthetic binding harness; it does not enable encryption for application data.
 
 Record guest OS, architecture, Python version, commit, exact commands, test
 count, skipped tests, and warnings. A module-runner result is not literal

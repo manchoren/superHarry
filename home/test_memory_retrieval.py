@@ -93,6 +93,17 @@ class MemoryRetrievalFallbackTests(TestCase):
                 semantic_search=lambda records, query, limit: [self.foreign],
                 charge_usage=lambda value: False,
             )
+        lookalike = MemoryRecord(
+            pk=self.match.pk, scope=MemoryRecord.Scope.USER,
+            owner=self.user, content="forged replacement",
+        )
+        records, mode, _ = retrieve_authorized_memory_records(
+            authorization=authorization, query="reunion",
+            semantic_search=lambda records, query, limit: [lookalike],
+            charge_usage=lambda value: True,
+        )
+        self.assertEqual(mode, "keyword")
+        self.assertEqual([record.pk for record in records], [self.match.pk])
         with self.assertRaises(MemoryRetrievalUnavailable):
             retrieve_memory_records(user=self.user, query="x", limit=MAX_RESULTS + 1)
         with self.assertRaises(MemoryRetrievalUnavailable):

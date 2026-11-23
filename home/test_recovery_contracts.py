@@ -1,8 +1,9 @@
 from django.test import SimpleTestCase
 
 from home.recovery_contracts import (
-    BackupEntry, RecoveryContractError, UpdateFixture, backup_fixture,
-    update_fixture, validate_backup_fixture, validate_update_rollback_fixture,
+    BackupEntry, RecoveryContractError, RestoreFixture, UpdateFixture,
+    backup_fixture, update_fixture, validate_backup_fixture,
+    validate_restore_fixture, validate_update_rollback_fixture,
 )
 
 
@@ -36,6 +37,22 @@ class T223BackupFixtureTests(SimpleTestCase):
             validate_backup_fixture(manifest, payloads, known_owner_ids={"user-1"}, available_key_versions=set())
         with self.assertRaises(RecoveryContractError):
             validate_backup_fixture(manifest, {}, known_owner_ids={"user-1"}, available_key_versions={"memory-v1"})
+
+    def test_staged_same_vm_restore_requires_barrier_and_verified_pre_backup(self):
+        fixture = RestoreFixture(True, True, True, True, "b" * 64, "b" * 64, "b" * 64, "a" * 64)
+        self.assertEqual(validate_restore_fixture(fixture), "restored")
+        for field in ("same_vm", "write_barrier_acquired", "staged_before_live_change", "pre_restore_backup_verified"):
+            values = {**fixture.__dict__, field: False}
+            with self.subTest(field=field), self.assertRaises(RecoveryContractError):
+                validate_restore_fixture(RestoreFixture(**values))
+
+    def test_interrupted_restore_rolls_back_without_external_replay(self):
+        fixture = RestoreFixture(True, True, True, True, "b" * 64, "b" * 64, "a" * 64, "a" * 64, interrupted=True)
+        self.assertEqual(validate_restore_fixture(fixture), "rolled_back")
+        with self.assertRaises(RecoveryContractError):
+            validate_restore_fixture(RestoreFixture(**{**fixture.__dict__, "live_data_digest_after_failure": "b" * 64}))
+        with self.assertRaises(RecoveryContractError):
+            validate_restore_fixture(RestoreFixture(**{**fixture.__dict__, "external_replays": 1}))
 
 
 class T224UpdateFixtureTests(SimpleTestCase):

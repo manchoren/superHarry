@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Protocol, runtime_checkable
 from uuid import UUID
+from django.db import IntegrityError, transaction
+from home.models import ChannelDedupeRecord, ChannelLinkGrantRecord
 
 
 class ChannelContractError(ValueError):
@@ -193,6 +195,66 @@ class ChannelRepository(ChannelAtomicStore, Protocol):
     def get_dedupe(self, *, dedupe_key: str) -> ChannelDedupeReceipt | None:
         """Return the current receipt without changing its consumed state."""
         ...
+
+
+class DjangoChannelRepository:
+    """Atomic database implementation for T238 linking and dedupe."""
+
+    def get_link_grant(self, *, grant_id):
+        row = ChannelLinkGrantRecord.objects.filter(pk=_uuid(grant_id, field='grant_id')).first()
+        return self._grant(row) if row else None
+
+    def consume_link_grant(self, *, grant_id, request_id, now):
+        gid = _uuid(grant_id, field='grant_id')
+        _uuid(request_id, field='request_id')
+        if not isinstance(now, datetime) or now.tzinfo is None:
+            raise ChannelContractError('link_time_invalid')
+        with transaction.atomic():
+            row = ChannelLinkGrantRecord.objects.select_for_update().filter(pk=gid).first()
+            if row is None:
+                raise ChannelContractError('link_unavailable')
+            if row.revoked: raise ChannelContractError('link_revoked')
+            if row.consumed: raise ChannelContractError('link_replayed')
+            if row.expires_at <= now: raise ChannelContractError('link_expired')
+            row.consumed = True
+            row.save(update_fields=('consumed',))
+            return self._grant(row)
+
+    def revoke_link_grant(self, *, grant_id):
+        gid = _uuid(grant_id, field='grant_id')
+        with transaction.atomic():
+            row = ChannelLinkGrantRecord.objects.select_for_update().filter(pk=gid).first()
+            if row is None: raise ChannelContractError('link_unavailable')
+            if row.consumed: raise ChannelContractError('link_replayed')
+            row.revoked = True
+            row.save(update_fields=('revoked',))
+            return self._grant(row)
+
+    def claim_dedupe(self, *, dedupe_key, request_id):
+        key = _bounded_text(dedupe_key, field='dedupe_key', maximum=256)
+        rid = _uuid(request_id, field='request_id')
+        with transaction.atomic():
+            try:
+                row = ChannelDedupeRecord.objects.create(dedupe_key=key, request_id=rid)
+            except IntegrityError:
+                row = ChannelDedupeRecord.objects.select_for_update().get(pk=key)
+                if row.request_id != rid: raise ChannelContractError('dedupe_request_mismatch')
+                if row.consumed: raise ChannelContractError('dedupe_replayed')
+                row.consumed = True
+                row.save(update_fields=('consumed',))
+                return ChannelDedupeReceipt(row.dedupe_key, row.request_id, True)
+            return ChannelDedupeReceipt(row.dedupe_key, row.request_id, False)
+
+    def get_dedupe(self, *, dedupe_key):
+        key = _bounded_text(dedupe_key, field='dedupe_key', maximum=256)
+        row = ChannelDedupeRecord.objects.filter(pk=key).first()
+        return ChannelDedupeReceipt(row.dedupe_key, row.request_id, row.consumed) if row else None
+
+    @staticmethod
+    def _grant(row):
+        return ChannelLinkGrant(UUID(str(row.grant_id)), row.channel, row.external_id,
+                                row.expires_at, row.revoked, row.consumed,
+                                user_id=UUID(str(row.user_id)))
 
 
 @dataclass(frozen=True)

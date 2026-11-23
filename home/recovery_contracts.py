@@ -87,6 +87,45 @@ def validate_backup_fixture(manifest: BackupManifest, payloads: Mapping[str, byt
 
 
 @dataclass(frozen=True)
+class RestoreFixture:
+    """Synthetic observation for the local T223 restore acceptance contract."""
+
+    same_vm: bool
+    write_barrier_acquired: bool
+    staged_before_live_change: bool
+    pre_restore_backup_verified: bool
+    restored_data_digest: str
+    expected_data_digest: str
+    live_data_digest_after_failure: str
+    pre_restore_data_digest: str
+    external_replays: int = 0
+    interrupted: bool = False
+
+
+def validate_restore_fixture(fixture: RestoreFixture) -> str:
+    """Validate staged same-VM restore observations without mutating live state."""
+    if not isinstance(fixture, RestoreFixture):
+        raise RecoveryContractError("invalid_restore_fixture")
+    if not fixture.same_vm or not fixture.write_barrier_acquired:
+        raise RecoveryContractError("restore_isolation_or_barrier_missing")
+    if not fixture.staged_before_live_change or not fixture.pre_restore_backup_verified:
+        raise RecoveryContractError("restore_preconditions_missing")
+    if fixture.external_replays != 0:
+        raise RecoveryContractError("restore_replayed_external_action")
+    if not fixture.restored_data_digest or not fixture.expected_data_digest:
+        raise RecoveryContractError("restore_digest_missing")
+    if fixture.interrupted:
+        if fixture.live_data_digest_after_failure != fixture.pre_restore_data_digest:
+            raise RecoveryContractError("interrupted_restore_not_rolled_back")
+        return "rolled_back"
+    if fixture.restored_data_digest != fixture.expected_data_digest:
+        raise RecoveryContractError("restore_digest_mismatch")
+    if fixture.live_data_digest_after_failure != fixture.expected_data_digest:
+        raise RecoveryContractError("restore_state_not_accepted")
+    return "restored"
+
+
+@dataclass(frozen=True)
 class UpdateFixture:
     old_release: str
     candidate_release: str

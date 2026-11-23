@@ -5,6 +5,7 @@ from django.db import IntegrityError
 from django.test import TestCase
 
 from home.models import MaintenanceJob
+from home.scheduled_tasks import claim_due_maintenance_job
 
 
 class T190MaintenanceJobContractTests(TestCase):
@@ -75,3 +76,19 @@ class T190MaintenanceJobContractTests(TestCase):
         local.full_clean()
         for value in (local.next_run_at, local.last_run_at, local.claimed_at):
             self.assertEqual(value.tzinfo, timezone.utc)
+
+    def test_due_system_job_can_be_claimed_once_without_starting_a_worker(self):
+        due = datetime(2026, 11, 16, 8, tzinfo=timezone.utc)
+        MaintenanceJob.objects.create(
+            task_type=MaintenanceJob.TaskType.STORAGE_CLEANUP,
+            schedule_timezone="UTC", enabled=True, next_run_at=due,
+        )
+        claimed = claim_due_maintenance_job(
+            task_type=MaintenanceJob.TaskType.STORAGE_CLEANUP, now=due,
+        )
+        self.assertIsNotNone(claimed)
+        self.assertEqual(claimed.state, MaintenanceJob.State.RUNNING)
+        self.assertEqual(claimed.claimed_at, due)
+        self.assertIsNone(claim_due_maintenance_job(
+            task_type=MaintenanceJob.TaskType.STORAGE_CLEANUP, now=due,
+        ))

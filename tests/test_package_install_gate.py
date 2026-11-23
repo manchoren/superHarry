@@ -43,7 +43,8 @@ def test_install_gate_never_runs_without_verified_sandbox_integration(tmp_path: 
     def runner(*args, **kwargs):
         calls.append((args, kwargs))
 
-    with pytest.raises(PermissionError, match="verified_sandbox_installation_not_implemented"):
+    expected = "sandbox_approval_malformed" if not approved_by else "verified_sandbox_installation_not_implemented"
+    with pytest.raises(PermissionError, match=expected):
         install_guarded_artifact(
             _evidence(digest), GuardResult("example", "1.0.0", 100, (), True),
             artifact, approved_by=approved_by, sandbox_plan=_sandbox_plan(), runner=runner,
@@ -88,5 +89,18 @@ def test_prepare_contract_rejects_digest_mismatch_without_runner(tmp_path: Path)
             GuardResult("example", "1.0.0", 100, (), True, True, digest),
             artifact,
             approved_by="owner",
+            sandbox_plan=_sandbox_plan(),
+        )
+
+
+def test_prepare_contract_rejects_blank_approval_even_with_passing_evidence(tmp_path: Path):
+    artifact = tmp_path / "example.whl"
+    artifact.write_bytes(b"wheel")
+    digest = hashlib.sha256(b"wheel").hexdigest()
+    result = GuardResult("example", "1.0.0", 100, (), True, True, digest)
+
+    with pytest.raises(PermissionError, match="sandbox_approval_malformed"):
+        prepare_sandbox_installation(
+            _evidence(digest), result, artifact, approved_by="   ",
             sandbox_plan=_sandbox_plan(),
         )

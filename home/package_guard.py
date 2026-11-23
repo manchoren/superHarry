@@ -238,6 +238,22 @@ class PackageGuard:
         self.min_score = min_score
         self.blocked_packages = {"malicious-pkg", "typosquat-requests"}
 
+    @classmethod
+    def from_persisted_settings(cls):
+        """Build the evaluator from the singleton admin policy."""
+        from home.models import PackageGuardSettings
+
+        settings = PackageGuardSettings.objects.filter(pk=1).first()
+        if settings is None:
+            return cls()
+        guard = cls(min_score=settings.minimum_score)
+        guard.blocked_packages.update(
+            name.strip().lower().replace("_", "-")
+            for name in settings.blocked_packages.splitlines()
+            if name.strip()
+        )
+        return guard
+
     def evaluate(self, package_name: str, version: str, registry: str = "pypi",
                  evidence: Optional[PackageEvidence] = None,
                  now: Optional[datetime] = None) -> PackageScore:

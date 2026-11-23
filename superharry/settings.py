@@ -6,7 +6,10 @@ from django.core.management.utils import get_random_secret_key
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SUPERHARRY_FILE_STORE_ROOT = Path(os.environ.get("SUPERHARRY_FILE_STORE_ROOT", BASE_DIR / "var" / "files")).resolve()
+SUPERHARRY_FILE_STAGING_ROOT = Path(os.environ.get("SUPERHARRY_FILE_STAGING_ROOT", BASE_DIR / "var" / "staging")).resolve()
 SUPERHARRY_FILE_MAX_BYTES = int(os.environ.get("SUPERHARRY_FILE_MAX_BYTES", str(25 * 1024 * 1024)))
+SUPERHARRY_MEMORY_SQLCIPHER_ENABLED = os.environ.get("SUPERHARRY_MEMORY_SQLCIPHER_ENABLED", "0") == "1"
+SUPERHARRY_MEMORY_SQLCIPHER_DRIVER = "sqlcipher3"
 SUPERHARRY_CONSTITUTION_SHA256 = (
     "59b3e1cc1f504f5dc510a7257a20a7d9e558b5b52033a7fc28831b62b3e92d8a"
 )

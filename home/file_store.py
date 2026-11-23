@@ -20,6 +20,17 @@ class FileStoreError(ValueError):
     pass
 
 
+def _max_size():
+    """Return a valid positive upload/download ceiling, failing closed."""
+    try:
+        limit = int(settings.SUPERHARRY_FILE_MAX_BYTES)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise FileStoreError("File size limit is invalid.") from exc
+    if limit <= 0:
+        raise FileStoreError("File size limit is invalid.")
+    return limit
+
+
 def _require_active_user(user, *, lock=False):
     if (not getattr(user, 'is_authenticated', False) or not getattr(user, 'is_active', False)
             or getattr(user, 'pk', None) is None
@@ -66,6 +77,29 @@ def _root():
     return root
 
 
+def _authorized_staging_directory(destination_dir):
+    """Return a real directory inside the application-owned staging root."""
+    configured = Path(settings.SUPERHARRY_FILE_STAGING_ROOT)
+    if configured.exists() and configured.is_symlink():
+        raise FileStoreError("File staging root cannot be a symlink.")
+    root = configured.resolve()
+    try:
+        root.mkdir(parents=True, exist_ok=True)
+    except FileExistsError as exc:
+        raise FileStoreError("File staging root must be a real directory.") from exc
+    if not root.is_dir() or root.is_symlink():
+        raise FileStoreError("File staging root must be a real directory.")
+    destination = Path(destination_dir)
+    if destination.is_symlink() or not destination.is_dir():
+        raise FileStoreError("Staging directory must be a real directory.")
+    resolved = destination.resolve()
+    if resolved == root or root not in resolved.parents:
+        raise FileStoreError("Staging directory is not authorized.")
+    if resolved.is_symlink() or not resolved.is_dir():
+        raise FileStoreError("Staging directory must be a real directory.")
+    return resolved
+
+
 def _storage_uuid(storage_id):
     if isinstance(storage_id, uuid.UUID):
         return storage_id
@@ -108,8 +142,8 @@ def _open_stored_file(record):
 
 def upload(*, user, uploaded_file, request_id=None):
     _require_active_user(user)
-    limit = int(settings.SUPERHARRY_FILE_MAX_BYTES)
-    if not isinstance(getattr(uploaded_file, "size", None), int) or uploaded_file.size > limit:
+    limit = _max_size()
+    if type(getattr(uploaded_file, "size", None)) is not int or uploaded_file.size < 0 or uploaded_file.size > limit:
         raise FileStoreError("File exceeds the configured size limit.")
     storage_id = uuid.uuid4()
     destination = _root() / str(storage_id)
@@ -172,7 +206,7 @@ def open_download_stream(*, user, storage_id, request_id=None):
     snapshot = None
     try:
         record = StoredFile.objects.get(storage_id=_storage_uuid(storage_id), owner=user)
-        limit = int(settings.SUPERHARRY_FILE_MAX_BYTES)
+        limit = _max_size()
         if record.size > limit:
             raise FileStoreError("Stored file exceeds the configured size limit.")
         snapshot = tempfile.SpooledTemporaryFile(max_size=min(limit, 1024 * 1024), mode="w+b")
@@ -211,14 +245,12 @@ def stage_for_authorized_job(*, user, storage_id, destination_dir, request_id=No
     _require_active_user(user)
     try:
         record = StoredFile.objects.get(storage_id=_storage_uuid(storage_id), owner=user)
-        if record.size > int(settings.SUPERHARRY_FILE_MAX_BYTES):
+        if record.size > _max_size():
             raise FileStoreError("Stored file exceeds the configured size limit.")
         _stored_path(record)
     except (StoredFile.DoesNotExist, ValueError, TypeError, OSError):
         raise FileStoreError("File is unavailable.")
-    destination = Path(destination_dir)
-    if destination.is_symlink() or not destination.is_dir():
-        raise FileStoreError("Staging directory must be a real directory.")
+    destination = _authorized_staging_directory(destination_dir)
     target = destination / str(record.storage_id)
     if target.exists() or target.is_symlink():
         raise FileStoreError("Staging target already exists.")

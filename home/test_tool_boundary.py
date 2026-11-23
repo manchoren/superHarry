@@ -117,7 +117,6 @@ class AuthorizedToolBoundaryTests(TestCase):
         with self.assertRaises(ToolDenied):
             executor.execute(self.invocation(tool_name='unowned.write', actor_user_id=None, target_user_id=None))
         self.assertEqual(self.calls, [])
-
     def test_registry_rejects_unsupported_schema_constraints(self):
         declaration = self.registry.get("owned.write")
         for schema in (
@@ -165,7 +164,6 @@ class AuthorizedToolBoundaryTests(TestCase):
             executor.execute(self.invocation())
         self.assertNotIn('private diagnostic', str(caught.exception))
         self.assertEqual(self.calls, [])
-
     def test_denial_audit_contains_no_handler_result(self):
         with self.assertRaises(ToolDenied):
             self.executor.execute(self.invocation(confirmed=False))

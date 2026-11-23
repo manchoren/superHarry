@@ -10,11 +10,16 @@ param(
     [string]$InstallerSha256,
     [ValidateSet('debian-13.7-arm64-base.qcow2', 'debian-13-nocloud-configured-base.qcow2', 'debian-13-nocloud-arm64-base.qcow2')]
     [string]$RunBaseName = 'debian-13.7-arm64-base.qcow2',
-    [switch]$ResumeInstall
+    [switch]$ResumeInstall,
+    [switch]$NonInteractive
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+if ($NonInteractive -and $Mode -ne 'Run') {
+    throw 'NonInteractive is supported only with Mode Run.'
+}
 
 $script:ExpectedSids = @(
     [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value,
@@ -546,8 +551,11 @@ $runArguments = @(
     '-device', 'virtio-net-pci,bus=netrp,netdev=guestnet,id=guestnic',
     '-boot', 'order=c',
     '-display', 'none',
-    '-serial', 'mon:stdio'
+    '-serial', $(if ($NonInteractive) { 'null' } else { 'mon:stdio' })
 )
+if ($NonInteractive) {
+    $runArguments += @('-monitor', 'none')
+}
 $qemuReturned = $false
 $qemuExitCode = $null
 try {

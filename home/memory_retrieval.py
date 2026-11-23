@@ -101,8 +101,10 @@ def retrieve_authorized_memory_records(
                 semantic = semantic_search(bounded, query, limit)
             except Exception:
                 semantic = None
+        authorized_instances = {id(record) for record in bounded}
         if (isinstance(semantic, (list, tuple))
-                and all(isinstance(record, MemoryRecord) and record in bounded for record in semantic)):
+                and all(isinstance(record, MemoryRecord) and id(record) in authorized_instances
+                        for record in semantic)):
             selected = list(dict.fromkeys(semantic))[:limit]
             mode = "semantic" if selected else "keyword"
         else:

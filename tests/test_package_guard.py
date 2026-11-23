@@ -12,6 +12,7 @@ from home.package_verifiers import VerificationResult
 NOW = datetime(2026, 11, 12, 12, tzinfo=timezone.utc)
 
 
+
 def evidence(**changes):
     artifact = b"synthetic wheel bytes"
     values = dict(registry="pypi", normalized_name="safe-package", version="1.2.3",

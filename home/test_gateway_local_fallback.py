@@ -16,7 +16,11 @@ from home.provider_outcomes import NotDispatched, OutcomeUnknown
 @override_settings(SUPERHARRY_LOCAL_INFERENCE_ENABLED=True)
 class GatewayLocalFallbackTests(SimpleTestCase):
     def setUp(self):
-        self.turn = SimpleNamespace(model_mode='automatic', requested_provider='', requested_model='')
+        self.turn = SimpleNamespace(
+            pk=1,
+            conversation=SimpleNamespace(owner_id=1),
+            model_mode='automatic', requested_provider='', requested_model='',
+        )
         self.adapter = MagicMock()
         self.governor = MagicMock()
 
@@ -75,7 +79,9 @@ class GatewayLocalFallbackTests(SimpleTestCase):
         self.adapter.stream.return_value = source
         event_stream = MagicMock()
         event_stream.__iter__.return_value = iter([object()])
-        with patch('home.gemini_chat.iter_validated_model_events', return_value=event_stream):
+        with patch('home.gemini_chat.reserve_application_budget', return_value=SimpleNamespace(pk=1)), \
+                patch('home.gemini_chat.mark_budget_unknown'), \
+                patch('home.gemini_chat.iter_validated_model_events', return_value=event_stream):
             with self.assertRaises(LocalInferenceError):
                 _run_local_fallback(turn=self.turn, history=[],
                                     authorized=MagicMock(side_effect=[True, True, False]),

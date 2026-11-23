@@ -66,6 +66,30 @@ class UserThemePreference(models.Model):
         constraints = [models.CheckConstraint(condition=models.Q(theme__in=('system', 'light', 'dark')), name='home_user_theme_valid')]
 
 
+class ChannelLinkGrantRecord(models.Model):
+    """Durable, single-use channel linking evidence (T238)."""
+    grant_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    channel = models.CharField(max_length=32)
+    external_id = models.CharField(max_length=256)
+    user_id = models.UUIDField()
+    expires_at = models.DateTimeField()
+    revoked = models.BooleanField(default=False)
+    consumed = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [models.CheckConstraint(
+            condition=~(models.Q(revoked=True) & models.Q(consumed=True)),
+            name='home_channel_link_state_ck'),
+            models.UniqueConstraint(fields=('channel', 'external_id'), name='home_channel_identity_unique')]
+
+
+class ChannelDedupeRecord(models.Model):
+    """Durable request deduplication bound to the original request UUID."""
+    dedupe_key = models.CharField(max_length=256, primary_key=True)
+    request_id = models.UUIDField()
+    consumed = models.BooleanField(default=False)
+
+
 class HeavyJob(models.Model):
     """Durable heavy-job seat used by the shared resource governor (T050)."""
 
@@ -303,6 +327,26 @@ class MemoryRecord(models.Model):
             )
             if not retained_after_deletion:
                 raise ValidationError("Confirmation metadata must be provided together.")
+
+
+class MemoryEncryptionState(models.Model):
+    """Metadata for a separately managed encrypted memory store."""
+
+    class State(models.TextChoices):
+        PLAINTEXT = "plaintext", "Plaintext"
+        ENCRYPTED = "encrypted", "Encrypted"
+        RECOVERY_PENDING = "recovery_pending", "Recovery pending"
+
+    singleton = models.BooleanField(default=True, unique=True, editable=False)
+    backend = models.CharField(max_length=32, default="sqlite3")
+    key_version = models.PositiveIntegerField(default=0)
+    state = models.CharField(max_length=32, choices=State.choices, default=State.PLAINTEXT)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=models.Q(key_version__gte=0), name="home_memory_key_version_ck"),
+        ]
 
 
 class Message(models.Model):
