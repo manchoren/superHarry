@@ -25,7 +25,8 @@ def evidence(**changes):
         malicious_pattern_passed=True, downloads_per_month=100001, age_days=731,
         security_patch_within_days=180, advisories=(), blocklist_checked=True,
         blocklisted=False, advisories_checked=True, collected_at=NOW - timedelta(hours=1),
-        expires_at=NOW + timedelta(hours=23), evidence_source="synthetic-fixture")
+        expires_at=NOW + timedelta(hours=23), evidence_source="synthetic-fixture",
+        blocklist_sha256=PackageGuard().blocklist_sha256)
     values.update(changes)
     return PackageEvidence(**values)
 
@@ -140,6 +141,27 @@ def test_blocklist_overrides_a_valid_score():
     score = PackageGuard().evaluate("safe-package", "1.2.3",
                                     evidence=evidence(blocklisted=True), now=NOW)
     assert score.blocked and score.total == 0
+
+
+def test_blocklist_change_invalidates_prior_evidence():
+    guard = PackageGuard()
+    prior = evidence()
+    guard.blocked_packages.add("newly-blocked-package")
+
+    score = guard.evaluate("safe-package", "1.2.3", evidence=prior, now=NOW)
+
+    assert score.blocked and score.reason == "blocklist_snapshot_mismatch"
+    assert not score.can_authorize_scoped_installation()
+
+
+def test_persisted_policy_refresh_failure_fails_closed(monkeypatch):
+    guard = PackageGuard()
+    monkeypatch.setattr(guard, "_refresh_persisted_settings", lambda: (_ for _ in ()).throw(RuntimeError()))
+
+    score = guard.evaluate("safe-package", "1.2.3", evidence=evidence(), now=NOW)
+
+    assert score.blocked and score.reason == "package_guard_policy_unavailable"
+    assert not score.can_authorize_scoped_installation()
 
 
 def test_package_score_preserves_component_sum_threshold_and_blocking():

@@ -27,8 +27,11 @@ from home.models import (
     ChatEvent,
     ChatTurn,
     Conversation,
+    GeminiChatJob,
     Message,
 )
+from home.capability_recovery import block_external_only_job
+from home.gemini_queue import claim_next
 
 
 class FakeChatDispatcher:
@@ -162,6 +165,73 @@ class ChatTurnAPITests(TestCase):
         self.assertEqual(audit_event.actor_user_id, self.owner.pk)
         self.assertEqual(audit_event.target_user_id, self.owner.pk)
         self.assertIsNotNone(audit_event.request_id)
+
+    def test_explicit_unavailable_route_is_persisted_blocked_and_idempotent(self):
+        key = uuid.uuid4()
+
+        def enqueue_with_durable_job(turn_id):
+            self.dispatcher.enqueued.append(turn_id)
+            GeminiChatJob.objects.create(turn_id=turn_id)
+
+        with patch.object(self.dispatcher, "enqueue", side_effect=enqueue_with_durable_job):
+            with patch("home.chat_views._provider_route_is_available", return_value=False):
+                response, _ = self._post_turn(
+                    idempotency_key=key,
+                    provider="openrouter",
+                    model_id="liquid/lfm-2.5-2.6b:free",
+                    openrouter_risk_accepted=True,
+                )
+
+        self.assertEqual(response.status_code, 202)
+        turn = ChatTurn.objects.get(pk=response.json()["turn_id"])
+        job = GeminiChatJob.objects.get(turn=turn)
+        self.assertEqual(turn.state, ChatTurn.State.QUEUED)
+        self.assertEqual(turn.requested_provider, "openrouter")
+        self.assertEqual(turn.requested_model, "liquid/lfm-2.5-2.6b:free")
+        self.assertTrue(turn.openrouter_risk_accepted)
+        self.assertEqual(job.capability_block_reason, "route_unavailable")
+        self.assertEqual(
+            turn.events.get().event_type,
+            ChatEvent.EventType.TURN_CAPABILITY_UNAVAILABLE,
+        )
+        self.assertIsNone(claim_next())
+
+        retry, _ = self._post_turn(
+            idempotency_key=key,
+            provider="openrouter",
+            model_id="liquid/lfm-2.5-2.6b:free",
+            openrouter_risk_accepted=True,
+        )
+        self.assertEqual(retry.status_code, 202)
+        self.assertEqual(ChatTurn.objects.count(), 1)
+        self.assertEqual(turn.events.count(), 1)
+
+        other_client = Client()
+        other_client.force_login(self.other_user)
+        event_response = other_client.get(
+            self._events_url(turn), secure=True,
+        )
+        cancel_response = other_client.post(
+            self._cancel_url(turn), secure=True, HTTP_ORIGIN="https://testserver",
+        )
+        self.assertEqual(event_response.status_code, 404)
+        self.assertEqual(cancel_response.status_code, 404)
+        self.assertEqual(turn.state, ChatTurn.State.QUEUED)
+
+    def test_local_turn_creation_is_not_blocked_by_external_route_status(self):
+        def enqueue_with_durable_job(turn_id):
+            self.dispatcher.enqueued.append(turn_id)
+            GeminiChatJob.objects.create(turn_id=turn_id)
+
+        with patch.object(self.dispatcher, "enqueue", side_effect=enqueue_with_durable_job):
+            with patch("home.chat_views._provider_route_is_available", return_value=False):
+                response, _ = self._post_turn()
+
+        self.assertEqual(response.status_code, 202)
+        turn = ChatTurn.objects.get(pk=response.json()["turn_id"])
+        self.assertEqual(turn.requested_provider, "")
+        self.assertEqual(turn.requested_model, "")
+        self.assertFalse(turn.gemini_job.capability_block_reason)
 
     def test_identical_retry_does_not_duplicate_message_audit_or_dispatch(self):
         key = uuid.uuid4()
@@ -456,6 +526,68 @@ class ChatTurnAPITests(TestCase):
             1,
         )
         self.assertEqual(self.dispatcher.cancelled, [turn.pk])
+
+    def test_cancel_finishes_capability_blocked_turn_without_worker_dispatch(self):
+        turn = self._new_turn()
+        turn.requested_provider = "openrouter"
+        turn.requested_model = "synthetic-model"
+        turn.openrouter_risk_accepted = True
+        turn.save(update_fields=[
+            "requested_provider", "requested_model", "openrouter_risk_accepted",
+        ])
+        job = GeminiChatJob.objects.create(turn=turn)
+        block_external_only_job(job.pk, reason="external_unavailable")
+        configure_chat_dispatcher(None)
+
+        response = self.client.post(
+            self._cancel_url(turn), secure=True, HTTP_ORIGIN="https://testserver",
+        )
+
+        turn.refresh_from_db()
+        job.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], ChatTurn.State.CANCELLED)
+        self.assertEqual(turn.state, ChatTurn.State.CANCELLED)
+        self.assertIsNotNone(turn.terminal_at)
+        self.assertEqual(job.state, GeminiChatJob.State.DONE)
+        self.assertEqual(job.capability_block_reason, "external_unavailable")
+        self.assertEqual(
+            list(turn.events.order_by("sequence").values_list("event_type", flat=True)),
+            [
+                ChatEvent.EventType.TURN_CAPABILITY_UNAVAILABLE,
+                ChatEvent.EventType.TURN_CANCEL_REQUESTED,
+                ChatEvent.EventType.TURN_CANCELLED,
+            ],
+        )
+        self.assertEqual(
+            AuditEvent.objects.filter(
+                event_type=AuditEvent.EventType.CHAT_TURN_CANCEL_REQUESTED,
+            ).count(),
+            1,
+        )
+
+    def test_blocked_turn_cancellation_rolls_back_on_audit_failure(self):
+        turn = self._new_turn()
+        turn.requested_provider = "openrouter"
+        turn.requested_model = "synthetic-model"
+        turn.openrouter_risk_accepted = True
+        turn.save(update_fields=[
+            "requested_provider", "requested_model", "openrouter_risk_accepted",
+        ])
+        job = GeminiChatJob.objects.create(turn=turn)
+        block_external_only_job(job.pk, reason="external_unavailable")
+        with patch("home.chat_views.record_event", side_effect=AuditUnavailable):
+            response = self.client.post(
+                self._cancel_url(turn), secure=True, HTTP_ORIGIN="https://testserver",
+            )
+
+        turn.refresh_from_db()
+        job.refresh_from_db()
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(turn.state, ChatTurn.State.QUEUED)
+        self.assertEqual(job.state, GeminiChatJob.State.QUEUED)
+        self.assertEqual(job.capability_block_reason, "external_unavailable")
+        self.assertEqual(turn.events.count(), 1)
 
     def test_cancel_fails_closed_without_dispatcher_or_audit(self):
         turn = self._new_turn()

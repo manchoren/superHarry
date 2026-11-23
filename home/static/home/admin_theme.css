@@ -1,0 +1,8 @@
+html[data-theme] :focus-visible {
+    outline: 0.2rem solid #155eef;
+    outline-offset: 0.2rem;
+}
+
+html[data-theme="dark"] :focus-visible {
+    outline-color: #9bc2ff;
+}

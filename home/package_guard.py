@@ -75,6 +75,8 @@ class PackageEvidence:
     provenance_evidence_available: bool = True
     # An empty result is authoritative only after a completed advisory lookup.
     advisories_checked: bool = False
+    # Evidence is invalid as soon as the configured blocklist changes.
+    blocklist_sha256: str = ""
 
     @property
     def artifact_sha256(self) -> str:
@@ -113,6 +115,7 @@ class PackageEvidence:
             bool(self.evidence_source.strip()),
             self.hash_verified, self.blocklist_checked,
             self.advisories_checked,
+            bool(re.fullmatch(r"[0-9a-f]{64}", self.blocklist_sha256)),
             self.signature_evidence_available, self.provenance_evidence_available,
             self.typosquatting_passed is not None,
             self.namespace_confusion_passed is not None,
@@ -237,6 +240,7 @@ class PackageGuard:
             raise ValueError("Package guard threshold must be between 0 and 100.")
         self.min_score = min_score
         self.blocked_packages = {"malicious-pkg", "typosquat-requests"}
+        self._uses_persisted_settings = False
 
     @classmethod
     def from_persisted_settings(cls):
@@ -244,19 +248,42 @@ class PackageGuard:
         from home.models import PackageGuardSettings
 
         settings = PackageGuardSettings.objects.filter(pk=1).first()
-        if settings is None:
-            return cls()
-        guard = cls(min_score=settings.minimum_score)
-        guard.blocked_packages.update(
-            name.strip().lower().replace("_", "-")
-            for name in settings.blocked_packages.splitlines()
-            if name.strip()
-        )
+        guard = cls(min_score=settings.minimum_score) if settings else cls()
+        guard._uses_persisted_settings = True
+        guard._load_persisted_settings(settings)
         return guard
+
+    @property
+    def blocklist_sha256(self) -> str:
+        canonical_blocklist = "\n".join(sorted(self.blocked_packages)).encode("utf-8")
+        return hashlib.sha256(canonical_blocklist).hexdigest()
+
+    def _load_persisted_settings(self, settings) -> None:
+        self.min_score = settings.minimum_score if settings else self.MIN_SCORE_THRESHOLD
+        self.blocked_packages = {"malicious-pkg", "typosquat-requests"}
+        if settings:
+            self.blocked_packages.update(
+                name.strip().lower().replace("_", "-")
+                for name in settings.blocked_packages.splitlines()
+                if name.strip()
+            )
+
+    def _refresh_persisted_settings(self) -> None:
+        if self._uses_persisted_settings:
+            from home.models import PackageGuardSettings
+
+            settings = PackageGuardSettings.objects.filter(pk=1).first()
+            self._load_persisted_settings(settings)
 
     def evaluate(self, package_name: str, version: str, registry: str = "pypi",
                  evidence: Optional[PackageEvidence] = None,
                  now: Optional[datetime] = None) -> PackageScore:
+        try:
+            self._refresh_persisted_settings()
+        except Exception:
+            logger.exception("Package guard policy refresh failed")
+            return PackageScore(package_name, version, registry, blocked=True,
+                                reason="package_guard_policy_unavailable")
         normalized = re.sub(r"[-_.]+", "-", package_name.strip()).lower()
         if evidence is None:
             return PackageScore(package_name, version, registry, blocked=True,
@@ -276,6 +303,10 @@ class PackageGuard:
             if evidence.claimed_sha256 != evidence.artifact_sha256:
                 return PackageScore(package_name, version, registry, blocked=True,
                                     reason="artifact_digest_mismatch",
+                                    artifact_sha256=evidence.artifact_sha256)
+            if evidence.blocklist_sha256 != self.blocklist_sha256:
+                return PackageScore(package_name, version, registry, blocked=True,
+                                    reason="blocklist_snapshot_mismatch",
                                     artifact_sha256=evidence.artifact_sha256)
             if evidence.signature_verified and evidence.signature_artifact_sha256 != evidence.artifact_sha256:
                 return PackageScore(package_name, version, registry, blocked=True,

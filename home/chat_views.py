@@ -22,7 +22,8 @@ from home.chat_events import (
     MAX_EVENT_BYTES,
     append_chat_event,
 )
-from home.models import AuditEvent, ChatEvent, ChatTurn, Conversation, Message
+from home.capability_recovery import block_external_only_job
+from home.models import AuditEvent, ChatEvent, ChatTurn, Conversation, GeminiChatJob, Message
 from home.gemini_context import MODEL_ID as GEMINI_MODEL_ID
 from home import openrouter_transport
 from home.provider_credentials import CredentialConfigError, load_provider_key
@@ -323,8 +324,17 @@ def create_turn(request, conversation_id):
             if provider == "openrouter" and risk_accepted is not True:
                 return _error(request, "INVALID_INPUT", 400)
 
-            if not route_available:
-                return _error(request, "INVALID_INPUT", 400)
+            if provider:
+                if provider == "openrouter":
+                    selection_valid = model_id in openrouter_transport.APPROVED_MODELS
+                elif provider == "gemini":
+                    selection_valid = model_id == GEMINI_MODEL_ID
+                elif provider == "groq":
+                    selection_valid = model_id == settings.GROQ_MODEL
+                else:
+                    selection_valid = False
+                if not selection_valid:
+                    return _error(request, "INVALID_INPUT", 400)
 
             dispatcher = get_chat_dispatcher()
             if dispatcher is None:
@@ -356,6 +366,12 @@ def create_turn(request, conversation_id):
                 request_id=request_id,
             )
             dispatcher.enqueue(turn.pk)
+            if provider and not route_available:
+                try:
+                    job = GeminiChatJob.objects.get(turn_id=turn.pk)
+                except GeminiChatJob.DoesNotExist as exc:
+                    raise ChatDispatchError("queued_job_missing") from exc
+                block_external_only_job(job.pk, reason="route_unavailable")
     except AuditUnavailable:
         return _error(request, "UNAVAILABLE", 503)
     except ChatDispatchError:
@@ -416,6 +432,48 @@ def cancel_turn(request, conversation_id, turn_id):
                 return _cancel_response(turn, 200)
             if turn.state == ChatTurn.State.CANCEL_REQUESTED:
                 return _cancel_response(turn, 202)
+
+            # Capability-blocked work cannot be claimed by the worker. Finish
+            # its cancellation here instead of leaving the turn active while a
+            # wake-up repeatedly finds no claimable job.
+            blocked_job = GeminiChatJob.objects.filter(
+                turn_id=turn.pk,
+                state=GeminiChatJob.State.QUEUED,
+                worker_finished_at__isnull=True,
+            ).exclude(capability_block_reason="").first()
+            if blocked_job is not None:
+                changed = GeminiChatJob.objects.filter(
+                    pk=blocked_job.pk,
+                    state=GeminiChatJob.State.QUEUED,
+                    worker_finished_at__isnull=True,
+                ).exclude(capability_block_reason="").update(
+                    state=GeminiChatJob.State.DONE,
+                )
+                if changed != 1:
+                    raise ChatDispatchError("blocked_job_changed")
+                turn.state = ChatTurn.State.CANCEL_REQUESTED
+                turn.save(update_fields=["state", "updated_at"])
+                record_event(
+                    event_type=AuditEvent.EventType.CHAT_TURN_CANCEL_REQUESTED,
+                    outcome=AuditEvent.Outcome.SUCCESS,
+                    actor_kind=AuditEvent.ActorKind.USER,
+                    actor_user_id=request.user.pk,
+                    target_user_id=request.user.pk,
+                    request_id=request_id,
+                )
+                append_chat_event(
+                    turn=turn,
+                    event_type=ChatEvent.EventType.TURN_CANCEL_REQUESTED,
+                    payload={"status": "cancel_requested"},
+                )
+                append_chat_event(
+                    turn=turn,
+                    event_type=ChatEvent.EventType.TURN_CANCELLED,
+                    payload={"status": "cancelled"},
+                )
+                turn.refresh_from_db()
+                return _cancel_response(turn, 200)
+
             dispatcher = get_chat_dispatcher()
             if dispatcher is None:
                 return _error(request, "UNAVAILABLE", 503)

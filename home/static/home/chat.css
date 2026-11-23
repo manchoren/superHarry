@@ -267,11 +267,17 @@ textarea {
     font-weight: 600;
 }
 
-.message-composer button:disabled,
+.message-composer button:disabled {
+    color: #fff;
+    background: #526174;
+    opacity: 1;
+    cursor: not-allowed;
+}
+
 .message-composer textarea:disabled {
     color: #526174;
     cursor: not-allowed;
-    opacity: 0.8;
+    opacity: 1;
 }
 
 .message-composer p {
@@ -340,4 +346,19 @@ textarea {
 .context-usage meter {
     width: 8rem;
     max-width: 100%;
+}
+
+.table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+}
+
+.table-scroll table {
+    min-width: 68rem;
+}
+
+.table-scroll th,
+.table-scroll td {
+    white-space: nowrap;
 }

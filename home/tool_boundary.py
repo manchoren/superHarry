@@ -263,7 +263,12 @@ class AuthorizedToolExecutor:
         authorization remains in ``execute`` and no model-provided callable is
         accepted.
         """
-        if not isinstance(proposal, ModelToolCallProposal) or not proposal.complete:
+        if not isinstance(proposal, ModelToolCallProposal):
+            raise ToolDenied("Tool proposal is invalid.")
+        if not isinstance(context, InvocationContext):
+            raise ToolDenied("Tool invocation context is invalid.")
+        if not proposal.complete:
+            self._audit_proposal_denial(proposal, context)
             raise ToolDenied("Tool proposal is incomplete.")
         try:
             if (not isinstance(proposal.call_id, str) or not proposal.call_id
@@ -274,6 +279,7 @@ class AuthorizedToolExecutor:
                 raise ValueError("tool proposal arguments exceed the boundary")
             arguments = json.loads(proposal.arguments_fragment, object_pairs_hook=_unique_json_object)
         except (TypeError, ValueError, UnicodeEncodeError, RecursionError):
+            self._audit_proposal_denial(proposal, context)
             raise ToolDenied("Tool proposal arguments must be valid JSON.") from None
         if not isinstance(arguments, Mapping):
             raise ToolDenied("Tool proposal arguments must be an object.")
@@ -290,6 +296,34 @@ class AuthorizedToolExecutor:
             policy_revision=context.policy_revision,
             operation_id=uuid5(context.operation_id, 'tool-call:' + proposal.call_id),
         ))
+
+    def _audit_proposal_denial(
+        self, proposal: ModelToolCallProposal, context: InvocationContext
+    ) -> None:
+        """Audit malformed calls when their declared tool is known.
+
+        Only server-owned identity and request correlation are included. The
+        untrusted proposal arguments and call identifier are never persisted.
+        Unknown tool names have no trusted declaration to supply an audit
+        event and remain denied without a declaration-level record.
+        """
+        try:
+            declaration = self._registry.get(proposal.name)
+        except ToolDenied:
+            return
+        try:
+            actor_user_id = _principal_user_id(context)
+        except ToolDenied:
+            actor_user_id = None
+        invocation = ToolInvocation(
+            tool_name=declaration.name,
+            arguments={},
+            actor_user_id=actor_user_id,
+            target_user_id=actor_user_id,
+            role=_tool_role(context.role),
+            request_id=context.request_id,
+        )
+        self._audit_denial(invocation, declaration)
 
     @staticmethod
     def _validate(invocation: ToolInvocation, declaration: ToolDeclaration) -> None:

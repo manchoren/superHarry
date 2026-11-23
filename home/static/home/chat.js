@@ -69,6 +69,10 @@
                 if (!id || !type || !data) throw new Error("invalid frame");
                 const event = type.slice(7);
                 const payload = JSON.parse(data.slice(6));
+                if (event === "turn.capability_unavailable") {
+                    turn.capabilityBlocked = true;
+                    cancel.disabled = false;
+                }
                 if (event === "message.delta") {
                     if (typeof payload.text !== "string") throw new Error("invalid delta");
                     turn.output.textContent += payload.text;
@@ -105,7 +109,9 @@
             return;
         }
         turn.retryDelay = 500;
-        status.textContent = form.dataset.working;
+        status.textContent = turn.capabilityBlocked
+            ? form.dataset.capabilityUnavailable
+            : form.dataset.working;
         schedulePoll(turn, 500);
     }
     form.addEventListener("submit", async event => {

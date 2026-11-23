@@ -253,6 +253,26 @@ class AuthorizedToolBoundaryTests(TestCase):
             )
         self.assertEqual(self.calls, [])
 
+    def test_malformed_known_proposals_are_audited_without_untrusted_arguments(self):
+        for proposal in (
+            self.proposal(complete=False),
+            self.proposal(arguments_fragment='{"value":"private payload"'),
+            self.proposal(arguments_fragment='{"value":"one","value":"two"}'),
+        ):
+            with self.subTest(proposal=proposal):
+                context = self.context()
+                before = len(self.audit)
+                with self.assertRaises(ToolDenied):
+                    self.executor.execute_proposal(proposal, context, confirmed=True)
+                self.assertEqual(len(self.audit), before + 1)
+                invocation, outcome, declaration = self.audit[-1]
+                self.assertEqual(outcome.status, "denied")
+                self.assertEqual(outcome.request_id, context.request_id)
+                self.assertEqual(invocation.arguments, {})
+                self.assertEqual(declaration.name, "owned.write")
+                self.assertNotIn("private payload", repr(invocation.arguments))
+        self.assertEqual(self.calls, [])
+
     def test_non_string_invocation_tool_name_is_denied(self):
         with self.assertRaises(ToolDenied):
             self.executor.execute(self.invocation(tool_name=[]))

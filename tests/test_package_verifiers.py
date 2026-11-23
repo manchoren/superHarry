@@ -34,6 +34,23 @@ def test_missing_gpg_is_unavailable_and_fail_closed(tmp_path: Path):
     assert result.reason == "verifier_not_installed"
 
 
+def test_gpg_timeout_is_incomplete_evidence(tmp_path: Path, monkeypatch):
+    artifact, signature, keyring = (tmp_path / name for name in ("a", "s", "k"))
+    for path in (artifact, signature, keyring):
+        path.write_bytes(b"contents")
+
+    def timeout(*args, **kwargs):
+        raise verifiers.subprocess.TimeoutExpired(args[0], kwargs.get("timeout", 1))
+
+    monkeypatch.setattr(verifiers.subprocess, "run", timeout)
+    result = verify_gpg_detached_signature(
+        artifact, signature, keyring=keyring, trusted_fingerprint="A" * 40,
+    )
+    assert result.available is False
+    assert result.verified is False
+    assert result.reason == "verifier_timeout"
+
+
 @pytest.mark.parametrize("signer", ["B" * 40, ""])
 def test_gpg_rejects_untrusted_or_missing_signer(tmp_path: Path, monkeypatch, signer: str):
     artifact, signature, keyring = (tmp_path / name for name in ("a", "s", "k"))

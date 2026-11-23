@@ -123,3 +123,54 @@ cases. Focused validation (`home.test_tool_boundary`,
 Malformed proposals that cannot be associated with a registered declaration
 remain denied without a declaration-level audit record. This is synthetic
 local evidence only and T232 remains Pending.
+
+## Malformed known-proposal audit follow-up - 2026-11-23
+
+Known-tool proposals rejected before JSON parsing completes (including
+incomplete, invalid-JSON and duplicate-key proposals) now emit a correlated
+`denied` outcome using the server-owned invocation request ID and an empty
+argument object. The proposal's raw arguments and call ID are not copied into
+the denial record. Unknown tool names still have no trusted declaration from
+which to derive an audit event and remain denied without a declaration-level
+record. Invalid invocation-context types are rejected before processing.
+
+Validation on the local Windows checkout, using synthetic proposals and
+handlers:
+
+- `.venv\Scripts\python.exe manage.py test home.test_tool_boundary home.test_tool_journal home.test_grant_policy` — 36 tests passed.
+- `.venv\Scripts\python.exe manage.py test` — 998 tests passed, 14 skipped.
+- `.venv\Scripts\python.exe manage.py check` — passed.
+- `.venv\Scripts\python.exe manage.py makemigrations --check --dry-run` — no changes detected.
+- `git diff --check` — passed; Git reported its existing LF-to-CRLF worktree-normalization notices.
+
+No live tool handler, provider, production database, VM service, deployment or
+real side effect was used. T232 remains Pending: this does not wire the
+executor into a production agent loop or establish durable integration for
+real handlers, crash recovery or cross-process operation identity.
+
+## Agent-loop integration review - 2026-11-23
+
+The current `ModelToolCallProposal` event is validated by the model interface
+and can be passed directly to `AuthorizedToolExecutor.execute_proposal`, but no
+product runtime does so. `FreeModelRouter` yields validated model events;
+`run_gemini_turn` uses the existing text response path and has no proposal
+consumer, application-owned tool declarations or real tool handlers.
+
+Connecting model proposals to that runtime would enable model-directed user
+actions. The accepted product requirements already define the initial
+main-agent tool, `recall_memory` (Q-64/P-54): it is restricted to the
+authorized main agent, calls the same non-reasoning memory agent, and cannot
+recurse or run for guests. This is an accepted feature direction, not proof
+that its dependencies or runtime integration are complete. The existing grant
+contract remains limited to reviewed non-consequential reads; consequential
+actions need individual confirmation and the durable journal. No general
+action-tool set is authorized by the `recall_memory` requirement.
+
+No runtime code was changed in this review. T232 remains Pending. The minimal
+product path is to finish T184's server-bound retrieval authorization and
+T185's bounded recall callback, then register only `recall_memory` for an
+authorized main-agent context. T230 already supplies its budget lifecycle.
+The missing engineering contract is a production model loop that can request
+tool proposals, preserve call/result correlation, and return tool results as
+untrusted content; current chat dispatch and adapters do not provide that
+path. Implement and test that protocol without enabling other tools or guests.

@@ -60,6 +60,24 @@ test('uncertain creation is retried only on user action with same key and payloa
     assert.equal(ui.elements['chat-cancel'].disabled, false);
 });
 
+test('capability-unavailable event explains queued route and keeps cancellation available', async () => {
+    const calls = [];
+    const ui = setup(async (url, options) => {
+        calls.push({url, options});
+        if (url === '/turns/') return ok({events_url: '/turns/one/events/'});
+        return stream('id: signed-one\nevent: turn.capability_unavailable\ndata: {"status":"unavailable","reason":"route_unavailable"}\n\n');
+    }, {capabilityUnavailable: 'route unavailable; request queued'});
+    ui.elements['chat-message'].value = 'hello';
+
+    await ui.submit();
+    await flush();
+
+    assert.equal(ui.elements['composer-status'].textContent, 'route unavailable; request queued');
+    assert.equal(ui.elements['chat-cancel'].disabled, false);
+    assert.equal(calls.length, 2);
+    assert.equal(ui.timers.length, 1);
+});
+
 test('explicit provider selection is captured once and remains immutable across retry', async () => {
     const calls = [];
     const ui = setup(async (url, opts) => {

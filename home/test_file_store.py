@@ -434,9 +434,11 @@ class AuthorizedFileStoreTests(TestCase):
         response = self.client.post(
             reverse("file-upload"), {"file": SimpleUploadedFile("x.txt", b"hello")},
             secure=True, HTTP_HOST="superharry.local", HTTP_ORIGIN="https://superharry.local",
+            HTTP_X_REQUEST_ID="00000000-0000-0000-0000-000000000001",
         )
         self.assertEqual(response.status_code, 201)
         request_id = response.json()["request_id"]
+        self.assertNotEqual(request_id, "00000000-0000-0000-0000-000000000001")
         self.assertEqual(response["Cache-Control"], "no-store")
         self.assertEqual(response["X-Content-Type-Options"], "nosniff")
         self.assertEqual(
@@ -452,6 +454,24 @@ class AuthorizedFileStoreTests(TestCase):
             AuditEvent.objects.get(event_type=AuditEvent.EventType.FILE_DOWNLOADED).request_id
         ))
         response.close()
+
+    def test_http_download_hides_other_users_file_without_auditing_access(self):
+        record = upload(user=self.owner, uploaded_file=SimpleUploadedFile("private.txt", b"secret"))
+        accessed_at = record.last_accessed_at
+        self.client.force_login(self.other)
+
+        response = self.client.get(
+            reverse("file-download", args=[record.storage_id]),
+            secure=True, HTTP_HOST="superharry.local", HTTP_ORIGIN="https://superharry.local",
+        )
+
+        self.assertEqual(response.status_code, 404)
+        payload = response.json()
+        self.assertEqual(payload["error"], "FILE_UNAVAILABLE")
+        self.assertNotEqual(payload["request_id"], "00000000-0000-0000-0000-000000000001")
+        record.refresh_from_db()
+        self.assertEqual(record.last_accessed_at, accessed_at)
+        self.assertFalse(AuditEvent.objects.filter(event_type=AuditEvent.EventType.FILE_DOWNLOADED).exists())
 
     @skipUnless(hasattr(os, "symlink"), "symlink support is unavailable")
     def test_symlink_store_entry_is_denied(self):

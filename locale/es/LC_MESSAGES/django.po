@@ -234,6 +234,9 @@ msgstr ""
 msgid "Context used"
 msgstr "Contexto utilizado"
 
+msgid "The selected route is unavailable. Your request is queued; cancel it or try again later."
+msgstr "La ruta seleccionada no esta disponible. Tu solicitud quedo en cola; puedes cancelarla o intentarlo mas tarde."
+
 msgid "tokens"
 msgstr "tokens"
 

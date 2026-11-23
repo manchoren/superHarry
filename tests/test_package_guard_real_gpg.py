@@ -60,6 +60,7 @@ class RealGPGBridgeTests(unittest.TestCase):
                     advisories_checked=True,
                     collected_at=now, expires_at=now + timedelta(hours=1),
                     evidence_source="isolated synthetic fixture",
+                    blocklist_sha256=PackageGuard().blocklist_sha256,
                 )
                 bound = verify_and_bind_package_evidence(
                     evidence, artifact, signature, provenance, keyring=keyring,

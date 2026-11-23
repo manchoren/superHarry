@@ -33,6 +33,35 @@ class ThemePreferenceTests(SimpleTestCase):
         template = (self.base_dir / "templates/home/conversation_delete.html").read_text(encoding="utf-8")
         self.assertIn('{% if user.is_authenticated %} data-account-theme="{{ account_theme }}"{% endif %}', template)
 
+    def test_disabled_composer_controls_keep_legible_theme_colors(self):
+        css = (self.base_dir / "static/home/chat.css").read_text(encoding="utf-8")
+        self.assertRegex(
+            css,
+            r"\.message-composer button:disabled\s*\{[^}]*color:\s*#fff;[^}]*background:\s*#526174;[^}]*opacity:\s*1;",
+        )
+        self.assertRegex(
+            css,
+            r"\.message-composer textarea:disabled\s*\{[^}]*color:\s*#526174;[^}]*opacity:\s*1;",
+        )
+
+    def test_audit_table_is_a_keyboard_accessible_mobile_scroll_region(self):
+        template = (self.base_dir / "templates/home/audit_events.html").read_text(encoding="utf-8")
+        css = (self.base_dir / "static/home/chat.css").read_text(encoding="utf-8")
+        self.assertIn('class="table-scroll" role="region"', template)
+        self.assertIn('aria-label="{% translate \'Audit events\' %}" tabindex="0"', template)
+        self.assertRegex(css, r"\.table-scroll\s*\{[^}]*max-width:\s*100%;[^}]*overflow-x:\s*auto;")
+        self.assertRegex(css, r"\.table-scroll table\s*\{[^}]*min-width:\s*68rem;")
+        self.assertRegex(css, r"\.table-scroll th,\s*\.table-scroll td\s*\{[^}]*white-space:\s*nowrap;")
+
+    def test_admin_loads_contrast_safe_theme_focus_styles(self):
+        template = (self.base_dir.parent / "templates/admin/base_site.html").read_text(encoding="utf-8")
+        css = (self.base_dir / "static/home/admin_theme.css").read_text(encoding="utf-8")
+        self.assertIn("home/admin_theme.css", template)
+        self.assertIn("html[data-theme] :focus-visible", css)
+        self.assertIn("outline: 0.2rem solid #155eef", css)
+        self.assertIn('html[data-theme="dark"] :focus-visible', css)
+        self.assertIn("outline-color: #9bc2ff", css)
+
 
 @override_settings(SUPERHARRY_HOSTNAME='testserver')
 class AccountThemeTests(TestCase):

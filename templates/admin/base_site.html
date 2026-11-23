@@ -1,6 +1,11 @@
 {% extends "admin/base_site.html" %}
 {% load static %}
 
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'home/admin_theme.css' %}" {% csp_nonce_attr %}>
+{% endblock %}
+
 {% block dark-mode-vars %}
   <link rel="stylesheet" href="{% static 'admin/css/dark_mode.css' %}" {% csp_nonce_attr %}>
   <script src="{% static 'home/theme.js' %}"{% if user.is_authenticated %} data-account-theme="{{ account_theme }}"{% endif %} {% csp_nonce_attr %}></script>

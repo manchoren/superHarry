@@ -48,7 +48,14 @@ def _run(command: Sequence[str], timeout_seconds: int) -> tuple[bool, bool, str]
     except FileNotFoundError:
         return False, False, "verifier_not_installed"
     except subprocess.TimeoutExpired:
-        return False, True, "verifier_timeout"
+        # The executable being present does not make an interrupted check a
+        # completed check. In particular, a timeout cannot prove absence of a
+        # signature or provenance record for D1 scoring.
+        return False, False, "verifier_timeout"
+    except OSError:
+        # Permission errors and other launch failures likewise provide no
+        # evidence about the artifact.
+        return False, False, "verifier_unavailable"
     output = "\n".join(part for part in (completed.stdout, completed.stderr) if part).strip()
     return completed.returncode == 0, True, output[-4000:]
 
