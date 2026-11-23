@@ -1,118 +1,147 @@
 #!/usr/bin/env python3
-"""Show project task progress and the next task in the delivery queue."""
+"""Show task progress from the configured GitHub issue tracker."""
 
 from __future__ import annotations
 
+import json
 import re
+import shutil
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-TASK_LINE = re.compile(
-    r"^- \[(?P<checked>[ xX])\] \*\*(?P<task_id>T\d+)"
-    r"(?:\s+-\s+(?P<title>.*?))?\*\*"
-)
-QUEUE_LINE = re.compile(r"^\|\s*\d+\s*\|\s*(T\d+)\s*\|\s*(.*?)\s*\|")
-STATUS = re.compile(r"\bStatus:\s*([^.;]+)")
+QUEUE_LINE = re.compile(r"^\|\s*\d+\s*\|\s*(T\d+)\s*\|")
+ISSUE_TITLE = re.compile(r"^(T\d+)\s+-\s+(.*)$")
 
 
 @dataclass
 class Task:
     task_id: str
     title: str
-    completed: bool
+    number: int
+    state: str
     status: str
 
 
-def read_tasks(path: Path) -> dict[str, Task]:
+def find_gh() -> str | None:
+    executable = shutil.which("gh")
+    if executable:
+        return executable
+
+    if sys.platform == "win32":
+        candidates = [
+            Path("C:/Program Files/GitHub CLI/gh.exe"),
+            Path.home() / "AppData/Local/Programs/GitHub CLI/gh.exe",
+        ]
+        return next((str(path) for path in candidates if path.is_file()), None)
+    return None
+
+
+def read_tracker_tasks(gh: str, repository: Path) -> dict[str, Task]:
+    result = subprocess.run(
+        [
+            gh,
+            "issue",
+            "list",
+            "--state",
+            "all",
+            "--limit",
+            "500",
+            "--label",
+            "project-task",
+            "--json",
+            "number,title,state,labels",
+        ],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+
     tasks: dict[str, Task] = {}
-    with path.open(encoding="utf-8") as task_file:
-        for line in task_file:
-            match = TASK_LINE.match(line)
-            if not match:
-                continue
+    for issue in json.loads(result.stdout):
+        title_match = ISSUE_TITLE.match(issue["title"])
+        if not title_match:
+            continue
 
-            task_id = match.group("task_id")
-            title = (match.group("title") or "").strip()
-            status_match = STATUS.search(line)
-            task = Task(
-                task_id=task_id,
-                title=title,
-                completed=match.group("checked").lower() == "x",
-                status=status_match.group(1).strip() if status_match else "",
-            )
+        task_id, title = title_match.groups()
+        if task_id in tasks:
+            raise ValueError(f"Multiple GitHub task issues use ID {task_id}.")
 
-            existing = tasks.get(task_id)
-            if existing is None:
-                tasks[task_id] = task
-                continue
+        labels = {label["name"] for label in issue["labels"]}
+        status_label = next(
+            (label.removeprefix("status:") for label in labels if label.startswith("status:")),
+            "pending",
+        )
+        state = issue["state"].upper()
+        if state == "CLOSED":
+            status = "Cancelled" if status_label == "cancelled" else "Completed"
+        else:
+            status = {
+                "pending": "Pending",
+                "in-progress": "In progress",
+                "blocked": "Blocked",
+                "deferred": "Deferred",
+            }.get(status_label, status_label.replace("-", " ").title())
 
-            tasks[task_id] = Task(
-                task_id=task_id,
-                title=existing.title or task.title,
-                completed=existing.completed or task.completed,
-                status=existing.status or task.status,
-            )
+        tasks[task_id] = Task(task_id, title, issue["number"], state, status)
+
+    if not tasks:
+        raise ValueError("No task issues with the `project-task` label were found.")
     return tasks
 
 
-def read_queue(path: Path) -> list[tuple[str, str]]:
-    queue: list[tuple[str, str]] = []
+def read_queue(path: Path) -> list[str]:
+    queue = []
     with path.open(encoding="utf-8") as task_file:
         for line in task_file:
             match = QUEUE_LINE.match(line)
             if match:
-                queue.append((match.group(1), match.group(2).strip()))
+                queue.append(match.group(1))
     return queue
 
 
 def main() -> int:
     repository = Path(__file__).resolve().parents[1]
-    backlog_path = repository / "docs" / "reference" / "backlog.md"
-    completed_path = repository / "docs" / "history" / "completed-tasks.md"
-    queue_path = repository / "tasks.md"
+    gh = find_gh()
+    if gh is None:
+        print("GitHub CLI (`gh`) is required and was not found.", file=sys.stderr)
+        return 1
 
     try:
-        tasks = read_tasks(backlog_path)
-        for task_id, task in read_tasks(completed_path).items():
-            existing = tasks.get(task_id)
-            tasks[task_id] = Task(
-                task_id=task_id,
-                title=(existing.title if existing else "") or task.title,
-                completed=(existing.completed if existing else False) or task.completed,
-                status=(existing.status if existing else "") or task.status,
-            )
-        queue = read_queue(queue_path)
-    except OSError as error:
-        print(f"Error reading task files: {error}", file=sys.stderr)
+        tasks = read_tracker_tasks(gh, repository)
+        queue = read_queue(repository / "tasks.md")
+    except (OSError, ValueError, subprocess.CalledProcessError, json.JSONDecodeError) as error:
+        detail = getattr(error, "stderr", None) or str(error)
+        print(f"Unable to read task progress from GitHub: {detail}", file=sys.stderr)
         return 1
 
-    if not tasks:
-        print("No tasks found in the backlog.", file=sys.stderr)
-        return 1
-
-    completed_count = sum(task.completed for task in tasks.values())
+    completed_count = sum(task.status == "Completed" for task in tasks.values())
     total_count = len(tasks)
     percentage = completed_count / total_count * 100
 
-    print("Project progress")
+    print("Project progress (GitHub Issues)")
     print(f"Completed tasks: {completed_count}/{total_count} ({percentage:.1f}%)")
 
     current_task = next(
-        (tasks[task_id] for task_id, _ in queue
-         if task_id in tasks and not tasks[task_id].completed),
+        (
+            tasks[task_id]
+            for task_id in queue
+            if task_id in tasks
+            and tasks[task_id].state != "CLOSED"
+            and tasks[task_id].status != "Deferred"
+        ),
         None,
     )
     if current_task is None:
         print("Current task: no pending task in the delivery queue.")
         return 0
 
-    title = current_task.title or next(
-        (queue_title for task_id, queue_title in queue if task_id == current_task.task_id),
-        "",
-    )
-    print(f"Current task: {current_task.task_id} - {title}")
-    print(f"Status: {current_task.status or 'Pending'}")
+    print(f"Current task: {current_task.task_id} - {current_task.title}")
+    print(f"Status: {current_task.status}")
+    print(f"GitHub issue: #{current_task.number}")
     return 0
 
 

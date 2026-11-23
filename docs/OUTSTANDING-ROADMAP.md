@@ -4,17 +4,18 @@ The [product-first validation policy](reference/product-first-validation.md) gov
 
 **Last reviewed:** 2026-11-23 (task and policy reconciliation).
 
-The [delivery queue](../tasks.md), [backlog](reference/backlog.md) and
-[specification-to-code review](reference/spec-code-review-2026-11-11.md) own current
-sequencing, status, evidence and acceptance. Previous percentages and live-test
-claims in this document are withdrawn as current completion evidence; they were
-not reproduced by this review. No overall implementation percentage is asserted.
+The [delivery queue](../tasks.md) owns ordering, the [backlog](reference/backlog.md)
+indexes scope and evidence, and linked GitHub Issues own current status,
+assignment and blockers. The [specification-to-code review](reference/spec-code-review-2026-11-11.md)
+records acceptance criteria. Previous percentages and live-test claims in this
+document are withdrawn as current completion evidence; they were not reproduced
+by this review. No overall implementation percentage is asserted.
 
 ## Design-to-task mapping
 
 | Design item | Current evidence | Delivery tasks |
 |---|---|---|
-| Package guard | Bounded evaluator now applies the approved scoring/evidence contract; verifier, admin and installer integration remain absent. | T231, T181, T193 |
+| Package guard | Local evaluator and artifact-bound GPG/SLSA evidence contract are complete; admin configuration and installer integration remain open. | T181, T193, T242 |
 | Memory encryption and recovery | A bounded memory schema slice exists; encryption, retrieval and recovery remain open. T223 is complete for the owner-approved Conversation/Message archive scope; SQLCipher memory recovery remains separate. | T183, T182, T188 |
 | Browser/display isolation | Design only; target-VM isolation not demonstrated. | T208, T209, T210 |
 | Network recovery/onboarding | Design only; bootstrap and network broker flows absent. | T212, T221 |
@@ -23,9 +24,9 @@ not reproduced by this review. No overall implementation percentage is asserted.
 | Guest limits | Guest session/chat flow and complete limit enforcement absent. | T235, T211 |
 | Memory lifecycle | A bounded memory schema slice exists; maintenance execution, staleness and deletion remain open. | T183, T190, T191, T239 |
 | Tool confirmations | Bounded common tool registry/executor exists; persisted grants and full agent-loop integration remain absent. | T232, T180 |
-| Open choices | Conflicting contracts require explicit reconciliation; proposed details are not approval. | T220, T227, T231 |
+| Open choices | Conflicting contracts require explicit reconciliation; proposed details are not approval. | T220, T227 |
 | Gateway migration | Gateway-only credential loading and bounded durable-chat routing exist; accounting integration and real gateway/VM acceptance remain open. | T226-T230, T179 |
-| Product foundations | File store, memory controls, themes and capability recovery remain. | T233, T234, T236, T240 |
+| Product foundations | File store, memory controls and capability recovery remain; local theme acceptance is complete. | T233, T234, T240 |
 
 ## Execution and validation boundaries
 

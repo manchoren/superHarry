@@ -4,7 +4,7 @@ Start with the [constitution](../constitution.md), [delivery queue](../tasks.md)
 
 ## Navigation
 
-Use the domain list below to find related proposals, task records and reviews. Search task IDs across the repository for related work and consult the [backlog](reference/backlog.md) for current status. Historical records are evidence of their date, not current authorization.
+Use the domain list below to find related proposals, task records and reviews. Search task IDs across the repository for related work; follow the linked GitHub issue for current status and the [backlog](reference/backlog.md) for local scope and evidence. Historical records are evidence of their date, not current authorization.
 
 ```text
 docs/

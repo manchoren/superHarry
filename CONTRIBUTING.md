@@ -19,10 +19,11 @@ python manage.py test
 python scripts/project_progress.py
 ```
 
-The project-progress command is read-only and does not validate dependencies,
-readiness, acceptance, links or duplicate records.
+The project-progress command reads task issues from the configured GitHub tracker;
+it requires an authenticated `gh` CLI and does not validate dependencies,
+readiness, acceptance or local evidence links.
 
-1. Select a ready task from [tasks.md](tasks.md), checking its dependencies and acceptance criteria in the backlog's linked record. Inspect the complete staged, unstaged and relevant untracked change set; preserve unrelated user work.
+1. Select a task from the ordered [tasks.md](tasks.md) index. Open its linked GitHub issue and check current status and native blockers; read scope and acceptance in the linked backlog/evidence records. Inspect the complete staged, unstaged and relevant untracked change set; preserve unrelated user work.
 2. Read [the test selection policy](docs/reference/test-scoping.md), inspect the change set and select checks proportional to the affected behavior. Independent review is optional unless a current task specifically requires it.
 3. State a short approach. Choose the smallest reversible implementation within standing authorization; record non-obvious decisions with the task and architectural decisions in an ADR. Ask only for remaining protected boundaries.
 4. Add regression tests for bugs and appropriate tests for behavior changes. Cover authorization, untrusted inputs, errors, audit and isolation as applicable. Use synthetic fixtures and mock models and network calls where practical. Broader real-model evaluation is deferred under the product-first policy.
@@ -37,9 +38,10 @@ Use short-lived `feature/`, `fix/` or `chore/` branches and Conventional Commits
 |--------|------------------------------------------|
 | [constitution.md](constitution.md) | Binding principles and approval boundaries. Amend only with explicit owner approval; plans and code do not amend it. |
 | [Product requirements](docs/reference/product-requirements.md) and [security policies](docs/reference/security-policies.md) | Accepted behavior and interfaces, with accepted/proposed/open distinctions. The constitution prevails over conflicting details. |
-| [Backlog](docs/reference/backlog.md) | Current task ID, title, status and link to its scope, dependencies, acceptance and evidence record. Owns active status; do not duplicate mutable status in reviews or roadmaps. |
-| [tasks.md](tasks.md) | Ordered delivery queue referencing backlog IDs. Ordering never overrides dependencies or approval boundaries. Use this exact case-sensitive filename in links and tools. |
-| [Completed history](docs/history/completed-tasks.md) | Closed task records with completion date, exact accepted scope and evidence links. Historical evidence does not establish current deployment acceptance. |
+| GitHub Issues | Current task status, assignee and native dependency relationships. Status labels are `status:pending`, `status:in-progress`, `status:blocked` and `status:deferred`; completed issues are closed with `status:completed`, and cancelled issues are closed with `status:cancelled`. |
+| [Backlog](docs/reference/backlog.md) | Stable task IDs, titles, scope summaries and links to acceptance/evidence records and their GitHub issues. Does not duplicate mutable status. |
+| [tasks.md](tasks.md) | Ordered delivery queue with one issue link per open task. Ordering never overrides native blockers or approval boundaries. Use this exact case-sensitive filename in links and tools. |
+| [Completed history](docs/history/completed-tasks.md) | Closed task records with completion date, exact accepted scope, evidence links and GitHub issue links. Historical evidence does not establish current deployment acceptance. |
 | Task evidence and dated reviews | One canonical linked evidence record per task, including changed files, commands/results, environment, constitution hash, limitations and follow-ups. Dated reviews describe their inspected snapshot; later evidence must be dated and distinguished from it. |
 | [Project plan](project_plan.md) and [roadmap](docs/OUTSTANDING-ROADMAP.md) | Derived summaries and sequencing. Link to authoritative records; update affected summaries without duplicating detailed requirements or unsupported completion percentages. |
 
@@ -56,26 +58,26 @@ replace authoritative task records, evidence, decisions or validation results.
 |---------|-------------------------------------|
 | New or changed requirement/interface | Update only affected requirement sections and interfaces; express behavior as Given/When/Then and flows as Mermaid when needed. Preserve approval status, record applicable authorization, and add or revise task scope, dependencies and acceptance. |
 | Implementation or bug fix | Update the task's evidence with actual behavior and checks. Update affected user/developer documentation; change accepted requirements only when the behavior change is authorized. Record remaining gaps as linked tasks. |
-| Assignment, handoff, blocker or dependency change | Update backlog status, owner and model if known; record the blocker, prerequisite or next action in the linked task record. Adjust queue order when priorities or readiness change. |
+| Assignment, handoff, blocker or dependency change | Update the GitHub issue assignee and native dependency edges; record implementation handoff details in the linked task record. Adjust queue order when priorities or readiness change. |
 | Validation result | Record exact command, result, date, environment and scope; distinguish static inspection, mocked/application tests, live-provider checks and target-VM acceptance. Failed, skipped or unavailable checks remain explicit. |
-| Completion or reopening | Apply the lifecycle rules below; synchronize backlog, queue, history and affected summaries. Preserve previous evidence when reopening and explain why it no longer establishes completion. |
+| Status change, completion or reopening | Update the GitHub issue state and status label, then synchronize the backlog index, queue, history and affected summaries. Preserve previous evidence when reopening and explain why it no longer establishes completion. |
 
 Given disagreement between code and an accepted requirement, when reviewing the feature, then record the specific gap and implementation task rather than declaring either aligned. Given conflicting documents or an unresolved protected choice, then identify the authoritative rule and record the unresolved decision without treating a proposal as accepted.
 
 ### Task lifecycle and closure
 
-- Keep task IDs unique and stable; allocate new IDs after checking both backlog and history. Every open task must have a linked scope, dependencies and verifiable acceptance criteria; implementation tasks identify relevant requirements and current code evidence.
-- Use `Pending` for unstarted work, `In progress` for active work with an identified owner, `Blocked` with a specific unmet prerequisite, `Deferred` for deliberately postponed scope, and `Completed` only for accepted scope with supporting evidence. Record cancelled or superseded tasks separately in history without a completed marker; link replacement work. Legacy statuses without verified ownership are review findings, not proof of active execution.
-- Keep every open task in the backlog and exactly once in the queue, including explicitly labeled deferred tasks at the end. Do not select a deferred or blocked task merely because it appears in the queue.
-- Given all acceptance criteria are met and applicable checks pass, when closing a task, then move its detailed record to completed history, retain its ID, scope, date and evidence, remove its active backlog entry and queue row, and update affected summaries. A linked subtask may remain open only when it is explicitly outside the closed scope.
+- Keep task IDs unique and stable; allocate new IDs after checking both backlog and history. Every open task must have a GitHub issue linked to scope, dependencies and verifiable acceptance criteria; implementation tasks identify relevant requirements and current code evidence.
+- Track status on the GitHub issue: `status:pending` for unstarted work, `status:in-progress` for active work with an identified owner, `status:blocked` with a specific open native blocker, and `status:deferred` for deliberately postponed scope. Close completed issues with `status:completed` only for accepted scope with supporting evidence. Close cancelled or superseded issues with `status:cancelled` and link replacement work.
+- Keep every open task in the backlog index and exactly once in the queue, including deferred tasks at the end. Do not select a deferred or blocked task merely because it appears in the queue.
+- Given all acceptance criteria are met and applicable checks pass, when closing a task, then close its GitHub issue, move its detailed record to completed history, retain its ID, scope, date and evidence, remove its active backlog entry and queue row, and update affected summaries. A linked subtask may remain open only when it is explicitly outside the closed scope.
 - Given only an implementation slice or documentation review is complete, then close only that recorded scope. Passing local tests, owner authorization, deployment and target-VM acceptance are separate claims; missing required VM evidence keeps the corresponding acceptance task open.
-- Given a completed task must reopen, then restore one active backlog record and queue row, link the dated historical evidence and reopening reason, and mark the historical record as superseded by the active task. Do not retain a checked completion marker that would make progress tooling count the reopened task as completed.
+- Given a completed task must reopen, then reopen its GitHub issue, remove `status:completed`, set the appropriate open status label, restore one active backlog index entry and queue row, link the dated historical evidence and reopening reason, and mark the historical record as superseded by the active task.
 
 ### Documentation verification before handoff
 
-1. Inspect the complete affected diff, including relevant untracked files. Check unique task IDs, status/checkbox agreement, one queue entry per open task, no completed queue entries, and dependencies that resolve to existing active or historical IDs without cycles.
-2. Check affected relative links and filename casing against real files, plus scope/status consistency across backlog, queue, history and summaries. Existing defects outside the change remain linked follow-ups; do not report them as fixed.
-3. Run `python scripts/project_progress.py` and `git diff --check`. The progress command reports counts and the first open queue entry; it does **not** validate dependencies, readiness, acceptance, links or duplicate records. Inspect those separately and check untracked documentation explicitly because `git diff --check` does not cover it.
+1. Inspect the complete affected diff, including relevant untracked files. Check unique task IDs, one queue entry per open task, no completed queue entries, and GitHub dependencies that resolve without cycles.
+2. Check affected relative links and filename casing against real files, plus ID/order consistency across GitHub, backlog, queue and history. Existing defects outside the change remain linked follow-ups; do not report them as fixed.
+3. Run `python scripts/project_progress.py` and `git diff --check`. The progress command reports GitHub task counts and the first open queued task; it does **not** validate readiness, acceptance or local evidence links. Inspect those separately and check untracked documentation explicitly because `git diff --check` does not cover it.
 4. Record actual verification results in the task's canonical evidence record. Documentation-only changes require relevant static checks; application changes follow the local checks below. A missing referenced test-selection policy does not grant permission to skip required tests or use a scoped-test exception.
 
 ## Local checks

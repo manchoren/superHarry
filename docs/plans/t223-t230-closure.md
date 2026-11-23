@@ -1,7 +1,7 @@
 # T223 and T230 closure plan
 
 Date: 2026-11-23
-Status: Planned; both tasks remain Pending in `docs/reference/backlog.md`.
+Status: Superseded on 2026-11-23. T223 and T230 are completed for their recorded scopes; see [T223 issue](https://github.com/manchoren/superHarry/issues/19), [T230 issue](https://github.com/manchoren/superHarry/issues/2), and the linked completion records. The planned steps below are a historical snapshot.
 
 ## Goal and scope
 
