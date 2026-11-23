@@ -8,7 +8,7 @@ Run `python scripts/project_progress.py` for a progress summary.
 
 Maintain this queue using [documentation ownership, update triggers and closure rules](CONTRIBUTING.md#documentation-ownership-and-synchronization). The backlog owns status; this file owns ordering. Check dependencies before starting the first listed task.
 
-**Last updated:** 2026-11-15
+**Last updated:** 2026-11-23
 
 ---
 
@@ -75,14 +75,13 @@ The [product-first policy](docs/reference/product-first-validation.md) supersede
 | 51 | T220 | Open choices decision matrix (scheduler defaults, API contracts, backup mechanics) |
 | 52 | T221 | VM deployment and native systemd services |
 | 53 | T222 | Full stack acceptance tests on target VM |
-| 54 | T223 | Backup and restore validation on target VM |
-| 55 | T224 | Update rollback validation on target VM |
-| 56 | T217 | WhatsApp channel adapter (deferred pending terms review) |
-| 57 | T169 | Pi OS device builds (deferred) |
-| 58 | T175 | Pi physical HDMI and Wi-Fi validation (deferred) |
-| 59 | T176 | Pi microSD, power and thermal behavior validation (deferred) |
-| 60 | T241 | External provider and gateway acceptance (deferred) |
-| 61 | T242 | Third-party package verification and supply chain (deferred) |
-| 62 | T243 | External services and artifacts review (deferred) |
-| 63 | T244 | Broader product evaluation and release evidence (deferred) |
-| 64 | T245 | Operational hardening and release recovery (deferred) |
+| 54 | T224 | Update rollback validation on target VM |
+| 55 | T217 | WhatsApp channel adapter (deferred pending terms review) |
+| 56 | T169 | Pi OS device builds (deferred) |
+| 57 | T175 | Pi physical HDMI and Wi-Fi validation (deferred) |
+| 58 | T176 | Pi microSD, power and thermal behavior validation (deferred) |
+| 59 | T241 | External provider and gateway acceptance (deferred) |
+| 60 | T242 | Third-party package verification and supply chain (deferred) |
+| 61 | T243 | External services and artifacts review (deferred) |
+| 62 | T244 | Broader product evaluation and release evidence (deferred) |
+| 63 | T245 | Operational hardening and release recovery (deferred) |

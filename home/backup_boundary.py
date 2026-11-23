@@ -107,7 +107,8 @@ def _validate_entries(entries: Iterable[BackupEntry]) -> tuple[BackupEntry, ...]
             raise BackupBoundaryError("backup entry is malformed")
         normalized = item.path.replace("\\", "/")
         parts = normalized.split("/")
-        if normalized != item.path or not normalized or normalized.startswith("/") or ".." in parts:
+        if (normalized != item.path or not normalized or normalized.startswith("/")
+                or any(part in ("", ".", "..") for part in parts)):
             raise BackupBoundaryError("entry path is unsafe")
         if any(part.casefold() in _FORBIDDEN for part in parts):
             raise BackupBoundaryError("entry is outside the data-only allowlist")
@@ -164,18 +165,33 @@ def create_backup_plan(*, application_release: str, schema_version: str,
     return BackupPlan(manifest, any(not item.encrypted for item in validated))
 
 
-def verify_restore_stage(*, manifest: BackupManifest, recovery_point_id: str,
-                         reviewed_owner_ids: Iterable[str], confirmed: bool) -> RestoreStage:
-    """Validate a staged restore request without reading or replacing live data."""
+def validate_restore_selection(*, manifest: BackupManifest,
+                               selected_archive_recovery_point_id: str,
+                               reviewed_owner_ids: Iterable[str]) -> RestoreStage:
+    """Validate the archive identity and owner selection before confirmation."""
     checked = _validate_manifest(manifest)
-    if not isinstance(recovery_point_id, str) or not recovery_point_id:
-        raise BackupBoundaryError("verified pre-restore recovery point is required")
-    if recovery_point_id != checked.recovery_point_id:
-        raise BackupBoundaryError("recovery point does not match the staged manifest")
+    if (not isinstance(selected_archive_recovery_point_id, str)
+            or not selected_archive_recovery_point_id):
+        raise BackupBoundaryError("selected archive recovery point is required")
+    if selected_archive_recovery_point_id != checked.recovery_point_id:
+        raise BackupBoundaryError("selected recovery point does not match the archive manifest")
     owners = tuple(reviewed_owner_ids)
     expected_owners = tuple(sorted({item.owner_id for item in checked.entries}))
     if tuple(sorted(set(owners))) != expected_owners:
         raise BackupBoundaryError("all and only known owners must be reviewed")
+    return RestoreStage(checked, selected_archive_recovery_point_id, expected_owners, False)
+
+
+def verify_restore_stage(*, manifest: BackupManifest,
+                         selected_archive_recovery_point_id: str,
+                         reviewed_owner_ids: Iterable[str], confirmed: bool) -> RestoreStage:
+    """Validate a staged restore request and require explicit confirmation."""
+    selected = validate_restore_selection(
+        manifest=manifest,
+        selected_archive_recovery_point_id=selected_archive_recovery_point_id,
+        reviewed_owner_ids=reviewed_owner_ids,
+    )
     if confirmed is not True:
         raise BackupBoundaryError("explicit restore confirmation is required")
-    return RestoreStage(checked, recovery_point_id, expected_owners, True)
+    return RestoreStage(selected.manifest, selected.recovery_point_id,
+                        selected.reviewed_owner_ids, True)

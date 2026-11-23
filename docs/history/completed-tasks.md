@@ -3,7 +3,7 @@
 Completed task records moved from the active backlog. Each entry preserves its task ID,
 title and completion status for release-scope tracking.
 
-**Last updated:** 2026-11-14
+**Last updated:** 2026-11-23
 
 ## Cancelled and superseded tasks
 
@@ -70,3 +70,26 @@ This completion does not establish VM deployment or provider acceptance.
   - Evidence: [fixture record](../reference/t237-evaluation-fixtures.md) and
     [overseer validation](../reference/evidence/overseer-product-first-2026-11-14.md).
     No live-provider or release acceptance is implied.
+
+## Phase 10: VM validation
+
+- [x] **T223 - Backup and restore validation on target VM** Status: Completed
+  - Completed 2026-11-23 for the owner-approved initial archive scope: replace
+    only `Conversation` and `Message` rows for explicitly reviewed existing
+    owners. Restore rejects any affected `ChatTurn`, preserves all operational
+    ledgers and unrelated owners, and rolls back injected transactional failure.
+  - The real archive pipeline validates and stages the ZIP, acquires SQLite
+    `BEGIN IMMEDIATE` on the Django `default` database, writes and verifies a
+    fresh pre-restore archive with a distinct recovery-point ID, then requires
+    explicit confirmation and a live gate-bound receipt before replacement.
+  - Evidence: [T223 archive and ARM64 VM validation](../reference/evidence/t223-data-archive-slice-2026-11-23.md).
+    Local Django suite: 984 passed, 14 skipped. ARM64 VM isolated archive,
+    rollback, owner/ChatTurn and concurrency suite: 31 passed; Django system
+    check clean; installed services stayed active and disposable files were
+    removed.
+  - Scope boundary: owner-approved archive excludes `MemoryRecord`,
+    `StoredFile`, authentication and operational ledgers. SQLCipher key
+    recovery is not claimed or tested here; it remains under T182/T183 as the
+    owner directed. Admin download/restore integration remains T188. This
+    closure does not claim production-data recovery or wider deployment
+    acceptance.

@@ -2,7 +2,7 @@
 
 The [product-first validation policy](reference/product-first-validation.md) governs current sequencing and defers broader validation to T241-T245.
 
-**Last reviewed:** 2026-11-14 (task and policy reconciliation).
+**Last reviewed:** 2026-11-23 (task and policy reconciliation).
 
 The [delivery queue](../tasks.md), [backlog](reference/backlog.md) and
 [specification-to-code review](reference/spec-code-review-2026-11-11.md) own current
@@ -15,7 +15,7 @@ not reproduced by this review. No overall implementation percentage is asserted.
 | Design item | Current evidence | Delivery tasks |
 |---|---|---|
 | Package guard | Bounded evaluator now applies the approved scoring/evidence contract; verifier, admin and installer integration remain absent. | T231, T181, T193 |
-| Memory encryption and recovery | A bounded memory schema slice exists; encryption, retrieval and recovery remain open. | T183, T182, T188, T223 |
+| Memory encryption and recovery | A bounded memory schema slice exists; encryption, retrieval and recovery remain open. T223 is complete for the owner-approved Conversation/Message archive scope; SQLCipher memory recovery remains separate. | T183, T182, T188 |
 | Browser/display isolation | Design only; target-VM isolation not demonstrated. | T208, T209, T210 |
 | Network recovery/onboarding | Design only; bootstrap and network broker flows absent. | T212, T221 |
 | Email/speech/external services | Checklists are not integrated adapters or benchmarks. | T238, T213-T217, T243 |

@@ -7,7 +7,7 @@ Apply the [documentation ownership, update triggers and closure rules](../../CON
 
 The owner-approved [product-first validation policy](product-first-validation.md) governs current scope and supersedes conflicting historical validation gates. Deferred follow-ups T241-T245 do not block the current product milestone.
 
-**Last updated:** 2026-11-15
+**Last updated:** 2026-11-23
 
 ---
 
@@ -89,7 +89,6 @@ Accepted owner follow-up (2026-11-11): [benchmarks waived](owner-validation-deci
   - Accepted decisions are synchronized in [T220 evidence](evidence/t220-decision-sync-2026-11-15.md): D1, D2 and R1-R3, within their explicit limits. Gateway/API, scheduler, backup/retrieval mechanics and other protected choices remain open; no proposal is accepted automatically. T231 depends on T225 and T230 on T227/T228/T179.
 - [ ] **T221 - VM deployment and native systemd services** Status: Pending
 - [ ] **T222 - Full stack acceptance tests on target VM** Status: Pending
-- [ ] **T223 - Backup and restore validation on target VM** Status: Pending. [Evidence](evidence/t223-t224-local-recovery-contracts-2026-11-15.md)
 - [ ] **T224 - Update rollback validation on target VM** Status: Pending. [Evidence](evidence/t223-t224-local-recovery-contracts-2026-11-15.md)
 
 ## Deferred (optional Raspberry Pi port)
@@ -103,7 +102,7 @@ Accepted owner follow-up (2026-11-11): [benchmarks waived](owner-validation-deci
 The [review and acceptance records](spec-code-review-2026-11-11.md) define the evidence, dependencies and Given/When/Then criteria for T179-T240. Completed scope is recorded in history and does not imply a new validation result. All pending tasks are **Unassigned**; no active implementer/model was verified. T179 is Pending because no active owner is verified; work already recorded remains evidence, not completion.
 
 - [ ] **T229 - Connect durable chat and local inference to the gateway** Status: Pending. Bounded gateway routing, credential resolution and fail-closed cancellation evidence is recorded in the dated review; real gateway, VM and release acceptance remain open.
-- [ ] **T230 - Enforce application budgets across gateway fallback and memory calls** Status: Pending. [Budget visibility evidence](t230-budget-visibility-evidence.md) records carried reservations and the missing durable configuration/rollover implementation.
+- [ ] **T230 - Enforce application budgets across gateway fallback and memory calls** Status: Pending. [Budget visibility evidence](t230-budget-visibility-evidence.md) records carried reservations and the missing durable configuration/rollover implementation; [memory-agent result contract slice](evidence/t230-memory-agent-result-contract-2026-11-23.md) validates authorized candidate IDs but does not enable or budget model dispatch; [Nous API boundary review](evidence/t230-memory-agent-budget-2026-11-23.md).
 - [ ] **T231 - Correct package guard scoring and evidence validation** Status: Pending. The bounded evaluator and contract-first tests are implemented; broader verifier and installation evidence is deferred to T242. Keep autonomous installation disabled until its required controls work.
 - [ ] **T232 - Implement the common authorized tool execution boundary** Status: Pending. A bounded registry/executor slice now adapts existing `ModelToolCallProposal` and `InvocationContext` contracts; persistent grants and real handlers remain open. Evidence: [T232 boundary evidence](t232-tool-boundary-evidence.md).
 - [ ] **T233 - Implement the authorized file store and upload/download boundary** Status: Pending
