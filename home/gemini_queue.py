@@ -1,6 +1,7 @@
 """Persistent Gemini development queue; claimed work is never retried."""
 
 import logging
+from datetime import datetime, timezone as datetime_timezone
 import threading
 from datetime import timedelta
 
@@ -102,10 +103,28 @@ def reconcile_stale(*, now=None):
     return reconciled
 
 
+def _provision_budget_periods_if_due(last_provisioned, *, now=None):
+    now = now or datetime.now(datetime_timezone.utc)
+    if (last_provisioned is None
+            or (now - last_provisioned).total_seconds() >= 60):
+        from home.application_budget import provision_configured_period_budgets
+        try:
+            provision_configured_period_budgets(at=now)
+        except Exception:
+            logger.warning('application_budget_period_provisioning_unavailable')
+        return now
+    return last_provisioned
+
+
 def _worker_loop(stop_event=None):
+    last_budget_provisioned = None
     while stop_event is None or not stop_event.is_set():
         try:
             close_old_connections()
+            now = datetime.now(datetime_timezone.utc)
+            last_budget_provisioned = _provision_budget_periods_if_due(
+                last_budget_provisioned, now=now,
+            )
             reconcile_stale()
             if run_one():
                 continue

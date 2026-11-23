@@ -334,6 +334,8 @@ class ApplicationBudgetConfigurationAdmin(admin.ModelAdmin):
         return False
 
     def save_model(self, request, obj, form, change):
+        from home.application_budget import provision_period_budgets
+
         previous = self.get_object(request, obj.pk) if change else None
         previous_values = (
             (previous.scope, previous.scope_key, previous.daily_limit, previous.monthly_limit)
@@ -341,6 +343,9 @@ class ApplicationBudgetConfigurationAdmin(admin.ModelAdmin):
         )
         with transaction.atomic():
             super().save_model(request, obj, form, change)
+            # Materialize this UTC period from the newly persisted durable
+            # configuration. Existing counters and holds are never reset.
+            provision_period_budgets(obj.scope, obj.scope_key, sync_limits=True)
             current_values = (obj.scope, obj.scope_key, obj.daily_limit, obj.monthly_limit)
             if previous_values != current_values:
                 record_event(

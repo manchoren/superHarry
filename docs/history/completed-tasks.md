@@ -51,6 +51,10 @@ title and completion status for release-scope tracking.
 - [x] **T050 - Heavy-job governor (single-slot scheduler)** Status: Completed
 - [x] **T086 - Package guard evidence scoring primitives** Status: Completed
 
+## Phase 3: Agent and model routing
+
+- [x] **T230 - Enforce application budgets across gateway fallback and memory calls** Status: Completed on 2026-11-23 for the current product-first implementation and isolated VM acceptance scope. `memory_agent_search` and repeated `memory_agent_recall` use the shared application-budget lifecycle; period configuration, provisioning and UTC rollover are wired. Exact Nous dispatch remains disabled by default; server-owned settings are declarations, not proof of zero charges for the target account/model. Verify account-specific billing treatment before activation under D2. No live provider call, zero-cost account claim or production activation is implied; broader provider/release acceptance remains deferred to T241/release. Evidence: [integrated T230 validation](../reference/evidence/t230-memory-agent-budget-2026-11-23.md).
+
 ## Phase 4: Persistence and administration
 
 - [x] **T174 - Durable storage and operational boundaries** Status: Completed
@@ -58,8 +62,9 @@ title and completion status for release-scope tracking.
 
 Completed 2026-11-14 for the current local scope. The raw constitution hash
 matches the runtime pin; local and gateway dispatch reject changed or missing
-constitution bytes before a model request. The memory-agent path remains
-disabled pending T184 and generic memory-context rejection is tested. Local
+constitution bytes before a model request. At that checkpoint, the memory-agent path remained
+disabled pending T184; the later T230 dispatch and budget integration supersedes
+that status for its accepted scope. Local
 validation and limitations are recorded in [overseer evidence](../reference/evidence/overseer-product-first-2026-11-14.md).
 This completion does not establish VM deployment or provider acceptance.
 

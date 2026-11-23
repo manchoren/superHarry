@@ -1,7 +1,8 @@
 # T230 memory-agent result contract slice - 2026-11-23
 
-Status: implementation groundwork only; T230 remains Pending and
-`memory_agent_search()` remains fail-closed.
+Status: historical result-contract groundwork, superseded by the integrated
+dispatcher and budgeted memory-agent acceptance recorded in
+[T230 integrated evidence](t230-memory-agent-budget-2026-11-23.md).
 
 ## Change
 
@@ -128,28 +129,44 @@ The regression test `test_memory_agent_caller_metadata_cannot_open_unverified_no
 also asserts that user/context/operation arguments remain denied and
 caller-supplied provider, model, endpoint, reservation and disclosure flags are
 rejected by the function signature; the Omniroute transport is never invoked.
-This guards the current fail-closed boundary but does not satisfy dispatch or
-integrated budget acceptance.
+This regression guard described the pre-integration fail-closed boundary; it
+was later extended with fake-provider budgeted-dispatch acceptance.
 
-`memory_agent_search()` must remain fail-closed until every route, disclosure,
-framing and budget gate is implemented and tested. This research does not close
-T230 or change provider consent, budget policy, or task status.
+At the time of this research, `memory_agent_search()` remained fail-closed
+while implementation and acceptance were pending. That status is superseded by
+the integrated evidence linked above; this historical research does not prove
+account-specific billing terms or authorize a live provider call.
 
-## Owner direction - 2026-11-23
+## Owner direction update - 2026-11-23
 
-The owner chose to keep memory-agent provider dispatch closed. Do not send
-memory content to Nous or make live provider calls. Reconsider only after a
-later scoped disclosure decision and verification that the exact account/model
-route is zero-cost under D2. The function remains fail-closed and T230 remains
-Pending; local budget and gateway work must continue within this boundary.
+The owner subsequently withdrew the earlier restriction on sending memory to
+the provider selected by product requirements, after asking why Nous was the
+selected provider and receiving that requirement reference. Disclosure to the
+product-designated Nous memory route is authorized for implementation. D2 still
+requires zero billable spend for the exact account/model route and prohibits
+paid or ambiguous fallback. This update authorizes implementation and
+synthetic tests; no live inference request was made. The subsequent integrated
+evidence records that dispatch now exists and is disabled by default unless the
+exact route configuration gates pass.
 
-## Validation for this evidence update
+## Earlier validation for this evidence update (superseded)
 
 The source review above used only official Nous Portal and OpenRouter web pages;
 it was not a provider/API integration test. The related local candidate/result
 contract validation remains 28 tests passed, `manage.py check` passed and
-`git diff --check` passed. The combined local Django suite subsequently passed
-984 tests with 14 skipped after the T223 archive pipeline and T230 regression
-guard were added. A focused authorization, memory, budget, retrieval, dispatch
+`git diff --check` passed. The combined local Django suite at that earlier checkpoint passed
+984 tests with 14 skipped after the T223 archive pipeline and initial T230
+regression guard were added; the later integrated 996-test result is in the
+current T230 evidence. A focused authorization, memory, budget, retrieval, dispatch
 and gateway-client run passed 50 tests. `manage.py check` and migration dry-run
 passed. No live inference request or authenticated API-key request was sent.
+
+## Current status
+
+The integrated `memory_agent_search()` path, repeated `memory_agent_recall()`
+budgeting, period provisioning/rollover, fake-provider regression tests and
+isolated VM acceptance are recorded in
+[T230 integrated evidence](t230-memory-agent-budget-2026-11-23.md). Public
+catalog metadata does not prove zero cost for the target account; the route
+therefore stays disabled unless its server-owned configuration verifies the D2
+requirements. No live provider call is claimed.

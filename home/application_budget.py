@@ -20,13 +20,14 @@ def period_start(at, period):
     raise ApplicationBudgetError('budget_unavailable')
 
 
-def provision_period_budgets(scope, scope_key, *, at=None):
+def provision_period_budgets(scope, scope_key, *, at=None, sync_limits=False):
     """Explicitly materialize configured UTC periods without resetting counters.
 
-    Missing configuration remains a fail-closed condition. Existing rows are
-    never rewritten, so rollover cannot erase usage or outstanding holds.
+    Missing configuration remains a fail-closed condition. Limit synchronization
+    updates only the configured hard limit; usage and outstanding holds remain.
     """
-    if (scope not in ('global', 'user') or not isinstance(scope_key, str)
+    if (type(sync_limits) is not bool
+            or scope not in ('global', 'user') or not isinstance(scope_key, str)
             or not scope_key.strip() or len(scope_key) > 128
             or scope == 'global' and scope_key != 'global'):
         raise ApplicationBudgetError('budget_unavailable')
@@ -44,10 +45,25 @@ def provision_period_budgets(scope, scope_key, *, at=None):
                     period_start=period_start(at, period),
                     defaults={'hard_limit': limit},
                 )
+                if sync_limits and budget.hard_limit != limit:
+                    budget.hard_limit = limit
+                    budget.save(update_fields=['hard_limit'])
                 result.append(budget)
             return result
     except (DatabaseError, IntegrityError):
         raise ApplicationBudgetError('budget_unavailable') from None
+
+
+def provision_configured_period_budgets(*, at=None):
+    """Idempotently provision current periods for every durable scope."""
+    try:
+        scopes = list(ApplicationBudgetConfiguration.objects.order_by("scope", "scope_key")
+                      .values_list("scope", "scope_key"))
+    except DatabaseError:
+        raise ApplicationBudgetError("budget_unavailable") from None
+    for scope, scope_key in scopes:
+        provision_period_budgets(scope, scope_key, at=at, sync_limits=True)
+    return len(scopes)
 
 
 def reserve(operation_id, amount, *, user_key=None, at=None):

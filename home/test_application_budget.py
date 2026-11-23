@@ -1,8 +1,10 @@
 from datetime import datetime, timezone
 
+from django.core.management import call_command
 from django.test import TestCase
 
 from home.application_budget import (ApplicationBudgetError, mark_unknown, period_start,
+                                     provision_configured_period_budgets,
                                      provision_period_budgets, reserve, settle)
 from home.models import ApplicationBudget, ApplicationBudgetConfiguration, ApplicationBudgetReservation
 
@@ -28,6 +30,51 @@ class ApplicationBudgetTests(TestCase):
         self.assertEqual([item.pk for item in first], [item.pk for item in second])
         first[0].refresh_from_db()
         self.assertEqual((first[0].hard_limit, first[0].used, first[0].reserved), (100, 7, 11))
+
+    def test_explicit_limit_sync_changes_limit_without_resetting_counters(self):
+        ApplicationBudget.objects.all().delete()
+        ApplicationBudgetConfiguration.objects.create(
+            scope='global', scope_key='global', daily_limit=90, monthly_limit=180,
+        )
+        existing = ApplicationBudget.objects.create(
+            scope='global', scope_key='global', period='daily',
+            period_start=period_start(self.at, 'daily'), hard_limit=100,
+            used=7, reserved=11,
+        )
+        synced = provision_period_budgets('global', 'global', at=self.at, sync_limits=True)
+        existing.refresh_from_db()
+        self.assertEqual(existing.pk, synced[0].pk)
+        self.assertEqual((existing.hard_limit, existing.used, existing.reserved), (90, 7, 11))
+
+    def test_management_command_provisions_current_periods_for_configured_scopes(self):
+        ApplicationBudget.objects.all().delete()
+        ApplicationBudgetConfiguration.objects.create(
+            scope='global', scope_key='global', daily_limit=100, monthly_limit=200,
+        )
+        ApplicationBudgetConfiguration.objects.create(
+            scope='user', scope_key='user-1', daily_limit=30, monthly_limit=60,
+        )
+        call_command('provision_application_budgets', verbosity=0)
+        self.assertEqual(ApplicationBudget.objects.count(), 4)
+        self.assertEqual(
+            set(ApplicationBudget.objects.values_list('scope', 'scope_key', 'period', 'hard_limit')),
+            {
+                ('global', 'global', 'daily', 100),
+                ('global', 'global', 'monthly', 200),
+                ('user', 'user-1', 'daily', 30),
+                ('user', 'user-1', 'monthly', 60),
+            },
+        )
+
+    def test_period_rollover_provisions_every_configured_scope(self):
+        ApplicationBudget.objects.all().delete()
+        for scope, key in (("global", "global"), ("user", "user-1")):
+            ApplicationBudgetConfiguration.objects.create(
+                scope=scope, scope_key=key, daily_limit=100, monthly_limit=200,
+            )
+        count = provision_configured_period_budgets(at=self.at)
+        self.assertEqual(count, 2)
+        self.assertEqual(ApplicationBudget.objects.count(), 4)
 
     def test_provisioning_missing_config_fails_closed(self):
         with self.assertRaises(ApplicationBudgetError):

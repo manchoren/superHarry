@@ -48,7 +48,7 @@ def verify_free_route_eligibility(*, provider: str, model_id: str,
     Returns a human-readable reason (the disclosure) on the first failed check.
     A successful result does not prove the account or upstream configuration.
     """
-    if provider not in ("groq", "openrouter"):
+    if provider not in ("groq", "openrouter", "nous"):
         return "route_provider_invalid"
 
     if admin_enabled is not True:
@@ -75,6 +75,11 @@ def verify_free_route_eligibility(*, provider: str, model_id: str,
         if not isinstance(upstream_id, str) or not upstream_id:
             return "upstream_id_invalid"
         if not is_approved_route(model_id, upstream_id):
+            return "upstream_not_approved"
+    elif provider == "nous":
+        # Nous memory dispatch is pinned to its explicitly free model and
+        # provider route. An arbitrary alias or upstream must fail closed.
+        if model_id != "upstage/solar-mini4:free" or upstream_id != "upstage":
             return "upstream_not_approved"
 
     if not isinstance(risk_accepted, bool) or not risk_accepted:

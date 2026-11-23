@@ -9,6 +9,8 @@ authorization and a server-owned invocation function.
 from dataclasses import dataclass
 from typing import Any, Callable, Mapping
 
+from home.memory_access import MemoryRetrievalAuthorization
+
 
 MAX_RECALL_CALLS = 3
 MAX_RECALL_QUERY_CHARS = 2_048
@@ -69,7 +71,9 @@ def recall_memory(
                 pass
         raise MemoryRecallDenied("memory_recall_unavailable")
 
-    if not isinstance(budget, RecallBudget) or budget._active:
+    if (not isinstance(budget, RecallBudget)
+            or not isinstance(authorization, MemoryRetrievalAuthorization)
+            or budget._active):
         deny()
     if caller != "main_agent":
         deny()

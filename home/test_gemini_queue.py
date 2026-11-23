@@ -14,7 +14,8 @@ from django.utils import timezone
 
 from home.chat_dispatch import ChatDispatchError, configure_chat_dispatcher, get_chat_dispatcher
 from home.gemini_chat import GeminiChatDispatcher
-from home.gemini_queue import _WAKE, claim_next, reconcile_stale, run_chat_worker, run_one, wake_worker
+from home.gemini_queue import (_WAKE, _provision_budget_periods_if_due, claim_next,
+                               reconcile_stale, run_chat_worker, run_one, wake_worker)
 from home.management.commands.run_chat_worker import Command as RunChatWorkerCommand
 from home.models import ChatTurn, Conversation, GeminiChatJob, Message, ProviderQuota, ProviderReservation
 from home.provider_quota import reserve, mark_unknown
@@ -103,6 +104,21 @@ class GeminiQueueTests(TestCase):
             with self.assertRaises(ChatDispatchError) as caught:
                 self.dispatcher.enqueue(self.turn.pk)
         self.assertNotIn('sensitive', str(caught.exception))
+
+
+class BudgetPeriodWorkerTests(SimpleTestCase):
+    def test_persistent_worker_provisions_on_startup_and_utc_rollover(self):
+        from datetime import datetime, timezone
+        start = datetime(2026, 11, 23, 23, 59, tzinfo=timezone.utc)
+        next_day = datetime(2026, 11, 24, 0, 0, tzinfo=timezone.utc)
+        with patch("home.application_budget.provision_configured_period_budgets") as provision:
+            last = _provision_budget_periods_if_due(None, now=start)
+            self.assertEqual(last, start)
+            not_due = _provision_budget_periods_if_due(last, now=start)
+            self.assertEqual(not_due, last)
+            next_period = _provision_budget_periods_if_due(last, now=next_day)
+            self.assertEqual(next_period, next_day)
+        self.assertEqual(provision.call_count, 2)
 
 
 class GeminiQueueConcurrencyTests(TransactionTestCase):
@@ -237,7 +253,8 @@ class ForegroundChatWorkerTests(SimpleTestCase):
             stop_event.set()
             return False
 
-        with patch('home.gemini_queue.reconcile_stale'), patch(
+        with patch('home.gemini_queue._provision_budget_periods_if_due', return_value=None), \
+                patch('home.gemini_queue.reconcile_stale'), patch(
                 'home.gemini_queue.run_one', side_effect=finish_after_one_poll):
             run_chat_worker(stop_event)
 
@@ -258,7 +275,8 @@ class ForegroundChatWorkerTests(SimpleTestCase):
             stop_event.set()
             return True
 
-        with patch('home.gemini_queue.reconcile_stale'), patch(
+        with patch('home.gemini_queue._provision_budget_periods_if_due', return_value=None), \
+                patch('home.gemini_queue.reconcile_stale'), patch(
                 'home.gemini_queue.run_one', side_effect=run_one_with_two_polls):
             worker = threading.Thread(target=run_chat_worker, args=(stop_event,))
             worker.start()

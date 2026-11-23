@@ -460,22 +460,21 @@ def test_chat_with_local_model(mock_completion):
 
 @patch('home.omniroute_client.omniroute_client.chat_completion')
 def test_memory_agent_search(mock_completion):
-    for user_key in (None, "user-1"):
-        with pytest.raises(NotDispatched, match="memory_gateway_admission_unavailable"):
-            memory_agent_search("query", [{"role": "system", "content": "Context"}], user_key=user_key)
+    for user in (None, "user-1"):
+        with pytest.raises(NotDispatched, match="memory_route_unavailable"):
+            memory_agent_search("query", user=user, operation_id="synthetic-op", risk_accepted=True)
     mock_completion.assert_not_called()
 
 
 @patch('home.omniroute_client.omniroute_client.chat_completion')
 def test_memory_agent_caller_metadata_cannot_open_unverified_nous_route(mock_completion):
-    context = [{"role": "system", "content": "synthetic authorized-looking context"}]
-    with pytest.raises(NotDispatched, match="memory_gateway_admission_unavailable"):
-        memory_agent_search("synthetic query", context, user_key="user-1", operation_id="synthetic-operation")
+    with pytest.raises(NotDispatched, match="memory_route_unavailable"):
+        memory_agent_search("synthetic query", user=None, operation_id="synthetic-operation",
+                            risk_accepted=True)
     mock_completion.assert_not_called()
     with pytest.raises(TypeError, match="unexpected keyword argument"):
         memory_agent_search(
             "synthetic query",
-            context,
             provider="nous",
             model="upstage/solar-mini4:free",
             endpoint="https://inference-api.nousresearch.com/v1",
@@ -488,8 +487,9 @@ def test_memory_agent_caller_metadata_cannot_open_unverified_nous_route(mock_com
 def test_memory_agent_does_not_mutate_caller_context(client):
     original = [{"role": "system", "content": "Context"}]
     with patch.object(omniroute_client, "chat_completion", return_value=Mock()) as completion:
-        with pytest.raises(NotDispatched):
-            memory_agent_search("query", original)
+        with pytest.raises(TypeError, match="unexpected keyword argument"):
+            memory_agent_search("query", conversation_context=original, user=None,
+                                operation_id="operation", risk_accepted=True)
     completion.assert_not_called()
     assert original == [{"role": "system", "content": "Context"}]
 

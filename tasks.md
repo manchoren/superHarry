@@ -23,21 +23,20 @@ The [product-first policy](docs/reference/product-first-validation.md) supersede
 | # | Task ID | Title |
 |---|---------|-------|
 | 1 | T179 | Free-provider pre-dispatch admission gates and exact tokenizer bound |
-| 2 | T230 | Enforce application budgets across gateway fallback and memory calls |
-| 3 | T229 | Connect durable chat and local inference to the gateway |
-| 4 | T231 | Correct package guard scoring and evidence validation |
-| 5 | T232 | Implement the common authorized tool execution boundary |
-| 6 | T233 | Implement the authorized file store and upload/download boundary |
-| 7 | T180 | Tool confirmation policy (operator-configured grants) |
-| 8 | T181 | Package guard Django admin UI integration |
-| 9 | T183 | Memory model and schema (global and user scopes) |
-| 10 | T182 | Memory encryption and recovery (SQLCipher) |
-| 11 | T184 | Memory-agent retrieval (pre-main-agent, non-reasoning) |
-| 12 | T185 | recall_memory tool with bounded re-invocation |
-| 13 | T186 | Semantic search with keyword fallback |
-| 14 | T234 | Deliver memory controls, personality and fixed-directive administration |
-| 15 | T187 | Per-user chat history persistence |
-| 16 | T235 | Deliver the local-only guest session and chat flow |
+| 2 | T229 | Connect durable chat and local inference to the gateway |
+| 3 | T231 | Correct package guard scoring and evidence validation |
+| 4 | T232 | Implement the common authorized tool execution boundary |
+| 5 | T233 | Implement the authorized file store and upload/download boundary |
+| 6 | T180 | Tool confirmation policy (operator-configured grants) |
+| 7 | T181 | Package guard Django admin UI integration |
+| 8 | T183 | Memory model and schema (global and user scopes) |
+| 9 | T182 | Memory encryption and recovery (SQLCipher) |
+| 10 | T184 | Memory-agent retrieval (pre-main-agent, non-reasoning) |
+| 11 | T185 | recall_memory tool with bounded re-invocation |
+| 12 | T186 | Semantic search with keyword fallback |
+| 13 | T234 | Deliver memory controls, personality and fixed-directive administration |
+| 14 | T187 | Per-user chat history persistence |
+| 15 | T235 | Deliver the local-only guest session and chat flow |
 | 17 | T211 | Guest rate limits (origin identification, session limits, queue timeout) |
 | 18 | T236 | Deliver persisted accessible light, dark and system themes |
 | 19 | T240 | Implement capability degradation and external-only task recovery |

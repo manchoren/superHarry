@@ -1,6 +1,6 @@
 # T230 budget visibility - 2026-11-14
 
-Status: Pending. Windows checkout; constitution SHA-256
+Status: implementation and isolated VM acceptance complete for the current product-first scope; constitution SHA-256
 `59b3e1cc1f504f5dc510a7257a20a7d9e558b5b52033a7fc28831b62b3e92d8a`.
 
 The principal-scoped budget page now displays unresolved reservations carried
@@ -44,6 +44,16 @@ usage/reservations, and fails closed when configuration is missing or malformed.
 cannot silently reopen external capacity. This is local contract evidence only;
 gateway/provider acceptance, VM rollover and production acceptance remain open.
 
+T230 current-period activation path (2026-11-23): saving a budget configuration
+through the audited admin now provisions its current daily and monthly rows and
+synchronizes their hard limits without resetting `used` or `reserved`. Added
+`manage.py provision_application_budgets` to apply durable configurations to
+all scopes and create missing current UTC periods. It is idempotent and fails
+closed on invalid/missing scope configuration; the dispatch path still does not
+auto-create rows. The persistent chat worker now provisions periods at startup and retries every
+60 seconds for UTC rollover. VM testing used a disposable test database; no
+production database was changed.
+
 T230 administrative configuration slice (2026-11-15): registered
 `ApplicationBudgetConfiguration` in Django Admin with canonical scope-key
 validation, deletion disabled, and an append-only audit event for every
@@ -62,3 +72,6 @@ storage-pressure test passed. The full suite reached 873 tests with 11 skips
 but had one order-sensitive failure in
 `PersistedCleanupInventoryTests.test_inventory_has_a_hard_candidate_limit`;
 that test passed when run alone. No T230-focused failure was observed.
+
+
+Current integrated memory-dispatch, budget settlement, period rollover, and isolated VM results are consolidated in [T230 integrated evidence](evidence/t230-memory-agent-budget-2026-11-23.md). Live-provider billing and release activation remain deferred under T241/release; dispatch stays disabled unless the exact account/model route passes D2 configuration gates.

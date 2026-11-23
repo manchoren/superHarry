@@ -338,7 +338,31 @@ def chat_with_local_model(messages, **kwargs):
     raise NotDispatched("gateway_locality_unverified")
 
 
-def memory_agent_search(query, conversation_context=None, *, user_key=None, operation_id=None):
-    # User identity alone does not establish permitted memory scope, consent,
-    # upstream eligibility or a valid token bound for the configured model.
-    raise NotDispatched("memory_gateway_admission_unavailable")
+def memory_agent_search(query, *, user=None, operation_id=None, risk_accepted=False):
+    """Run the pinned Nous memory route through its fail-closed budget boundary."""
+    if (user is None or not getattr(user, "is_authenticated", False)
+            or not getattr(user, "is_active", False)
+            or not isinstance(operation_id, str) or not operation_id.strip()):
+        raise NotDispatched("memory_route_unavailable")
+    from home.memory_agent_dispatch import dispatch_memory_agent
+    return dispatch_memory_agent(
+        query=query,
+        user=user,
+        operation_id=operation_id,
+        risk_accepted=risk_accepted,
+    )
+
+
+def memory_agent_recall(query, reason, *, user=None, budget=None, caller=None,
+                        operation_id=None, risk_accepted=False):
+    """Bounded recall call routed through the same budgeted Nous dispatcher."""
+    from home.memory_agent_dispatch import memory_agent_recall as dispatch_recall
+    return dispatch_recall(
+        query=query,
+        reason=reason,
+        user=user,
+        budget=budget,
+        caller=caller,
+        operation_id=operation_id,
+        risk_accepted=risk_accepted,
+    )

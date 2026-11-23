@@ -46,5 +46,6 @@ class DispatchConstitutionTests(SimpleTestCase):
     def test_unintegrated_memory_agent_remains_disabled(self):
         with patch("home.omniroute_client.OmnirouteClient") as client:
             with self.assertRaises(NotDispatched):
-                memory_agent_search("synthetic", user_key="user", operation_id="operation")
+                memory_agent_search("synthetic", user=None, operation_id="operation",
+                                    risk_accepted=True)
             client.assert_not_called()
