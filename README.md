@@ -1,5 +1,7 @@
 # superHarry
 
+NOTE: this project is abandoned. please check manchoren/SuperHarry2 
+
 superHarry is a free, public personal AI agent running in a persistent Linux VM, with Raspberry Pi support planned as an optional later port. Its intended capabilities include an authenticated web interface, local models and configured free-tier model providers, controlled tools, user-scoped memory and scheduled work. Voice, messaging and an HDMI display are subject to the scope and sequencing in the project plan.
 
 The repository now contains the initial Django monolith scaffold. It uses Django's built-in authentication, sessions, CSRF protection, ORM and admin rather than a separate TypeScript access service. This is a development foundation, not a complete application or production deployment.
